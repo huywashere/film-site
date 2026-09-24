@@ -32,6 +32,7 @@ export async function GET(
   { params }: { params: Promise<{ path: string[] }> },
 ) {
   const { path } = await params;
+  const isHealthCheck = path?.join("/") === "catalog/providers/health";
   if (
     !path?.length ||
     path.length > 4 ||
@@ -52,7 +53,7 @@ export async function GET(
 
   const origin = gatewayOrigin();
   if (!origin) {
-    if (path.join("/") === "catalog/providers/health") {
+    if (isHealthCheck) {
       return NextResponse.json(
         { available: false },
         {
@@ -87,12 +88,27 @@ export async function GET(
       const value = response.headers.get(name);
       if (value) headers.set(name, value);
     }
-    if (path.join("/") === "catalog/providers/health") {
+    if (isHealthCheck) {
       headers.set("X-NetPhim-Catalog-Available", response.ok ? "1" : "0");
     }
     headers.set("X-NetPhim-Catalog-Path", "gin-via-next");
-    return new NextResponse(body, { status: response.status, headers });
+    return new NextResponse(body, {
+      status: isHealthCheck ? 200 : response.status,
+      headers,
+    });
   } catch {
+    if (isHealthCheck) {
+      return NextResponse.json(
+        { available: false },
+        {
+          status: 200,
+          headers: {
+            "Cache-Control": "no-store",
+            "X-NetPhim-Catalog-Available": "0",
+          },
+        },
+      );
+    }
     return NextResponse.json(
       { error: "Catalog gateway tạm thời không khả dụng" },
       { status: 503, headers: { "Cache-Control": "no-store" } },

@@ -34,7 +34,14 @@ function cleanProperties(properties: TelemetryProperties = {}) {
 function telemetryEndpoint() {
   const fallbackBase =
     process.env.NODE_ENV === 'production' ? '/api/v1' : 'http://localhost:3001/api/v1';
-  const rawBase = (process.env.NEXT_PUBLIC_API_URL || fallbackBase).replace(/\/+$/, '');
+  // Browser telemetry must remain first-party in production. Sending directly
+  // to a Railway/API origin makes every page depend on that origin's CORS
+  // policy, while the existing Next proxy already forwards `/api/v1` safely.
+  const rawBase = (
+    process.env.NODE_ENV === 'production'
+      ? fallbackBase
+      : process.env.NEXT_PUBLIC_API_URL || fallbackBase
+  ).replace(/\/+$/, '');
   const baseUrl =
     rawBase === '/api/v1' || rawBase.endsWith('/api/v1')
       ? rawBase

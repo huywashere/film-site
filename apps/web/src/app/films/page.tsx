@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
   Search,
@@ -22,6 +22,7 @@ import { movieApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { cardFont } from "@/lib/fonts";
 import { BrowseFilmsSkeleton } from "@/components/loading/CatalogPageSkeletons";
+import { useReliableNavigation } from "@/hooks/useReliableNavigation";
 
 // ── Định nghĩa các tùy chọn bộ lọc ──────────────────────────────────────────
 
@@ -59,7 +60,7 @@ const SORTS = [
 ];
 
 function BrowseFilmsContent() {
-  const router = useRouter();
+  const router = useReliableNavigation();
   const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");

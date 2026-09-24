@@ -10,8 +10,15 @@ export function RegisterSW() {
     ) {
       navigator.serviceWorker
         .register("/sw.js", { updateViaCache: "none" })
-        .then(async (reg) => {
-          await reg.update();
+        .then(async (registration) => {
+          if (
+            !registration ||
+            typeof registration.update !== "function"
+          ) {
+            return;
+          }
+
+          await registration.update();
         })
         .catch((err) => {
           console.error("🔴 PWA Service Worker registration failed:", err);

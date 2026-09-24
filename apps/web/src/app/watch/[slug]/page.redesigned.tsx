@@ -1,6 +1,6 @@
 "use client";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useParams, useSearchParams, useRouter } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
@@ -31,6 +31,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useTranslation } from "@/store/langStore";
 import { useWatchParty } from "@/hooks/useWatchParty";
 import { WatchPartyPanel } from "@/components/watch/WatchPartyPanel";
+import { useReliableNavigation } from "@/hooks/useReliableNavigation";
 import { AdvancedCommentSection } from "@/components/comments/AdvancedCommentSection";
 
 const ArtPlayer = dynamic(() => import("@/components/video/ArtPlayer"), {
@@ -89,7 +90,7 @@ function AutoNextOverlay({
 export default function WatchPageRedesigned() {
   const params = useParams();
   const searchParams = useSearchParams();
-  const router = useRouter();
+  const router = useReliableNavigation();
   const { toast } = useToast();
   const user = useAuthStore((s) => s.user);
   const { t } = useTranslation();

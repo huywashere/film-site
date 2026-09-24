@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -32,6 +32,7 @@ import { TrailerModal } from "@/components/film/TrailerModal";
 import { cardFont } from "@/lib/fonts";
 import { DeferredSection } from "@/components/layout/DeferredSection";
 import { useDeferredContent } from "@/hooks/useDeferredContent";
+import { useReliableNavigation } from "@/hooks/useReliableNavigation";
 import { cn } from "@/lib/utils";
 import {
   CURATED_SCIFI_HERO_POOL,
@@ -674,7 +675,7 @@ function GenreCuratedHeroBanner({
 // ── MAIN GENRE PAGE COMPONENT ──
 export default function GenrePage() {
   const params = useParams();
-  const router = useRouter();
+  const router = useReliableNavigation();
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const slug = params.slug as string;

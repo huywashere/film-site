@@ -41,13 +41,32 @@ test('service worker never serves stale cached HTML after a deployment', () => {
   const services = source('src/components/layout/ClientBackgroundServices.tsx');
   assert.doesNotMatch(registration, /controllerchange|location\.reload/);
   assert.match(services, /<RegisterSW \/>/);
-  assert.match(services, /document\.addEventListener\("click", navigateInternalLink, true\)/);
+  assert.match(services, /document\.addEventListener\("click", recoverStalledNavigation, true\)/);
+  assert.match(services, /window\.location\.href === startingHref/);
   assert.match(services, /window\.location\.assign\(destination\.href\)/);
+  assert.match(services, /nestedControl && nestedControl !== anchor/);
+  assert.doesNotMatch(services, /event\.preventDefault\(\)/);
+  assert.match(worker, /if \(url\.origin !== self\.location\.origin\) return/);
   assert.match(worker, /if \(isNextAsset\) return/);
   assert.match(
     source('src/components/layout/ConditionalFooter.tsx'),
     /if \(!mounted \|\| pathname !== "\/"\)/,
   );
+});
+
+test('programmatic navigation has the same bounded recovery as links', () => {
+  const navigation = source('src/hooks/useReliableNavigation.ts');
+  const catalog = source('src/app/films/[type]/FilmsTypeClient.tsx');
+  const search = source('src/components/search/SpotlightSearchModal.tsx');
+  const navbar = source('src/components/layout/Navbar.tsx');
+
+  assert.match(navigation, /navigate\(clientHref, options\)/);
+  assert.match(navigation, /window\.setTimeout/);
+  assert.match(navigation, /window\.location\.href !== startingHref/);
+  assert.match(navigation, /window\.location\.assign\(destination\.href\)/);
+  for (const client of [catalog, search, navbar]) {
+    assert.match(client, /useReliableNavigation\(\)/);
+  }
 });
 
 test('FlexPhim branding is consistent while legacy client keys stay compatible', () => {

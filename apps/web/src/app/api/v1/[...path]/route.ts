@@ -42,15 +42,17 @@ async function proxyRequest(
   request: NextRequest,
   context: { params: Promise<{ path: string[] }> },
 ) {
+  const { path } = await context.params;
+  const isTelemetry = path.join('/') === 'telemetry/client/batch';
   const upstreamBase = getUpstreamBase();
   if (!upstreamBase) {
+    if (isTelemetry) return new NextResponse(null, { status: 204 });
     return NextResponse.json(
       { message: 'API upstream is not configured' },
       { status: 503 },
     );
   }
 
-  const { path } = await context.params;
   const suffix = path.map(encodeURIComponent).join('/');
   const upstreamUrl = new URL(`${upstreamBase}/${suffix}`);
   upstreamUrl.search = request.nextUrl.search;
@@ -66,6 +68,7 @@ async function proxyRequest(
       redirect: 'manual',
     });
   } catch {
+    if (isTelemetry) return new NextResponse(null, { status: 204 });
     return NextResponse.json(
       { message: 'API upstream is temporarily unavailable' },
       { status: 502 },

@@ -1,14 +1,15 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { authApi } from "@/lib/api";
 import Link from "next/link";
 import { Loader2, CheckCircle2, XCircle } from "lucide-react";
+import { useReliableNavigation } from "@/hooks/useReliableNavigation";
 
 function VerifyEmailContent() {
   const searchParams = useSearchParams();
-  const router = useRouter();
+  const router = useReliableNavigation();
   const token = searchParams.get("token");
 
   const [status, setStatus] = useState<"loading" | "success" | "error">(

@@ -22,7 +22,6 @@ import { useAuthStore } from "@/store/authStore";
 import { useQuery } from "@tanstack/react-query";
 import {
   movieApi,
-  siteConfigApi,
   watchlistApi,
   watchHistoryApi,
   type PublicSiteConfiguration,
@@ -158,6 +157,7 @@ const FanCardButton = styled.button<{
 interface HeroBannerProps {
   films?: FilmItem[];
   initialConfig?: PublicSiteConfiguration;
+  randomizeCuratedPool?: boolean;
 }
 
 interface HeroFilm extends FilmItem {
@@ -167,11 +167,13 @@ interface HeroFilm extends FilmItem {
   tmdbOnly?: boolean;
 }
 
-const HERO_SESSION_KEY = "netphim.tmdb-hero.v9";
-const HERO_INDEX_SESSION_KEY = "netphim.tmdb-hero-index.v3";
+const HERO_SESSION_KEY = "netphim.tmdb-hero.v10";
+const HERO_INDEX_SESSION_KEY = "netphim.tmdb-hero-index.v4";
 const LEGACY_HERO_SESSION_KEYS = [
+  "netphim.tmdb-hero.v9",
   "netphim.tmdb-hero.v8",
   "netphim.tmdb-hero.v7",
+  "netphim.tmdb-hero-index.v3",
   "netphim.tmdb-hero-index.v2",
 ] as const;
 
@@ -1160,6 +1162,42 @@ function isStoredHeroPlaylist(value: unknown): value is HeroFilm[] {
 let cachedHeroPlaylist: HeroFilm[] | null = null;
 let cachedHeroIndex = 0;
 
+function secureRandomUnit(): number {
+  if (typeof window !== "undefined" && window.crypto?.getRandomValues) {
+    const value = new Uint32Array(1);
+    window.crypto.getRandomValues(value);
+    return value[0] / 0x1_0000_0000;
+  }
+  return Math.random();
+}
+
+function shuffleHeroPool<T>(items: readonly T[]): T[] {
+  const shuffled = [...items];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(secureRandomUnit() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [
+      shuffled[swapIndex],
+      shuffled[index],
+    ];
+  }
+  return shuffled;
+}
+
+function selectCuratedHeroPlaylist(previous: HeroFilm[] | null): HeroFilm[] {
+  const previousSlugs = new Set((previous || []).map((film) => film.slug));
+  const fresh = CURATED_HERO_FRANCHISE_POOL.filter(
+    (film) => !previousSlugs.has(film.slug),
+  );
+  const recentlyShown = CURATED_HERO_FRANCHISE_POOL.filter((film) =>
+    previousSlugs.has(film.slug),
+  );
+
+  return [
+    ...shuffleHeroPool(fresh),
+    ...shuffleHeroPool(recentlyShown),
+  ].slice(0, 6) as HeroFilm[];
+}
+
 function readStoredHeroPlaylist(): HeroFilm[] | null {
   if (typeof window === "undefined") return null;
 
@@ -1176,17 +1214,6 @@ function readStoredHeroPlaylist(): HeroFilm[] | null {
   } catch {
     return null;
   }
-}
-
-function readStoredHeroIndex(playlistLength: number): number {
-  if (typeof window === "undefined" || playlistLength <= 0) return 0;
-
-  const parsed = Number(
-    window.sessionStorage.getItem(HERO_INDEX_SESSION_KEY) || "0",
-  );
-  return Number.isInteger(parsed) && parsed >= 0 && parsed < playlistLength
-    ? parsed
-    : 0;
 }
 
 function storeHeroPlaylist(playlist: HeroFilm[]) {
@@ -1226,8 +1253,14 @@ async function loadFreshTmdbPlaylist(): Promise<HeroFilm[]> {
   return retainPlayableHeroes(withLogos);
 }
 
-export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
-  const [current, setCurrent] = useState(0);
+export default function HeroBanner({
+  films,
+  initialConfig,
+  randomizeCuratedPool = false,
+}: HeroBannerProps) {
+  const [current, setCurrent] = useState(() =>
+    cachedHeroPlaylist?.length ? cachedHeroIndex : 0,
+  );
   const [autoRotateEnabled, setAutoRotateEnabled] = useState(false);
   const [pageVisible, setPageVisible] = useState(true);
   const attemptedTitleLogos = useRef(new Set<string>());
@@ -1236,6 +1269,7 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
   // empty initial list made production wait for /config/public before the LCP
   // image and title even existed in the DOM.
   const [featured, setFeatured] = useState<HeroFilm[]>(() => {
+    if (cachedHeroPlaylist?.length) return cachedHeroPlaylist;
     if (films && films.length > 0) return (films as HeroFilm[]).slice(0, 6);
     const pinned = (initialConfig?.heroMovieSlugs || [])
       .map((slug) =>
@@ -1249,6 +1283,9 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
   const [trailerModalFilm, setTrailerModalFilm] = useState<FilmItem | null>(
     null,
   );
+  const [departingFilm, setDepartingFilm] = useState<HeroFilm | null>(null);
+  const [departingVisible, setDepartingVisible] = useState(false);
+  const initialPaintFilm = useRef<HeroFilm | null>(featured[current] || null);
   const [visualReadiness, setVisualReadiness] = useState<
     Record<string, { backdrop: boolean; title: boolean }>
   >({});
@@ -1319,39 +1356,28 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
       document.removeEventListener("visibilitychange", syncVisibility);
   }, []);
 
-  // Resolve one authoritative playlist before painting any film artwork.
-  // Priority: explicit props -> admin-pinned slugs -> stored session -> curated.
-  // Keeping this in one effect removes the former race between site config and
-  // session restoration that swapped banners shortly after every reload.
+  // Keep the server-rendered first slide stable for LCP, then prepare a fresh
+  // six-film playlist from the full curated pool. The previous playlist is
+  // used only as an exclusion set, so a hard reload produces genuinely new
+  // films while client-side navigation back home retains the current queue.
   useEffect(() => {
     let active = true;
+    let transitionTimer: number | null = null;
+    let firstFrame = 0;
+    let secondFrame = 0;
     const initialize = async () => {
       let playlist: HeroFilm[] = [];
       let restoredIndex = 0;
 
-      if (films && films.length > 0) {
+      if (!randomizeCuratedPool && films && films.length > 0) {
         playlist = (films as HeroFilm[]).slice(0, 6);
       } else {
-        const stored = readStoredHeroPlaylist();
-        try {
-          const config =
-            initialConfig || (await siteConfigApi.getPublic()).data;
-          if (!active) return;
-          const requestedSlugs = (config?.heroMovieSlugs || [])
-            .map((slug) => slug.trim())
-            .filter(Boolean);
+        const requestedSlugs = (initialConfig?.heroMovieSlugs || [])
+          .map((slug) => slug.trim())
+          .filter(Boolean);
 
-          const storedMatchesPinned = Boolean(
-            stored &&
-            requestedSlugs.length > 0 &&
-            stored.length === Math.min(6, requestedSlugs.length) &&
-            requestedSlugs.slice(0, 6).every((slug, index) => stored[index]?.slug === slug),
-          );
-
-          if (requestedSlugs.length && storedMatchesPinned && stored) {
-            playlist = stored.slice(0, 6);
-            restoredIndex = readStoredHeroIndex(playlist.length);
-          } else if (requestedSlugs.length) {
+        if (requestedSlugs.length) {
+          try {
             playlist = (
               await Promise.all(
                 requestedSlugs.slice(0, 6).map(async (slug) => {
@@ -1375,19 +1401,18 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
                 }),
               )
             ).filter((film): film is HeroFilm => Boolean(film)).slice(0, 6);
-          } else if (stored?.length) {
-            playlist = stored.slice(0, 6);
-            restoredIndex = readStoredHeroIndex(playlist.length);
-          } else {
-            playlist = CURATED_HERO_FRANCHISE_POOL.slice(0, 6) as HeroFilm[];
-            restoredIndex = 0;
+          } catch {
+            playlist = [];
           }
-        } catch {
-          playlist = CURATED_HERO_FRANCHISE_POOL.slice(0, 6) as HeroFilm[];
+        } else if (cachedHeroPlaylist?.length) {
+          playlist = cachedHeroPlaylist.slice(0, 6);
+          restoredIndex = Math.min(cachedHeroIndex, playlist.length - 1);
+        } else {
+          playlist = selectCuratedHeroPlaylist(readStoredHeroPlaylist());
         }
 
         if (!playlist.length) {
-          playlist = CURATED_HERO_FRANCHISE_POOL.slice(0, 6) as HeroFilm[];
+          playlist = selectCuratedHeroPlaylist(null);
         }
       }
 
@@ -1421,20 +1446,77 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
         .map((film) => film?.titleLogo || getMovieLogo(film?.slug))
         .map((url) => getPrimaryHeroLogoUrl(url))
         .filter((url): url is string => Boolean(url));
-      await Promise.all(initialLogoUrls.map((url) => preloadMovieLogo(url)));
+      const target = initialPlaylist[selectedIndex];
+      const usesPortraitArtwork = window.matchMedia(
+        "(max-width: 1023px) and (orientation: portrait)",
+      ).matches;
+      const backdropCandidates = usesPortraitArtwork
+        ? preferSameOriginHeroCandidates(
+            addHeroEdgeFallback(
+              buildHeroCardImageCandidates(
+                {
+                  heroBackdrop: target?.heroBackdrop,
+                  thumbUrl: target?.thumb_url,
+                  posterUrl: target?.poster_url,
+                },
+                "poster",
+              ).map(getMobileHeroBackdrop),
+            ),
+          )
+        : buildHeroImageCandidates({
+            heroBackdrop: target?.heroBackdrop,
+            thumbUrl: target?.thumb_url,
+            posterUrl: target?.poster_url,
+          });
+      const [, readyBackdrop] = await Promise.all([
+        Promise.all(initialLogoUrls.map((url) => preloadMovieLogo(url))),
+        preloadHeroBackdropCandidates(backdropCandidates, 3_600),
+      ]);
       if (!active) return;
+      const outgoing = initialPaintFilm.current;
+      // A preload timeout must never replace the already-painted hero with an
+      // image that has not decoded. The regular slide activator can retry it
+      // later while the stable first frame remains visible.
+      if (target && outgoing?.slug !== target.slug && !readyBackdrop) return;
+      if (target && readyBackdrop) {
+        const preference = preferredHeroBackdrops.get(target.slug) || {};
+        preferredHeroBackdrops.set(target.slug, {
+          ...preference,
+          [usesPortraitArtwork ? "portrait" : "landscape"]: readyBackdrop,
+        });
+        markVisualReady(target.slug, "backdrop");
+      }
+
+      if (outgoing && outgoing.slug !== target?.slug) {
+        setDepartingFilm(outgoing);
+        setDepartingVisible(true);
+      }
       setFeatured(initialPlaylist);
       setCurrent(selectedIndex);
       storeHeroPlaylist(initialPlaylist);
+      initialPaintFilm.current = target || null;
 
+      if (outgoing && outgoing.slug !== target?.slug) {
+        firstFrame = window.requestAnimationFrame(() => {
+          secondFrame = window.requestAnimationFrame(() => {
+            if (active) setDepartingVisible(false);
+          });
+        });
+        transitionTimer = window.setTimeout(() => {
+          if (active) setDepartingFilm(null);
+        }, 1_050);
+      }
     };
 
     void initialize();
 
     return () => {
       active = false;
+      if (transitionTimer !== null) window.clearTimeout(transitionTimer);
+      if (firstFrame) window.cancelAnimationFrame(firstFrame);
+      if (secondFrame) window.cancelAnimationFrame(secondFrame);
     };
-  }, [films, initialConfig]);
+  }, [films, initialConfig, markVisualReady, randomizeCuratedPool]);
 
   // Resolve featured title artwork in the background.
   useEffect(() => {
@@ -1980,6 +2062,29 @@ export default function HeroBanner({ films, initialConfig }: HeroBannerProps) {
             </div>
           );
         })}
+        {departingFilm ? (
+          <div
+            aria-hidden="true"
+            className={cn(
+              "pointer-events-none absolute inset-0 z-20 h-full w-full transition-opacity duration-1000 ease-out",
+              departingVisible ? "opacity-100" : "opacity-0",
+            )}
+          >
+            <HeroBackdropImage
+              film={departingFilm}
+              isActive
+              preferredPortraitSrc={
+                preferredHeroBackdrops.get(departingFilm.slug)?.portrait
+              }
+              preferredLandscapeSrc={
+                preferredHeroBackdrops.get(departingFilm.slug)?.landscape
+              }
+              onReady={() =>
+                markVisualReady(departingFilm.slug, "backdrop")
+              }
+            />
+          </div>
+        ) : null}
         {/* Keep the hero static: auto-decoding a full HLS stream made the
             homepage tab CPU and bandwidth heavy. */}
       </div>

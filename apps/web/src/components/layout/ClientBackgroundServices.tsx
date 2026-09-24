@@ -11,7 +11,16 @@ export function ClientBackgroundServices() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const navigateInternalLink = (event: MouseEvent) => {
+    let fallbackTimer: number | null = null;
+
+    const clearFallback = () => {
+      if (fallbackTimer !== null) {
+        window.clearTimeout(fallbackTimer);
+        fallbackTimer = null;
+      }
+    };
+
+    const recoverStalledNavigation = (event: MouseEvent) => {
       if (
         event.button !== 0 ||
         event.metaKey ||
@@ -25,8 +34,12 @@ export function ClientBackgroundServices() {
       const target = event.target;
       if (!(target instanceof Element)) return;
       const anchor = target.closest<HTMLAnchorElement>("a[href]");
+      const nestedControl = target.closest<HTMLElement>(
+        'button, input, textarea, select, [role="button"], [contenteditable="true"]',
+      );
       if (
         !anchor ||
+        (nestedControl && nestedControl !== anchor) ||
         anchor.hasAttribute("download") ||
         (anchor.target && anchor.target !== "_self")
       ) {
@@ -34,23 +47,32 @@ export function ClientBackgroundServices() {
       }
 
       const destination = new URL(anchor.href, window.location.href);
+      const startingHref = window.location.href;
       if (
         destination.origin !== window.location.origin ||
-        destination.href === window.location.href
+        destination.href === startingHref
       ) {
         return;
       }
 
-      // Keep navigation functional even if a stale RSC tree or hydration
-      // mismatch prevents Next's client router from committing the new route.
-      event.preventDefault();
-      event.stopPropagation();
-      window.location.assign(destination.href);
+      // Do not interfere with Next's normal Link handling. Recover only when
+      // its RSC request completed/aborted without committing the destination.
+      clearFallback();
+      fallbackTimer = window.setTimeout(() => {
+        fallbackTimer = null;
+        if (window.location.href === startingHref) {
+          window.location.assign(destination.href);
+        }
+      }, 1_200);
     };
 
-    document.addEventListener("click", navigateInternalLink, true);
-    return () =>
-      document.removeEventListener("click", navigateInternalLink, true);
+    document.addEventListener("click", recoverStalledNavigation, true);
+    window.addEventListener("pagehide", clearFallback);
+    return () => {
+      clearFallback();
+      document.removeEventListener("click", recoverStalledNavigation, true);
+      window.removeEventListener("pagehide", clearFallback);
+    };
   }, []);
 
   useEffect(() => {

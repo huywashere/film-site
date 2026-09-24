@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Bookmark, Loader2, ArrowLeft } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { watchlistApi } from "@/lib/api";
@@ -12,9 +11,10 @@ import { Pagination } from "@/components/film/Pagination";
 import type { WatchlistItem } from "@/types/movie";
 import { guestDataStorage, type GuestWatchlistItem } from "@/lib/user-data";
 import { cardFont } from "@/lib/fonts";
+import { useReliableNavigation } from "@/hooks/useReliableNavigation";
 
 export default function WatchlistPage() {
-  const router = useRouter();
+  const router = useReliableNavigation();
   const { user } = useAuthStore();
   const [page, setPage] = useState(1);
   const [guestItems, setGuestItems] = useState<GuestWatchlistItem[]>([]);

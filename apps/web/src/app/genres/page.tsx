@@ -95,21 +95,29 @@ function ResilientHubCardImage({
   const candidates = useMemo(() => {
     if (src.includes('image.tmdb.org')) {
       return [
+        `/api/image-proxy?url=${encodeURIComponent(src)}&strict=1`,
         src,
         `https://wsrv.nl/?url=${encodeURIComponent(src)}&w=640&q=80&output=webp&we=1`,
-        `/api/image-proxy?url=${encodeURIComponent(src)}&strict=1`,
       ];
     }
     return buildAsianHeroImageCandidates(src);
   }, [src]);
 
   const [candidateIdx, setCandidateIdx] = useState(0);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     setCandidateIdx(0);
+    setFailed(false);
   }, [src]);
 
   const currentSrc = candidates[candidateIdx] || src;
+
+  if (failed) {
+    return (
+      <div className="h-full w-full bg-[radial-gradient(circle_at_70%_22%,rgba(124,58,237,0.28),transparent_42%),linear-gradient(135deg,#171923,#090a10)]" />
+    );
+  }
 
   return (
     <Image
@@ -127,6 +135,8 @@ function ResilientHubCardImage({
       onError={() => {
         if (candidateIdx < candidates.length - 1) {
           setCandidateIdx((prev: number) => prev + 1);
+        } else {
+          setFailed(true);
         }
       }}
       className={cn(

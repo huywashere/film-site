@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { Suspense } from "react";
 import { useAuthStore } from "@/store/authStore";
 import UserDashboardPage from "./[username]/page";
+import { useReliableNavigation } from "@/hooks/useReliableNavigation";
 
 export default function UserProfileIndexPage() {
-  const router = useRouter();
+  const router = useReliableNavigation();
   const { user } = useAuthStore();
 
   useEffect(() => {

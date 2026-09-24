@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, useMemo, startTransition } from "react";
 import Link from "next/link";
 import NextImage from "next/image";
-import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -30,6 +29,7 @@ import { VoiceSearchButton } from "@/components/search/VoiceSearchButton";
 import { cardFont } from "@/lib/fonts";
 import { searchLocalFilms } from "@/lib/smart-search";
 import { isIMEQuery, normalizeForSearch } from "@/lib/text-utils";
+import { useReliableNavigation } from "@/hooks/useReliableNavigation";
 
 // ── Local storage helpers ─────────────────────────────────────────
 const HISTORY_KEY = "netphim-search-history";
@@ -131,7 +131,7 @@ export function SpotlightSearchModal({
   onClose: () => void;
   suggestions?: FilmItem[];
 }) {
-  const router = useRouter();
+  const navigation = useReliableNavigation();
   const [viewMode, setViewMode] = useState<"compact" | "expanded">("compact");
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -395,7 +395,7 @@ export function SpotlightSearchModal({
   const handleSelectMovie = (slug: string) => {
     if (query.trim()) saveHistory(query.trim());
     onClose();
-    router.push(`/film/${slug}`);
+    navigation.push(`/film/${slug}`);
   };
 
   const handleGoToSearchPage = (searchQuery?: string) => {
@@ -405,7 +405,7 @@ export function SpotlightSearchModal({
     if (!targetQuery) return;
     saveHistory(targetQuery);
     onClose();
-    router.push(`/search?q=${encodeURIComponent(targetQuery)}`);
+    navigation.push(`/search?q=${encodeURIComponent(targetQuery)}`);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { authApi } from "@/lib/api";
 import Link from "next/link";
 import {
@@ -13,10 +13,11 @@ import {
   XCircle,
 } from "lucide-react";
 import { useToast } from "@/providers/ToastProvider";
+import { useReliableNavigation } from "@/hooks/useReliableNavigation";
 
 function ResetPasswordContent() {
   const searchParams = useSearchParams();
-  const router = useRouter();
+  const router = useReliableNavigation();
   const token = searchParams.get("token");
 
   const [password, setPassword] = useState("");

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import NextImage from "next/image";
 import { movieApi } from "@/lib/api";
@@ -33,6 +33,7 @@ import { cardFont } from "@/lib/fonts";
 import { preloadMovieLogo } from "@/lib/movie-logo-cache";
 import { DeferredSection } from "@/components/layout/DeferredSection";
 import { useTranslation } from "@/store/langStore";
+import { useReliableNavigation } from "@/hooks/useReliableNavigation";
 import { useDeferredContent } from "@/hooks/useDeferredContent";
 import { useAuthStore } from "@/store/authStore";
 import {
@@ -718,7 +719,7 @@ function AsianCuratedHeroBanner({
 
 export default function CountryPage() {
   const params = useParams();
-  const router = useRouter();
+  const router = useReliableNavigation();
   const searchParams = useSearchParams();
   const { t, lang } = useTranslation();
   const slug = params.slug as string;

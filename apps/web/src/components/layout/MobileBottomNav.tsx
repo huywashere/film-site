@@ -87,17 +87,6 @@ export function MobileBottomNav() {
     }
   };
 
-  const navigateReliably = (
-    event: React.MouseEvent<HTMLAnchorElement>,
-    href: string,
-  ) => {
-    // Production deployments can leave an open document with a stale RSC
-    // router tree. In that state Next fetches the destination successfully but
-    // never commits it. A document navigation also guarantees fresh chunks.
-    event.preventDefault();
-    window.location.assign(href);
-  };
-
   return (
     <nav
       aria-label="Điều hướng nhanh di động"
@@ -134,7 +123,6 @@ export function MobileBottomNav() {
                 onTouchStart={warmRoute}
                 onPointerDown={warmRoute}
                 aria-current={item.isActive ? 'page' : undefined}
-                onClick={(event) => navigateReliably(event, item.href)}
                 className="group relative flex items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-white/70 active:scale-95 transition-transform touch-manipulation select-none"
               >
                 {/* Active Pill Capsule Gliding Highlight */}
@@ -187,9 +175,6 @@ export function MobileBottomNav() {
             prefetch={false}
             onTouchStart={warmProfileRoute}
             onPointerDown={warmProfileRoute}
-            onClick={(event) =>
-              navigateReliably(event, `/user/${encodeURIComponent(user.username)}`)
-            }
             title={user.displayName || user.username}
             aria-label={`Trang cá nhân ${user.displayName || user.username}`}
             className={cn(

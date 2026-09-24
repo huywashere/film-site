@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -32,12 +31,13 @@ import {
 import { deduplicateSectionRow } from "@/lib/recommendation-engine";
 import { cardFont } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
+import { useReliableNavigation } from "@/hooks/useReliableNavigation";
 import type { Socket } from "socket.io-client";
 
 type LobbyState = "connecting" | "online" | "offline";
 
 export default function WatchPartyListPage() {
-  const router = useRouter();
+  const router = useReliableNavigation();
   const { toast } = useToast();
   const [socket, setSocket] = useState<Socket | null>(null);
   const [rooms, setRooms] = useState<WatchPartyLobbyRoom[]>([]);

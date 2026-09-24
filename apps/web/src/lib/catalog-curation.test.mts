@@ -104,6 +104,21 @@ test('browse quick filters do not duplicate Marvel and DC universe entries', () 
   assert.doesNotMatch(quickTypes, /Marvel Studios|DC Universe/);
 });
 
+test('film type routes ship server data and cannot remain on a client-only skeleton', () => {
+  const page = readFileSync('src/app/films/[type]/page.tsx', 'utf8');
+  const client = readFileSync('src/app/films/[type]/FilmsTypeClient.tsx', 'utf8');
+  const loading = readFileSync('src/app/films/[type]/loading.tsx', 'utf8');
+
+  assert.doesNotMatch(page, /["']use client["']/);
+  assert.match(page, /await Promise\.all\(\[params, searchParams\]\)/);
+  assert.match(page, /getInitialFilmCatalog\(type, page\)/);
+  assert.match(client, /withCatalogTimeout/);
+  assert.match(client, /staleTime: initialData \? 0 : 30 \* 60 \* 1000/);
+  assert.match(client, /refetchOnMount: initialData \? "always" : true/);
+  assert.match(client, /Chưa thể tải danh sách phim/);
+  assert.doesNotMatch(loading, /useParams|useSearchParams|["']use client["']/);
+});
+
 test('topic pages keep quick navigation visible and use title-only topic cards', () => {
   const genres = readFileSync('src/app/genres/page.tsx', 'utf8');
   const sidebar = readFileSync('src/components/layout/Sidebar.tsx', 'utf8');
@@ -123,7 +138,8 @@ test('topic pages keep quick navigation visible and use title-only topic cards',
   );
   assert.match(mobileNav, /pathname\.startsWith\(["']\/universe\/["']\)/);
   assert.match(mobileNav, /if \(!mounted \|\| pathname === '\/login'/);
-  assert.match(mobileNav, /window\.location\.assign\(href\)/);
+  assert.doesNotMatch(mobileNav, /event\.preventDefault\(\)/);
+  assert.doesNotMatch(mobileNav, /window\.location\.assign/);
   assert.doesNotMatch(mobileNav, /onClick=\{\(\) => router\.push/);
 });
 

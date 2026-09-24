@@ -21,7 +21,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import NextImage from "next/image";
-import { useRouter } from "next/navigation";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   getFirebaseAuth,
@@ -46,6 +45,7 @@ import {
   type AuthArtwork,
 } from "@/lib/auth-artworks";
 import { cn } from "@/lib/utils";
+import { useReliableNavigation } from "@/hooks/useReliableNavigation";
 
 export interface AuthModalProps {
   isPage?: boolean;
@@ -67,7 +67,7 @@ export function AuthModal({
   isPage = false,
   initialMode = "login",
 }: AuthModalProps = {}) {
-  const router = useRouter();
+  const router = useReliableNavigation();
   const modalStore = useAuthModalStore();
   const closeAuthModal = modalStore.closeModal;
   const { setUser, login, register } = useAuthStore();

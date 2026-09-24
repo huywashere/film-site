@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {
   useState,
   useEffect,
@@ -33,6 +33,7 @@ import {
 } from "@/components/search/SearchHistory";
 import { cardFont } from "@/lib/fonts";
 import { FilmNotFound } from "@/components/film/FilmNotFound";
+import { useReliableNavigation } from "@/hooks/useReliableNavigation";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/store/langStore";
 import { recordTelemetry } from "@/lib/telemetry";
@@ -202,7 +203,7 @@ const YEAR_OPTIONS = Array.from(
 
 function SearchContent() {
   const searchParams = useSearchParams();
-  const router = useRouter();
+  const router = useReliableNavigation();
   const { t, lang } = useTranslation();
   const [isNavigating, startTransition] = useTransition();
 

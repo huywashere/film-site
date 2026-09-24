@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { api, watchHistoryApi, watchlistApi, authApi } from "@/lib/api";
 import { useState, useEffect, startTransition } from "react";
 import {
@@ -63,6 +63,7 @@ import { cardFont } from "@/lib/fonts";
 import { PRESET_AVATARS, type PresetAvatar } from "@/lib/default-avatars";
 import { applyLocalDecorativeAssetFallback } from "@/lib/decorative-asset-cdn";
 import { InteractiveAdminMascot } from "@/components/mascot/InteractiveAdminMascot";
+import { useReliableNavigation } from "@/hooks/useReliableNavigation";
 import {
   DEFAULT_AVATAR_FRAME_COLOR,
   DEFAULT_NAME_COLOR,
@@ -466,7 +467,7 @@ function PwaInstallModal({
 
 export default function UserDashboardPage() {
   const params = useParams();
-  const router = useRouter();
+  const router = useReliableNavigation();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const { toast } = useToast();

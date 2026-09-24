@@ -298,6 +298,7 @@ export function TmdbArtwork({
 
   const [candidateIndex, setCandidateIndex] = useState(0);
   const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
 
   const shouldAttemptArtwork = enabled && (priority || nearViewport);
@@ -370,6 +371,7 @@ export function TmdbArtwork({
   useEffect(() => {
     setCandidateIndex(0);
     setLoadedSrc(null);
+    setFailedSrc(null);
     setAutoRecovery(false);
   }, [film.slug, kind]);
 
@@ -395,6 +397,7 @@ export function TmdbArtwork({
       if (providerPrimary && !isTmdbImageUrl(providerPrimary)) {
         setAutoRecovery(true);
       }
+      setFailedSrc(src);
       setCandidateIndex((index) => {
         const next = index + 1;
         if (next >= candidates.length && !autoRecovery) {
@@ -429,7 +432,7 @@ export function TmdbArtwork({
         aria-hidden="true"
         className="absolute inset-0 animate-pulse bg-[linear-gradient(110deg,#101218_25%,#181b23_45%,#101218_65%)] bg-[length:220%_100%] [animation-iteration-count:3] motion-reduce:animate-none"
       />
-      {src && deliveredImageProps ? (
+      {src && deliveredImageProps && failedSrc !== src ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           ref={imgRef}
@@ -438,8 +441,12 @@ export function TmdbArtwork({
           referrerPolicy="no-referrer"
           draggable={false}
           style={objectPosition ? { objectPosition } : undefined}
-          onLoad={() => setLoadedSrc(src)}
+          onLoad={() => {
+            setFailedSrc(null);
+            setLoadedSrc(src);
+          }}
           onError={() => {
+            setFailedSrc(src);
             if (providerPrimary && !isTmdbImageUrl(providerPrimary)) {
               setAutoRecovery(true);
             }
@@ -452,7 +459,8 @@ export function TmdbArtwork({
             });
           }}
           className={cn(
-            'relative z-[1] h-full w-full object-cover',
+            'relative z-[1] h-full w-full object-cover transition-opacity duration-300',
+            loaded ? 'opacity-100' : 'opacity-0',
             imageClassName,
           )}
           data-artwork-source={

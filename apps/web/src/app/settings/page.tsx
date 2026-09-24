@@ -2,7 +2,6 @@
 
 import { useState, startTransition } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   Sliders,
   Tv,
@@ -23,6 +22,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useToast } from "@/providers/ToastProvider";
 import { cn } from "@/lib/utils";
 import { cardFont } from "@/lib/fonts";
+import { useReliableNavigation } from "@/hooks/useReliableNavigation";
 
 type SettingsTab = "all" | "display" | "player" | "notifications" | "storage";
 
@@ -77,7 +77,7 @@ function SettingRow({
 }
 
 export default function SettingsPage() {
-  const router = useRouter();
+  const router = useReliableNavigation();
   const { user } = useAuthStore();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<SettingsTab>("all");

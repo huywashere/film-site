@@ -1,6 +1,6 @@
 'use client';
 import { useQuery } from '@tanstack/react-query';
-import { useParams, useSearchParams, useRouter } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import NextImage from 'next/image';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
@@ -73,6 +73,7 @@ import { TmdbArtwork } from '@/components/film/TmdbArtwork';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/providers/ToastProvider';
 import { useAuthStore } from '@/store/authStore';
+import { useReliableNavigation } from '@/hooks/useReliableNavigation';
 import { useTranslation } from '@/store/langStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useWatchParty } from '@/hooks/useWatchParty';
@@ -1310,7 +1311,7 @@ function WatchSkeleton() {
 export default function WatchPage({ initialData }: { initialData?: any }) {
   const params = useParams();
   const searchParams = useSearchParams();
-  const router = useRouter();
+  const router = useReliableNavigation();
   const { toast } = useToast();
   const user = useAuthStore((s) => s.user);
   const isAdmin = useMemo(() => isUserAdmin(user), [user]);

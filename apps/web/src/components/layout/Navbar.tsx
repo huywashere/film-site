@@ -51,6 +51,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { InteractiveAdminMascot } from "@/components/mascot/InteractiveAdminMascot";
+import { useReliableNavigation } from "@/hooks/useReliableNavigation";
 
 const MobileSidebar = dynamic(
   () => import("./MobileSidebar").then((mod) => mod.MobileSidebar),
@@ -378,6 +379,7 @@ function LanguageSwitcher() {
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
+  const navigation = useReliableNavigation();
   const queryClient = useQueryClient();
 
   const isMoreActive =
@@ -674,7 +676,7 @@ export function Navbar() {
       if (link.startsWith("http://") || link.startsWith("https://")) {
         window.open(link, "_blank", "noopener,noreferrer");
       } else {
-        router.push(link);
+        navigation.push(link);
       }
     }
   };
@@ -693,7 +695,7 @@ export function Navbar() {
     );
     persistNotificationReadIds(window.localStorage, channel, [id]);
     if (slug) {
-      router.push(`/film/${slug}`);
+      navigation.push(`/film/${slug}`);
     }
   };
 
@@ -1198,7 +1200,7 @@ export function Navbar() {
                       <div className="py-1 space-y-0.5">
                         <DropdownMenuItem
                           onClick={() =>
-                            router.push(
+                            navigation.push(
                               user.username
                                 ? `/user/${encodeURIComponent(user.username)}`
                                 : "/user",
@@ -1213,7 +1215,7 @@ export function Navbar() {
                           <span>{t("nav.profile")}</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => router.push("/watchlist")}
+                          onClick={() => navigation.push("/watchlist")}
                           className="hover:bg-white/12 hover:backdrop-blur-md hover:text-white transition-all rounded-lg cursor-pointer flex items-center py-1.5 px-2.5 text-xs font-medium"
                         >
                           <Bookmark
@@ -1223,7 +1225,7 @@ export function Navbar() {
                           <span>{t("nav.watchlist")}</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => router.push("/history")}
+                          onClick={() => navigation.push("/history")}
                           className="hover:bg-white/12 hover:backdrop-blur-md hover:text-white transition-all rounded-lg cursor-pointer flex items-center py-1.5 px-2.5 text-xs font-medium"
                         >
                           <History
@@ -1233,7 +1235,7 @@ export function Navbar() {
                           <span>{t("nav.history")}</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => router.push("/settings")}
+                          onClick={() => navigation.push("/settings")}
                           className="hover:bg-white/12 hover:backdrop-blur-md hover:text-white transition-all rounded-lg cursor-pointer flex items-center py-1.5 px-2.5 text-xs font-medium"
                         >
                           <Settings
@@ -1303,7 +1305,7 @@ export function Navbar() {
                         <DropdownMenuItem
                           onClick={() => {
                             logout();
-                            router.push("/");
+                            navigation.push("/");
                           }}
                           className="hover:bg-red-500/15 text-red-400 hover:text-red-300 rounded-lg cursor-pointer flex items-center py-1.5 px-2.5 text-xs font-semibold"
                         >

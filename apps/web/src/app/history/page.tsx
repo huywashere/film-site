@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import {
   History as HistoryIcon,
   ChevronLeft,
@@ -26,6 +25,7 @@ import { guestDataStorage } from '@/lib/user-data';
 import { watchProgressStorage } from '@/lib/watch-progress';
 import { cardFont } from '@/lib/fonts';
 import { formatEpisodeLabel } from '@/lib/player-source-routing';
+import { useReliableNavigation } from '@/hooks/useReliableNavigation';
 import {
   Dialog,
   DialogClose,
@@ -49,7 +49,7 @@ interface HistoryItem {
 
 export default function HistoryPage() {
   const { user } = useAuthStore();
-  const router = useRouter();
+  const router = useReliableNavigation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [deletingId, setDeletingId] = useState<string | null>(null);

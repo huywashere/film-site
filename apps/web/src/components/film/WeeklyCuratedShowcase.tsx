@@ -2,7 +2,6 @@
 
 import { useMemo, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import {
   Tv,
   Clapperboard,
@@ -18,6 +17,7 @@ import { TmdbArtwork } from '@/components/film/TmdbArtwork';
 import { cardFont } from '@/lib/fonts';
 import { cn } from '@/lib/utils';
 import { deduplicateSectionRow } from '@/lib/recommendation-engine';
+import { useReliableNavigation } from '@/hooks/useReliableNavigation';
 
 interface WeeklyCuratedShowcaseProps {
   seriesFilms?: FilmItem[];
@@ -30,7 +30,7 @@ export function WeeklyCuratedShowcase({
   singleFilms = [],
   isLoading = false,
 }: WeeklyCuratedShowcaseProps) {
-  const router = useRouter();
+  const router = useReliableNavigation();
   const [activeTab, setActiveTab] = useState<'all' | 'series' | 'single'>('all');
   const [showInfoModal, setShowInfoModal] = useState(false);
 

@@ -791,6 +791,9 @@ export default function HomePageClient({
     queryKey: ["public-site-configuration"],
     queryFn: () => siteConfigApi.getPublic().then((response) => response.data),
     initialData: initialPublicConfig || undefined,
+    // The first-party endpoint returns a safe default when the API is cold.
+    // Keep the browser query enabled so a missed SSR fetch can still recover.
+    enabled: true,
     staleTime: 60_000,
     retry: false,
   });
@@ -1738,6 +1741,7 @@ export default function HomePageClient({
       <HeroBanner
         films={initialHeroFilms}
         initialConfig={initialPublicConfig || undefined}
+        randomizeCuratedPool
       />
 
       {/* Main Content Area */}

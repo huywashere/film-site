@@ -6,6 +6,7 @@ import {
   buildHeroImageCandidates,
   buildHeroResponsiveSrcSet,
 } from './hero-image.ts';
+import { CURATED_HERO_FRANCHISE_POOL } from './curated-hero-pool.ts';
 
 test('prefers the cached same-origin TMDB relay while retaining direct and wsrv fallbacks', () => {
   const raw = 'https://image.tmdb.org/t/p/original/backdrop.jpg';
@@ -181,7 +182,7 @@ test('hero banner waits for decoded title logos before revealing a slide', () =>
 
   assert.match(
     source,
-    /await Promise\.all\(initialLogoUrls\.map\(\(url\) => preloadMovieLogo\(url\)\)\)/,
+    /Promise\.all\(initialLogoUrls\.map\(\(url\) => preloadMovieLogo\(url\)\)\)/,
   );
   assert.match(source, /const \[displayLogo\] = useState/);
   assert.match(source, /hasLogoCandidate && logoLoaded/);
@@ -209,7 +210,7 @@ test('large homepage showcases request original TMDB backdrops only near the vie
   assert.match(artwork, /add\(artworkQuery\.backdropOriginal\)/);
 });
 
-test('shared artwork never hides a successfully decoded native image', () => {
+test('shared artwork reveals decoded native images without exposing broken candidates', () => {
   const source = readFileSync('src/components/film/TmdbArtwork.tsx', 'utf8');
 
   assert.match(source, /image\?\.complete && image\.naturalWidth > 0/);
@@ -219,7 +220,8 @@ test('shared artwork never hides a successfully decoded native image', () => {
     source,
     /const src = shouldAttemptArtwork \? candidates\[candidateIndex\] : undefined/,
   );
-  assert.doesNotMatch(source, /loaded \? 'opacity-100'/);
+  assert.match(source, /loaded \? 'opacity-100' : 'opacity-0'/);
+  assert.match(source, /setLoadedSrc\(src\)/);
 });
 
 test('large homepage showcases change slides only after user interaction', () => {
@@ -327,6 +329,23 @@ test('homepage keeps the server hero stable and renders desktop controls in the 
   assert.doesNotMatch(page, /Math\.random\(\)/);
   assert.doesNotMatch(hero, /showDesktopFanCards/);
   assert.doesNotMatch(hero, /matchMedia\("\(min-width: 1280px\)"\)/);
+});
+
+test('homepage rotates six non-repeating films from the complete curated hero pool', () => {
+  const hero = readFileSync('src/app/components/HeroBanner.tsx', 'utf8');
+  const homepage = readFileSync('src/app/HomePageClient.tsx', 'utf8');
+  const slugs = CURATED_HERO_FRANCHISE_POOL.map((film) => film.slug);
+
+  assert.equal(CURATED_HERO_FRANCHISE_POOL.length, 100);
+  assert.equal(new Set(slugs).size, 100);
+  assert.ok(CURATED_HERO_FRANCHISE_POOL.every((film) => film.heroBackdrop));
+  assert.ok(CURATED_HERO_FRANCHISE_POOL.every((film) => film.poster_url));
+  assert.match(homepage, /randomizeCuratedPool/);
+  assert.match(hero, /selectCuratedHeroPlaylist\(readStoredHeroPlaylist\(\)\)/);
+  assert.match(hero, /!previousSlugs\.has\(film\.slug\)/);
+  assert.match(hero, /preloadHeroBackdropCandidates\(backdropCandidates, 3_600\)/);
+  assert.match(hero, /outgoing\?\.slug !== target\.slug && !readyBackdrop\) return/);
+  assert.match(homepage, /queryKey: \["public-site-configuration"\][\s\S]*enabled: true/);
 });
 
 test('hero keeps metadata visible while title artwork finishes decoding', () => {

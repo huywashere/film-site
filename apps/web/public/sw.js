@@ -1,4 +1,5 @@
-const CACHE_NAME = "netphim-cache-v9";
+const CACHE_PREFIX = "netphim-cache-";
+const CACHE_NAME = `${CACHE_PREFIX}v10`;
 const OFFLINE_URL = "/offline";
 
 // Never precache the homepage document. Serving cached HTML after a deploy can
@@ -16,17 +17,19 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cache) => {
-          if (cache !== CACHE_NAME) {
-            return caches.delete(cache);
-          }
-        }),
+    (async () => {
+      const cacheNames = await caches.keys();
+      await Promise.all(
+        cacheNames
+          .filter(
+            (cacheName) =>
+              cacheName.startsWith(CACHE_PREFIX) && cacheName !== CACHE_NAME,
+          )
+          .map((cacheName) => caches.delete(cacheName)),
       );
-    }),
+      await self.clients.claim();
+    })(),
   );
-  self.clients.claim();
 });
 
 self.addEventListener("fetch", (event) => {
@@ -43,6 +46,11 @@ self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
   const url = new URL(event.request.url);
+
+  // Cross-origin images, APIs and CDN assets must use the browser's normal
+  // network path. Intercepting them here can turn an otherwise valid response
+  // into ERR_FAILED when the response is opaque or blocked from CacheStorage.
+  if (url.origin !== self.location.origin) return;
 
   // Exclude hot-reloading dev urls and auth api calls
   if (
