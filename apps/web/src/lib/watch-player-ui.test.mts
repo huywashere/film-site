@@ -30,3 +30,8 @@ test('watch player hydrates eagerly and shows loading feedback before HLS mounts
   assert.match(watchPage, /data-eager-hydration="true"/);
   assert.match(watchPage, /Đang tải nguồn phát/);
 });
+
+test('watch toolbar keeps its compact intrinsic height beside the spanning sidebar', () => {
+  assert.match(watchPage, /xl:grid-rows-\[min-content_auto_auto\]/);
+  assert.match(watchPage, /flex h-fit self-start items-center justify-between/);
+});

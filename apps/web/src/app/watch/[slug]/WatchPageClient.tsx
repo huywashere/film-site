@@ -3758,14 +3758,14 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       >
         <div
           className={cn(
-            'grid gap-x-5 gap-y-2 sm:gap-y-2.5 transition-all duration-300',
+            'grid gap-x-5 gap-y-2 sm:gap-y-2.5 transition-all duration-300 xl:grid-rows-[min-content_auto_auto]',
             'grid-cols-1 xl:grid-cols-[minmax(0,1fr)_300px]',
           )}
         >
           {/* ───── 0. TOP CONTROLS & BREADCRUMB BAR (Above Player) ───── */}
           <div
             className={cn(
-              'flex items-center justify-between gap-2 py-1.5 px-3 sm:px-3.5 bg-white/[0.03] border border-white/[0.06] rounded-xl text-xs text-white/60 select-none',
+              'flex h-fit self-start items-center justify-between gap-2 py-1.5 px-3 sm:px-3.5 bg-white/[0.03] border border-white/[0.06] rounded-xl text-xs text-white/60 select-none',
               theaterMode ? 'col-span-full' : 'xl:col-start-1 xl:row-start-1',
             )}
           >
