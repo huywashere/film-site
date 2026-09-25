@@ -255,13 +255,17 @@ function CountryCategoryRow({
         >
           {isLoading
             ? Array.from({ length: 8 }).map((_, i) => (
-                <SwiperSlide key={`sk-${i}`}>
+                <SwiperSlide
+                  key={`sk-${i}`}
+                  className="w-1/4 sm:w-1/5 lg:w-[14.2857%] xl:w-[12.5%]"
+                >
                   <FilmCardSkeleton hideDetails={false} />
                 </SwiperSlide>
               ))
             : films.map((film, idx) => (
                 <SwiperSlide
                   key={`${film.slug || film._id || (film as any).id}-${idx}`}
+                  className="w-1/4 sm:w-1/5 lg:w-[14.2857%] xl:w-[12.5%]"
                 >
                   <FilmCard
                     film={film}
@@ -770,7 +774,19 @@ export default function CountryPageClient({
     placeholderData: undefined,
   });
 
-  const mainData = mergedData || fastData;
+  const mainData = useMemo(() => {
+    const score = (payload: any) => {
+      const items = payload?.data?.items || payload?.items || [];
+      if (!Array.isArray(items)) return 0;
+      const categorized = items.filter(
+        (item: any) => Array.isArray(item?.category) && item.category.length > 0,
+      ).length;
+      return items.length + categorized * 2;
+    };
+    if (!mergedData) return fastData;
+    if (!fastData) return mergedData;
+    return score(mergedData) >= score(fastData) ? mergedData : fastData;
+  }, [fastData, mergedData]);
   const mainLoading = fastLoading && !mainData;
 
   const films: FilmItem[] = useMemo(
@@ -1046,6 +1062,7 @@ function filmMatchesKeywords(f: FilmItem, keywords: string[]): boolean {
 
   return (
     <div
+      data-eager-hydration="true"
       className={cn(
         cardFont.className,
         "min-h-screen w-full bg-background text-foreground",

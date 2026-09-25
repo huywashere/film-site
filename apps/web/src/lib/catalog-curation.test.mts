@@ -111,6 +111,7 @@ test('all catalog route families receive server-seeded films before hydration', 
   const countryPage = readFileSync('src/app/country/[slug]/page.tsx', 'utf8');
   const genreClient = readFileSync('src/app/genre/[slug]/GenrePageClient.tsx', 'utf8');
   const countryClient = readFileSync('src/app/country/[slug]/CountryPageClient.tsx', 'utf8');
+  const watchClient = readFileSync('src/app/watch/[slug]/WatchPageClient.tsx', 'utf8');
   const backgroundServices = readFileSync(
     'src/components/layout/ClientBackgroundServices.tsx',
     'utf8',
@@ -121,6 +122,8 @@ test('all catalog route families receive server-seeded films before hydration', 
   assert.match(serverCatalog, /"phim-bo-dang-chieu": "dang-chieu"/);
   assert.match(serverCatalog, /"phim-bo-hoan-thanh": "hoan-thanh"/);
   assert.match(serverCatalog, /"song-ngu-ai": "thuyet-minh"/);
+  assert.match(serverCatalog, /requireCategoryMetadata: true/);
+  assert.match(serverCatalog, /minItems: 20/);
   assert.match(browsePage, /getInitialBrowseCatalog/);
   assert.match(genrePage, /getInitialGenreCatalog\(slug, page\)/);
   assert.match(countryPage, /getInitialCountryCatalog\(slug, page\)/);
@@ -129,6 +132,13 @@ test('all catalog route families receive server-seeded films before hydration', 
   assert.doesNotMatch(browsePage, /["']use client["']/);
   assert.doesNotMatch(genrePage, /["']use client["']/);
   assert.doesNotMatch(countryPage, /["']use client["']/);
+  assert.match(backgroundServices, /\[data-eager-hydration='true'\]/);
+  assert.match(backgroundServices, /new MouseEvent\("click"/);
+  assert.match(genreClient, /data-eager-hydration="true"/);
+  assert.match(countryClient, /data-eager-hydration="true"/);
+  assert.match(genreClient, /w-1\/4 sm:w-1\/5/);
+  assert.match(countryClient, /w-1\/4 sm:w-1\/5/);
+  assert.match(watchClient, /data-eager-hydration="true"/);
   assert.match(backgroundServices, /const isCatalogDestination/);
   assert.match(backgroundServices, /window\.location\.assign\(destination\.href\)/);
 });

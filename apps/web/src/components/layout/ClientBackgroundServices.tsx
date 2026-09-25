@@ -61,11 +61,10 @@ export function ClientBackgroundServices() {
         destination.pathname.startsWith("/genre/") ||
         destination.pathname.startsWith("/country/");
 
-      // These routes depend on several upstream catalogues. A Next RSC
-      // transition can remain pending while one provider is cold, leaving the
-      // old tab visible and unresponsive. Their server-rendered document is
-      // already data-seeded, so navigate to it immediately and deterministically.
       if (isCatalogDestination) {
+        // Catalog documents already contain a rich server seed. A native
+        // navigation paints it faster and more reliably than waiting for a
+        // cold RSC transition through several upstream providers.
         event.stopImmediatePropagation();
         clearFallback();
         window.location.assign(destination.href);
@@ -89,6 +88,33 @@ export function ClientBackgroundServices() {
       clearFallback();
       document.removeEventListener("click", recoverStalledNavigation, true);
       window.removeEventListener("pagehide", clearFallback);
+    };
+  }, []);
+
+  useEffect(() => {
+    // React can leave large streamed client boundaries dehydrated until the
+    // first trusted interaction. Wake interaction-critical catalogue/player
+    // roots from this small, eagerly hydrated shell so their effects, queries
+    // and video engine start without requiring a user click.
+    if (window.location.pathname.startsWith("/watch/")) {
+      void import("@/components/video/HlsVideoPlayer");
+    }
+
+    const wakeBoundaries = () => {
+      document
+        .querySelectorAll<HTMLElement>("[data-eager-hydration='true']")
+        .forEach((target) => {
+          target.dispatchEvent(
+            new MouseEvent("click", { bubbles: true, cancelable: true }),
+          );
+        });
+    };
+
+    const frame = window.requestAnimationFrame(wakeBoundaries);
+    const retry = window.setTimeout(wakeBoundaries, 700);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(retry);
     };
   }, []);
 

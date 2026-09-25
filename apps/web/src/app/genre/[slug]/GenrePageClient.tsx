@@ -210,12 +210,18 @@ function GenreCategoryRow({
         >
           {isLoading
             ? Array.from({ length: 8 }).map((_, i) => (
-                <SwiperSlide key={`sk-${i}`}>
+                <SwiperSlide
+                  key={`sk-${i}`}
+                  className="w-1/4 sm:w-1/5 lg:w-[14.2857%] xl:w-[12.5%]"
+                >
                   <FilmCardSkeleton hideDetails={false} />
                 </SwiperSlide>
               ))
             : films.map((film, idx) => (
-                <SwiperSlide key={`${film.slug || film._id || (film as any).id}-${idx}`}>
+                <SwiperSlide
+                  key={`${film.slug || film._id || (film as any).id}-${idx}`}
+                  className="w-1/4 sm:w-1/5 lg:w-[14.2857%] xl:w-[12.5%]"
+                >
                   <FilmCard film={film} hideDetails={false} />
                 </SwiperSlide>
               ))}
@@ -1145,6 +1151,7 @@ export default function GenrePageClient({
 
   return (
     <div
+      data-eager-hydration="true"
       className={cn(
         cardFont.className,
         "min-h-screen w-full bg-[#0a0b10] text-white",

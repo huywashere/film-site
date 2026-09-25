@@ -1239,6 +1239,7 @@ function filmMatchesAnimeKeywords(f: FilmItem, keywords: string[]): boolean {
 
   return (
     <div
+      data-eager-hydration="true"
       className={cn(
         cardFont.className,
         "min-h-screen w-full bg-background text-foreground",

@@ -25,3 +25,8 @@ test('stream health control uses an activity icon and explicit label', () => {
   assert.match(artPlayer, /tooltip: 'Đo sức khỏe luồng'/);
   assert.match(healthPanel, /<Activity[\s\S]*Sức khỏe luồng phát/);
 });
+
+test('watch player hydrates eagerly and shows loading feedback before HLS mounts', () => {
+  assert.match(watchPage, /data-eager-hydration="true"/);
+  assert.match(watchPage, /Đang tải nguồn phát/);
+});

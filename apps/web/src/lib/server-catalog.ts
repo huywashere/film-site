@@ -208,10 +208,10 @@ function typePaths(kind: CatalogKind, page: number): string[] {
 
   const slug = PROVIDER_SLUGS[kind];
   return [
-    withQuery(`/api/kkphim/v1/api/danh-sach/${slug}`, page),
-    withQuery(`/api/nguonc/films/danh-sach/${slug}`, page),
-    withQuery(`/api/vsmov/danh-sach/${slug}`, page),
-    withQuery(`/api/ophim/v1/api/danh-sach/${slug}`, page),
+    withQuery(`/api/kkphim/v1/api/danh-sach/${slug}`, page, 36),
+    withQuery(`/api/nguonc/films/danh-sach/${slug}`, page, 36),
+    withQuery(`/api/vsmov/danh-sach/${slug}`, page, 36),
+    withQuery(`/api/ophim/v1/api/danh-sach/${slug}`, page, 36),
   ];
 }
 
@@ -236,11 +236,32 @@ function countryPaths(slug: string, page: number): string[] {
   ];
 }
 
+type CatalogPreference = {
+  minItems?: number;
+  requireCategoryMetadata?: boolean;
+};
+
+function isPreferredCatalog(
+  payload: any,
+  preference: CatalogPreference,
+): boolean {
+  const items = extractItems(payload) as any[];
+  if (items.length < (preference.minItems || 1)) return false;
+  if (!preference.requireCategoryMetadata) return true;
+  return items.some(
+    (item) => Array.isArray(item?.category) && item.category.length > 0,
+  );
+}
+
 /**
- * Return the first provider that has actual films. All providers start at the
- * same time so a slow/broken upstream cannot hold the route-level HTML open.
+ * Start every provider concurrently, but give a rich catalogue a short grace
+ * window to beat a tiny metadata-poor response. This keeps navigation fast
+ * while preserving the category information required by curated topic rows.
  */
-async function fetchFirstHealthyCatalog(paths: string[]): Promise<any | null> {
+async function fetchFirstHealthyCatalog(
+  paths: string[],
+  preference: CatalogPreference = {},
+): Promise<any | null> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 7_000);
   const attempts = paths.map(async (path) => {
@@ -262,10 +283,31 @@ async function fetchFirstHealthyCatalog(paths: string[]): Promise<any | null> {
     return payload;
   });
 
+  const firstHealthy = Promise.any(attempts);
+  const preferred = Promise.any(
+    attempts.map(async (attempt) => {
+      const payload = await attempt;
+      if (!isPreferredCatalog(payload, preference)) {
+        throw new Error("Catalog source is too small for the initial view");
+      }
+      return payload;
+    }),
+  );
+  const boundedFallback = new Promise<any>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      void firstHealthy.then(resolve, reject);
+    }, 1_400);
+    void preferred.finally(() => clearTimeout(timer)).catch(() => undefined);
+  });
+
   try {
-    return await Promise.any(attempts);
+    return await Promise.race([preferred, boundedFallback]);
   } catch {
-    return null;
+    try {
+      return await firstHealthy;
+    } catch {
+      return null;
+    }
   } finally {
     clearTimeout(timeout);
     controller.abort();
@@ -278,21 +320,27 @@ export async function getInitialFilmCatalog(
 ): Promise<any | null> {
   const kind = TYPE_ALIASES[type];
   if (!kind) return null;
-  return fetchFirstHealthyCatalog(typePaths(kind, page));
+  return fetchFirstHealthyCatalog(typePaths(kind, page), { minItems: 20 });
 }
 
 export async function getInitialGenreCatalog(
   slug: string,
   page: number,
 ): Promise<any | null> {
-  return fetchFirstHealthyCatalog(genrePaths(slug, page));
+  return fetchFirstHealthyCatalog(genrePaths(slug, page), {
+    minItems: 20,
+    requireCategoryMetadata: true,
+  });
 }
 
 export async function getInitialCountryCatalog(
   slug: string,
   page: number,
 ): Promise<any | null> {
-  return fetchFirstHealthyCatalog(countryPaths(slug, page));
+  return fetchFirstHealthyCatalog(countryPaths(slug, page), {
+    minItems: 20,
+    requireCategoryMetadata: true,
+  });
 }
 
 export async function getInitialBrowseCatalog(

@@ -129,7 +129,12 @@ const HlsVideoPlayer = dynamic(
   () => import('@/components/video/HlsVideoPlayer').then((module) => module.HlsVideoPlayer),
   {
     ssr: false,
-    loading: () => <div className="h-full w-full animate-pulse bg-[#0b0d12]" />,
+    loading: () => (
+      <div className="flex h-full w-full items-center justify-center gap-3 bg-[#080a0e] text-sm font-semibold text-white/60">
+        <Loader2 className="h-5 w-5 animate-spin text-violet-400" />
+        <span>Đang tải nguồn phát...</span>
+      </div>
+    ),
   },
 );
 
@@ -3711,7 +3716,10 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
   ];
 
   return (
-    <div className={`${cardFont.className} relative min-h-screen bg-[#101114] text-white`}>
+    <div
+      data-eager-hydration="true"
+      className={`${cardFont.className} relative min-h-screen bg-[#101114] text-white`}
+    >
       {/* ── JSON-LD STRUCTURED DATA SCHEMA FOR GOOGLE SEO ── */}
       <script
         type="application/ld+json"

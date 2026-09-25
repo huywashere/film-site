@@ -406,6 +406,7 @@ function BrowseFilmsContent({
 
   return (
     <main
+      data-eager-hydration="true"
       className={cn(
         cardFont.className,
         "relative min-h-[100dvh] bg-[#0a0b10] text-white pb-24 sm:pb-28 pt-16 sm:pt-20 select-none",

@@ -82,6 +82,7 @@ jobs:
         env:
           POSTGRES_PASSWORD: ci-postgres-password
           REDIS_PASSWORD: ci-redis-password
+          RABBITMQ_PASSWORD: ci-rabbitmq-password
           MEILI_MASTER_KEY: ci-meilisearch-private-key-at-least-32-characters
           JWT_SECRET: ci-jwt-secret
           JWT_REFRESH_SECRET: ci-jwt-refresh-secret
@@ -91,6 +92,7 @@ jobs:
           ADMIN_METRICS_TOKEN: ci-admin-metrics-token
           REVALIDATE_SECRET: ci-revalidate-secret
           MEDIA_INTERNAL_TOKEN: ci-media-internal-token
+          API_PUBLIC_URL: https://api.example.test
           TUNNEL_TOKEN: ci-tunnel-token
 
       - name: Validate Terraform infrastructure
