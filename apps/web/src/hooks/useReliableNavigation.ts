@@ -7,15 +7,7 @@ type NavigationOptions = {
   scroll?: boolean;
 };
 
-let fallbackTimer: number | null = null;
-
-function clearPendingFallback() {
-  if (fallbackTimer === null || typeof window === 'undefined') return;
-  window.clearTimeout(fallbackTimer);
-  fallbackTimer = null;
-}
-
-function navigateWithFallback(
+function navigateReliably(
   navigate: (href: string, options?: NavigationOptions) => void,
   href: string,
   options: NavigationOptions | undefined,
@@ -33,45 +25,28 @@ function navigateWithFallback(
     return;
   }
 
-  const startingHref = window.location.href;
   const clientHref = `${destination.pathname}${destination.search}${destination.hash}`;
-  clearPendingFallback();
-
-  try {
-    navigate(clientHref, options);
-  } catch {
-    if (replace) window.location.replace(destination.href);
-    else window.location.assign(destination.href);
-    return;
-  }
-
-  if (destination.href === startingHref) return;
-  fallbackTimer = window.setTimeout(() => {
-    fallbackTimer = null;
-    if (window.location.href !== startingHref) return;
-    if (replace) window.location.replace(destination.href);
-    else window.location.assign(destination.href);
-  }, 1_200);
+  navigate(clientHref, options);
 }
 
 /**
- * Preserve normal Next.js client navigation, but recover with a document
- * navigation when an RSC transition never commits the destination URL.
- * The module-level timer survives modal/menu unmounts triggered by the click.
+ * Keep same-origin navigation inside Next.js so the shared shell, React Query
+ * cache and prefetched RSC payload survive route changes. External URLs still
+ * use normal document navigation.
  */
 export function useReliableNavigation() {
   const router = useRouter();
 
   const push = useCallback(
     (href: string, options?: NavigationOptions) => {
-      navigateWithFallback(router.push, href, options, false);
+      navigateReliably(router.push, href, options, false);
     },
     [router],
   );
 
   const replace = useCallback(
     (href: string, options?: NavigationOptions) => {
-      navigateWithFallback(router.replace, href, options, true);
+      navigateReliably(router.replace, href, options, true);
     },
     [router],
   );

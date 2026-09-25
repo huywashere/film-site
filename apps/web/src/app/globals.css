@@ -1848,3 +1848,44 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
     transition: none;
   }
 }
+/* Keep catalogue rows stable before Swiper hydrates. Without this fallback,
+   Swiper's base CSS makes every SSR slide 100% wide and the first poster fills
+   the row for a frame during client navigation. Swiper takes over after init. */
+.catalog-row-swiper:not(.swiper-initialized) .swiper-wrapper {
+  display: flex;
+  gap: 8px;
+}
+
+.catalog-row-swiper:not(.swiper-initialized) .swiper-slide {
+  width: calc((100% - 24px) / 4) !important;
+  flex: 0 0 calc((100% - 24px) / 4) !important;
+}
+
+@media (min-width: 640px) {
+  .catalog-row-swiper:not(.swiper-initialized) .swiper-wrapper {
+    gap: 12px;
+  }
+
+  .catalog-row-swiper:not(.swiper-initialized) .swiper-slide {
+    width: calc((100% - 48px) / 5) !important;
+    flex-basis: calc((100% - 48px) / 5) !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .catalog-row-swiper:not(.swiper-initialized) .swiper-wrapper {
+    gap: 16px;
+  }
+
+  .catalog-row-swiper:not(.swiper-initialized) .swiper-slide {
+    width: calc((100% - 96px) / 7) !important;
+    flex-basis: calc((100% - 96px) / 7) !important;
+  }
+}
+
+@media (min-width: 1280px) {
+  .catalog-row-swiper:not(.swiper-initialized) .swiper-slide {
+    width: calc((100% - 112px) / 8) !important;
+    flex-basis: calc((100% - 112px) / 8) !important;
+  }
+}

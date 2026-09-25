@@ -41,11 +41,10 @@ test('service worker never serves stale cached HTML after a deployment', () => {
   const services = source('src/components/layout/ClientBackgroundServices.tsx');
   assert.doesNotMatch(registration, /controllerchange|location\.reload/);
   assert.match(services, /<RegisterSW \/>/);
-  assert.match(services, /document\.addEventListener\("click", recoverStalledNavigation, true\)/);
-  assert.match(services, /window\.location\.href === startingHref/);
-  assert.match(services, /window\.location\.assign\(destination\.href\)/);
-  assert.match(services, /nestedControl && nestedControl !== anchor/);
+  assert.doesNotMatch(services, /document\.addEventListener\("click"/);
+  assert.doesNotMatch(services, /router\.push/);
   assert.doesNotMatch(services, /event\.preventDefault\(\)/);
+  assert.doesNotMatch(services, /window\.location\.assign\(destination\.href\)/);
   assert.match(worker, /if \(url\.origin !== self\.location\.origin\) return/);
   assert.match(worker, /if \(isNextAsset\) return/);
   assert.match(
@@ -54,16 +53,20 @@ test('service worker never serves stale cached HTML after a deployment', () => {
   );
 });
 
-test('programmatic navigation has the same bounded recovery as links', () => {
+test('programmatic same-origin navigation preserves the Next.js app shell', () => {
   const navigation = source('src/hooks/useReliableNavigation.ts');
   const catalog = source('src/app/films/[type]/FilmsTypeClient.tsx');
   const search = source('src/components/search/SpotlightSearchModal.tsx');
   const navbar = source('src/components/layout/Navbar.tsx');
+  const globalStyles = source('src/app/globals.css');
 
   assert.match(navigation, /navigate\(clientHref, options\)/);
-  assert.match(navigation, /window\.setTimeout/);
-  assert.match(navigation, /window\.location\.href !== startingHref/);
-  assert.match(navigation, /window\.location\.assign\(destination\.href\)/);
+  assert.doesNotMatch(navigation, /window\.setTimeout/);
+  assert.doesNotMatch(navigation, /startingHref/);
+  assert.match(navbar, /EMPTY_NAVBAR_NOTIFICATION_ITEMS/);
+  assert.doesNotMatch(navbar, /seriesNotificationItems\s*=\s*\[\]/);
+  assert.doesNotMatch(navbar, /singleNotificationItems\s*=\s*\[\]/);
+  assert.match(globalStyles, /\.catalog-row-swiper:not\(\.swiper-initialized\)/);
   for (const client of [catalog, search, navbar]) {
     assert.match(client, /useReliableNavigation\(\)/);
   }

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import {
   ChevronLeft,
   ChevronRight,
@@ -76,7 +76,6 @@ const MOVIE_WORLD_PREFETCH: Array<{
 
 export function Sidebar() {
   const pathname = usePathname();
-  const router = useRouter();
   const queryClient = useQueryClient();
   const [mounted, setMounted] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -163,12 +162,6 @@ export function Sidebar() {
   const warmRoute = useCallback(
     (href: string) => {
       if (href.startsWith('http')) return;
-      try {
-        router.prefetch(href);
-      } catch (_e) {
-        // ignore prefetch errors
-      }
-
       if (warmedRoutesRef.current.has(href)) return;
       warmedRoutesRef.current.add(href);
 
@@ -248,7 +241,7 @@ export function Sidebar() {
         }
       }
     },
-    [queryClient, router],
+    [queryClient],
   );
 
   // Home reveals the rail after the hero; every other supported page is immediate.

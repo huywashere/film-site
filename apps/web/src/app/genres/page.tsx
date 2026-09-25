@@ -3,7 +3,6 @@
 import { useMemo, useCallback, useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { cardFont } from '@/lib/fonts';
 import { cn } from '@/lib/utils';
@@ -150,12 +149,10 @@ function ResilientHubCardImage({
 }
 
 export default function GenresPage() {
-  const router = useRouter();
   const queryClient = useQueryClient();
 
   const handlePrefetchHub = useCallback(
     (hub: HubCard) => {
-      router.prefetch(hub.href);
       if (hub.slug === 'marvel') {
         void queryClient.prefetchQuery({
           queryKey: ['films-universe', 'marvel', 1],
@@ -230,7 +227,7 @@ export default function GenresPage() {
         });
       }
     },
-    [queryClient, router],
+    [queryClient],
   );
 
   // Background idle prefetch for top hubs
@@ -271,7 +268,7 @@ export default function GenresPage() {
                 <Link
                   key={hub.slug}
                   href={hub.href}
-                  prefetch={true}
+                  prefetch={false}
                   onMouseEnter={() => handlePrefetchHub(hub)}
                   onFocus={() => handlePrefetchHub(hub)}
                   onTouchStart={() => handlePrefetchHub(hub)}

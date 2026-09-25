@@ -1,5 +1,6 @@
 import BrowseFilmsClient from "./BrowseFilmsClient";
 import { getInitialBrowseCatalog } from "@/lib/server-catalog";
+import { headers } from "next/headers";
 
 type QueryValue = string | string[] | undefined;
 type BrowseFilmsPageProps = {
@@ -18,10 +19,10 @@ function normalizePage(value: QueryValue): number {
 export default async function BrowseFilmsPage({
   searchParams,
 }: BrowseFilmsPageProps) {
-  const query = await searchParams;
+  const [query, requestHeaders] = await Promise.all([searchParams, headers()]);
   const page = normalizePage(query.page);
   const keyword = first(query.q) || first(query.search);
-  const initialData = keyword
+  const initialData = keyword || requestHeaders.get("rsc") === "1"
     ? null
     : await getInitialBrowseCatalog(
         first(query.type),

@@ -1,5 +1,6 @@
 import GenrePageClient from "./GenrePageClient";
 import { getInitialGenreCatalog } from "@/lib/server-catalog";
+import { headers } from "next/headers";
 
 type GenrePageProps = {
   params: Promise<{ slug: string }>;
@@ -12,9 +13,16 @@ function normalizePage(value: string | string[] | undefined): number {
 }
 
 export default async function GenrePage({ params, searchParams }: GenrePageProps) {
-  const [{ slug }, query] = await Promise.all([params, searchParams]);
+  const [{ slug }, query, requestHeaders] = await Promise.all([
+    params,
+    searchParams,
+    headers(),
+  ]);
   const page = normalizePage(query.page);
-  const initialData = await getInitialGenreCatalog(slug, page);
+  const initialData =
+    requestHeaders.get("rsc") === "1"
+      ? null
+      : await getInitialGenreCatalog(slug, page);
 
   return (
     <GenrePageClient

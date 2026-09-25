@@ -1,5 +1,6 @@
 import FilmsTypeClient from "./FilmsTypeClient";
 import { getInitialFilmCatalog } from "@/lib/server-catalog";
+import { headers } from "next/headers";
 
 type FilmsTypePageProps = {
   params: Promise<{ type: string }>;
@@ -15,9 +16,16 @@ export default async function FilmsTypePage({
   params,
   searchParams,
 }: FilmsTypePageProps) {
-  const [{ type }, query] = await Promise.all([params, searchParams]);
+  const [{ type }, query, requestHeaders] = await Promise.all([
+    params,
+    searchParams,
+    headers(),
+  ]);
   const page = normalizePage(query.page);
-  const initialData = await getInitialFilmCatalog(type, page);
+  const initialData =
+    requestHeaders.get("rsc") === "1"
+      ? null
+      : await getInitialFilmCatalog(type, page);
 
   return (
     <FilmsTypeClient

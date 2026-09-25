@@ -1,5 +1,6 @@
 import CountryPageClient from "./CountryPageClient";
 import { getInitialCountryCatalog } from "@/lib/server-catalog";
+import { headers } from "next/headers";
 
 type CountryPageProps = {
   params: Promise<{ slug: string }>;
@@ -15,12 +16,16 @@ function normalizePage(value: string | string[] | undefined): number {
 }
 
 export default async function CountryPage({ params, searchParams }: CountryPageProps) {
-  const [{ slug }, query] = await Promise.all([params, searchParams]);
+  const [{ slug }, query, requestHeaders] = await Promise.all([
+    params,
+    searchParams,
+    headers(),
+  ]);
   const page = normalizePage(query.page);
   const category = Array.isArray(query.category)
     ? query.category[0]
     : query.category;
-  const initialData = category
+  const initialData = category || requestHeaders.get("rsc") === "1"
     ? null
     : await getInitialCountryCatalog(slug, page);
 

@@ -2,7 +2,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import NextImage from "next/image";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
 import {
@@ -85,6 +85,8 @@ type NavbarMovieNotification = {
   publishedAt?: string | null;
   read: boolean;
 };
+
+const EMPTY_NAVBAR_NOTIFICATION_ITEMS: any[] = [];
 
 function notificationMovieItems(payload: any): any[] {
   if (Array.isArray(payload)) return payload;
@@ -378,7 +380,6 @@ function LanguageSwitcher() {
 
 export function Navbar() {
   const pathname = usePathname();
-  const router = useRouter();
   const navigation = useReliableNavigation();
   const queryClient = useQueryClient();
 
@@ -402,7 +403,6 @@ export function Navbar() {
 
   const prefetchNav = useCallback(
     (href: string) => {
-      router.prefetch(href);
       if (href === "/") {
         void queryClient.prefetchQuery({
           queryKey: ["home-feed-v1", 24],
@@ -449,7 +449,7 @@ export function Navbar() {
         });
       }
     },
-    [queryClient, router],
+    [queryClient],
   );
 
   const [notifTab, setNotifTab] = useState<"system" | MovieNotificationChannel>(
@@ -487,7 +487,7 @@ export function Navbar() {
     NavbarMovieNotification[]
   >([]);
 
-  const { data: seriesNotificationItems = [] } = useQuery({
+  const { data: seriesNotificationItems = EMPTY_NAVBAR_NOTIFICATION_ITEMS } = useQuery({
     queryKey: ["navbar-latest-notifications", "series"],
     queryFn: () => loadMovieNotificationFeed("series"),
     staleTime: 1000 * 60 * 2,
@@ -495,7 +495,7 @@ export function Navbar() {
     refetchOnWindowFocus: false,
   });
 
-  const { data: singleNotificationItems = [] } = useQuery({
+  const { data: singleNotificationItems = EMPTY_NAVBAR_NOTIFICATION_ITEMS } = useQuery({
     queryKey: ["navbar-latest-notifications", "single"],
     queryFn: () => loadMovieNotificationFeed("single"),
     staleTime: 1000 * 60 * 2,
@@ -781,7 +781,6 @@ export function Navbar() {
                     key={item.slug}
                     href={`/genre/${item.slug}`}
                     prefetch={false}
-                    onMouseEnter={() => router.prefetch(`/genre/${item.slug}`)}
                     className="px-3.5 py-2 rounded-xl text-xs font-semibold text-neutral-300 hover:text-white hover:bg-white/15 hover:backdrop-blur-md hover:translate-x-1 transition-all duration-200 block truncate"
                   >
                     {t(`genres_list.${item.slug}`, item.label)}
@@ -804,9 +803,6 @@ export function Navbar() {
                     key={item.slug}
                     href={`/country/${item.slug}`}
                     prefetch={false}
-                    onMouseEnter={() =>
-                      router.prefetch(`/country/${item.slug}`)
-                    }
                     className="px-3 py-2 rounded-xl text-xs font-semibold text-neutral-300 hover:text-white hover:bg-white/15 hover:backdrop-blur-md hover:translate-x-1 transition-all duration-200 flex items-center gap-2.5 truncate group/flag"
                   >
                     <CountryFlagImage
@@ -852,7 +848,6 @@ export function Navbar() {
                       key={item.href}
                       href={item.href}
                       prefetch={false}
-                      onMouseEnter={() => router.prefetch(item.href)}
                       className={cn(
                         "px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 block truncate",
                         isItemActive

@@ -104,7 +104,7 @@ test('browse quick filters do not duplicate Marvel and DC universe entries', () 
   assert.doesNotMatch(quickTypes, /Marvel Studios|DC Universe/);
 });
 
-test('all catalog route families receive server-seeded films before hydration', () => {
+test('catalog routes keep direct-load server seeds without forcing document navigation', () => {
   const serverCatalog = readFileSync('src/lib/server-catalog.ts', 'utf8');
   const browsePage = readFileSync('src/app/films/page.tsx', 'utf8');
   const genrePage = readFileSync('src/app/genre/[slug]/page.tsx', 'utf8');
@@ -139,17 +139,19 @@ test('all catalog route families receive server-seeded films before hydration', 
   assert.match(genreClient, /w-1\/4 sm:w-1\/5/);
   assert.match(countryClient, /w-1\/4 sm:w-1\/5/);
   assert.match(watchClient, /data-eager-hydration="true"/);
-  assert.match(backgroundServices, /const isCatalogDestination/);
-  assert.match(backgroundServices, /window\.location\.assign\(destination\.href\)/);
+  assert.match(genrePage, /requestHeaders\.get\("rsc"\) === "1"/);
+  assert.match(countryPage, /requestHeaders\.get\("rsc"\) === "1"/);
+  assert.doesNotMatch(backgroundServices, /const isCatalogDestination/);
+  assert.doesNotMatch(backgroundServices, /window\.location\.assign\(destination\.href\)/);
 });
 
-test('film type routes ship server data and cannot remain on a client-only skeleton', () => {
+test('film type routes seed document loads and unblock client route transitions', () => {
   const page = readFileSync('src/app/films/[type]/page.tsx', 'utf8');
   const client = readFileSync('src/app/films/[type]/FilmsTypeClient.tsx', 'utf8');
   const loading = readFileSync('src/app/films/[type]/loading.tsx', 'utf8');
 
   assert.doesNotMatch(page, /["']use client["']/);
-  assert.match(page, /await Promise\.all\(\[params, searchParams\]\)/);
+  assert.match(page, /requestHeaders\.get\("rsc"\) === "1"/);
   assert.match(page, /getInitialFilmCatalog\(type, page\)/);
   assert.match(client, /withCatalogTimeout/);
   assert.match(client, /staleTime: initialData \? 0 : 30 \* 60 \* 1000/);

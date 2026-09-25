@@ -251,7 +251,7 @@ function CountryCategoryRow({
             },
           }}
           freeMode={{ enabled: true, momentumRatio: 0.8 }}
-          className="!py-2 !px-1 w-full"
+          className="catalog-row-swiper !py-2 !px-1 w-full"
         >
           {isLoading
             ? Array.from({ length: 8 }).map((_, i) => (
