@@ -199,34 +199,63 @@ const TYPE_CFG: Record<ServerType, { label: string; Icon: any; active: string; i
   };
 
 // ── Auto-next countdown overlay (Netflix Standard) ─────────────
+function formatTimestampSeconds(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds < 0) return '00:00';
+  const total = Math.floor(seconds);
+  const hrs = Math.floor(total / 3600);
+  const mins = Math.floor((total % 3600) / 60);
+  const secs = total % 60;
+  if (hrs > 0) {
+    return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+}
+
+// ── Auto-next countdown overlay (Netflix Standard) ─────────────
 function AutoNextOverlay({
   seconds,
+  nextEpisodeTitle,
   onSkip,
   onCancel,
 }: {
   seconds: number;
+  nextEpisodeTitle?: string;
   onSkip: () => void;
   onCancel: () => void;
 }) {
   return (
-    <div className="absolute bottom-16 right-6 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
-      <div className="bg-black/80 border border-white/20 rounded-[4px] px-5 py-3.5 flex items-center gap-4 backdrop-blur-md shadow-2xl">
-        <div>
-          <p className="text-[10px] uppercase tracking-wider text-white/50 font-semibold mb-0.5">
-            Tập tiếp theo trong
-          </p>
-          <p className="text-white font-extrabold text-2xl tabular-nums leading-none">{seconds}s</p>
+    <div className="absolute bottom-16 right-4 sm:right-6 z-50 animate-in fade-in slide-in-from-bottom-3 duration-300 select-none">
+      <div className="bg-[#0f1117]/95 border border-sky-500/30 rounded-2xl p-4 flex items-center gap-4 backdrop-blur-xl shadow-2xl ring-1 ring-white/10 max-w-sm">
+        <div className="relative flex items-center justify-center w-12 h-12 rounded-xl bg-sky-500/10 border border-sky-500/25 shrink-0">
+          <span className="text-sky-400 font-extrabold text-xl tabular-nums leading-none animate-pulse">
+            {seconds}s
+          </span>
         </div>
-        <div className="flex gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] uppercase tracking-wider text-sky-400 font-bold mb-0.5 flex items-center gap-1.5">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-500" />
+            </span>
+            Tập tiếp theo sẽ phát sau
+          </p>
+          <p className="text-white font-semibold text-xs truncate">
+            {nextEpisodeTitle ? `Tập ${nextEpisodeTitle.replace(/^tập\s*/i, '')}` : 'Tập tiếp theo'}
+          </p>
+        </div>
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
+            type="button"
             onClick={onSkip}
-            className="flex items-center gap-1.5 bg-white hover:bg-white/90 text-black px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider rounded-[3px] shadow transition-all active:scale-95"
+            className="flex items-center gap-1 bg-white hover:bg-white/90 text-black px-3 py-1.5 text-xs font-bold rounded-lg shadow-md transition-all active:scale-95 cursor-pointer"
           >
-            <Play size={11} fill="currentColor" /> Phát ngay
+            <Play size={12} fill="currentColor" /> Phát ngay
           </button>
           <button
+            type="button"
             onClick={onCancel}
-            className="px-3 py-1.5 text-xs font-medium uppercase tracking-wider text-white/60 hover:text-white hover:bg-white/10 rounded-[3px] border border-white/15 transition-all"
+            className="px-2.5 py-1.5 text-xs font-medium text-white/60 hover:text-white hover:bg-white/10 rounded-lg border border-white/10 transition-all cursor-pointer"
+            title="Hủy tự động phát cho tập này"
           >
             Hủy
           </button>
@@ -1333,6 +1362,15 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
   const roomCode = searchParams.get('room');
   const shouldCreateParty = searchParams.get('party') === 'create';
   const requestedRoomName = searchParams.get('roomName') || '';
+  const requestedTimestamp = useMemo(() => {
+    const t = searchParams.get('t');
+    if (!t) return 0;
+    const parsed = Number(t);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+  }, [searchParams]);
+  const [shareWithTimestamp, setShareWithTimestamp] = useState(false);
+  const autoNextDismissedRef = useRef(false);
+  const hasNotifiedTimestampRef = useRef(false);
   const [watchPartyRequested, setWatchPartyRequested] = useState(
     Boolean(roomCode || shouldCreateParty),
   );
@@ -3031,17 +3069,20 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
         }
       }
 
-      // ── Auto Next Episode Countdown Trigger (within 3 seconds of ending) ──
+      // ── Auto Next Episode Countdown Trigger (15-20s before ending) ──
+      const remainingSecs = duration - currentTime;
       if (
         autoNextConfig &&
         (!watchPartyRoomId || isWatchPartyHost) &&
-        duration > 30 &&
-        currentTime >= duration - 3 &&
+        duration > 40 &&
+        remainingSecs <= 18 &&
+        remainingSecs > 0 &&
         autoNextCountdown === null &&
+        !autoNextDismissedRef.current &&
         currentEpIndex >= 0 &&
         currentEpIndex < serverData.length - 1
       ) {
-        setAutoNextCountdown(5);
+        setAutoNextCountdown(Math.min(10, Math.max(5, Math.ceil(remainingSecs))));
       }
 
       watchProgressStorage.saveProgress({
@@ -3142,7 +3183,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       syncWatchPartyPlayerState('ended', artInstance?.duration || artInstance?.currentTime || 0);
     }
     if (watchPartyRoomId && !isWatchPartyHost) return;
-    if (!autoNextConfig) return;
+    if (!autoNextConfig || autoNextDismissedRef.current) return;
     if (currentEpIndex >= 0 && currentEpIndex < serverData.length - 1) setAutoNextCountdown(5);
   }, [
     artInstance,
@@ -3271,6 +3312,29 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
         if (artInstance) {
           artInstance.volume = Math.max(0, Math.round(((artInstance.volume || 1) - 0.1) * 10) / 10);
         }
+      } else if (e.key === 'c' || e.key === 'C') {
+        e.preventDefault();
+        if (artInstance?.subtitle) {
+          artInstance.subtitle.show = !artInstance.subtitle.show;
+          const msg = artInstance.subtitle.show ? 'Đã bật phụ đề' : 'Đã tắt phụ đề';
+          if (artInstance.notice) artInstance.notice.show = msg;
+          toast(msg, 'info');
+        }
+      } else if (e.key === 'p' || e.key === 'P') {
+        e.preventDefault();
+        if (artInstance) {
+          try {
+            if (typeof document !== 'undefined' && document.pictureInPictureElement) {
+              document.exitPictureInPicture();
+            } else if (artInstance.video && typeof artInstance.video.requestPictureInPicture === 'function') {
+              artInstance.video.requestPictureInPicture();
+            } else {
+              artInstance.pip = !artInstance.pip;
+            }
+          } catch {}
+        }
+      } else if (e.key === 'Escape') {
+        setShowShortcutsGuide(false);
       } else if (e.key === 'n' || e.key === 'N') {
         e.preventDefault();
         goNextEpisode();
@@ -3483,7 +3547,9 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     fallbackInProgressRef.current = false;
     recordedViewRef.current = false;
     playedSourceKeysRef.current.clear();
-    lastKnownPlaybackTimeRef.current = resumeAt;
+    autoNextDismissedRef.current = false;
+    hasNotifiedTimestampRef.current = false;
+    lastKnownPlaybackTimeRef.current = requestedTimestamp > 0 ? requestedTimestamp : resumeAt;
     clearIframeLoadTimeout();
     hasPreloadedNextEpRef.current = false;
     setSuggestedServerToast(null);
@@ -3861,125 +3927,213 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                 </span>
               </button>
 
+              {/* Chế độ Rạp phim (Theater Mode) */}
+              <button
+                type="button"
+                onClick={() => {
+                  setTheaterMode((prev) => {
+                    const next = !prev;
+                    toast(
+                      next ? 'Đã bật chế độ Rạp phim mở rộng' : 'Đã tắt chế độ Rạp phim',
+                      'info',
+                    );
+                    return next;
+                  });
+                }}
+                className={cn(
+                  'flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all font-medium text-xs cursor-pointer select-none border',
+                  theaterMode
+                    ? 'bg-sky-500/15 text-sky-400 border-sky-500/30 font-semibold shadow-sm'
+                    : 'bg-white/[0.04] hover:bg-white/[0.08] text-neutral-400 hover:text-white border-white/[0.06]',
+                )}
+                title="Chế độ rạp phim (Phím T)"
+              >
+                <Maximize2 size={13} className={theaterMode ? 'text-sky-400' : 'text-neutral-400'} />
+                <span className="hidden sm:inline">Rạp phim</span>
+              </button>
+
+              {/* Bảng Phím tắt (Keyboard Shortcuts) */}
+              <button
+                type="button"
+                onClick={() => setShowShortcutsGuide((prev) => !prev)}
+                className={cn(
+                  'flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all font-medium text-xs cursor-pointer select-none border',
+                  showShortcutsGuide
+                    ? 'bg-purple-500/15 text-purple-400 border-purple-500/30 font-semibold shadow-sm'
+                    : 'bg-white/[0.04] hover:bg-white/[0.08] text-neutral-400 hover:text-white border-white/[0.06]',
+                )}
+                title="Bảng phím tắt (Phím ?)"
+              >
+                <Keyboard size={13} className={showShortcutsGuide ? 'text-purple-400' : 'text-neutral-400'} />
+                <span className="hidden sm:inline">Phím tắt</span>
+              </button>
+
               {/* Multi-Platform Share Button & Dropdown */}
               <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (typeof navigator !== 'undefined' && navigator.share) {
-                      navigator
-                        .share({
-                          title: film?.name || 'FlexPhim',
-                          text: `Xem phim ${film?.name || ''} miễn phí trên FlexPhim!`,
-                          url: window.location.href,
-                        })
-                        .catch(() => setShowShareModal((p) => !p));
-                    } else {
-                      setShowShareModal((p) => !p);
+                {(() => {
+                  const currentPlaySeconds = Math.floor(
+                    artInstance?.currentTime || lastKnownPlaybackTimeRef.current || 0,
+                  );
+                  let computedShareUrl = '';
+                  if (typeof window !== 'undefined') {
+                    try {
+                      const u = new URL(window.location.href);
+                      if (shareWithTimestamp && currentPlaySeconds > 3) {
+                        u.searchParams.set('t', String(currentPlaySeconds));
+                      } else {
+                        u.searchParams.delete('t');
+                      }
+                      computedShareUrl = u.toString();
+                    } catch {
+                      computedShareUrl = window.location.href;
                     }
-                  }}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] hover:text-white transition-colors text-white/50 text-xs font-medium border border-white/[0.06] cursor-pointer"
-                  title="Chia sẻ phim ra các nền tảng"
-                >
-                  <Share2 size={13} />
-                  <span className="hidden sm:inline">Chia sẻ</span>
-                </button>
+                  }
 
-                {/* Multi-Platform Share Dropdown */}
-                {showShareModal && (
-                  <div className="absolute right-0 top-full mt-2 z-50 w-72 p-3.5 rounded-2xl bg-[#111419]/95 border border-white/15 backdrop-blur-xl shadow-2xl space-y-3 animate-in fade-in zoom-in-95 duration-150">
-                    <div className="flex items-center justify-between pb-2 border-b border-white/10">
-                      <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                        <Share2 size={13} className="text-blue-400" /> Chia Sẻ Phim Trực Tiếp
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setShowShareModal(false)}
-                        className="text-neutral-400 hover:text-white text-xs px-1.5 py-0.5 rounded hover:bg-white/10"
-                      >
-                        ✕
-                      </button>
-                    </div>
-
-                    {/* Direct Platform Links */}
-                    <div className="grid grid-cols-2 gap-2 text-xs font-semibold">
-                      {/* Facebook */}
-                      <a
-                        href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 p-2 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 transition-all active:scale-95"
-                      >
-                        <span className="w-5 h-5 rounded-full bg-blue-600 text-white font-black text-[11px] flex items-center justify-center">
-                          f
-                        </span>
-                        <span>Facebook</span>
-                      </a>
-
-                      {/* Zalo */}
-                      <a
-                        href={`https://zalo.me/share?url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 p-2 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-400/30 transition-all active:scale-95"
-                      >
-                        <span className="w-5 h-5 rounded-full bg-blue-500 text-white font-black text-[10px] flex items-center justify-center">
-                          Z
-                        </span>
-                        <span>Zalo</span>
-                      </a>
-
-                      {/* Telegram */}
-                      <a
-                        href={`https://t.me/share/url?url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}&text=${encodeURIComponent(`Xem phim ${film?.name || ''} chất lượng cao!`)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 p-2 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-400/30 transition-all active:scale-95"
-                      >
-                        <Send size={13} className="text-sky-400" />
-                        <span>Telegram</span>
-                      </a>
-
-                      {/* Twitter / X */}
-                      <a
-                        href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}&text=${encodeURIComponent(`Xem phim ${film?.name || ''} trên FlexPhim!`)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 p-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white border border-white/10 transition-all active:scale-95"
-                      >
-                        <span className="font-mono text-xs">𝕏</span>
-                        <span>Twitter / X</span>
-                      </a>
-                    </div>
-
-                    {/* Copy Link Input Bar */}
-                    <div className="pt-2 border-t border-white/10 flex items-center gap-1.5">
-                      <input
-                        type="text"
-                        readOnly
-                        value={typeof window !== 'undefined' ? window.location.href : ''}
-                        className="w-full bg-black/40 border border-white/10 rounded-lg px-2.5 py-1.5 text-[10px] text-neutral-300 focus:outline-none truncate font-mono"
-                      />
+                  return (
+                    <>
                       <button
                         type="button"
                         onClick={() => {
-                          navigator.clipboard.writeText(window.location.href);
-                          setCopied(true);
-                          toast('Đã sao chép liên kết!', 'success');
-                          setTimeout(() => setCopied(false), 2000);
+                          if (typeof navigator !== 'undefined' && navigator.share) {
+                            navigator
+                              .share({
+                                title: film?.name || 'FlexPhim',
+                                text: `Xem phim ${film?.name || ''} miễn phí trên FlexPhim!`,
+                                url: computedShareUrl,
+                              })
+                              .catch(() => setShowShareModal((p) => !p));
+                          } else {
+                            setShowShareModal((p) => !p);
+                          }
                         }}
-                        className="flex items-center gap-1 bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg border border-white/15 transition-all shrink-0 active:scale-95"
+                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] hover:text-white transition-colors text-white/50 text-xs font-medium border border-white/[0.06] cursor-pointer"
+                        title="Chia sẻ phim ra các nền tảng"
                       >
-                        {copied ? (
-                          <Check size={13} className="text-emerald-400" />
-                        ) : (
-                          <Copy size={13} />
-                        )}
-                        <span>{copied ? 'Đã chép' : 'Chép'}</span>
+                        <Share2 size={13} />
+                        <span className="hidden sm:inline">Chia sẻ</span>
                       </button>
-                    </div>
-                  </div>
-                )}
+
+                      {/* Multi-Platform Share Dropdown */}
+                      {showShareModal && (
+                        <div className="absolute right-0 top-full mt-2 z-50 w-72 p-3.5 rounded-2xl bg-[#111419]/95 border border-white/15 backdrop-blur-xl shadow-2xl space-y-3 animate-in fade-in zoom-in-95 duration-150">
+                          <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                            <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                              <Share2 size={13} className="text-blue-400" /> Chia Sẻ Phim Trực Tiếp
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setShowShareModal(false)}
+                              className="text-neutral-400 hover:text-white text-xs px-1.5 py-0.5 rounded hover:bg-white/10"
+                            >
+                              ✕
+                            </button>
+                          </div>
+
+                          {/* Timestamp Checkbox */}
+                          {currentPlaySeconds > 3 && (
+                            <label className="flex items-center gap-2 p-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 transition-colors cursor-pointer select-none">
+                              <input
+                                type="checkbox"
+                                checked={shareWithTimestamp}
+                                onChange={(e) => setShareWithTimestamp(e.target.checked)}
+                                className="w-3.5 h-3.5 rounded border-white/20 bg-black/40 text-sky-500 focus:ring-0 cursor-pointer"
+                              />
+                              <span className="text-xs text-neutral-300">
+                                Bắt đầu tại{' '}
+                                <strong className="font-mono font-bold text-sky-400">
+                                  {formatTimestampSeconds(currentPlaySeconds)}
+                                </strong>
+                              </span>
+                            </label>
+                          )}
+
+                          {/* Direct Platform Links */}
+                          <div className="grid grid-cols-2 gap-2 text-xs font-semibold">
+                            {/* Facebook */}
+                            <a
+                              href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(computedShareUrl)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 p-2 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 transition-all active:scale-95"
+                            >
+                              <span className="w-5 h-5 rounded-full bg-blue-600 text-white font-black text-[11px] flex items-center justify-center">
+                                f
+                              </span>
+                              <span>Facebook</span>
+                            </a>
+
+                            {/* Zalo */}
+                            <a
+                              href={`https://zalo.me/share?url=${encodeURIComponent(computedShareUrl)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 p-2 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-400/30 transition-all active:scale-95"
+                            >
+                              <span className="w-5 h-5 rounded-full bg-blue-500 text-white font-black text-[10px] flex items-center justify-center">
+                                Z
+                              </span>
+                              <span>Zalo</span>
+                            </a>
+
+                            {/* Telegram */}
+                            <a
+                              href={`https://t.me/share/url?url=${encodeURIComponent(computedShareUrl)}&text=${encodeURIComponent(`Xem phim ${film?.name || ''} chất lượng cao!`)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 p-2 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-400/30 transition-all active:scale-95"
+                            >
+                              <Send size={13} className="text-sky-400" />
+                              <span>Telegram</span>
+                            </a>
+
+                            {/* Twitter / X */}
+                            <a
+                              href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(computedShareUrl)}&text=${encodeURIComponent(`Xem phim ${film?.name || ''} trên FlexPhim!`)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 p-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white border border-white/10 transition-all active:scale-95"
+                            >
+                              <span className="font-mono text-xs">𝕏</span>
+                              <span>Twitter / X</span>
+                            </a>
+                          </div>
+
+                          {/* Copy Link Input Bar */}
+                          <div className="pt-2 border-t border-white/10 flex items-center gap-1.5">
+                            <input
+                              type="text"
+                              readOnly
+                              value={computedShareUrl}
+                              className="w-full bg-black/40 border border-white/10 rounded-lg px-2.5 py-1.5 text-[10px] text-neutral-300 focus:outline-none truncate font-mono"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText(computedShareUrl);
+                                setCopied(true);
+                                toast(
+                                  shareWithTimestamp && currentPlaySeconds > 3
+                                    ? `Đã sao chép liên kết tại ${formatTimestampSeconds(currentPlaySeconds)}!`
+                                    : 'Đã sao chép liên kết!',
+                                  'success',
+                                );
+                                setTimeout(() => setCopied(false), 2000);
+                              }}
+                              className="flex items-center gap-1 bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg border border-white/15 transition-all shrink-0 active:scale-95"
+                            >
+                              {copied ? (
+                                <Check size={13} className="text-emerald-400" />
+                              ) : (
+                                <Copy size={13} />
+                              )}
+                              <span>{copied ? 'Đã chép' : 'Chép'}</span>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
 
               {/* Kiểm tra Máy Chủ (Admin Only) */}
@@ -4043,9 +4197,20 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                     skipIntroStart={currentEpData?.intro?.start}
                     skipIntroEnd={currentEpData?.intro?.end}
                     skipOutroStart={currentEpData?.outro?.start}
-                    initialTime={lastKnownPlaybackTimeRef.current || resumeAt}
+                    initialTime={
+                      lastKnownPlaybackTimeRef.current ||
+                      (requestedTimestamp > 0 ? requestedTimestamp : resumeAt)
+                    }
                     autoPlay={autoPlayConfig}
                     autoSkipAds={useSettingsStore.getState().autoSkipAds ?? true}
+                    isTheaterMode={theaterMode}
+                    onTheaterModeToggle={(active) => {
+                      setTheaterMode(active);
+                      toast(
+                        active ? 'Đã bật chế độ Rạp phim mở rộng' : 'Đã tắt chế độ Rạp phim',
+                        'info',
+                      );
+                    }}
                     servers={playerServers}
                     currentServerIndex={currentServer}
                     onSwitchServer={handleSelectServer}
@@ -4056,6 +4221,13 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                       setFallbackMessage('');
                     }}
                     onPlaying={() => {
+                      if (requestedTimestamp > 0 && !hasNotifiedTimestampRef.current) {
+                        hasNotifiedTimestampRef.current = true;
+                        toast(
+                          `Đang phát từ ${formatTimestampSeconds(requestedTimestamp)} theo liên kết chia sẻ`,
+                          'info',
+                        );
+                      }
                       const sourceKey = `${sourceCandidate.source || 'unknown'}:${sourceCandidate.serverName || 'unknown'}`;
                       if (!playedSourceKeysRef.current.has(sourceKey)) {
                         playedSourceKeysRef.current.add(sourceKey);
@@ -4168,8 +4340,15 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                 {autoNextCountdown !== null && (
                   <AutoNextOverlay
                     seconds={autoNextCountdown}
+                    nextEpisodeTitle={
+                      serverData[currentEpIndex + 1]?.name || serverData[currentEpIndex + 1]?.slug
+                    }
                     onSkip={goNextEpisode}
-                    onCancel={() => setAutoNextCountdown(null)}
+                    onCancel={() => {
+                      autoNextDismissedRef.current = true;
+                      setAutoNextCountdown(null);
+                      toast('Đã hủy tự động chuyển tập cho tập này', 'info');
+                    }}
                   />
                 )}
 
@@ -4229,101 +4408,109 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
           >
             {/* ── EXPANDABLE SHORTCUTS & GESTURE GUIDE (Premium Clean Cinema Standard) ── */}
             {showShortcutsGuide && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 p-4 sm:p-5 bg-neutral-900/90 border border-white/10 rounded-2xl animate-in fade-in zoom-in-95 duration-200 shadow-2xl backdrop-blur-xl">
-                {/* Column 1: Desktop Keyboard */}
-                <div className="space-y-3 p-4 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                  <div className="flex items-center gap-2 text-xs font-bold text-white tracking-wide">
-                    <Monitor size={15} className="text-[#23ade5]" />
-                    <span>Bàn Phím (Desktop)</span>
+              <div
+                className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 select-none"
+                onClick={() => setShowShortcutsGuide(false)}
+              >
+                <div
+                  className="relative w-full max-w-2xl bg-[#11141c]/95 border border-white/15 rounded-3xl p-5 sm:p-6 shadow-2xl backdrop-blur-2xl space-y-4 animate-in zoom-in-95 duration-200"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center">
+                        <Keyboard size={18} />
+                      </div>
+                      <div>
+                        <h3 className="text-sm sm:text-base font-bold text-white">
+                          Bảng Phím Tắt Trình Phát
+                        </h3>
+                        <p className="text-[11px] text-white/50">
+                          Điều khiển xem phim nhanh trên bàn phím (Desktop)
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowShortcutsGuide(false)}
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+                      title="Đóng bảng phím tắt (Esc)"
+                    >
+                      ✕
+                    </button>
                   </div>
-                  <div className="space-y-2 text-xs text-neutral-300">
-                    <div className="flex items-center justify-between py-1 border-b border-white/[0.05]">
-                      <span className="text-neutral-400">Phát / Tạm dừng</span>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+                      <span className="text-white/70">Phát / Tạm dừng</span>
                       <kbd className="px-2 py-0.5 rounded bg-white/10 border border-white/15 text-[10px] font-mono font-bold text-white shadow-sm">
                         Space / K
                       </kbd>
                     </div>
-                    <div className="flex items-center justify-between py-1 border-b border-white/[0.05]">
-                      <span className="text-neutral-400">Toàn màn hình</span>
+                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+                      <span className="text-white/70">Toàn màn hình</span>
                       <kbd className="px-2 py-0.5 rounded bg-white/10 border border-white/15 text-[10px] font-mono font-bold text-white shadow-sm">
                         F
                       </kbd>
                     </div>
-                    <div className="flex items-center justify-between py-1 border-b border-white/[0.05]">
-                      <span className="text-neutral-400">Tua lùi / Tới 10s</span>
+                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+                      <span className="text-white/70">Bật / Tắt tiếng (Mute)</span>
                       <kbd className="px-2 py-0.5 rounded bg-white/10 border border-white/15 text-[10px] font-mono font-bold text-white shadow-sm">
-                        ← / →
+                        M
                       </kbd>
                     </div>
-                    <div className="flex items-center justify-between py-1 border-b border-white/[0.05]">
-                      <span className="text-neutral-400">Tăng / Giảm âm lượng</span>
+                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+                      <span className="text-white/70">Tua lùi / Tiến 10 giây</span>
+                      <kbd className="px-2 py-0.5 rounded bg-white/10 border border-white/15 text-[10px] font-mono font-bold text-white shadow-sm">
+                        J / L hoặc ← / →
+                      </kbd>
+                    </div>
+                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+                      <span className="text-white/70">Tăng / Giảm âm lượng (+/- 10%)</span>
                       <kbd className="px-2 py-0.5 rounded bg-white/10 border border-white/15 text-[10px] font-mono font-bold text-white shadow-sm">
                         ↑ / ↓
                       </kbd>
                     </div>
-                    <div className="flex items-center justify-between py-1">
-                      <span className="text-neutral-400">Chuyển tập kế tiếp</span>
+                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+                      <span className="text-white/70">Chuyển tập tiếp theo</span>
                       <kbd className="px-2 py-0.5 rounded bg-white/10 border border-white/15 text-[10px] font-mono font-bold text-white shadow-sm">
                         N
                       </kbd>
                     </div>
+                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+                      <span className="text-white/70">Bật / Tắt phụ đề</span>
+                      <kbd className="px-2 py-0.5 rounded bg-white/10 border border-white/15 text-[10px] font-mono font-bold text-white shadow-sm">
+                        C
+                      </kbd>
+                    </div>
+                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+                      <span className="text-white/70">Chế độ Rạp chiếu phim</span>
+                      <kbd className="px-2 py-0.5 rounded bg-white/10 border border-white/15 text-[10px] font-mono font-bold text-white shadow-sm">
+                        T
+                      </kbd>
+                    </div>
+                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+                      <span className="text-white/70">Hình trong hình (PiP)</span>
+                      <kbd className="px-2 py-0.5 rounded bg-white/10 border border-white/15 text-[10px] font-mono font-bold text-white shadow-sm">
+                        P
+                      </kbd>
+                    </div>
+                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+                      <span className="text-white/70">Mở / Đóng bảng phím tắt này</span>
+                      <kbd className="px-2 py-0.5 rounded bg-white/10 border border-white/15 text-[10px] font-mono font-bold text-white shadow-sm">
+                        ?
+                      </kbd>
+                    </div>
                   </div>
-                </div>
 
-                {/* Column 2: Mobile Gestures */}
-                <div className="space-y-3 p-4 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                  <div className="flex items-center gap-2 text-xs font-bold text-white tracking-wide">
-                    <Smartphone size={15} className="text-[#23ade5]" />
-                    <span>Cử Chỉ (Mobile)</span>
-                  </div>
-                  <div className="space-y-2.5 text-xs text-neutral-300">
-                    <div className="flex items-start gap-2.5 py-1 border-b border-white/[0.05]">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#23ade5] mt-1.5 shrink-0" />
-                      <span className="leading-relaxed">
-                        Chạm 1 lần để hiện hoặc ẩn thanh điều khiển
-                      </span>
-                    </div>
-                    <div className="flex items-start gap-2.5 py-1 border-b border-white/[0.05]">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#23ade5] mt-1.5 shrink-0" />
-                      <span className="leading-relaxed">
-                        Chạm đúp bên trái hoặc phải để tua 10 giây
-                      </span>
-                    </div>
-                    <div className="flex items-start gap-2.5 py-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#23ade5] mt-1.5 shrink-0" />
-                      <span className="leading-relaxed">
-                        Nhấn giữ video để kích hoạt{' '}
-                        <b className="text-white font-semibold">Tốc độ 2x</b>, thả tay để về 1x
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Column 3: Quick Action Functions */}
-                <div className="space-y-3 p-4 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                  <div className="flex items-center gap-2 text-xs font-bold text-white tracking-wide">
-                    <SlidersHorizontal size={15} className="text-[#23ade5]" />
-                    <span>Tính Năng Phím Nhanh</span>
-                  </div>
-                  <div className="space-y-2 text-xs text-neutral-300">
-                    <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.05] flex items-center justify-between">
-                      <span className="flex items-center gap-2">
-                        <SkipForward size={13} className="text-[#23ade5]" />
-                        <span>Tự động chuyển tập</span>
-                      </span>
-                      <span className="text-[10px] font-bold text-neutral-400 font-mono">
-                        Auto Next
-                      </span>
-                    </div>
-                    <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.05] flex items-center justify-between">
-                      <span className="flex items-center gap-2">
-                        <Bug size={13} className="text-purple-400" />
-                        <span>Báo lỗi link phim</span>
-                      </span>
-                      <span className="text-[10px] font-bold text-neutral-400 font-mono">
-                        Report
-                      </span>
-                    </div>
+                  <div className="pt-2 flex items-center justify-between text-[11px] text-white/40 border-t border-white/10">
+                    <span>
+                      Mẹo: Nhấn phím <kbd className="font-mono text-white/70">?</kbd> bất cứ lúc nào
+                      khi xem phim để mở bảng này.
+                    </span>
+                    <span>
+                      Nhấn <kbd className="font-mono text-white/70">Esc</kbd> để đóng
+                    </span>
                   </div>
                 </div>
               </div>
