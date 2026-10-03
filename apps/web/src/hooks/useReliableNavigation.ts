@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 
 type NavigationOptions = {
@@ -12,6 +12,7 @@ function navigateReliably(
   href: string,
   options: NavigationOptions | undefined,
   replace: boolean,
+  startTransition: (fn: () => void) => void,
 ) {
   if (typeof window === 'undefined') {
     navigate(href, options);
@@ -26,29 +27,33 @@ function navigateReliably(
   }
 
   const clientHref = `${destination.pathname}${destination.search}${destination.hash}`;
-  navigate(clientHref, options);
+  startTransition(() => {
+    navigate(clientHref, options);
+  });
 }
 
 /**
  * Keep same-origin navigation inside Next.js so the shared shell, React Query
  * cache and prefetched RSC payload survive route changes. External URLs still
  * use normal document navigation.
+ * Uses React Concurrent Transition to prevent main-thread freezing.
  */
 export function useReliableNavigation() {
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
 
   const push = useCallback(
     (href: string, options?: NavigationOptions) => {
-      navigateReliably(router.push, href, options, false);
+      navigateReliably(router.push, href, options, false, startTransition);
     },
-    [router],
+    [router, startTransition],
   );
 
   const replace = useCallback(
     (href: string, options?: NavigationOptions) => {
-      navigateReliably(router.replace, href, options, true);
+      navigateReliably(router.replace, href, options, true, startTransition);
     },
-    [router],
+    [router, startTransition],
   );
 
   return useMemo(
@@ -59,7 +64,8 @@ export function useReliableNavigation() {
       forward: router.forward,
       refresh: router.refresh,
       prefetch: router.prefetch,
+      isPending,
     }),
-    [push, replace, router],
+    [push, replace, router, isPending],
   );
 }

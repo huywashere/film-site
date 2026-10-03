@@ -16,6 +16,7 @@ import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { ClientBackgroundServices } from "@/components/layout/ClientBackgroundServices";
 import { OperationalNotice } from "@/components/layout/OperationalNotice";
 import { LogoSplashIntro } from "@/components/layout/LogoSplashIntro";
+import { TopRouteProgress } from "@/components/layout/TopRouteProgress";
 import { cardFont } from "@/lib/fonts";
 
 const PREPAINT_SCRIPT = `
@@ -176,6 +177,7 @@ export default function RootLayout({
         className={`${cardFont.variable} ${cardFont.className} antialiased`}
         suppressHydrationWarning
       >
+        <TopRouteProgress />
         <LogoSplashIntro />
         <ThemeWatcher />
         <ThemeColorSync />

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   ChevronLeft,
   ChevronRight,
@@ -76,8 +76,14 @@ const MOVIE_WORLD_PREFETCH: Array<{
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [mounted, setMounted] = useState(false);
+  const [optimisticPath, setOptimisticPath] = useState<string | null>(null);
+
+  useEffect(() => {
+    setOptimisticPath(null);
+  }, [pathname]);
   const [collapsed, setCollapsed] = useState(false);
   const [scrolledPastHomeHero, setScrolledPastHomeHero] = useState(false);
   const warmedRoutesRef = useRef(new Set<string>());
@@ -162,8 +168,19 @@ export function Sidebar() {
   const warmRoute = useCallback(
     (href: string) => {
       if (href.startsWith('http')) return;
+      try {
+        router.prefetch(href);
+      } catch {}
       if (warmedRoutesRef.current.has(href)) return;
       warmedRoutesRef.current.add(href);
+
+      if (href === '/films') {
+        void queryClient.prefetchQuery({
+          queryKey: ['browse-films-all', 'all', '', '', '', 'all', 'all', 'modified.time', 1],
+          queryFn: () => movieApi.getLatest(1).then((r) => r.data),
+          staleTime: 15 * 60 * 1000,
+        });
+      }
 
       if (href === '/') {
         void queryClient.prefetchQuery({
@@ -241,8 +258,22 @@ export function Sidebar() {
         }
       }
     },
-    [queryClient],
+    [queryClient, router],
   );
+
+  // Idle pre-warm primary tabs after mount
+  useEffect(() => {
+    if (!mounted || typeof window === 'undefined') return;
+    const timer = setTimeout(() => {
+      const topRoutes = ['/', '/films', '/genres', '/films/series', '/films/single', '/watchlist', '/history'];
+      topRoutes.forEach((route) => {
+        try {
+          router.prefetch(route);
+        } catch {}
+      });
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, [mounted, router]);
 
   // Home reveals the rail after the hero; every other supported page is immediate.
   // Vercel's static prerender can expose a null pathname while the browser
@@ -276,11 +307,17 @@ export function Sidebar() {
 
           {/* Navigation Icon List */}
           {SIDEBAR_ITEMS.map((item) => {
+            const effectivePath = optimisticPath || pathname;
+            const isEffectiveGenre =
+              effectivePath === '/genres' ||
+              effectivePath.startsWith('/genre/') ||
+              effectivePath.startsWith('/country/') ||
+              effectivePath.startsWith('/universe/');
             const isActive =
               !item.isExternal &&
               (item.href === '/genres'
-                ? isGenrePage || isCountryPage || isUniversePage
-                : pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href)));
+                ? isEffectiveGenre
+                : effectivePath === item.href || (item.href !== '/' && effectivePath.startsWith(item.href)));
 
             const Icon = item.icon;
             const isBilingual = Boolean((item as any).isBilingual);
@@ -386,13 +423,15 @@ export function Sidebar() {
               <Link
                 key={item.href}
                 href={item.href}
-                prefetch={false}
+                prefetch
                 aria-label={item.title}
                 aria-current={isActive ? 'page' : undefined}
                 title={item.title}
                 onMouseEnter={() => warmRoute(item.href)}
                 onFocus={() => warmRoute(item.href)}
                 onTouchStart={() => warmRoute(item.href)}
+                onPointerDown={() => warmRoute(item.href)}
+                onClick={() => setOptimisticPath(item.href)}
                 className={cn(
                   'relative w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 group cursor-pointer',
                   isActive

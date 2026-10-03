@@ -16,6 +16,11 @@ export function MobileBottomNav() {
   const { user } = useAuthStore();
   const reduceMotion = useReducedMotion();
   const [mounted, setMounted] = useState(false);
+  const [optimisticHref, setOptimisticHref] = useState<string | null>(null);
+
+  useEffect(() => {
+    setOptimisticHref(null);
+  }, [pathname]);
 
   useEffect(() => {
     setMounted(true);
@@ -51,31 +56,31 @@ export function MobileBottomNav() {
       label: 'Home',
       href: '/',
       icon: Home,
-      isActive: pathname === '/',
+      isActive: (optimisticHref || pathname) === '/',
     },
     {
       label: 'Duyệt phim',
       href: '/films',
       icon: Clapperboard,
-      isActive: isFilmsRoute,
+      isActive: optimisticHref ? (optimisticHref === '/films' || optimisticHref.startsWith('/films/')) : isFilmsRoute,
     },
     {
       label: 'Chủ đề',
       href: '/genres',
       icon: LayoutDashboard,
-      isActive: isGenresRoute,
+      isActive: optimisticHref ? (optimisticHref === '/genres' || optimisticHref.startsWith('/genre/')) : isGenresRoute,
     },
     {
       label: 'Tủ phim',
       href: '/watchlist',
       icon: Bookmark,
-      isActive: pathname === '/watchlist',
+      isActive: (optimisticHref || pathname) === '/watchlist',
     },
     {
       label: 'Lịch sử',
       href: '/history',
       icon: History,
-      isActive: pathname === '/history',
+      isActive: (optimisticHref || pathname) === '/history',
     },
   ];
 
@@ -119,9 +124,10 @@ export function MobileBottomNav() {
               <Link
                 key={item.href}
                 href={item.href}
-                prefetch={false}
+                prefetch
                 onTouchStart={warmRoute}
                 onPointerDown={warmRoute}
+                onClick={() => setOptimisticHref(item.href)}
                 aria-current={item.isActive ? 'page' : undefined}
                 className="group relative flex items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-white/70 active:scale-95 transition-transform touch-manipulation select-none"
               >
@@ -172,7 +178,7 @@ export function MobileBottomNav() {
         {user ? (
           <Link
             href={`/user/${encodeURIComponent(user.username)}`}
-            prefetch={false}
+            prefetch
             onTouchStart={warmProfileRoute}
             onPointerDown={warmProfileRoute}
             title={user.displayName || user.username}
