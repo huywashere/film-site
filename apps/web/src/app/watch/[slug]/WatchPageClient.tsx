@@ -3817,7 +3817,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       {/* ── MAIN — padded top for navbar (64px) + safe left padding for sidebar (96px) ── */}
       <main
         className={cn(
-          'pt-16 sm:pt-[70px] mx-auto px-3 md:px-5 pb-10 transition-all duration-300',
+          'pt-14 sm:pt-[58px] mx-auto px-3 md:px-5 pb-10 transition-all duration-300',
           theaterMode ? 'w-full lg:pl-20 max-w-none' : 'max-w-[1800px] lg:pl-20',
         )}
       >
@@ -4399,7 +4399,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
           {/* ── 2. UNDER-PLAYER CONTENT (Title, Episodes, Cast, Comments) ── */}
           <div
             className={cn(
-              'space-y-4 min-w-0 mt-3 sm:mt-4',
+              'space-y-3 min-w-0 mt-1 sm:mt-1.5',
               theaterMode
                 ? 'col-span-1 xl:col-start-1 xl:row-start-3'
                 : 'xl:col-start-1 xl:row-start-3',
@@ -5457,7 +5457,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
             className={cn(
               'space-y-4 min-w-0',
               theaterMode
-                ? 'col-span-1 xl:col-start-2 xl:row-start-3 mt-3 sm:mt-4'
+                ? 'col-span-1 xl:col-start-2 xl:row-start-3 mt-1 sm:mt-1.5'
                 : 'xl:col-start-2 xl:row-start-1 xl:row-span-3',
             )}
           >
