@@ -4837,6 +4837,8 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                             <button
                               type="button"
                               onClick={() => {
+                                setIsFallbacking(false);
+                                setFallbackMessage('');
                                 setPlayerEngine('hls');
                                 toast('Đã chuyển sang Trình phát Chuẩn HD (ArtPlayer)', 'info');
                               }}

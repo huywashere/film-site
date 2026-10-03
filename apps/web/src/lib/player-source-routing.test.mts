@@ -149,6 +149,7 @@ test("allows direct HLS playback for known CDN domains", () => {
   assert.equal(isDirectHlsAllowedByCsp("https://s6.kkphimplayer6.com/20260822/index.m3u8"), true);
   assert.equal(isDirectHlsAllowedByCsp("https://s5.phim1280.tv/20260822/index.m3u8"), true);
   assert.equal(isDirectHlsAllowedByCsp("https://opstream14.com/20260822/index.m3u8"), true);
+  assert.equal(isDirectHlsAllowedByCsp("https://a.kvp726.com/20260930/zCyPT1JO/index.m3u8"), true);
   assert.equal(isDirectHlsAllowedByCsp("https://evil-untrusted-cdn.com/test.m3u8"), false);
 });
 

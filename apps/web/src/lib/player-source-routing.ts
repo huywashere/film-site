@@ -29,6 +29,7 @@ const DIRECT_HLS_HOST_SUFFIXES = [
   "kkphimplayer6.com",
   "kkphimplayer5.com",
   "kkphimplayer.com",
+  "kvp726.com",
   "ophim.live",
   "ophim1.com",
   "ophim17.cc",
@@ -53,6 +54,7 @@ export function isDirectHlsAllowedByCsp(value: string) {
     const hostname = url.hostname.toLowerCase();
     if (/^([a-z0-9-]+\.)?kkphimplayer\d*\.com$/.test(hostname)) return true;
     if (/^([a-z0-9-]+\.)?opstream\d*\.com$/.test(hostname)) return true;
+    if (/^([a-z0-9-]+\.)?kvp\d*\.com$/.test(hostname)) return true;
     return DIRECT_HLS_HOST_SUFFIXES.some(
       (suffix) => hostname === suffix || hostname.endsWith(`.${suffix}`),
     );
@@ -142,6 +144,7 @@ const UNSANDBOXED_EMBED_HOST_SUFFIXES: Record<string, string[]> = {
     "kkphimplayer6.com",
     "kkphimplayer7.com",
     "kkphimplayer8.com",
+    "kvp726.com",
   ],
   ophim: [
     "ophim.live",

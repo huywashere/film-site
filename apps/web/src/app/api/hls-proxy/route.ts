@@ -51,6 +51,10 @@ const DEFAULT_ALLOWED_HOST_PATTERNS = [
   "vsphim.com",
   "vicdn.cc",
   "*.vicdn.cc",
+  "*.kvp*.com",
+  "kvp*.com",
+  "*.kvp726.com",
+  "kvp726.com",
 ];
 
 function hostIsAllowed(hostname: string): boolean {
