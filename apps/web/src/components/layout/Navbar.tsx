@@ -313,7 +313,7 @@ function AnimatedNavbarLogo() {
   return (
     <Link
       href="/"
-      prefetch
+      prefetch={false}
       aria-label="FlexPhim - Trang chủ"
       className="group flex select-none items-center space-x-2.5"
     >
@@ -462,22 +462,31 @@ export function Navbar() {
     [queryClient, navigation],
   );
 
-  // Idle prefetch primary nav links and data
+  // Delay background route prefetching until browser is fully idle (after initial paint & hydration)
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const timer = setTimeout(() => {
+    const prefetchIdle = () => {
       NAV_LINKS.forEach((link) => {
         try {
           navigation.prefetch(link.href);
-          prefetchNav(link.href);
         } catch {}
       });
-      navigation.prefetch("/films");
-      prefetchNav("/films");
-      navigation.prefetch("/genres");
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, [navigation, prefetchNav]);
+      try {
+        navigation.prefetch("/films");
+        navigation.prefetch("/genres");
+      } catch {}
+    };
+
+    if ("requestIdleCallback" in window) {
+      const handle = (window as any).requestIdleCallback(prefetchIdle, {
+        timeout: 6000,
+      });
+      return () => (window as any).cancelIdleCallback(handle);
+    } else {
+      const timer = setTimeout(prefetchIdle, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [navigation]);
 
   const [notifTab, setNotifTab] = useState<"system" | MovieNotificationChannel>(
     "system",
@@ -807,7 +816,7 @@ export function Navbar() {
                   <Link
                     key={item.slug}
                     href={`/genre/${item.slug}`}
-                    prefetch
+                    prefetch={false}
                     onMouseEnter={() => prefetchNav(`/genre/${item.slug}`)}
                     onPointerDown={() => prefetchNav(`/genre/${item.slug}`)}
                     className="px-3.5 py-2 rounded-xl text-xs font-semibold text-neutral-300 hover:text-white hover:bg-white/15 hover:backdrop-blur-md hover:translate-x-1 transition-all duration-200 block truncate"
@@ -831,7 +840,7 @@ export function Navbar() {
                   <Link
                     key={item.slug}
                     href={`/country/${item.slug}`}
-                    prefetch
+                    prefetch={false}
                     onMouseEnter={() => prefetchNav(`/country/${item.slug}`)}
                     onPointerDown={() => prefetchNav(`/country/${item.slug}`)}
                     className="px-3 py-2 rounded-xl text-xs font-semibold text-neutral-300 hover:text-white hover:bg-white/15 hover:backdrop-blur-md hover:translate-x-1 transition-all duration-200 flex items-center gap-2.5 truncate group/flag"
@@ -878,7 +887,7 @@ export function Navbar() {
                     <Link
                       key={item.href}
                       href={item.href}
-                      prefetch
+                      prefetch={false}
                       onMouseEnter={() => prefetchNav(item.href)}
                       onPointerDown={() => prefetchNav(item.href)}
                       className={cn(
@@ -905,7 +914,7 @@ export function Navbar() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  prefetch
+                  prefetch={false}
                   onMouseEnter={() => prefetchNav(link.href)}
                   onTouchStart={() => prefetchNav(link.href)}
                   onPointerDown={() => prefetchNav(link.href)}

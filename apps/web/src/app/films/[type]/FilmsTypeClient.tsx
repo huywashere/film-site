@@ -802,10 +802,10 @@ export default function FilmsTypeClient({
     queryFn: () => withCatalogTimeout(apiFn(page).then((r) => r.data)),
     initialData,
     initialDataUpdatedAt,
-    staleTime: 15 * 60 * 1000,
+    staleTime: initialData ? 0 : 30 * 60 * 1000,
     gcTime: 2 * 60 * 60 * 1000,
     retry: false,
-    refetchOnMount: false,
+    refetchOnMount: initialData ? "always" : true,
     refetchOnWindowFocus: false,
     placeholderData: (previousData) => previousData,
   });

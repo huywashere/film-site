@@ -339,7 +339,7 @@ export function Sidebar() {
             const isActive =
               !item.isExternal &&
               (item.href === '/genres'
-                ? isEffectiveGenre
+                ? isGenrePage || isCountryPage || isUniversePage || isEffectiveGenre
                 : effectivePath === item.href || (item.href !== '/' && effectivePath.startsWith(item.href)));
 
             const Icon = item.icon;

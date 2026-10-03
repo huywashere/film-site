@@ -1089,7 +1089,7 @@ function HeroBackdropImage({
             aria-hidden="true"
             referrerPolicy="strict-origin-when-cross-origin"
             loading={isActive ? "eager" : "lazy"}
-            decoding={isActive ? "sync" : "async"}
+            decoding="async"
             fetchPriority={isActive ? "high" : "low"}
             onLoad={() => {
               const loadedSrc = imageRef.current?.currentSrc || src;

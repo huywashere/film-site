@@ -394,7 +394,8 @@ test('homepage shelves rely on viewport loading instead of eager image bursts', 
   assert.doesNotMatch(history, /priority=\{idx < 5\}/);
   assert.doesNotMatch(landscape, /priority=\{index < 2\}/);
   assert.doesNotMatch(top10, /priority=\{rank <= 5\}/);
-  assert.ok((homepage.match(/<LazySection initiallyVisible>/g) || []).length >= 7);
+  assert.ok((homepage.match(/<LazySection/g) || []).length >= 7);
+  assert.ok((homepage.match(/<LazySection initiallyVisible>/g) || []).length >= 2);
 });
 
 test('video player keyboard seek step strictly locks to 10 seconds without double triggering', () => {

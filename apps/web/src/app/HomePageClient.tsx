@@ -1604,7 +1604,7 @@ export default function HomePageClient({
       </LazySection>
     ),
     vfx: (
-      <LazySection initiallyVisible>
+      <LazySection>
         <FilmSection
           title={t("sections.vfx", "Phim Thần Thoại & Kỹ Xảo")}
           films={vfxRowList}
@@ -1614,7 +1614,7 @@ export default function HomePageClient({
       </LazySection>
     ),
     "usuk-series": (
-      <LazySection initiallyVisible>
+      <LazySection>
         <div className="hidden md:block">
           <HeroShowcaseSection
             title={t("sections.usUkSeries", "Series Âu-Mỹ Đỉnh Cao")}
@@ -1634,7 +1634,7 @@ export default function HomePageClient({
       </LazySection>
     ),
     action: (
-      <LazySection initiallyVisible>
+      <LazySection>
         <FilmSection
           title={t("sections.action", "Phim Hành Động Kịch Tính")}
           films={actionRowList}
@@ -1644,7 +1644,7 @@ export default function HomePageClient({
       </LazySection>
     ),
     scifi: (
-      <LazySection initiallyVisible>
+      <LazySection>
         <div className="hidden md:block">
           <CuratedSpotlightSection
             title={t("sections.scifi", "Tuyệt Tác Khoa Học Viễn Tưởng")}
@@ -1664,7 +1664,7 @@ export default function HomePageClient({
       </LazySection>
     ),
     horror: (
-      <LazySection initiallyVisible>
+      <LazySection>
         <FilmSection
           title={t("sections.horror", "Phim Kinh Dị")}
           films={horrorRowList}
@@ -1674,7 +1674,7 @@ export default function HomePageClient({
       </LazySection>
     ),
     historical: (
-      <LazySection initiallyVisible>
+      <LazySection>
         <div data-mobile-simple-section="historical" className="md:hidden">
           <FilmSection
             title={t("sections.historical", "Phim Cổ Trang")}
@@ -1695,7 +1695,7 @@ export default function HomePageClient({
       </LazySection>
     ),
     theatrical: (
-      <LazySection initiallyVisible>
+      <LazySection>
         <FilmSection
           title={t("sections.theatrical", "Phim Chiếu Rạp")}
           films={theatricalRowList}
