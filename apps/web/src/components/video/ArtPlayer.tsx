@@ -69,6 +69,7 @@ export interface ArtPlayerProps {
   servers?: PlayerServerItem[];
   currentServerIndex?: number;
   onSwitchServer?: (index: number) => void;
+  onAspectRatioChange?: (ratio: number) => void;
 }
 
 export default function ArtPlayer({
@@ -101,6 +102,7 @@ export default function ArtPlayer({
   servers,
   currentServerIndex,
   onSwitchServer,
+  onAspectRatioChange,
   isTheaterMode = false,
   onTheaterModeToggle,
 }: ArtPlayerProps) {
@@ -162,6 +164,8 @@ export default function ArtPlayer({
   onPlaybackStartRef.current = onPlaybackStart;
   onBufferingRef.current = onBuffering;
   onPlaybackStateChangeRef.current = onPlaybackStateChange;
+  const onAspectRatioChangeRef = useRef(onAspectRatioChange);
+  onAspectRatioChangeRef.current = onAspectRatioChange;
 
   const triggerSeekRippleRef = useRef<((isLeft: boolean) => void) | null>(null);
   const serializedSubtitles = JSON.stringify(subtitles || []);
@@ -1326,11 +1330,24 @@ export default function ArtPlayer({
       syncSkipAdButton();
     });
 
+    const checkVideoAspectRatio = (videoEl: HTMLVideoElement | null) => {
+      if (!videoEl) return;
+      const w = videoEl.videoWidth;
+      const h = videoEl.videoHeight;
+      if (w > 0 && h > 0) {
+        const ratio = w / h;
+        if (Number.isFinite(ratio) && ratio >= 1.2 && ratio <= 2.6) {
+          onAspectRatioChangeRef.current?.(ratio);
+        }
+      }
+    };
+
     // Keep business callbacks around ArtPlayer's native UI lifecycle.
     player.on('ready', () => {
       setPortalContainer((player as any).template?.$player || containerRef.current);
       if (player.video) {
         attachNightModeAudio(player.video);
+        checkVideoAspectRatio(player.video);
       }
       onReadyRef.current?.(player);
       if (player.loading) {
@@ -1342,9 +1359,24 @@ export default function ArtPlayer({
       syncTimelineMarkers();
     });
 
-    player.on('video:loadedmetadata', syncTimelineMarkers);
+    player.on('video:loadedmetadata', () => {
+      if (player.video) {
+        checkVideoAspectRatio(player.video);
+      }
+      syncTimelineMarkers();
+    });
     player.on('video:durationchange', syncTimelineMarkers);
     player.on('resize', syncTimelineMarkers);
+
+    let resizeObserver: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined' && containerRef.current) {
+      resizeObserver = new ResizeObserver(() => {
+        try {
+          player.resize();
+        } catch {}
+      });
+      resizeObserver.observe(containerRef.current);
+    }
 
     // Auto landscape rotation on mobile fullscreen
     const handleOrientationOnFullscreen = (isFull: boolean) => {
@@ -1472,6 +1504,7 @@ export default function ArtPlayer({
       }
       teardownScrubberPreview();
       teardownMobileCenterControls();
+      resizeObserver?.disconnect();
       setPortalContainer(null);
     };
     // Recreate only when the primary/fallback transport or subtitles change. Other props use refs.

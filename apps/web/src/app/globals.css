@@ -582,9 +582,7 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
 @media (min-width: 1280px) {
   .netphim-watch-player:not(.is-theater) {
     width: 100%;
-    height: min(calc(100svh - 156px), calc(56.25vw - 225px));
-    max-height: none;
-    aspect-ratio: auto;
+    max-height: calc(100svh - 140px);
     margin-inline: 0;
   }
 }

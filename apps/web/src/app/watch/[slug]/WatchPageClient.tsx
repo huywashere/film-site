@@ -1500,6 +1500,10 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
 
   // Universal Player Container & Gestures (for ALL video players & iframe sources)
   const playerContainerRef = useRef<HTMLDivElement>(null);
+  const [videoAspectRatio, setVideoAspectRatio] = useState<number | null>(null);
+  useEffect(() => {
+    setVideoAspectRatio(null);
+  }, [slug]);
   const commentsSectionRef = useRef<HTMLDivElement>(null);
   const [commentsReadySlug, setCommentsReadySlug] = useState('');
   const commentsReady = commentsReadySlug === slug;
@@ -4143,11 +4147,18 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
           {/* ───── 1. PLAYER ───── */}
           <div
             ref={playerContainerRef}
+            style={
+              !theaterMode && videoAspectRatio
+                ? { aspectRatio: `${videoAspectRatio}` }
+                : undefined
+            }
             className={cn(
               'netphim-watch-player bg-black rounded-none overflow-hidden relative shadow-2xl ring-1 ring-white/[0.06] select-none transition-all duration-300 flex items-center justify-center',
               theaterMode
                 ? 'is-theater col-span-full w-full aspect-[16/9] sm:aspect-auto sm:h-[72vh] lg:h-[78vh] min-h-[400px] max-h-[920px] mx-auto shadow-2xl ring-1 ring-white/10'
-                : 'xl:col-start-1 xl:row-start-2 w-full aspect-video',
+                : videoAspectRatio
+                  ? 'xl:col-start-1 xl:row-start-2 w-full'
+                  : 'xl:col-start-1 xl:row-start-2 w-full aspect-video',
               lightOff ? 'relative z-50 ring-1 ring-white/20 shadow-2xl' : '',
             )}
           >
@@ -4203,6 +4214,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                     servers={playerServers}
                     currentServerIndex={currentServer}
                     onSwitchServer={handleSelectServer}
+                    onAspectRatioChange={setVideoAspectRatio}
                     onReady={(player) => {
                       setArtInstance(player);
                       setPlayerReadySlug(slug);
@@ -4389,7 +4401,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
           {/* ── 2. UNDER-PLAYER CONTENT (Title, Episodes, Cast, Comments) ── */}
           <div
             className={cn(
-              'space-y-3 min-w-0 mt-1 sm:mt-1.5',
+              'space-y-3 min-w-0 mt-0.5 sm:mt-1',
               theaterMode
                 ? 'col-span-1 xl:col-start-1 xl:row-start-3'
                 : 'xl:col-start-1 xl:row-start-3',
