@@ -29,6 +29,51 @@ export function MobileBottomNav() {
     setMounted(true);
   }, []);
 
+  const warmRoute = useCallback(
+    (href: string) => {
+      try {
+        router.prefetch(href);
+      } catch {}
+      if (href === '/films') {
+        void queryClient.prefetchQuery({
+          queryKey: ['browse-films-v2', '', 'all', 'all', '', '', '', 'all', 'all', 'modified.time', 1],
+          queryFn: () => movieApi.getLatest(1).then((r) => r?.data?.data || r?.data || { items: [] }),
+          staleTime: 15 * 60 * 1000,
+        });
+      } else if (href === '/') {
+        void queryClient.prefetchQuery({
+          queryKey: ['home-feed-v1', 24],
+          queryFn: () => movieApi.getHomeFeed(24).then((response) => response.data),
+          staleTime: 5 * 60 * 1000,
+          gcTime: 60 * 60 * 1000,
+        });
+      }
+    },
+    [queryClient, router],
+  );
+
+  // Idle pre-warm primary tabs on mobile
+  useEffect(() => {
+    if (!mounted || typeof window === 'undefined') return;
+    const timer = setTimeout(() => {
+      ['/', '/films', '/genres'].forEach((route) => {
+        try {
+          router.prefetch(route);
+        } catch {}
+      });
+      warmRoute('/films');
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [mounted, router, warmRoute]);
+
+  const warmProfileRoute = () => {
+    if (user?.username) {
+      try {
+        router.prefetch(`/user/${encodeURIComponent(user.username)}`);
+      } catch {}
+    }
+  };
+
   // Static prerender does not always expose the final pathname on Vercel.
   // Wait until mount so the active pill and label cannot mismatch hydration.
   if (!mounted || pathname === '/login' || pathname === '/register') {
@@ -86,51 +131,6 @@ export function MobileBottomNav() {
       isActive: (optimisticHref || pathname) === '/history',
     },
   ];
-
-  const warmRoute = useCallback(
-    (href: string) => {
-      try {
-        router.prefetch(href);
-      } catch {}
-      if (href === '/films') {
-        void queryClient.prefetchQuery({
-          queryKey: ['browse-films-v2', '', 'all', 'all', '', '', '', 'all', 'all', 'modified.time', 1],
-          queryFn: () => movieApi.getLatest(1).then((r) => r?.data?.data || r?.data || { items: [] }),
-          staleTime: 15 * 60 * 1000,
-        });
-      } else if (href === '/') {
-        void queryClient.prefetchQuery({
-          queryKey: ['home-feed-v1', 24],
-          queryFn: () => movieApi.getHomeFeed(24).then((response) => response.data),
-          staleTime: 5 * 60 * 1000,
-          gcTime: 60 * 60 * 1000,
-        });
-      }
-    },
-    [queryClient, router],
-  );
-
-  // Idle pre-warm primary tabs on mobile
-  useEffect(() => {
-    if (!mounted || typeof window === 'undefined') return;
-    const timer = setTimeout(() => {
-      ['/', '/films', '/genres'].forEach((route) => {
-        try {
-          router.prefetch(route);
-        } catch {}
-      });
-      warmRoute('/films');
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, [mounted, router, warmRoute]);
-
-  const warmProfileRoute = () => {
-    if (user?.username) {
-      try {
-        router.prefetch(`/user/${encodeURIComponent(user.username)}`);
-      } catch {}
-    }
-  };
 
   return (
     <nav

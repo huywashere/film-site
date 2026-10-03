@@ -266,18 +266,37 @@ export default function ConfigurationPage() {
             </h2>
           </div>
           <div className="mt-5 space-y-4">
-            <Toggle
-              label="Chế độ bảo trì"
-              detail="Hiện cảnh báo ưu tiên cao trên giao diện người xem."
-              checked={config.maintenanceMode}
-              onChange={(value) => update("maintenanceMode", value)}
-            />
-            <Field
-              label="Nội dung bảo trì"
-              value={config.maintenanceNotice || ""}
-              onChange={(value) => update("maintenanceNotice", value)}
-              multiline
-            />
+            <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4 space-y-3">
+              <Toggle
+                label="Chế độ bảo trì toàn bộ website (Full Site Shutdown)"
+                detail="Khi BẬT, toàn bộ website sẽ tạm khóa và hiển thị màn hình bảo trì toàn phần cho tất cả khách xem phim. Chỉ tài khoản Quản trị viên (Admin) mới có quyền truy cập."
+                checked={config.maintenanceMode}
+                onChange={(value) => update("maintenanceMode", value)}
+              />
+
+              {config.maintenanceMode && (
+                <div className="rounded-xl border border-red-500/30 bg-red-50 p-3 text-xs text-red-700 flex items-start gap-2.5">
+                  <span className="relative flex h-3 w-3 shrink-0 mt-0.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600" />
+                  </span>
+                  <div>
+                    <strong className="block text-red-800 font-bold mb-0.5">
+                      CẢNH BÁO: Website đang ở chế độ bảo trì toàn phần
+                    </strong>
+                    Toàn bộ khách truy cập sẽ thấy màn hình thông báo bảo trì và không thể xem phim. Hãy bấm nút <strong>&quot;Lưu cấu hình&quot;</strong> ở góc phải phía trên để áp dụng.
+                  </div>
+                </div>
+              )}
+
+              <Field
+                label="Nội dung thông báo bảo trì (hiển thị trên màn hình khóa)"
+                value={config.maintenanceNotice || ""}
+                onChange={(value) => update("maintenanceNotice", value)}
+                placeholder="Để trống để dùng thông báo mặc định..."
+                multiline
+              />
+            </div>
             <Field
               label="Thông báo toàn site"
               value={config.announcementText || ""}

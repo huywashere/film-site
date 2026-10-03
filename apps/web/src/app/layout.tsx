@@ -15,6 +15,7 @@ import { safeJsonLd } from "@/lib/safe-json-ld";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { ClientBackgroundServices } from "@/components/layout/ClientBackgroundServices";
 import { OperationalNotice } from "@/components/layout/OperationalNotice";
+import { MaintenanceGuard } from "@/components/layout/MaintenanceGuard";
 import { LogoSplashIntro } from "@/components/layout/LogoSplashIntro";
 import { TopRouteProgress } from "@/components/layout/TopRouteProgress";
 import { cardFont } from "@/lib/fonts";
@@ -183,6 +184,7 @@ export default function RootLayout({
         <ThemeColorSync />
         <OperationalNotice />
         <QueryProvider>
+          <MaintenanceGuard />
           <ToastProvider>
             <AuthSessionBridge />
             <LazyAuthModalHost />
