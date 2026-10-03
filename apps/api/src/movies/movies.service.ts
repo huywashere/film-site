@@ -1,16 +1,44 @@
+import { existsSync } from 'fs';
+import { join, resolve } from 'path';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { RedisCacheService } from '../redis/redis.service';
 import { PrismaService } from '../prisma/prisma.service';
+import type { MoviePlaybackSource } from '@prisma/client';
 import axios, { AxiosInstance } from 'axios';
 import { RecordMovieViewDto } from './movies.dto';
 import { SearchIndexerService } from './search-indexer.service';
+
+
+interface ServerEpisodeItem {
+  name?: string;
+  slug: string;
+  filename?: string;
+  link_embed?: string;
+  link_m3u8?: string;
+  thumbnailVttUrl?: string;
+  thumbnail_vtt?: string;
+  preview_vtt?: string;
+  storyboard?: string;
+  subtitles?: Array<{ label: string; url: string; language: string; default: boolean }>;
+  intro?: { start: number; end: number };
+  outro?: { start: number };
+  [key: string]: unknown;
+}
+
+interface ServerGroup {
+  server_name: string;
+  server_data: ServerEpisodeItem[];
+  [key: string]: unknown;
+}
 
 @Injectable()
 export class MoviesService {
   private readonly logger = new Logger(MoviesService.name);
   private readonly http: AxiosInstance;
   private readonly baseUrl: string;
+  private readonly mediaBaseDir: string;
+  private readonly apiPublicUrl: string;
 
   constructor(
     private readonly config: ConfigService,
@@ -19,6 +47,12 @@ export class MoviesService {
     private readonly searchIndexer: SearchIndexerService,
   ) {
     this.baseUrl = config.get('KKPHIM_BASE_URL') || 'https://phimapi.com';
+    this.mediaBaseDir = resolve(
+      this.config.get<string>('MEDIA_STORAGE_DIR', '../../.local-data/media'),
+    );
+    this.apiPublicUrl = this.config
+      .get<string>('API_PUBLIC_URL', `http://localhost:${this.config.get('PORT', 3001)}`)
+      .replace(/\/$/, '');
     this.http = axios.create({
       baseURL: this.baseUrl,
       timeout: 10000,
@@ -335,23 +369,39 @@ export class MoviesService {
     return this.cachedGet(`filtered:${queryString}`, `/v1/api/danh-sach?${queryString}`, 300);
   }
 
-  // ── Chi tiết phim ───────────────────────────────────────────────
 
-  private formatCustomServers(playbackSources: any[]): any[] {
+  getStoryboardVtt(movieId: string, episodeKey: string): string | undefined {
+    const vttPath = join(this.mediaBaseDir, 'storyboards', movieId, episodeKey, 'thumbnails.vtt');
+    if (existsSync(vttPath)) {
+      return `${this.apiPublicUrl}/media/storyboards/${movieId}/${episodeKey}/thumbnails.vtt`;
+    }
+    return undefined;
+  }
+
+  
+// ── Chi tiết phim ───────────────────────────────────────────────
+
+  private formatCustomServers(playbackSources: MoviePlaybackSource[]): ServerGroup[] {
     if (!playbackSources || !playbackSources.length) return [];
 
-    const serverMap = new Map<string, any[]>();
+    const serverMap = new Map<string, ServerEpisodeItem[]>();
     for (const source of playbackSources) {
+      if (source.episodeKey === 'catalog' || !source.streamUrl) {
+        continue;
+      }
       const serverKey = source.serverName || 'FlexPhim VIP';
       if (!serverMap.has(serverKey)) {
         serverMap.set(serverKey, []);
       }
+      const vttUrl = this.getStoryboardVtt(source.movieId, source.episodeKey);
       serverMap.get(serverKey)!.push({
         name: source.episodeName || (source.episodeKey === 'full' ? 'Full' : `Tập ${source.episodeKey}`),
         slug: source.episodeKey,
         filename: source.episodeName || source.episodeKey,
         link_embed: '',
         link_m3u8: source.streamUrl || '',
+        thumbnailVttUrl: vttUrl,
+        thumbnail_vtt: vttUrl,
         subtitles: (() => {
           if (!source.subtitleUrls) return [];
           let raw = source.subtitleUrls;
@@ -420,6 +470,20 @@ export class MoviesService {
       ? this.formatCustomServers(dbMovie.playbackSources)
       : [];
 
+
+    const enrichWithStoryboards = (servers: ServerGroup[]): ServerGroup[] => {
+      if (!Array.isArray(servers)) return servers;
+      return servers.map((srv) => ({
+        ...srv,
+        server_data: (srv.server_data || []).map((ep: ServerEpisodeItem) => {
+          const vtt = this.getStoryboardVtt(slug, ep.slug);
+          return vtt
+            ? { ...ep, thumbnailVttUrl: vtt, thumbnail_vtt: vtt, preview_vtt: vtt, storyboard: vtt }
+            : ep;
+        }),
+      }));
+    };
+
     if (dbMovie && !dbMovie.isHidden && (dbMovie.sources?.includes('manual') || !dbMovie.sources?.length)) {
       return {
         status: true,
@@ -452,10 +516,13 @@ export class MoviesService {
 
     try {
       const upstream = await this.cachedGet<any>(`detail:${slug}`, `/phim/${slug}`, 600);
-      if (customServers.length && upstream && upstream.episodes) {
+      if (upstream && upstream.episodes) {
+        const mergedEpisodes = customServers.length
+          ? [...customServers, ...upstream.episodes]
+          : upstream.episodes;
         return {
           ...upstream,
-          episodes: [...customServers, ...upstream.episodes],
+          episodes: enrichWithStoryboards(mergedEpisodes),
         };
       }
       return upstream;

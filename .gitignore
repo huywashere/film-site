@@ -34,6 +34,7 @@ backups/
 apps/api/media/
 apps/api/uploads/
 apps/api/transcode/
+*.traineddata
 
 # VPS Deploy (KHÔNG commit các file này)
 ssl/

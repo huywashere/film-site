@@ -11,7 +11,13 @@ export class IpBlacklistGuard implements CanActivate {
   constructor(private readonly cache: RedisCacheService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    if (context.getType() !== 'http') {
+      return true;
+    }
     const req = context.switchToHttp().getRequest();
+    if (!req || !req.headers) {
+      return true;
+    }
     const clientIp = this.extractClientIp(req);
 
     if (!clientIp) return true;
@@ -30,6 +36,7 @@ export class IpBlacklistGuard implements CanActivate {
   }
 
   private extractClientIp(req: any): string {
+    if (!req || !req.headers) return "";
     const forwarded = req.headers["x-forwarded-for"];
     if (typeof forwarded === "string" && forwarded) {
       return forwarded.split(",")[0].trim();

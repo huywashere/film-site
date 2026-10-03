@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import { RotateCcw, Home } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 import { recordTelemetry } from "@/lib/telemetry";
 import { cardFont } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
@@ -17,25 +17,16 @@ export function StatusPage({ code, onRetry }: StatusPageProps) {
 
   useEffect(() => {
     document.body.dataset.statusPage = "true";
-    recordTelemetry(
-      `route.${code}`,
-      { status: code },
-      "warning",
-    );
-
-    return () => {
-      delete document.body.dataset.statusPage;
-    };
+    recordTelemetry(`route.${code}`, { status: code }, "warning");
+    return () => { delete document.body.dataset.statusPage; };
   }, [code, isServerError]);
 
   const title = isServerError
     ? "Rất tiếc! Hệ thống đang gặp sự cố tạm thời."
     : "Oops! Trang web bạn tìm kiếm không tồn tại.";
-
   const description1 = isServerError
     ? "Máy chủ đang quá tải hoặc đang bảo trì."
     : "Có thể bạn đã nhập sai địa chỉ";
-
   const description2 = isServerError
     ? "Vui lòng thử lại sau ít phút."
     : "hoặc trang web đã di chuyển.";
@@ -47,365 +38,360 @@ export function StatusPage({ code, onRetry }: StatusPageProps) {
         "status-page fixed inset-0 z-[1000] flex min-h-[100dvh] w-full flex-col items-center justify-center overflow-hidden bg-[#141414] px-4 py-8 text-white select-none",
       )}
     >
-      <div className="pointer-events-none absolute left-1/2 top-1/2 h-[420px] w-[720px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-500/[0.045] blur-[120px]" />
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes eddFloat {
+          0%,100% { transform: translateY(0) rotate(0deg); }
+          25% { transform: translateY(-5px) rotate(-1deg); }
+          75% { transform: translateY(3px) rotate(1deg); }
+        }
+        @keyframes moonFloat {
+          0%,100% { transform: translateY(0); }
+          50% { transform: translateY(5px); }
+        }
+        @keyframes satFloat {
+          0%,100% { transform: translateY(0); }
+          50% { transform: translateY(-4px); }
+        }
+        @keyframes cometFloat {
+          0%,100% { opacity:0.8; transform:scale(1); }
+          50% { opacity:1; transform:scale(1.06); }
+        }
+        @keyframes antennaPulse {
+          0%,100% { opacity:0.85; }
+          50% { opacity:1; filter:drop-shadow(0 0 3px #9bc3db); }
+        }
+        .edd-g   { animation: eddFloat 4.8s ease-in-out infinite; }
+        .moon-g  { animation: moonFloat 5.5s ease-in-out infinite; }
+        .sat-g   { animation: satFloat 6.2s ease-in-out infinite; }
+        .comet-g { animation: cometFloat 3.6s ease-in-out infinite; }
+        .ant-g   { animation: antennaPulse 2.8s ease-in-out infinite; }
+      `}} />
 
       <section className="relative z-10 flex w-full max-w-5xl flex-col items-center text-center">
-        {/* ── VECTOR GRAPHIC (404 / 500) ── */}
-        <div className="relative w-full max-w-[850px] h-[250px] sm:h-[320px] md:h-[390px] flex items-center justify-center mb-8">
+
+        {/* ══ MAIN SVG ILLUSTRATION ══════════════════════════════════════ */}
+        <div className="relative w-full max-w-[920px] h-[200px] sm:h-[260px] md:h-[310px] flex items-center justify-center mb-3">
           <svg
-            viewBox="0 0 900 420"
+            viewBox="0 0 960 290"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
-            className="h-full w-full grayscale contrast-125 opacity-90"
+            className="h-full w-full"
           >
             <defs>
-              {/* 3D Dark Block Color */}
-              <linearGradient
-                id="stakeNumGrad"
-                x1="0"
-                y1="0"
-                x2="0"
-                y2="420"
-                gradientUnits="userSpaceOnUse"
-              >
-                <stop offset="0%" stopColor="#141e28" />
-                <stop offset="100%" stopColor="#111922" />
+              {/* ── Digit face gradient (very subtly lighter than #141414 BG) ── */}
+              <linearGradient id="dg" x1="0" y1="0" x2="0" y2="290" gradientUnits="userSpaceOnUse">
+                <stop offset="0%"   stopColor="#212529" />
+                <stop offset="100%" stopColor="#191c20" />
               </linearGradient>
 
-              {/* Stake Mascot Monster Fill */}
-              <linearGradient
-                id="mascotGrad"
-                x1="0"
-                y1="0"
-                x2="100"
-                y2="120"
-                gradientUnits="userSpaceOnUse"
-              >
-                <stop offset="0%" stopColor="#557691" />
-                <stop offset="100%" stopColor="#3d566c" />
+              {/* ── Portal / inner space inside the "0" ── */}
+              <radialGradient id="portal" cx="50%" cy="45%" r="55%">
+                <stop offset="0%"   stopColor="#111418" />
+                <stop offset="75%"  stopColor="#0c0e12" />
+                <stop offset="100%" stopColor="#070809" />
+              </radialGradient>
+
+              {/* ── Mascot body gradient (authentic Stake Edd muted steel-blue) ── */}
+              <linearGradient id="eddBody" x1="0" y1="55" x2="0" y2="205" gradientUnits="userSpaceOnUse">
+                <stop offset="0%"   stopColor="#6e8ea4" />
+                <stop offset="55%"  stopColor="#5a7a8f" />
+                <stop offset="100%" stopColor="#486575" />
+              </linearGradient>
+              <linearGradient id="eddWing" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%"   stopColor="#62818f" />
+                <stop offset="100%" stopColor="#445e6c" />
               </linearGradient>
 
-              {/* Space Objects Gradient */}
-              <linearGradient
-                id="spaceObjGrad"
-                x1="0"
-                y1="0"
-                x2="60"
-                y2="60"
-                gradientUnits="userSpaceOnUse"
-              >
-                <stop offset="0%" stopColor="#3b546a" />
-                <stop offset="100%" stopColor="#253746" />
+              {/* ── Space objects ── */}
+              <linearGradient id="spaceObj" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%"   stopColor="#415870" />
+                <stop offset="100%" stopColor="#2a3d4d" />
               </linearGradient>
+
+              {/* ── Clip the mascot inside the 0 portal ── */}
+              <clipPath id="portalClip">
+                <ellipse cx="480" cy="138" rx="80" ry="103" />
+              </clipPath>
             </defs>
 
-            {/* ── DIGIT 1 (4 or 5) ── */}
+            {/* ════════════════════════════════════════════════════════════
+                DIGIT 1 — "4" (for 404)  or  "5" (for 500)
+            ════════════════════════════════════════════════════════════ */}
             {code[0] === "4" ? (
-              <g id="digit-1-4">
-                {/* 3D Side/Extrusion Depth */}
-                <path
-                  d="M 50,110 L 210,110 L 210,220 L 260,220 L 260,110 L 320,110 L 320,340 L 260,340 L 260,270 L 50,270 Z"
-                  fill="#0c131a"
-                />
-                {/* Main Front Face */}
-                <path
-                  d="M 40,100 L 200,100 L 200,210 L 250,210 L 250,100 L 310,100 L 310,330 L 250,330 L 250,260 L 40,260 Z"
-                  fill="url(#stakeNumGrad)"
-                  stroke="#1b2a37"
-                  strokeWidth="2"
-                />
-                {/* Inner Cutout Hole */}
-                <polygon
-                  points="105,155 195,155 195,210 105,210"
-                  fill="#1b2a37"
-                />
+              <g>
+                {/* shadow offset */}
+                <text x="153" y="248" fontSize="265" fontWeight="900"
+                  fontFamily="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif"
+                  fill="#0b0d10" textAnchor="middle">4</text>
+                {/* front */}
+                <text x="144" y="239" fontSize="265" fontWeight="900"
+                  fontFamily="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif"
+                  fill="url(#dg)" textAnchor="middle" stroke="#25292e" strokeWidth="0.7">4</text>
               </g>
             ) : (
-              <g id="digit-1-5">
-                <path
-                  d="M 40,100 H 310 V 160 H 120 V 210 H 310 V 330 H 40 V 260 H 250 V 250 H 40 Z"
-                  fill="url(#stakeNumGrad)"
-                />
+              <g>
+                <text x="153" y="248" fontSize="265" fontWeight="900"
+                  fontFamily="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif"
+                  fill="#0b0d10" textAnchor="middle">5</text>
+                <text x="144" y="239" fontSize="265" fontWeight="900"
+                  fontFamily="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif"
+                  fill="url(#dg)" textAnchor="middle" stroke="#25292e" strokeWidth="0.7">5</text>
               </g>
             )}
 
-            {/* ── CENTRAL ZERO (0) CONTAINING MASCOT ── */}
-            <g id="digit-2-zero">
-              {/* 3D Extrusion Back */}
-              <ellipse cx="458" cy="218" rx="142" ry="168" fill="#0c131a" />
-              {/* Outer Oval Front */}
-              <ellipse
-                cx="450"
-                cy="210"
-                rx="138"
-                ry="162"
-                fill="url(#stakeNumGrad)"
-                stroke="#1b2a37"
-                strokeWidth="2"
-              />
-              {/* Inner Hole Cutout */}
-              <ellipse cx="450" cy="210" rx="78" ry="108" fill="#1b2a37" />
+            {/* ════════════════════════════════════════════════════════════
+                DIGIT 2 — Central "0"  + Cosmic portal + Mascot Edd
+            ════════════════════════════════════════════════════════════ */}
+            <g>
+              {/* 0 shadow */}
+              <text x="489" y="248" fontSize="265" fontWeight="900"
+                fontFamily="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif"
+                fill="#0b0d10" textAnchor="middle">0</text>
+              {/* 0 front face */}
+              <text x="480" y="239" fontSize="265" fontWeight="900"
+                fontFamily="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif"
+                fill="url(#dg)" textAnchor="middle" stroke="#25292e" strokeWidth="0.7">0</text>
 
-              {/* 1. Top-Left Shooting Meteorite */}
-              <g transform="translate(360, 105) rotate(-35)">
-                <path d="M 0,15 Q 12,-6 32,0 Q 18,26 0,15 Z" fill="#2d4254" />
-                <circle cx="6" cy="12" r="2" fill="#1b2a37" />
-                <circle cx="14" cy="8" r="1.5" fill="#1b2a37" />
-                <circle cx="-8" cy="24" r="3" fill="#2d4254" opacity="0.6" />
-                <circle cx="-18" cy="32" r="2" fill="#2d4254" opacity="0.4" />
-              </g>
+              {/* ── cosmic portal inside the 0 ── */}
+              <ellipse cx="480" cy="138" rx="80" ry="103" fill="url(#portal)" />
 
-              {/* 2. Bottom-Left Cratered Moon */}
-              <g transform="translate(340, 240)">
-                <path
-                  d="M 40,5 C 20,-5 5,15 10,40 C 15,65 35,75 55,65 C 75,55 70,30 60,18 Z"
-                  fill="url(#spaceObjGrad)"
-                  stroke="#1b2a37"
-                  strokeWidth="2"
-                />
-                <ellipse
-                  cx="28"
-                  cy="22"
-                  rx="7"
-                  ry="9"
-                  fill="#1b2a37"
-                  opacity="0.85"
-                />
-                <circle
-                  cx="42"
-                  cy="42"
-                  r="5.5"
-                  fill="#1b2a37"
-                  opacity="0.85"
-                />
-                <circle
-                  cx="20"
-                  cy="45"
-                  r="4"
-                  fill="#1b2a37"
-                  opacity="0.85"
-                />
-                <circle
-                  cx="48"
-                  cy="20"
-                  r="3"
-                  fill="#1b2a37"
-                  opacity="0.85"
-                />
-              </g>
+              {/* ── Everything inside the portal is clipped ── */}
+              <g clipPath="url(#portalClip)">
 
-              {/* 3. Bottom-Right Saturn Planet */}
-              <g transform="translate(520, 255)">
-                <ellipse
-                  cx="30"
-                  cy="30"
-                  rx="42"
-                  ry="12"
-                  fill="#233443"
-                  transform="rotate(-22 30 30)"
-                />
-                <circle
-                  cx="30"
-                  cy="30"
-                  r="22"
-                  fill="url(#spaceObjGrad)"
-                  stroke="#1b2a37"
-                  strokeWidth="2"
-                />
-                <path
-                  d="M -8 24 A 42 12 0 0 0 68 36"
-                  stroke="#48667f"
-                  strokeWidth="3.5"
-                  fill="none"
-                  transform="rotate(-22 30 30)"
-                />
-              </g>
+                {/* Ambient star specks */}
+                <circle cx="425" cy="200" r="1.6" fill="#3e5769" />
+                <circle cx="533" cy="78" r="1.3" fill="#334656" />
+                <circle cx="448" cy="84" r="0.9" fill="#2e4050" />
 
-              {/* 4. Top-Right Star Dot */}
-              <circle cx="535" cy="135" r="4" fill="#364e62" />
+                {/* ╔════════════════════════════════════════════════════╗
+                    MASCOT EDD  — exact Stake.com ghost/cloud blob shape
+                    Key features from reference screenshot:
+                    • Amorphous ghost body — NOT rectangular
+                    • 2 large wing-lobes on the left (upper & lower)
+                    • Right side has jetpack protrusion
+                    • Single enormous cyclops eye — upper half of body
+                    • Small frown below eye
+                    • Lightning bolt antenna (top-right)
+                    • Muted steel-blue #5b7a8e color scheme
+                    ╚════════════════════════════════════════════════════╝ */}
 
-              {/* 5. Bottom-Left Star Dot inside Zero */}
-              <circle cx="395" cy="310" r="2.5" fill="#2d4254" />
+                <g className="edd-g" style={{ transformOrigin: "478px 130px" }}>
 
-              {/* 6. CENTER EXACT STAKE MONSTER MASCOT */}
-              <g transform="translate(398, 140)">
-                <g id="exact-stake-mascot" className="animate-float-mascot">
-                  {/* Backpack */}
-                  <rect
-                    x="80"
-                    y="48"
-                    width="16"
-                    height="34"
-                    rx="8"
-                    fill="#364f64"
-                    stroke="#141e28"
-                    strokeWidth="2"
+                  {/* ── Jetpack / oxygen tank (back-right, drawn first so body overlaps) ── */}
+                  <rect x="514" y="108" width="14" height="34" rx="7"
+                    fill="#253848" stroke="#111e28" strokeWidth="1.5"
+                    transform="rotate(12 521 125)" />
+                  {/* tank stripes */}
+                  <line x1="515" y1="117" x2="525" y2="120" stroke="#1c2e3c" strokeWidth="1.3" />
+                  <line x1="513" y1="125" x2="523" y2="128" stroke="#1c2e3c" strokeWidth="1.3" />
+
+                  {/* ── LEFT UPPER WING LOBE — drawn first (behind body) ── */}
+                  <ellipse cx="422" cy="110" rx="22" ry="18"
+                    fill="url(#eddBody)" stroke="#162432" strokeWidth="2" />
+
+                  {/* ── LEFT LOWER WING LOBE ── */}
+                  <ellipse cx="415" cy="152" rx="28" ry="24"
+                    fill="url(#eddBody)" stroke="#162432" strokeWidth="2" />
+
+                  {/* ── MAIN BODY — organic ghost/cloud blob ── */}
+                  <path
+                    d="
+                      M 478,58
+                      C 494,58 513,66 522,82
+                      C 531,96 527,112 525,122
+                      C 531,124 542,128 545,138
+                      C 548,149 542,161 533,165
+                      C 525,168 515,163 513,168
+                      C 511,177 507,186 498,191
+                      C 488,197 478,199 466,199
+                      C 454,199 442,196 434,190
+                      C 426,184 424,174 423,168
+                      C 420,164 412,166 406,162
+                      C 400,158 396,147 400,137
+                      C 403,128 414,122 421,121
+                      C 419,111 419,96 428,82
+                      C 438,67 462,58 478,58 Z
+                    "
+                    fill="url(#eddBody)"
+                    stroke="#162432"
+                    strokeWidth="2.5"
                   />
 
-                  {/* Antenna */}
-                  <path
-                    d="M 82,28 L 90,22 L 85,18 L 93,12"
-                    stroke="#4f6f89"
-                    strokeWidth="3"
+                  {/* ── TOP HEAD BUMPS (small crown spikes, Stake style) ── */}
+                  <ellipse cx="458" cy="62" rx="9" ry="7"
+                    fill="url(#eddBody)" stroke="#162432" strokeWidth="1.8"
+                    transform="rotate(-15 458 62)" />
+                  <ellipse cx="478" cy="56" rx="8" ry="7"
+                    fill="url(#eddBody)" stroke="#162432" strokeWidth="1.8" />
+                  <ellipse cx="496" cy="60" rx="8" ry="7"
+                    fill="url(#eddBody)" stroke="#162432" strokeWidth="1.8"
+                    transform="rotate(12 496 60)" />
+
+                  {/* ── ANTENNA LIGHTNING BOLT (top-right of head) ── */}
+                  <g className="ant-g">
+                    {/* antenna stalk */}
+                    <line x1="508" y1="72" x2="516" y2="55" stroke="#9bc3db" strokeWidth="2.2" strokeLinecap="round" />
+                    {/* lightning bolt shape */}
+                    <path d="M 510,65 L 518,58 L 513,55 L 521,47"
+                      stroke="#9bc3db" strokeWidth="2.4"
+                      strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                    <circle cx="521" cy="47" r="2.6" fill="#9bc3db" />
+                  </g>
+
+                  {/* ── CYCLOPS EYE — very large, Stake's signature ── */}
+                  {/* Outer socket / eye-ring (dark sclera housing) */}
+                  <circle cx="476" cy="95" r="19" fill="#12202c" stroke="#1e3346" strokeWidth="2.2" />
+                  {/* White iris */}
+                  <circle cx="476" cy="95" r="13.5" fill="#e2eff8" />
+                  {/* Pupil — looking slightly down and to the left (lost in space) */}
+                  <circle cx="474" cy="97" r="8.5" fill="#0d1c27" />
+                  {/* Main highlight glint */}
+                  <circle cx="478" cy="91" r="3.2" fill="#ffffff" />
+                  {/* Secondary micro-glint */}
+                  <circle cx="473" cy="99" r="1.5" fill="#ffffff" />
+
+                  {/* ── FROWN MOUTH (slightly open, nervous in space) ── */}
+                  <path d="M 464,120 Q 476,111 488,120"
+                    stroke="#0f1d28"
+                    strokeWidth="2.6"
                     strokeLinecap="round"
-                    strokeLinejoin="round"
-                    fill="none"
-                  />
+                    fill="none" />
 
-                  {/* Body */}
-                  <path
-                    d="M 36,32 
-                       C 32,20 28,14 26,12 C 24,10 32,24 38,30 
-                       C 48,24 62,24 70,28 
-                       C 76,22 84,10 82,12 C 80,14 76,20 74,30 
-                       C 88,40 94,58 90,75 
-                       C 86,90 78,102 68,108 
-                       C 64,118 56,125 46,122 
-                       C 38,120 34,110 32,104 
-                       C 24,102 16,92 14,80 
-                       C 12,65 20,42 36,32 Z"
-                    fill="url(#mascotGrad)"
-                    stroke="#141e28"
-                    strokeWidth="2.5"
-                  />
+                  {/* ── Subtle ground shadow under Edd ── */}
+                  <ellipse cx="473" cy="194" rx="32" ry="9" fill="#000" opacity="0.4" />
 
-                  {/* Left Arm Raised High */}
-                  <path
-                    d="M 28,52 C 16,42 8,24 16,18 C 24,14 28,28 32,44 Z"
-                    fill="url(#mascotGrad)"
-                    stroke="#141e28"
-                    strokeWidth="2"
-                  />
-                  <circle cx="12" cy="20" r="4.5" fill="#557691" />
-
-                  {/* Right Arm */}
-                  <path
-                    d="M 82,62 C 92,68 96,78 88,82 C 82,85 78,74 76,66 Z"
-                    fill="url(#mascotGrad)"
-                    stroke="#141e28"
-                    strokeWidth="1.5"
-                  />
-
-                  {/* Left Stubby Foot */}
-                  <path
-                    d="M 28,100 C 18,105 12,115 16,122 C 22,128 33,124 36,112 Z"
-                    fill="#45627a"
-                    stroke="#141e28"
-                    strokeWidth="2"
-                  />
-
-                  {/* Right Stubby Foot */}
-                  <path
-                    d="M 58,110 C 58,120 64,128 72,126 C 78,124 80,114 74,106 Z"
-                    fill="#45627a"
-                    stroke="#141e28"
-                    strokeWidth="2"
-                  />
-
-                  {/* Single Big Eye */}
-                  <circle
-                    cx="56"
-                    cy="52"
-                    r="16"
-                    fill="#1b2a37"
-                    stroke="#253847"
-                    strokeWidth="2.5"
-                  />
-                  <circle cx="56" cy="52" r="11" fill="#557691" />
-                  <circle cx="56" cy="52" r="7" fill="#111922" />
-                  <circle cx="53" cy="49" r="2.5" fill="#ffffff" />
-
-                  {/* Frowning Mouth */}
-                  <path
-                    d="M 50,76 Q 56,71 62,76"
-                    stroke="#182532"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    fill="none"
-                  />
                 </g>
+              </g>{/* end portalClip */}
+            </g>{/* end d2-zero */}
+
+            {/* ════════════════════════════════════════════════════════════
+                DIGIT 3 — "4" (for 404)  or  "0" (for 500)
+            ════════════════════════════════════════════════════════════ */}
+            {code[2] === "4" ? (
+              <g>
+                <text x="838" y="248" fontSize="265" fontWeight="900"
+                  fontFamily="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif"
+                  fill="#0b0d10" textAnchor="middle">4</text>
+                <text x="829" y="239" fontSize="265" fontWeight="900"
+                  fontFamily="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif"
+                  fill="url(#dg)" textAnchor="middle" stroke="#25292e" strokeWidth="0.7">4</text>
               </g>
+            ) : (
+              <g>
+                <text x="838" y="248" fontSize="265" fontWeight="900"
+                  fontFamily="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif"
+                  fill="#0b0d10" textAnchor="middle">0</text>
+                <text x="829" y="239" fontSize="265" fontWeight="900"
+                  fontFamily="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif"
+                  fill="url(#dg)" textAnchor="middle" stroke="#25292e" strokeWidth="0.7">0</text>
+              </g>
+            )}
+
+            {/* ════════════════════════════════════════════════════════════
+                SPACE OBJECTS (exact Stake.com placements)
+            ════════════════════════════════════════════════════════════ */}
+
+            {/* ── Comet/Meteor — upper area between digit-1 and digit-2 ── */}
+            {/* In stake screenshot: rocky comet shape, upper left of 0, has tail streaks */}
+            <g className="comet-g">
+              {/* Main comet rock body */}
+              <path
+                d="M 346,44 C 337,46 328,52 323,60 C 318,68 318,77 322,84
+                   C 326,90 334,94 342,93 C 350,92 357,87 360,80
+                   C 364,72 362,63 357,57 C 352,51 346,44 346,44 Z"
+                fill="url(#spaceObj)" stroke="#14232f" strokeWidth="1.6" />
+              {/* Comet tail streaks */}
+              <line x1="355" y1="48" x2="375" y2="33" stroke="#33495a" strokeWidth="1.8" strokeLinecap="round" />
+              <line x1="362" y1="54" x2="383" y2="40" stroke="#2a3d4d" strokeWidth="1.3" strokeLinecap="round" />
+              <line x1="358" y1="44" x2="379" y2="28" stroke="#243545" strokeWidth="1" strokeLinecap="round" />
+              {/* Crater on comet */}
+              <circle cx="336" cy="72" r="5" fill="#182633" />
+              <circle cx="346" cy="58" r="3.5" fill="#182633" />
             </g>
 
-            {/* ── DIGIT 3 (4 or 0) ── */}
-            {code[2] === "4" ? (
-              <g id="digit-3-4">
-                {/* 3D Depth */}
-                <path
-                  d="M 590,110 L 750,110 L 750,220 L 800,220 L 800,110 L 860,110 L 860,340 L 800,340 L 800,270 L 590,270 Z"
-                  fill="#0c131a"
-                />
-                {/* Front Face */}
-                <path
-                  d="M 580,100 L 740,100 L 740,210 L 790,210 L 790,100 L 850,100 L 850,330 L 790,330 L 790,260 L 580,260 Z"
-                  fill="url(#stakeNumGrad)"
-                  stroke="#1b2a37"
-                  strokeWidth="2"
-                />
-                {/* Inner Cutout Hole */}
-                <polygon
-                  points="645,155 735,155 735,210 645,210"
-                  fill="#1b2a37"
-                />
-              </g>
-            ) : (
-              <g id="digit-3-0">
-                <ellipse
-                  cx="670"
-                  cy="210"
-                  rx="138"
-                  ry="162"
-                  fill="url(#stakeNumGrad)"
-                  stroke="#1b2a37"
-                  strokeWidth="2"
-                />
-                <ellipse cx="670" cy="210" rx="78" ry="108" fill="#1b2a37" />
-              </g>
-            )}
+            {/* ── Pear Moon — between digit-1 and digit-2, lower area ── */}
+            {/* In stake screenshot: pear/drop shape with multiple craters, left of the 0 */}
+            <g className="moon-g">
+              <path
+                d="M 308,118
+                   C 295,128 284,148 282,174
+                   C 280,197 283,216 300,218
+                   C 318,218 334,206 338,190
+                   C 342,172 337,152 326,137
+                   C 322,130 318,124 308,118 Z"
+                fill="url(#spaceObj)" stroke="#14232f" strokeWidth="1.8" />
+              {/* Prominent lunar craters */}
+              <ellipse cx="320" cy="195" rx="6" ry="5" fill="#182633" />
+              <circle cx="300" cy="158" r="5.5" fill="#182633" />
+              <circle cx="320" cy="138" r="4" fill="#182633" />
+              <circle cx="298" cy="194" r="3" fill="#182633" />
+              <circle cx="330" cy="168" r="3" fill="#182633" />
+              <circle cx="310" cy="175" r="2" fill="#1e3040" />
+            </g>
+
+            {/* ── Saturn — lower-right of the centre 0 ── */}
+            {/* In stake screenshot: clear planet + prominent ring system */}
+            <g className="sat-g">
+              {/* Back ring arc */}
+              <ellipse cx="660" cy="196" rx="40" ry="10"
+                fill="#1b2d3c" transform="rotate(-18 660 196)" />
+              {/* Planet sphere */}
+              <circle cx="660" cy="196" r="21"
+                fill="url(#spaceObj)" stroke="#14232f" strokeWidth="1.8" />
+              {/* Ring band on top of planet (front arc) */}
+              <path
+                d="M 622,210 C 635,225 685,210 698,186"
+                stroke="#7ca2bc" strokeWidth="3.2" strokeLinecap="round" fill="none" />
+              {/* Subtle ring highlight */}
+              <path
+                d="M 626,207 C 638,220 682,208 694,188"
+                stroke="#557f99" strokeWidth="1.2" strokeLinecap="round" fill="none" opacity="0.5" />
+            </g>
+
+            {/* Ambient background stars */}
+            <circle cx="612" cy="72" r="2.8" fill="#4c6878" />
+            <circle cx="680" cy="92" r="1.7" fill="#3c5669" />
+            <circle cx="355" cy="175" r="1.4" fill="#3a5162" />
+
           </svg>
         </div>
 
-        {/* ── STATUS TEXT & ACTION BUTTONS ── */}
+        {/* ══ STATUS TEXT ═════════════════════════════════════════════════ */}
         <div className="flex flex-col items-center max-w-lg px-2">
-          {/* Title */}
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white mb-2.5">
+          <h1 className="text-lg sm:text-[21px] font-bold tracking-tight text-white mb-2">
             {title}
           </h1>
-
-          {/* Subtitle */}
-          <p className="mb-6 text-xs sm:text-sm leading-relaxed text-neutral-400 font-normal max-w-md">
+          <p className="mb-7 text-[13px] sm:text-[14px] leading-relaxed text-[#7895ad] font-normal max-w-md">
             {description1}
             <br />
             {description2}
           </p>
 
-          {/* Action Buttons */}
           <div className="flex flex-wrap items-center justify-center gap-3">
             {isServerError && onRetry && (
               <button
                 type="button"
                 onClick={onRetry}
-                className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-white px-6 text-xs sm:text-sm font-bold text-black shadow-xl transition-all hover:bg-neutral-200 hover:scale-105 active:scale-95"
+                className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-md bg-[#2f4558] px-6 text-[13.5px] font-bold text-white transition-all duration-150 hover:bg-[#3a5268] hover:scale-[1.02] active:scale-[0.98]"
               >
                 <RotateCcw size={15} />
                 <span>Thử lại ngay</span>
               </button>
             )}
-
             <Link
               href="/"
               className={cn(
-                "inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl text-xs sm:text-sm font-bold transition-all active:scale-95",
+                "inline-flex h-10 cursor-pointer items-center justify-center rounded-md text-[13.5px] font-bold text-white transition-all duration-150 hover:scale-[1.02] active:scale-[0.98]",
                 isServerError && onRetry
-                  ? "bg-white/[0.08] hover:bg-white/[0.16] border border-white/10 text-white px-5"
-                  : "bg-white hover:bg-neutral-200 text-black px-6 shadow-xl hover:scale-105",
+                  ? "bg-[#1e2d3a] hover:bg-[#253644] text-[#7895ad] hover:text-white px-5"
+                  : "bg-[#2f4558] hover:bg-[#3a5268] px-7",
               )}
             >
-              <Home size={15} />
               <span>Đi tới trang chủ</span>
             </Link>
           </div>
         </div>
+
       </section>
     </main>
   );

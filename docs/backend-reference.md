@@ -190,6 +190,24 @@ Mọi đường dẫn dưới đây có prefix `/api/v1`.
 
 - Gửi email xác minh, reset mật khẩu và cảnh báo đăng nhập thiết bị mới.
 
+#### `TranslateModule` — `/translate`
+
+- `POST /translate`: Dịch văn bản đơn (mô tả, tiêu đề phim) sang tiếng Việt kèm bộ đệm Redis 7 ngày.
+- `POST /translate/batch`: Dịch hàng loạt chuỗi văn bản theo lô phục vụ tối ưu tốc độ crawl/sync.
+- `POST /translate/subtitle`: Dịch file phụ đề WebVTT/SRT trực tiếp, bảo toàn tuyệt đối các mốc thời gian cue.
+
+#### `SubtitlesModule` — `/subtitles`
+
+- `POST /upload`: Tiếp nhận file phụ đề `.srt` hoặc `.vtt`, chuẩn hóa convert sang WebVTT và lưu trữ.
+- `POST /convert`: Chuyển đổi trực tiếp nội dung chuỗi SRT sang WebVTT.
+- `GET /file/:filename`: Phục vụ tĩnh file WebVTT chuẩn kèm header CORS cho trình phát ArtPlayer.
+
+#### `OcrModule` — `/ocr`
+
+- `POST /upload`: Nhận diện ký tự quang học từ file ảnh tải lên với Tesseract.js đa ngôn ngữ (Tiếng Việt, Tiếng Anh).
+- `POST /url`: Nhận diện chữ từ đường dẫn URL ảnh từ xa (poster, banner, watermark khung hình video).
+- `POST /base64`: Nhận diện chữ từ chuỗi base64 trích xuất từ canvas khung hình trên trình duyệt.
+
 #### `AuditService`
 
 - Ghi actor, action, entity, metadata, IP và user-agent cho thao tác quản trị nhạy cảm.
@@ -204,6 +222,9 @@ Mọi đường dẫn dưới đây có prefix `/api/v1`.
 | `/admin/stats`, `/analytics/advanced` | Tổng quan KPI, user/movie/view, search analytics, playback analytics |
 | `/admin/movies*` | Tạo phim, phân trang, metadata, nguồn, visibility, playback source, tìm/gộp bản trùng, xóa có confirmation |
 | `/admin/media/uploads` | Nhận video, theo dõi job FFmpeg/HLS và phát hành nguồn tự lưu |
+| `/admin/crawler/single` | Cào sâu một phim theo slug/URL, bóc tách danh sách server và tập phim |
+| `/admin/crawler/batch` | Khởi chạy tiến trình cào hàng loạt theo dải trang và danh mục |
+| `/admin/crawler/jobs*` | Lấy danh sách, chi tiết tiến độ thời gian thực hoặc hủy job cào |
 | `/admin/movies/sync`, `/sync-jobs*` | Tạo, chạy lại và theo dõi job đồng bộ provider |
 | `/admin/sync/schedules*` | Lịch crawl tự động, bật/tắt, chạy ngay và thống kê |
 | `/admin/users*` | Tìm user, chi tiết, ban, role, lock, verification, session và reset 2FA |

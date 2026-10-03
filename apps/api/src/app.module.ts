@@ -26,6 +26,9 @@ import { AdsModule } from "./ads/ads.module";
 import { SystemNotificationsModule } from "./system-notifications/system-notifications.module";
 import { RecommendationsModule } from "./recommendations/recommendations.module";
 import { IpBlacklistGuard } from "./common/guards/ip-blacklist.guard";
+import { TranslateModule } from "./translate/translate.module";
+import { SubtitlesModule } from "./subtitles/subtitles.module";
+import { OcrModule } from "./ocr/ocr.module";
 
 @Module({
   imports: [
@@ -76,6 +79,9 @@ import { IpBlacklistGuard } from "./common/guards/ip-blacklist.guard";
     SystemNotificationsModule,
     RecommendationsModule,
     StorageModule,
+    TranslateModule,
+    SubtitlesModule,
+    OcrModule,
   ],
   providers: [
     // Global IP Blacklist Guard (chống DDoS & chặn IP tức thì qua Redis)

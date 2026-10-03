@@ -18,6 +18,8 @@ import { SystemNotificationsModule } from "../system-notifications/system-notifi
 import { AdminSecurityService } from "./admin-security.service";
 import { AdminSyncSchedulerService } from "./admin-sync-scheduler.service";
 import { MediaIngestService } from "./media-ingest.service";
+import { CrawlerService } from "./crawler.service";
+import { StoryboardService } from "./storyboard.service";
 
 @Module({
   imports: [
@@ -36,11 +38,13 @@ import { MediaIngestService } from "./media-ingest.service";
     AdminSecurityService,
     AdminSyncSchedulerService,
     MediaIngestService,
+    CrawlerService,
+    StoryboardService,
     AuditService,
     AdminAccessService,
     AdminSessionGuard,
     AdminPermissionGuard,
   ],
-  exports: [AdminService, AuditService, AdminSecurityService, AdminSyncSchedulerService],
+  exports: [AdminService, AuditService, AdminSecurityService, AdminSyncSchedulerService, CrawlerService, StoryboardService],
 })
 export class AdminModule {}

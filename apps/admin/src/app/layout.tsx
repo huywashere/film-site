@@ -38,6 +38,7 @@ import {
   IconDatabase,
   IconChartBar,
   IconTopologyStar3,
+  IconWorldDownload,
   IconLogout,
   IconSpeakerphone,
   IconCamera,
@@ -117,6 +118,12 @@ const NAV_GROUPS: Array<{
         href: "/movies",
         label: { vi: "Thư viện phim", en: "Movie Library" },
         icon: IconMovie,
+      },
+              {
+        href: "/crawler",
+        label: { vi: "Tools Cào phim & Ingest", en: "Crawler Center" },
+        icon: IconWorldDownload,
+        permission: "movies.write",
       },
       {
         href: "/catalog",

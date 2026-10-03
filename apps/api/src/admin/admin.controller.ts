@@ -12,6 +12,7 @@ import {
   UploadedFile,
   UseInterceptors,
   BadRequestException,
+  NotFoundException,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { diskStorage } from "multer";
@@ -53,6 +54,8 @@ import {
   UpdateSystemNotificationDto,
 } from "../system-notifications/system-notifications.dto";
 import { MediaIngestService } from "./media-ingest.service";
+import { CrawlerService } from "./crawler.service";
+import { StoryboardService } from "./storyboard.service";
 import { CreateMediaUploadDto } from "./media-upload.dto";
 
 const mediaUploadDirectory = resolve(
@@ -89,6 +92,8 @@ export class AdminController {
     private readonly adsService: AdsService,
     private readonly systemNotificationsService: SystemNotificationsService,
     private readonly mediaIngest: MediaIngestService,
+    private readonly crawler: CrawlerService,
+    private readonly storyboard: StoryboardService,
   ) {}
 
   // ── 1. Overview Dashboard ─────────────────────────────────────────
@@ -250,6 +255,50 @@ export class AdminController {
   @RequireAdminPermissions("sync.manage")
   retrySyncJob(@Param("id") id: string, @Req() req: any) {
     return this.adminService.retrySyncJob(id, req.user);
+  }
+
+  // ── 2.1 Media Upload & Transcoding (FFmpeg Adaptive Bitrate HLS) ──
+  @Get("media/uploads")
+  @RequireAdminPermissions("movies.read")
+  listMediaUploadJobs(@Query("movieId") movieId?: string) {
+    return this.mediaIngest.listJobs(movieId);
+  }
+
+  @Post("media/uploads")
+  @RequireAdminPermissions("movies.write")
+  @UseInterceptors(
+    FileInterceptor("file", {
+      storage: diskStorage({
+        destination: (_req, _file, cb) => {
+          mkdirSync(mediaUploadDirectory, { recursive: true });
+          cb(null, mediaUploadDirectory);
+        },
+        filename: (_req, file, cb) => {
+          const ext = extname(file.originalname).toLowerCase();
+          cb(null, `${randomUUID()}${ext}`);
+        },
+      }),
+      fileFilter: (_req, file, cb) => {
+        if (
+          !acceptedVideoTypes.has(file.mimetype) &&
+          !/\.(mp4|mkv|webm|mov|avi)$/i.test(file.originalname)
+        ) {
+          return cb(
+            new BadRequestException("Định dạng video không được hỗ trợ"),
+            false,
+          );
+        }
+        cb(null, true);
+      },
+      limits: { fileSize: 4 * 1024 * 1024 * 1024 },
+    }),
+  )
+  uploadMedia(
+    @UploadedFile() file: Express.Multer.File,
+    @Body() body: CreateMediaUploadDto,
+    @Req() req: any,
+  ) {
+    return this.mediaIngest.createJob(file, body, req.user);
   }
 
   // ── 3. User Management ────────────────────────────────────────────
@@ -750,5 +799,83 @@ export class AdminController {
   @RequireAdminPermissions("cms.manage")
   deleteSystemNotification(@Param("id") id: string) {
     return this.systemNotificationsService.delete(id);
+  }
+
+  // ── Crawler Tooling Endpoints ─────────────────────────────────────
+  @Post("crawler/single")
+  @RequireAdminPermissions("movies.write")
+  crawlSingleMovie(@Body() body: { slugOrUrl: string; provider?: string }) {
+    return this.crawler.crawlSingle(body.slugOrUrl, body.provider);
+  }
+
+  @Post("crawler/batch")
+  @RequireAdminPermissions("movies.write")
+  startBatchCrawler(
+    @Body()
+    body: {
+      provider: string;
+      category?: string;
+      startPage?: number;
+      endPage?: number;
+      deep?: boolean;
+      delayMs?: number;
+    },
+  ) {
+    return this.crawler.startBatchJob(body);
+  }
+
+  @Get("crawler/jobs")
+  @RequireAdminPermissions("movies.read")
+  getCrawlerJobs() {
+    return this.crawler.getJobs();
+  }
+
+  @Get("crawler/jobs/:id")
+  @RequireAdminPermissions("movies.read")
+  getCrawlerJob(@Param("id") id: string) {
+    const job = this.crawler.getJob(id);
+    if (!job) throw new NotFoundException("Không tìm thấy job cào phim");
+    return job;
+  }
+
+  @Post("crawler/jobs/:id/cancel")
+  @RequireAdminPermissions("movies.write")
+  cancelCrawlerJob(@Param("id") id: string) {
+    const ok = this.crawler.cancelJob(id);
+    return { success: ok };
+  }
+
+  // ── Storyboard Fast Seeking Endpoints ─────────────────────────────
+  @Post("storyboard/generate")
+  @RequireAdminPermissions("movies.write")
+  generateStoryboard(
+    @Body()
+    body: {
+      movieId: string;
+      episodeKey?: string;
+      streamUrl?: string;
+      intervalSeconds?: number;
+    },
+  ) {
+    return this.storyboard.generateStoryboard(body);
+  }
+
+  @Post("storyboard/generate-movie")
+  @RequireAdminPermissions("movies.write")
+  generateStoryboardForMovie(@Body() body: { movieId: string }) {
+    return this.storyboard.generateForMovie(body.movieId);
+  }
+
+  @Get("storyboard/status/:movieId/:episodeKey")
+  @RequireAdminPermissions("movies.read")
+  getStoryboardStatus(
+    @Param("movieId") movieId: string,
+    @Param("episodeKey") episodeKey: string,
+  ) {
+    const vttUrl = this.storyboard.getStoryboardVttUrl(movieId, episodeKey);
+    return {
+      exists: Boolean(vttUrl),
+      vttUrl,
+    };
   }
 }
