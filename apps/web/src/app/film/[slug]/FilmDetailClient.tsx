@@ -1347,6 +1347,7 @@ export default function FilmDetailPage({
     fetchImages: true,
     fetchCredits: secondaryReady,
     fetchVideos: secondaryReady || showTrailer,
+    fetchDetails: true,
     initialTmdb,
   });
 
@@ -1358,9 +1359,16 @@ export default function FilmDetailPage({
       cleanContent.toLowerCase().includes('đang cập nhật');
 
     if (isCleanEmptyOrPlaceholder && tmdbOverview) {
-      return String(tmdbOverview);
+      return String(cleanMovieDescription(tmdbOverview));
     }
-    return String(cleanContent || tmdbOverview || '');
+    if (
+      tmdbOverview &&
+      cleanContent &&
+      (cleanContent.length < 80 || (cleanContent.endsWith('...') && tmdbOverview.length > cleanContent.length + 50))
+    ) {
+      return String(cleanMovieDescription(tmdbOverview));
+    }
+    return String(cleanContent || (tmdbOverview ? cleanMovieDescription(tmdbOverview) : ''));
   }, [cleanContent, tmdbOverview]);
 
   // OMDB data — ratings IMDb/RT/Metacritic + awards + box office (fetch immediately, 0ms cache)
@@ -2518,7 +2526,7 @@ export default function FilmDetailPage({
             )}
 
             {displayOverview && (
-              <div className="space-y-3 max-w-4xl text-xs sm:text-sm text-neutral-300 leading-relaxed font-normal">
+              <div className="space-y-3.5 w-full text-xs sm:text-sm text-neutral-300 leading-relaxed font-normal">
                 {displayOverview.split('\n\n').map((para: string, idx: number) => (
                   <p key={idx}>{para}</p>
                 ))}

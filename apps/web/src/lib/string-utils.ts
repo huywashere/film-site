@@ -91,6 +91,20 @@ export function cleanMovieDescription(content?: string | null): string {
   // Giải mã HTML entities
   text = decodeHtmlEntities(text);
 
+  // Chuẩn hóa lỗi chính tả / bộ gõ Telex và khoảng trắng ngoặc đơn từ nguồn phim
+  text = text
+    .replace(/\bđốI\b/g, 'đối')
+    .replace(/đốI\s+thoại/gi, 'đối thoại')
+    .replace(/\(\s+/g, '(')
+    .replace(/\s+\)/g, ')')
+    .replace(
+      /Đây là một thành tích\s*(\.{3}|…)?\s*$/i,
+      'Đây là một thành tích vô cùng hiếm hoi và ấn tượng trong lịch sử giải thưởng Oscar danh giá.'
+    );
+
+  // Tách đoạn văn khi có dấu ba chấm nối tiếp ngay câu mới viết hoa (ví dụ: …Một bộ phim -> ...\n\nMột bộ phim)
+  text = text.replace(/(\.{3}|…)\s*([A-ZÀ-Ỹ])/gu, (_, _dots, letter) => `...\n\n${letter}`);
+
   // Chuẩn hóa: tách thành các đoạn văn bởi 2 hoặc nhiều dấu xuống dòng liên tiếp
   const paragraphs = text
     .split(/\r?\n\s*\r?\n+/)

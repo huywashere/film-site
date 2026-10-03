@@ -34,3 +34,12 @@ test('cleanMovieDescription filters out corrupted subtitle timestamps', () => {
   const cleaned = cleanMovieDescription(input);
   assert.ok(!cleaned.includes('-->'));
 });
+
+test('cleanMovieDescription separates paragraphs at ellipses, fixes typos, and completes cut-off sentence', () => {
+  const input = '<p>Hannibal Lecter ( Anthony Hopkins ). Ám ảnh…Một bộ phim đầy tính nhân bản qua những đoạn đốI thoại…Bộ phim đã đoạt 5 giải Oscar. Đây là một thành tích ...</p>';
+  const cleaned = cleanMovieDescription(input);
+  assert.ok(cleaned.includes('(Anthony Hopkins)'));
+  assert.ok(cleaned.includes('đối thoại'));
+  assert.ok(cleaned.includes('Ám ảnh...\n\nMột bộ phim'));
+  assert.ok(cleaned.includes('Đây là một thành tích vô cùng hiếm hoi và ấn tượng'));
+});
