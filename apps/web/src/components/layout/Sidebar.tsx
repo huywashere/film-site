@@ -176,8 +176,8 @@ export function Sidebar() {
 
       if (href === '/films') {
         void queryClient.prefetchQuery({
-          queryKey: ['browse-films-all', 'all', '', '', '', 'all', 'all', 'modified.time', 1],
-          queryFn: () => movieApi.getLatest(1).then((r) => r.data),
+          queryKey: ['browse-films-v2', '', 'all', 'all', '', '', '', 'all', 'all', 'modified.time', 1],
+          queryFn: () => movieApi.getLatest(1).then((r) => r?.data?.data || r?.data || { items: [] }),
           staleTime: 15 * 60 * 1000,
         });
       }
@@ -220,9 +220,14 @@ export function Sidebar() {
         });
       }
 
-      if (href === '/films/tvshows') {
+      if (href === '/films/tvshows' || href === '/films/shows') {
         void queryClient.prefetchQuery({
           queryKey: ['films-type', 'tvshows', 1],
+          queryFn: () => movieApi.getTvShows(1).then((r) => r.data),
+          staleTime: 15 * 60 * 1000,
+        });
+        void queryClient.prefetchQuery({
+          queryKey: ['films-type', 'shows', 1],
           queryFn: () => movieApi.getTvShows(1).then((r) => r.data),
           staleTime: 15 * 60 * 1000,
         });
@@ -261,7 +266,7 @@ export function Sidebar() {
     [queryClient, router],
   );
 
-  // Idle pre-warm primary tabs after mount
+  // Idle pre-warm primary tabs and data after mount for instant zero-latency clicks
   useEffect(() => {
     if (!mounted || typeof window === 'undefined') return;
     const timer = setTimeout(() => {
@@ -271,9 +276,14 @@ export function Sidebar() {
           router.prefetch(route);
         } catch {}
       });
-    }, 1200);
+
+      // Warm data for primary destinations
+      warmRoute('/films');
+      warmRoute('/films/series');
+      warmRoute('/films/single');
+    }, 800);
     return () => clearTimeout(timer);
-  }, [mounted, router]);
+  }, [mounted, router, warmRoute]);
 
   // Home reveals the rail after the hero; every other supported page is immediate.
   // Vercel's static prerender can expose a null pathname while the browser

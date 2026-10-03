@@ -33,7 +33,7 @@ export default function FilmSection({ title, icon, films, isLoading, href }: Fil
         </h2>
         <Link
           href={href}
-          prefetch={false}
+          prefetch
           className="group/link ml-4 inline-flex shrink-0 select-none items-center gap-1 whitespace-nowrap rounded-full px-2 py-1 text-xs font-semibold text-white/65 transition-colors hover:bg-white/[0.06] hover:text-white sm:text-sm"
         >
           <span>{t('home.viewAll', 'Xem tất cả')}</span>

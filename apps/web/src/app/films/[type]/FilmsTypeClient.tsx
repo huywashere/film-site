@@ -802,12 +802,10 @@ export default function FilmsTypeClient({
     queryFn: () => withCatalogTimeout(apiFn(page).then((r) => r.data)),
     initialData,
     initialDataUpdatedAt,
-    // SSR KKPhim data is a fast paint seed. Refresh it immediately through
-    // movieApi so the visible list still receives gateway/multi-source dedupe.
-    staleTime: initialData ? 0 : 30 * 60 * 1000,
+    staleTime: 15 * 60 * 1000,
     gcTime: 2 * 60 * 60 * 1000,
     retry: false,
-    refetchOnMount: initialData ? "always" : true,
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
     placeholderData: (previousData) => previousData,
   });

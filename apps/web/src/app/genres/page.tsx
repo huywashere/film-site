@@ -268,7 +268,7 @@ export default function GenresPage() {
                 <Link
                   key={hub.slug}
                   href={hub.href}
-                  prefetch={false}
+                  prefetch
                   onMouseEnter={() => handlePrefetchHub(hub)}
                   onFocus={() => handlePrefetchHub(hub)}
                   onTouchStart={() => handlePrefetchHub(hub)}

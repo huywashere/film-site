@@ -33,11 +33,11 @@ function TopRouteProgressInner() {
       const currentPath = window.location.pathname + window.location.search;
       if (href !== currentPath) {
         setLoading(true);
-        setProgress(38);
+        setProgress(45);
         if (progressTimerRef.current) clearTimeout(progressTimerRef.current);
         progressTimerRef.current = setTimeout(() => {
-          setProgress(65);
-        }, 180);
+          setProgress(75);
+        }, 120);
       }
     };
 
@@ -48,23 +48,19 @@ function TopRouteProgressInner() {
     };
   }, []);
 
-  // When pathname or searchParams finish updating, glide to 100% and hide
+  // When pathname or searchParams finish updating, glide to 100% and hide swiftly
   useEffect(() => {
+    if (!loading && progress === 0) return;
     if (progressTimerRef.current) clearTimeout(progressTimerRef.current);
-    setProgress(95);
+    setProgress(100);
 
-    const timer1 = setTimeout(() => {
-      setProgress(100);
-    }, 80);
-
-    const timer2 = setTimeout(() => {
+    const timer = setTimeout(() => {
       setLoading(false);
       setProgress(0);
-    }, 280);
+    }, 140);
 
     return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
+      clearTimeout(timer);
     };
   }, [pathname, searchParams]);
 
@@ -73,12 +69,16 @@ function TopRouteProgressInner() {
   return (
     <div
       aria-hidden="true"
-      className="fixed top-0 left-0 right-0 z-[99999] pointer-events-none h-[2.5px] bg-transparent"
+      className="fixed top-0 left-0 right-0 z-[99999] pointer-events-none h-[2px] bg-transparent"
     >
       <div
-        className="h-full bg-gradient-to-r from-cyan-400 via-violet-500 to-rose-500 shadow-[0_0_12px_rgba(35,173,229,0.9),0_0_24px_rgba(168,85,247,0.6)] transition-all duration-200 ease-out"
+        className="relative h-full bg-gradient-to-r from-purple-400 via-purple-300 to-violet-300 shadow-[0_0_8px_rgba(192,132,252,0.85),0_0_16px_rgba(168,85,247,0.4)] transition-all duration-150 ease-out"
         style={{ width: `${progress}%`, opacity: progress === 100 ? 0 : 1 }}
-      />
+      >
+        {/* Sleek leading flare at the tip */}
+        <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-r from-transparent to-white/70 blur-[0.5px]" />
+        <div className="absolute -right-0.5 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_5px_#c084fc]" />
+      </div>
     </div>
   );
 }

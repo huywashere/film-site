@@ -414,6 +414,13 @@ export function Navbar() {
           staleTime: 5 * 60 * 1000,
           gcTime: 60 * 60 * 1000,
         });
+      } else if (href === "/films") {
+        void queryClient.prefetchQuery({
+          queryKey: ["browse-films-v2", "", "all", "all", "", "", "", "all", "all", "modified.time", 1],
+          queryFn: () =>
+            movieApi.getLatest(1).then((r) => r?.data?.data || r?.data || { items: [] }),
+          staleTime: 15 * 60 * 1000,
+        });
       } else if (href === "/films/series") {
         void queryClient.prefetchQuery({
           queryKey: ["films-type", "series", 1],
@@ -452,21 +459,25 @@ export function Navbar() {
         });
       }
     },
-    [queryClient],
+    [queryClient, navigation],
   );
 
-  // Idle prefetch primary nav links
+  // Idle prefetch primary nav links and data
   useEffect(() => {
     if (typeof window === "undefined") return;
     const timer = setTimeout(() => {
       NAV_LINKS.forEach((link) => {
         try {
           navigation.prefetch(link.href);
+          prefetchNav(link.href);
         } catch {}
       });
-    }, 1800);
+      navigation.prefetch("/films");
+      prefetchNav("/films");
+      navigation.prefetch("/genres");
+    }, 1000);
     return () => clearTimeout(timer);
-  }, [navigation]);
+  }, [navigation, prefetchNav]);
 
   const [notifTab, setNotifTab] = useState<"system" | MovieNotificationChannel>(
     "system",

@@ -2,7 +2,9 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { movieApi } from '@/lib/api';
 import { Bookmark, Clapperboard, History, Home, LayoutDashboard, User } from 'lucide-react';
 import { motion, useReducedMotion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '@/store/authStore';
@@ -13,6 +15,7 @@ import { cardFont } from '@/lib/fonts';
 export function MobileBottomNav() {
   const pathname = usePathname();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { user } = useAuthStore();
   const reduceMotion = useReducedMotion();
   const [mounted, setMounted] = useState(false);
@@ -84,6 +87,43 @@ export function MobileBottomNav() {
     },
   ];
 
+  const warmRoute = useCallback(
+    (href: string) => {
+      try {
+        router.prefetch(href);
+      } catch {}
+      if (href === '/films') {
+        void queryClient.prefetchQuery({
+          queryKey: ['browse-films-v2', '', 'all', 'all', '', '', '', 'all', 'all', 'modified.time', 1],
+          queryFn: () => movieApi.getLatest(1).then((r) => r?.data?.data || r?.data || { items: [] }),
+          staleTime: 15 * 60 * 1000,
+        });
+      } else if (href === '/') {
+        void queryClient.prefetchQuery({
+          queryKey: ['home-feed-v1', 24],
+          queryFn: () => movieApi.getHomeFeed(24).then((response) => response.data),
+          staleTime: 5 * 60 * 1000,
+          gcTime: 60 * 60 * 1000,
+        });
+      }
+    },
+    [queryClient, router],
+  );
+
+  // Idle pre-warm primary tabs on mobile
+  useEffect(() => {
+    if (!mounted || typeof window === 'undefined') return;
+    const timer = setTimeout(() => {
+      ['/', '/films', '/genres'].forEach((route) => {
+        try {
+          router.prefetch(route);
+        } catch {}
+      });
+      warmRoute('/films');
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [mounted, router, warmRoute]);
+
   const warmProfileRoute = () => {
     if (user?.username) {
       try {
@@ -114,19 +154,14 @@ export function MobileBottomNav() {
           {/* Nav Items (Active expands to [Icon] Label, Inactive shows Icon only) */}
           {navItems.map((item) => {
             const Icon = item.icon;
-            const warmRoute = () => {
-              try {
-                router.prefetch(item.href);
-              } catch {}
-            };
 
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 prefetch
-                onTouchStart={warmRoute}
-                onPointerDown={warmRoute}
+                onTouchStart={() => warmRoute(item.href)}
+                onPointerDown={() => warmRoute(item.href)}
                 onClick={() => setOptimisticHref(item.href)}
                 aria-current={item.isActive ? 'page' : undefined}
                 className="group relative flex items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-white/70 active:scale-95 transition-transform touch-manipulation select-none"
