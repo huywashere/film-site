@@ -515,26 +515,27 @@ export function FilmCardSkeleton({
     >
       <div
         className={cn(
-          'relative overflow-hidden border border-white/5 bg-neutral-900',
+          'relative overflow-hidden border border-white/[0.08] bg-[#12141c] shadow-md',
           isPosterPill ? 'rounded-[22px] sm:rounded-[26px]' : 'rounded-[8px]',
           effectiveVariant === 'landscape' ? 'aspect-video w-full' : 'aspect-[2/3] w-full',
         )}
       >
-        <div className="absolute inset-0 bg-neutral-800/40" />
+        <div className="absolute inset-0 bg-gradient-to-tr from-white/[0.02] via-white/[0.05] to-transparent" />
+        <div className="absolute top-2 right-2 h-4 w-7 rounded bg-white/[0.08]" />
         {isPosterPill && (
           <div className="absolute inset-x-0 bottom-2.5 flex flex-col items-center gap-1.5 px-3 sm:bottom-3">
-            <div className="h-3 w-4/5 rounded bg-neutral-700/70" />
+            <div className="h-3 w-4/5 rounded bg-white/[0.12]" />
             <div className="flex items-center justify-center gap-1.5">
-              <div className="h-3 w-10 rounded-full bg-neutral-700/50" />
-              <div className="h-3 w-10 rounded-full bg-neutral-700/50" />
+              <div className="h-3 w-10 rounded-full bg-white/[0.08]" />
+              <div className="h-3 w-10 rounded-full bg-white/[0.08]" />
             </div>
           </div>
         )}
       </div>
       {!hideDetails && !isPosterPill && (
-        <div className="mt-2 px-0.5">
-          <div className="h-3 w-[78%] rounded-sm bg-neutral-800/70" />
-          <div className="mt-1 h-2.5 w-[52%] rounded-sm bg-neutral-800/45" />
+        <div className="mt-2 px-0.5 space-y-1.5">
+          <div className="h-3.5 w-[78%] rounded bg-white/[0.09]" />
+          <div className="h-2.5 w-[48%] rounded bg-white/[0.05]" />
         </div>
       )}
     </div>
