@@ -3491,21 +3491,11 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
 
   const handlePlayerFailure = useCallback(
     (reason: string) => {
-      // Khi luồng ArtPlayer HLS gặp sự cố (CORS, ISP chặn, CDN chết), tự động chuyển sang
-      // Trình phát Dự phòng (Embed) của chính tập phim này trước thay vì bỏ qua cả server KKPhim/OPhim.
-      if (playerEngine === 'hls' && (embedUrl || iframeUrl)) {
-        setPlayerEngine('iframe');
-        setIsFallbacking(true);
-        setFallbackMessage('Đang chuyển sang Trình phát Dự phòng...');
-        setTimeout(() => {
-          setIsFallbacking(false);
-          setFallbackMessage('');
-        }, 600);
-        return;
-      }
+      // Khi luồng ArtPlayer gặp sự cố, tự động thử sang server tiếp theo
+      // để duy trì trải nghiệm xem mượt mà trên ArtPlayer
       tryNextServer(reason);
     },
-    [playerEngine, embedUrl, iframeUrl, tryNextServer],
+    [tryNextServer],
   );
 
   // A failed server may have scheduled a delayed router.replace. Cancel it
@@ -4825,52 +4815,6 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                         </div>
                       )}
 
-                      {/* Chế độ phát: Chuẩn HD (ArtPlayer) / Embed (Dự phòng) */}
-                      {m3u8Url && (embedUrl || iframeUrl) && (
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <div className="hidden sm:block h-3.5 w-px bg-white/10 mx-0.5" />
-                          <div
-                            className="flex items-center gap-1 bg-white/[0.04] p-0.5 rounded-lg border border-white/[0.08]"
-                            role="group"
-                            aria-label="Chế độ phát"
-                          >
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setIsFallbacking(false);
-                                setFallbackMessage('');
-                                setPlayerEngine('hls');
-                                toast('Đã chuyển sang Trình phát Chuẩn HD (ArtPlayer)', 'info');
-                              }}
-                              className={cn(
-                                'px-2 py-0.5 rounded-md text-[11px] font-semibold transition-all cursor-pointer select-none',
-                                playerEngine === 'hls'
-                                  ? 'bg-purple-600 text-white font-bold shadow-sm shadow-purple-900/30'
-                                  : 'text-neutral-400 hover:text-white',
-                              )}
-                              title="Trình phát mượt chuẩn ArtPlayer HLS"
-                            >
-                              Chuẩn HD
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setPlayerEngine('iframe');
-                                toast('Đã chuyển sang Trình phát Dự phòng', 'info');
-                              }}
-                              className={cn(
-                                'px-2 py-0.5 rounded-md text-[11px] font-semibold transition-all cursor-pointer select-none',
-                                playerEngine === 'iframe'
-                                  ? 'bg-purple-600 text-white font-bold shadow-sm shadow-purple-900/30'
-                                  : 'text-neutral-400 hover:text-white',
-                              )}
-                              title="Trình phát dự phòng nếu luồng HLS bị lỗi hoặc giật lag"
-                            >
-                              Dự phòng
-                            </button>
-                          </div>
-                        </div>
-                      )}
                     </div>
                   );
                 })()}
