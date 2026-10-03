@@ -416,9 +416,9 @@ export function WeeklyCuratedShowcase({
                     {/* Ambient Gradient Overlay for Readability */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 via-50% to-black/20 pointer-events-none" />
 
-                    {/* Top Badges Bar: Clean, Minimalist Frosted Glass (No garish neon borders) */}
+                    {/* Top Badges Bar: Clean, Minimalist (High performance) */}
                     <div className="absolute top-2 inset-x-2 flex items-center justify-between gap-1 z-10 pointer-events-none">
-                      <span className="inline-flex items-center gap-1 rounded-md bg-black/75 backdrop-blur-md border border-white/15 px-1.5 py-0.5 text-[9px] sm:text-[9.5px] font-bold text-neutral-200 shadow-sm">
+                      <span className="inline-flex items-center gap-1 rounded-md bg-black/85 border border-white/15 px-1.5 py-0.5 text-[9px] sm:text-[9.5px] font-bold text-neutral-200 shadow-sm">
                         {isSeries ? (
                           <>
                             <Tv size={10} className="stroke-[2.2] text-sky-400" />
@@ -432,7 +432,7 @@ export function WeeklyCuratedShowcase({
                         )}
                       </span>
 
-                      <span className="inline-flex items-center rounded-md bg-black/75 backdrop-blur-md border border-white/15 px-1.5 py-0.5 text-[8.5px] sm:text-[9px] font-black text-white/90 shadow-sm">
+                      <span className="inline-flex items-center rounded-md bg-black/85 border border-white/15 px-1.5 py-0.5 text-[8.5px] sm:text-[9px] font-black text-white/90 shadow-sm">
                         {qualityBadge}
                       </span>
                     </div>

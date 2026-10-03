@@ -129,20 +129,33 @@ export function Sidebar() {
       return;
     }
 
-    const updateVisibility = () => {
+    let ticking = false;
+    let lastState: boolean | null = null;
+
+    const checkVisibility = () => {
       const hero = document.querySelector<HTMLElement>('[data-hero-banner="true"]');
-      const pastHero = hero
-        ? hero.getBoundingClientRect().bottom <= 72
-        : window.scrollY > Math.min(window.innerHeight * 0.8, 720);
-      setScrolledPastHomeHero(pastHero);
+      const threshold = hero ? Math.max(0, hero.offsetHeight - 72) : Math.min(window.innerHeight * 0.8, 720);
+      const pastHero = window.scrollY >= threshold;
+      if (pastHero !== lastState) {
+        lastState = pastHero;
+        setScrolledPastHomeHero(pastHero);
+      }
+      ticking = false;
     };
 
-    updateVisibility();
-    window.addEventListener('scroll', updateVisibility, { passive: true });
-    window.addEventListener('resize', updateVisibility, { passive: true });
+    const onScroll = () => {
+      if (!ticking) {
+        ticking = true;
+        window.requestAnimationFrame(checkVisibility);
+      }
+    };
+
+    checkVisibility();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
     return () => {
-      window.removeEventListener('scroll', updateVisibility);
-      window.removeEventListener('resize', updateVisibility);
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
     };
   }, [isHomePage, pathname]);
 

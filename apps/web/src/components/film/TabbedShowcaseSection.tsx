@@ -211,7 +211,7 @@ export function TabbedShowcaseSection({
                   </div>
 
                   {rating > 0 && (
-                    <div className="absolute top-2 right-2 z-10 inline-flex items-center gap-0.5 rounded bg-black/70 border border-amber-400/30 px-1.5 py-0.5 text-[9px] font-black text-amber-400 backdrop-blur-md">
+                    <div className="absolute top-2 right-2 z-10 inline-flex items-center gap-0.5 rounded bg-black/85 border border-amber-400/30 px-1.5 py-0.5 text-[9px] font-black text-amber-400 shadow-sm">
                       <Star size={8} fill="currentColor" />
                       {rating.toFixed(1)}
                     </div>
@@ -231,7 +231,7 @@ export function TabbedShowcaseSection({
                   {/* Bottom info on hover */}
                   {film.episode_current && film.episode_current !== "Full" && (
                     <div className="absolute bottom-2 left-2 z-10">
-                      <span className="rounded bg-black/80 border border-white/20 px-1.5 py-0.5 text-[9px] font-bold text-neutral-300 backdrop-blur-md">
+                      <span className="rounded bg-black/85 border border-white/20 px-1.5 py-0.5 text-[9px] font-bold text-neutral-300 shadow-sm">
                         {film.episode_current}
                       </span>
                     </div>

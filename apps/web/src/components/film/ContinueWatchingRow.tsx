@@ -422,13 +422,13 @@ export function ContinueWatchingRow({ fallbackFilms = [] }: ContinueWatchingRowP
                           <span className="bg-[#7c3aed] text-white text-[9.5px] font-black px-1.5 py-0.5 rounded shadow tracking-tight uppercase">
                             {epLabel}
                           </span>
-                          <span className="bg-black/75 border border-white/20 text-neutral-300 text-[9.5px] font-bold px-1.5 py-0.5 rounded backdrop-blur-sm shadow uppercase">
+                          <span className="bg-black/85 border border-white/20 text-neutral-300 text-[9.5px] font-bold px-1.5 py-0.5 rounded shadow uppercase">
                             {qualityBadge}
                           </span>
                         </div>
 
                         {/* Play Button Icon on Hover */}
-                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-opacity z-20 bg-black/30 backdrop-blur-[1px]">
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-opacity z-20 bg-black/40">
                           <div className="w-9 h-9 rounded-full bg-white text-black flex items-center justify-center shadow-lg transform scale-75 group-hover/card:scale-100 transition-transform">
                             <Play size={16} fill="currentColor" className="ml-0.5" />
                           </div>

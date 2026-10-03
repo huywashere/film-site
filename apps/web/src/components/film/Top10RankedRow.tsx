@@ -249,7 +249,7 @@ function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
           {/* Top Badges: [T.Minh] (left) ... [FHD] (right) */}
           <div className="absolute top-2 inset-x-2 flex items-center justify-between z-20 pointer-events-none gap-1">
             {langBadge ? (
-              <span className="whitespace-nowrap bg-black/75 border border-white/20 backdrop-blur-md text-white text-[8.5px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-[4px] shadow-sm leading-none tracking-tight">
+              <span className="whitespace-nowrap bg-black/85 border border-white/20 text-white text-[8.5px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-[4px] shadow-sm leading-none tracking-tight">
                 {langBadge}
               </span>
             ) : (
@@ -266,7 +266,7 @@ function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
           {/* Bottom Badges: [Full] (left) ... [⭐ 8.0] (right) */}
           <div className="absolute bottom-2 inset-x-2 flex items-center justify-between z-20 pointer-events-none gap-1">
             {episodeBadge ? (
-              <span className="whitespace-nowrap bg-black/80 border border-white/20 backdrop-blur-md text-white text-[8.5px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-[4px] shadow-sm leading-none tracking-tight">
+              <span className="whitespace-nowrap bg-black/85 border border-white/20 text-white text-[8.5px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-[4px] shadow-sm leading-none tracking-tight">
                 {episodeBadge}
               </span>
             ) : (

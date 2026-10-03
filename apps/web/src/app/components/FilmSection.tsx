@@ -25,7 +25,7 @@ export default function FilmSection({ title, icon, films, isLoading, href }: Fil
   const Icon = icons[icon];
 
   return (
-    <section className="relative mb-12 md:mb-16">
+    <section className="relative mb-12 md:mb-16 cv-section-auto">
       <div className="mb-4 flex items-end justify-between px-1 sm:mb-5">
         <h2 className="text-xl md:text-2xl font-bold text-foreground flex items-center space-x-2">
           <Icon size={18} className="text-netflixRed" />

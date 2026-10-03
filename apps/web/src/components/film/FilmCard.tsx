@@ -379,7 +379,7 @@ function FilmCardComponent({
             {/* ── Top-right: Quality (FHD / HD / 4K - sát mép trên) ── */}
             {!isPosterPill && qualityBadge && (
               <div className="pointer-events-none absolute right-0 top-0 z-20">
-                <span className="inline-flex items-center rounded-bl-[4px] border-b border-l border-white/15 bg-black/80 px-1.5 py-[2.5px] text-[8px] font-extrabold uppercase leading-none tracking-wider text-white shadow-md backdrop-blur-md sm:px-2 sm:py-[3px] sm:text-[9px]">
+                <span className="inline-flex items-center rounded-bl-[4px] border-b border-l border-white/15 bg-black/85 px-1.5 py-[2.5px] text-[8px] font-extrabold uppercase leading-none tracking-wider text-white shadow-md sm:px-2 sm:py-[3px] sm:text-[9px]">
                   {qualityBadge}
                 </span>
               </div>
@@ -402,7 +402,7 @@ function FilmCardComponent({
                     {posterPillBadges.slice(0, 3).map((badge, bIdx) => (
                       <span
                         key={`${badge.text}-${bIdx}`}
-                        className="inline-flex items-center rounded-full border border-white/20 bg-black/65 px-1.5 py-[2px] text-[7.5px] sm:text-[8.5px] font-bold leading-none tracking-wide text-white/95 backdrop-blur-md shadow-sm"
+                        className="inline-flex items-center rounded-full border border-white/20 bg-black/80 px-1.5 py-[2px] text-[7.5px] sm:text-[8.5px] font-bold leading-none tracking-wide text-white/95 shadow-sm"
                       >
                         {badge.text}
                       </span>
@@ -417,12 +417,12 @@ function FilmCardComponent({
                   <div className="pointer-events-none absolute bottom-1.5 left-1.5 z-20 sm:bottom-2 sm:left-2">
                     <span
                       className={cn(
-                        'inline-flex items-center rounded-[4px] border px-1.5 py-[2px] text-[8px] font-black leading-none text-white shadow-[0_2px_8px_rgba(0,0,0,0.4)] backdrop-blur-md sm:px-2 sm:py-[2.5px] sm:text-[9px]',
+                        'inline-flex items-center rounded-[4px] border px-1.5 py-[2px] text-[8px] font-black leading-none text-white shadow-[0_2px_8px_rgba(0,0,0,0.4)] sm:px-2 sm:py-[2.5px] sm:text-[9px]',
                         bottomLeftBadge.type === 'sub'
-                          ? 'border-blue-400/30 bg-[#2563eb]/90'
+                          ? 'border-blue-400/30 bg-[#2563eb]'
                           : bottomLeftBadge.voiceType === 'dub'
-                            ? 'border-purple-400/30 bg-[#9333ea]/90'
-                            : 'border-emerald-400/30 bg-[#16a34a]/90',
+                            ? 'border-purple-400/30 bg-[#9333ea]'
+                            : 'border-emerald-400/30 bg-[#16a34a]',
                       )}
                     >
                       {bottomLeftBadge.text}
@@ -435,10 +435,10 @@ function FilmCardComponent({
                   <div className="pointer-events-none absolute bottom-1.5 right-1.5 z-20 sm:bottom-2 sm:right-2">
                     <span
                       className={cn(
-                        'inline-flex items-center rounded-[4px] border px-1.5 py-[2px] text-[8px] font-black leading-none text-white shadow-[0_2px_8px_rgba(0,0,0,0.4)] backdrop-blur-md sm:px-2 sm:py-[2.5px] sm:text-[9px]',
+                        'inline-flex items-center rounded-[4px] border px-1.5 py-[2px] text-[8px] font-black leading-none text-white shadow-[0_2px_8px_rgba(0,0,0,0.4)] sm:px-2 sm:py-[2.5px] sm:text-[9px]',
                         bottomRightBadge.voiceType === 'dub'
-                          ? 'border-purple-400/30 bg-[#9333ea]/90'
-                          : 'border-emerald-400/30 bg-[#16a34a]/90',
+                          ? 'border-purple-400/30 bg-[#9333ea]'
+                          : 'border-emerald-400/30 bg-[#16a34a]',
                       )}
                     >
                       {bottomRightBadge.text}
@@ -450,14 +450,14 @@ function FilmCardComponent({
 
             {/* Hover Overlay Play Icon */}
             <div className={cn(
-              "pointer-events-none absolute inset-0 z-30 flex flex-col items-center justify-center opacity-0 transition-opacity duration-300 group-hover/card:opacity-100 bg-black/40 backdrop-blur-[2px] p-2.5 text-center",
+              "pointer-events-none absolute inset-0 z-30 flex flex-col items-center justify-center opacity-0 transition-opacity duration-300 group-hover/card:opacity-100 bg-black/50 p-2.5 text-center",
               isPosterPill ? "rounded-[22px] sm:rounded-[26px]" : "rounded-[8px]"
             )}>
               <div className={cn(
-                "flex scale-90 items-center justify-center rounded-full shadow-[0_10px_28px_rgba(0,0,0,0.6)] backdrop-blur-md transition-transform duration-300 motion-safe:group-hover/card:scale-100",
+                "flex scale-90 items-center justify-center rounded-full shadow-[0_10px_28px_rgba(0,0,0,0.6)] transition-transform duration-300 motion-safe:group-hover/card:scale-100",
                 isPosterPill
                   ? "h-12 w-12 border border-white/70 bg-black/80 text-white"
-                  : "h-10 w-10 border border-white/50 bg-black/70 text-white"
+                  : "h-10 w-10 border border-white/50 bg-black/75 text-white"
               )}>
                 <Play size={isPosterPill ? 18 : 16} fill="currentColor" className="ml-0.5" />
               </div>

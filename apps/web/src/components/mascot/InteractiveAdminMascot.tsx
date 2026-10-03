@@ -152,12 +152,23 @@ export function InteractiveAdminMascot({
       aim();
     };
 
+    let scrollTicking = false;
+    const onScroll = () => {
+      if (!scrollTicking) {
+        scrollTicking = true;
+        window.requestAnimationFrame(() => {
+          aim();
+          scrollTicking = false;
+        });
+      }
+    };
+
     window.addEventListener("pointermove", onPointerMove, { passive: true });
-    window.addEventListener("scroll", aim, { passive: true });
+    window.addEventListener("scroll", onScroll, { passive: true });
 
     return () => {
       window.removeEventListener("pointermove", onPointerMove);
-      window.removeEventListener("scroll", aim);
+      window.removeEventListener("scroll", onScroll);
     };
   }, [interactive]);
 

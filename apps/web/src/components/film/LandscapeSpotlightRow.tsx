@@ -230,7 +230,7 @@ export function LandscapeSpotlightRow({
                   ) : (
                     <span />
                   )}
-                  <span className="rounded border border-white/10 bg-black/85 px-1 sm:px-1.5 py-0.5 sm:py-1 text-[7.5px] sm:text-[9px] font-black uppercase leading-none text-white shadow-lg backdrop-blur-sm">
+                  <span className="rounded border border-white/10 bg-black/85 px-1 sm:px-1.5 py-0.5 sm:py-1 text-[7.5px] sm:text-[9px] font-black uppercase leading-none text-white shadow-lg">
                     {quality}
                   </span>
                 </div>

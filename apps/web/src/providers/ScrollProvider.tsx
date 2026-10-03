@@ -76,17 +76,26 @@ export function ScrollProvider({ children }: { children: React.ReactNode }) {
     window.history.scrollRestoration = "manual";
     activeRouteRef.current = currentRouteKey();
 
+    let saveTimeout: ReturnType<typeof setTimeout> | null = null;
+
     const persistCurrentPosition = () => {
       if (restoringRef.current) return;
+      if (saveTimeout !== null) {
+        clearTimeout(saveTimeout);
+        saveTimeout = null;
+      }
       savePosition(activeRouteRef.current);
     };
 
     const handleScroll = () => {
-      if (restoringRef.current || scrollFrameRef.current !== null) return;
-      scrollFrameRef.current = window.requestAnimationFrame(() => {
-        scrollFrameRef.current = null;
+      if (restoringRef.current) return;
+      if (saveTimeout !== null) {
+        clearTimeout(saveTimeout);
+      }
+      saveTimeout = setTimeout(() => {
+        saveTimeout = null;
         persistCurrentPosition();
-      });
+      }, 180);
     };
 
     const handleInternalLink = (event: MouseEvent) => {
@@ -130,6 +139,10 @@ export function ScrollProvider({ children }: { children: React.ReactNode }) {
     return () => {
       persistCurrentPosition();
       cancelRestoreRef.current();
+      if (saveTimeout !== null) {
+        clearTimeout(saveTimeout);
+        saveTimeout = null;
+      }
       if (scrollFrameRef.current !== null) {
         window.cancelAnimationFrame(scrollFrameRef.current);
       }
