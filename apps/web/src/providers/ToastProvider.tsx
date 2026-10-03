@@ -58,7 +58,7 @@ interface ToastContextValue {
   ) => void;
 }
 
-const TOAST_DURATION = 3800;
+const TOAST_DURATION = 1500;
 const ToastContext = createContext<ToastContextValue>({ toast: () => {} });
 
 export const useToast = () => useContext(ToastContext);
