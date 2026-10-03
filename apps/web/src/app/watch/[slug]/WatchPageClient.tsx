@@ -39,7 +39,6 @@ import {
   Maximize2,
   Heart,
   Plus,
-  HelpCircle,
   SkipForward,
   Bug,
   Smartphone,
@@ -5465,36 +5464,9 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
             {/* Film Info */}
             <SidebarFilmCard film={film} slug={slug} />
 
-            {/* ── PLAYER QUICK ACTIONS PANEL (THU GỌN TINH TẾ) ── */}
-            <div className="space-y-1.5 pb-3 border-b border-white/[0.08] select-none">
-              {/* Playback toggles */}
+            {/* ── PLAYER QUICK ACTIONS PANEL (TỰ CHUYỂN & BÁO LỖI) ── */}
+            <div className="pb-3 border-b border-white/[0.08] select-none">
               <div className="grid grid-cols-2 gap-1.5">
-                {/* Rạp phim */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    const next = !theaterMode;
-                    setTheaterMode(next);
-                    toast(
-                      next ? 'Đã bật chế độ Rạp phim mở rộng' : 'Đã tắt chế độ Rạp phim',
-                      'info',
-                    );
-                  }}
-                  title={theaterMode ? 'Tắt chế độ rạp phim' : 'Bật chế độ rạp phim'}
-                  className={cn(
-                    'flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-[11px] font-semibold transition-all cursor-pointer select-none active:scale-95 border',
-                    theaterMode
-                      ? 'bg-white/15 text-white border-white/20 shadow-sm'
-                      : 'bg-white/[0.03] hover:bg-white/[0.07] text-neutral-400 hover:text-neutral-200 border-white/[0.06]',
-                  )}
-                >
-                  <Maximize2
-                    size={12}
-                    className={theaterMode ? 'text-white' : 'text-neutral-400'}
-                  />
-                  <span className="truncate">Rạp phim</span>
-                </button>
-
                 {/* Tự động chuyển tập */}
                 <button
                   type="button"
@@ -5520,33 +5492,15 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                   />
                   <span className="truncate">Tự chuyển</span>
                 </button>
-              </div>
 
-              {/* Utilities row */}
-              <div className="grid grid-cols-2 gap-1.5">
                 {/* Báo lỗi */}
                 <button
                   type="button"
                   onClick={() => setShowReportModal(true)}
-                  className="flex items-center justify-center gap-1.5 py-1 px-2 rounded-lg text-[11px] font-medium text-neutral-400 hover:text-neutral-200 bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.05] transition-all cursor-pointer active:scale-95"
+                  className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-[11px] font-medium text-neutral-400 hover:text-neutral-200 bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.05] transition-all cursor-pointer active:scale-95"
                 >
                   <Bug size={12} className="text-neutral-400 shrink-0" />
                   <span>Báo lỗi</span>
-                </button>
-
-                {/* Phím tắt */}
-                <button
-                  type="button"
-                  onClick={() => setShowShortcutsGuide((prev) => !prev)}
-                  className={cn(
-                    'flex items-center justify-center gap-1.5 py-1 px-2 rounded-lg text-[11px] font-medium transition-all cursor-pointer active:scale-95 border',
-                    showShortcutsGuide
-                      ? 'bg-white/15 text-white border-white/20'
-                      : 'text-neutral-400 hover:text-neutral-200 bg-white/[0.02] hover:bg-white/[0.06] border-white/[0.05]',
-                  )}
-                >
-                  <HelpCircle size={12} className="text-neutral-400 shrink-0" />
-                  <span>Phím tắt</span>
                 </button>
               </div>
             </div>
