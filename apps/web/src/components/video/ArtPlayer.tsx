@@ -753,7 +753,7 @@ export default function ArtPlayer({
       playbackRate: true,
       aspectRatio: true,
       fullscreen: true,
-      fullscreenWeb: true,
+      fullscreenWeb: false,
       controls: [
         {
           name: 'backward-10',
@@ -861,20 +861,6 @@ export default function ArtPlayer({
             }
           },
         },
-        ...(onTheaterModeToggle
-          ? [
-              {
-                name: 'theater-mode',
-                position: 'right',
-                index: 45,
-                html: `<span class="art-icon art-icon-theater" style="display:inline-flex;align-items:center;justify-content:center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="7" y1="20" x2="17" y2="20"/></svg></span>`,
-                tooltip: 'Chế độ Rạp (T)',
-                click: function () {
-                  onTheaterModeToggleRef.current?.(!isTheaterModeRef.current);
-                },
-              },
-            ]
-          : []),
       ],
       subtitleOffset: true,
       // Keep the canvas completely clean while controls are idle. The regular
