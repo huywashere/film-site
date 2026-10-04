@@ -11,6 +11,8 @@ export const vi = {
     country: "Quốc Gia",
     list: "Danh Sách",
     more: "Thêm",
+    comments: "Bình luận",
+    randomMovie: "Phim ngẫu nhiên",
     watchParty: "Xem Chung",
     schedule: "Lịch chiếu",
     yearFilter: "Bộ lọc theo năm",

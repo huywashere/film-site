@@ -278,6 +278,18 @@ export function CountryFlagImage({
 
 const MORE_NAV_ITEMS = [
   {
+    href: "/comments",
+    key: "nav.comments",
+    label: "Bình luận",
+    labelEn: "Comments",
+  },
+  {
+    href: "/random",
+    key: "nav.randomMovie",
+    label: "Phim ngẫu nhiên",
+    labelEn: "Random Movie",
+  },
+  {
     href: "/watch-party",
     key: "nav.watchParty",
     label: "Xem Chung",

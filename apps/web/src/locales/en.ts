@@ -11,6 +11,8 @@ export const en = {
     country: "Countries",
     list: "Lists",
     more: "More",
+    comments: "Comments",
+    randomMovie: "Random Movie",
     watchParty: "Watch Party",
     schedule: "Schedule",
     yearFilter: "Filter by Year",

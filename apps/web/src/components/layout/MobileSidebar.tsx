@@ -407,6 +407,14 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
               <div className="mt-1 space-y-1 px-1 pt-1 animate-in fade-in duration-200">
                 {[
                   {
+                    title: t("nav.comments", "Bình luận"),
+                    href: "/comments",
+                  },
+                  {
+                    title: t("nav.randomMovie", "Phim ngẫu nhiên"),
+                    href: "/random",
+                  },
+                  {
                     title: t("nav.watchParty", "Xem Chung"),
                     href: "/watch-party",
                   },
