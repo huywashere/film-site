@@ -301,6 +301,46 @@ func TestDedupeNormalizesSeasonLabelsWithoutCollapsingSeasons(t *testing.T) {
 	}
 }
 
+func TestNormalizeVSMov(t *testing.T) {
+	raw := map[string]any{
+		"pathImage": "https://vsmov.com/storage/images/",
+		"movie": map[string]any{
+			"name":       "Test VSMov",
+			"thumb_url":  "thumb.jpg",
+			"poster_url": "poster.jpg",
+		},
+		"episodes": []any{
+			map[string]any{
+				"server_name": "Vietsub\r\n                        #1",
+				"server_data": []any{
+					map[string]any{
+						"name":       "1",
+						"slug":       "tap-1",
+						"link_embed": "https://v9.streamvsmov.com/video/750a13ae-8811-4e43-8453-c5074046421f",
+						"link_m3u8":  "",
+					},
+				},
+			},
+		},
+	}
+	normalized := normalizeVSMov(raw)
+	movie, _ := normalized["movie"].(map[string]any)
+	if thumb := fmt.Sprint(movie["thumb_url"]); thumb != "https://vsmov.com/storage/images/thumb.jpg" {
+		t.Fatalf("unexpected thumb_url: %s", thumb)
+	}
+	eps, _ := normalized["episodes"].([]any)
+	server, _ := eps[0].(map[string]any)
+	if sName := fmt.Sprint(server["server_name"]); sName != "Vietsub #1" {
+		t.Fatalf("unexpected server_name: %q", sName)
+	}
+	items, _ := server["server_data"].([]any)
+	ep, _ := items[0].(map[string]any)
+	expectedM3u8 := "https://v9.streamvsmov.com/stream/750a13ae-8811-4e43-8453-c5074046421f/master.m3u8"
+	if m3u8 := fmt.Sprint(ep["link_m3u8"]); m3u8 != expectedM3u8 {
+		t.Fatalf("expected derived link_m3u8 %s, got %s", expectedM3u8, m3u8)
+	}
+}
+
 func testConfig(origin string) config.Config {
 	return config.Config{
 		SigningSecret:           strings.Repeat("x", 32),

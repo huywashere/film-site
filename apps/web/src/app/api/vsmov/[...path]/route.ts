@@ -2,6 +2,7 @@ import {
   createMovieProxyHandler,
   resolveMovieApiOrigins,
 } from "@/lib/movie-proxy";
+import { deriveVsmovM3u8 } from "@/lib/player-source-routing";
 
 /**
  * VSMov API Proxy — https://vsmov.com
@@ -28,7 +29,7 @@ const VSMOV_ORIGINS = resolveMovieApiOrigins(
 );
 const VSMOV_DEFAULT_CDN = "https://vsmov.com/storage/images/";
 
-// ── Image URL normalizer ─────────────────────────────────────────
+// ── Image & Episode Stream normalizer ─────────────────────────────
 export function normalizeVsmovImages(raw: any, _path: string): any {
   if (!raw) return raw;
 
@@ -48,28 +49,92 @@ export function normalizeVsmovImages(raw: any, _path: string): any {
           ...item,
           thumb_url: fixUrl(item.thumb_url),
           poster_url: fixUrl(item.poster_url),
+          _source: "vsmov",
         }
       : item;
 
+  const fixEpisodes = (episodes: any): any => {
+    if (!Array.isArray(episodes)) return episodes;
+    return episodes.map((server: any) => {
+      const serverName = String(server?.server_name || "")
+        .replace(/[\r\n]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+      const rawData = Array.isArray(server?.server_data)
+        ? server.server_data
+        : Array.isArray(server?.items)
+          ? server.items
+          : [];
+      const fixedData = rawData.map((ep: any) => {
+        const link_embed = String(ep?.link_embed || ep?.embed || "").trim();
+        let link_m3u8 = String(ep?.link_m3u8 || ep?.m3u8 || "").trim();
+        if (!link_m3u8 && link_embed) {
+          link_m3u8 = deriveVsmovM3u8(link_embed);
+        }
+        return {
+          ...ep,
+          link_embed,
+          link_m3u8,
+        };
+      });
+      return {
+        ...server,
+        server_name: serverName,
+        server_data: fixedData,
+      };
+    });
+  };
+
+  let result = raw;
+
   // List response
-  if (Array.isArray(raw.items)) {
-    return { ...raw, items: raw.items.map(fixItem) };
+  if (Array.isArray(result.items)) {
+    result = { ...result, items: result.items.map(fixItem) };
   }
 
   // Detail response
-  if (raw.movie) {
-    return { ...raw, movie: fixItem(raw.movie) };
+  if (result.movie) {
+    result = { ...result, movie: fixItem(result.movie) };
   }
 
   // Nested data wrapper
-  if (raw.data?.items && Array.isArray(raw.data.items)) {
-    return {
-      ...raw,
-      data: { ...raw.data, items: raw.data.items.map(fixItem) },
+  if (result.data?.items && Array.isArray(result.data.items)) {
+    result = {
+      ...result,
+      data: { ...result.data, items: result.data.items.map(fixItem) },
     };
   }
 
-  return raw;
+  if (result.data?.item) {
+    result = {
+      ...result,
+      data: { ...result.data, item: fixItem(result.data.item) },
+    };
+  }
+
+  if (result.data?.movie) {
+    result = {
+      ...result,
+      data: { ...result.data, movie: fixItem(result.data.movie) },
+    };
+  }
+
+  // Normalize episodes (both top-level and nested variants)
+  if (Array.isArray(result.episodes)) {
+    result = { ...result, episodes: fixEpisodes(result.episodes) };
+  } else if (Array.isArray(result.data?.episodes)) {
+    result = {
+      ...result,
+      data: { ...result.data, episodes: fixEpisodes(result.data.episodes) },
+    };
+  } else if (Array.isArray(result.movie?.episodes)) {
+    result = {
+      ...result,
+      movie: { ...result.movie, episodes: fixEpisodes(result.movie.episodes) },
+    };
+  }
+
+  return result;
 }
 
 // ── TTL strategy ─────────────────────────────────────────────────

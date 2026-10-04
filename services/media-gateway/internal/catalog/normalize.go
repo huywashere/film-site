@@ -300,7 +300,51 @@ func normalizeVSMov(payload map[string]any) map[string]any {
 	for _, item := range extractItems(payload) {
 		fix(item)
 	}
+	for _, rawServer := range episodesFromPayload(payload) {
+		server, ok := rawServer.(map[string]any)
+		if !ok {
+			continue
+		}
+		if serverName := firstString(server["server_name"]); serverName != "" {
+			server["server_name"] = strings.Join(strings.Fields(serverName), " ")
+		}
+		var items []any
+		if rawItems, ok := server["server_data"].([]any); ok {
+			items = rawItems
+		} else if rawItems, ok := server["items"].([]any); ok {
+			items = rawItems
+		}
+		for _, rawItem := range items {
+			item, ok := rawItem.(map[string]any)
+			if !ok {
+				continue
+			}
+			linkM3u8 := firstString(item["link_m3u8"])
+			linkEmbed := firstString(item["link_embed"])
+			if linkM3u8 == "" && linkEmbed != "" {
+				if derived := deriveVSMovM3u8(linkEmbed); derived != "" {
+					item["link_m3u8"] = derived
+				}
+			}
+		}
+	}
 	return payload
+}
+
+func deriveVSMovM3u8(embedURL string) string {
+	if embedURL == "" {
+		return ""
+	}
+	parsed, err := url.Parse(strings.TrimSpace(embedURL))
+	if err != nil {
+		return ""
+	}
+	parts := strings.Split(strings.Trim(parsed.Path, "/"), "/")
+	if len(parts) >= 2 && parts[0] == "video" && parts[1] != "" {
+		parsed.Path = "/stream/" + parts[1] + "/master.m3u8"
+		return parsed.String()
+	}
+	return ""
 }
 
 func movieFromPayload(payload map[string]any) map[string]any {

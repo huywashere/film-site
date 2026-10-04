@@ -86,6 +86,32 @@ export function isTerminalHlsHttpStatus(value: unknown) {
   return status === 404 || status === 410;
 }
 
+/**
+ * VSMov provides movie playback via embed links (`https://v{node}.streamvsmov.com/video/{hash}`)
+ * with empty `link_m3u8` fields in its API responses.
+ * The underlying HLS stream is deterministically available at:
+ * `https://v{node}.streamvsmov.com/stream/{hash}/master.m3u8`.
+ */
+export function deriveVsmovM3u8(embedUrl: string): string {
+  if (!embedUrl || typeof embedUrl !== "string") return "";
+  const trimmed = embedUrl.trim();
+  try {
+    const parsed = new URL(trimmed);
+    const match = parsed.pathname.match(/^\/video\/([a-zA-Z0-9_-]+)/i);
+    if (match) {
+      const videoId = match[1];
+      parsed.pathname = `/stream/${videoId}/master.m3u8`;
+      return parsed.toString();
+    }
+  } catch {
+    const match = trimmed.match(/^(https?:\/\/[^\/]+)\/video\/([a-zA-Z0-9_-]+)/i);
+    if (match) {
+      return `${match[1]}/stream/${match[2]}/master.m3u8`;
+    }
+  }
+  return "";
+}
+
 export function getSourceAbbr(source?: string): string {
   if (!source) return "KP";
   const s = source.toLowerCase();

@@ -8,6 +8,7 @@ import {
   buildVidsrcEmbedUrl,
   canonicalEpisodeKey,
   canUseUnsandboxedEmbed,
+  deriveVsmovM3u8,
   detectServerType,
   episodeNumberFromLabel,
   findMatchingEpisode,
@@ -339,3 +340,21 @@ test("builds documented vidcore.org movie and TV embed URLs", () => {
     true,
   );
 });
+
+test("derives native HLS stream master.m3u8 from VSMov embed URLs", () => {
+  assert.equal(
+    deriveVsmovM3u8("https://v9.streamvsmov.com/video/750a13ae-8811-4e43-8453-c5074046421f"),
+    "https://v9.streamvsmov.com/stream/750a13ae-8811-4e43-8453-c5074046421f/master.m3u8",
+  );
+  assert.equal(
+    deriveVsmovM3u8("https://v2.streamvsmov.com/video/abc-xyz?autostart=true"),
+    "https://v2.streamvsmov.com/stream/abc-xyz/master.m3u8?autostart=true",
+  );
+  assert.equal(
+    deriveVsmovM3u8("https://vsmov.com/video/test-hash"),
+    "https://vsmov.com/stream/test-hash/master.m3u8",
+  );
+  assert.equal(deriveVsmovM3u8("https://phimapi.com/share/abc"), "");
+  assert.equal(deriveVsmovM3u8(""), "");
+});
+

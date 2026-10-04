@@ -65,7 +65,10 @@ import {
   viewApi,
   watchHistoryApi,
 } from '@/lib/api';
-import { canUseUnsandboxedEmbed } from '@/lib/player-source-routing';
+import {
+  canUseUnsandboxedEmbed,
+  deriveVsmovM3u8,
+} from '@/lib/player-source-routing';
 import { extractFilmItems, normalizeText } from '@/lib/movie-normalizer';
 import { resolveImageUrl } from '@/components/film/FilmCard';
 import { TmdbArtwork } from '@/components/film/TmdbArtwork';
@@ -2392,16 +2395,25 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
           : Array.isArray(server?.items)
             ? server.items
             : [];
-        const normalizedItems = rawItems.map((item: any) => ({
-          name: item?.name || '',
-          slug: item?.slug || '',
-          link_embed: item?.link_embed || item?.embed || '',
-          link_m3u8: item?.link_m3u8 || item?.m3u8 || '',
-        }));
+        const normalizedItems = rawItems.map((item: any) => {
+          const link_embed = String(item?.link_embed || item?.embed || '').trim();
+          let link_m3u8 = String(item?.link_m3u8 || item?.m3u8 || '').trim();
+          if (!link_m3u8 && link_embed) {
+            link_m3u8 = deriveVsmovM3u8(link_embed);
+          }
+          return {
+            name: item?.name || '',
+            slug: item?.slug || '',
+            link_embed,
+            link_m3u8,
+            link_m3u8_proxy: item?.link_m3u8_proxy || '',
+          };
+        });
         return {
           ...server,
           server_name: String(server?.server_name || '')
-            .replace(/\r?\n|\r/g, ' ')
+            .replace(/[\r\n]+/g, ' ')
+            .replace(/\s+/g, ' ')
             .trim(),
           server_data: normalizedItems,
         };
@@ -4281,7 +4293,13 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                       className="w-full h-full border-0"
                       allowFullScreen
                       allow="autoplay; fullscreen; picture-in-picture; encrypted-media; gyroscope; accelerometer"
-                      referrerPolicy="strict-origin-when-cross-origin"
+                      referrerPolicy={
+                        server?._source === 'vsmov' ||
+                        iframeUrl.includes('streamvsmov.com') ||
+                        iframeUrl.includes('vsmov.com')
+                          ? 'no-referrer'
+                          : 'strict-origin-when-cross-origin'
+                      }
                       sandbox={iframeSandbox}
                       title={`${film?.name} - ${currentEpData?.name}`}
                       onLoad={() => {
