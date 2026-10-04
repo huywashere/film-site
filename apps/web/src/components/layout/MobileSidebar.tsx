@@ -25,6 +25,11 @@ import {
   FileText,
   Mail,
   ListFilter,
+  MessageSquare,
+  Shuffle,
+  UserCheck,
+  CalendarDays,
+  SlidersHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/authStore";
@@ -409,47 +414,61 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                   {
                     title: t("nav.comments", "Bình luận"),
                     href: "/comments",
+                    icon: MessageSquare,
                   },
                   {
                     title: t("nav.randomMovie", "Phim ngẫu nhiên"),
                     href: "/random",
+                    icon: Shuffle,
                   },
                   {
                     title: t("nav.watchParty", "Xem Chung"),
                     href: "/watch-party",
+                    icon: Users,
                   },
                   {
                     title: t("nav.actors", "Diễn viên"),
                     href: "/actors",
+                    icon: UserCheck,
                   },
                   {
                     title: t("nav.schedule", "Lịch chiếu"),
                     href: "/schedule",
+                    icon: CalendarDays,
                   },
                   {
                     title: t("nav.tvshows", "TV Shows"),
                     href: "/films/tv-shows",
+                    icon: Tv,
                   },
                   {
                     title: t("nav.yearFilter", "Bộ lọc theo năm"),
                     href: "/films",
+                    icon: SlidersHorizontal,
                   },
                 ].map((subItem) => {
                   const isActive =
                     pathname === subItem.href ||
                     pathname.startsWith(subItem.href + "/");
+                  const SubIcon = subItem.icon;
                   return (
                     <Link
                       key={subItem.href}
                       href={subItem.href}
                       className={cn(
-                        "flex items-center px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all",
+                        "flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all",
                         isActive
                           ? "bg-white/15 text-white font-semibold"
                           : "text-neutral-300 hover:bg-white/10 hover:text-white",
                       )}
                       onClick={onClose}
                     >
+                      {SubIcon && (
+                        <SubIcon
+                          size={15}
+                          className={isActive ? "text-white" : "text-neutral-400"}
+                        />
+                      )}
                       <span>{subItem.title}</span>
                     </Link>
                   );

@@ -26,6 +26,13 @@ import {
   Settings,
   History,
   MonitorSmartphone,
+  MessageSquare,
+  Shuffle,
+  Users,
+  UserCheck,
+  CalendarDays,
+  Tv,
+  SlidersHorizontal,
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useAuthModalStore } from "@/store/authModalStore";
@@ -282,42 +289,49 @@ const MORE_NAV_ITEMS = [
     key: "nav.comments",
     label: "Bình luận",
     labelEn: "Comments",
+    icon: MessageSquare,
   },
   {
     href: "/random",
     key: "nav.randomMovie",
     label: "Phim ngẫu nhiên",
     labelEn: "Random Movie",
+    icon: Shuffle,
   },
   {
     href: "/watch-party",
     key: "nav.watchParty",
     label: "Xem Chung",
     labelEn: "Watch Party",
+    icon: Users,
   },
   {
     href: "/actors",
     key: "nav.actors",
     label: "Diễn viên",
     labelEn: "Actors",
+    icon: UserCheck,
   },
   {
     href: "/schedule",
     key: "nav.schedule",
     label: "Lịch chiếu",
     labelEn: "Schedule",
+    icon: CalendarDays,
   },
   {
     href: "/films/tv-shows",
     key: "nav.tvshows",
     label: "TV Shows",
     labelEn: "TV Shows",
+    icon: Tv,
   },
   {
     href: "/films",
     key: "nav.yearFilter",
     label: "Bộ lọc theo năm",
     labelEn: "Filter by Year",
+    icon: SlidersHorizontal,
   },
 ];
 
@@ -890,11 +904,12 @@ export function Navbar() {
                 />
               </button>
 
-              <div className="absolute top-[85%] left-1/2 -translate-x-1/2 mt-0 w-[170px] p-1.5 bg-[#12141c]/95 backdrop-blur-3xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.6)] rounded-2xl ring-1 ring-white/10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 flex flex-col space-y-0.5">
+              <div className="absolute top-[85%] left-1/2 -translate-x-1/2 mt-0 w-[190px] p-1.5 bg-[#12141c]/95 backdrop-blur-3xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.6)] rounded-2xl ring-1 ring-white/10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 flex flex-col space-y-0.5">
                 {MORE_NAV_ITEMS.map((item) => {
                   const isItemActive =
                     pathname === item.href ||
                     pathname.startsWith(item.href + "/");
+                  const Icon = item.icon;
                   return (
                     <Link
                       key={item.href}
@@ -903,17 +918,28 @@ export function Navbar() {
                       onMouseEnter={() => prefetchNav(item.href)}
                       onPointerDown={() => prefetchNav(item.href)}
                       className={cn(
-                        "px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 block truncate",
+                        "px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-150 flex items-center gap-2.5 truncate",
                         isItemActive
                           ? "bg-white/15 text-white font-semibold"
                           : "text-neutral-300 hover:text-white hover:bg-white/10 hover:translate-x-0.5",
                       )}
                     >
-                      {item.key
-                        ? t(item.key, lang === "en" ? item.labelEn : item.label)
-                        : lang === "en"
-                          ? item.labelEn
-                          : item.label}
+                      {Icon && (
+                        <Icon
+                          size={15}
+                          className={cn(
+                            "shrink-0",
+                            isItemActive ? "text-white" : "text-neutral-400",
+                          )}
+                        />
+                      )}
+                      <span className="truncate">
+                        {item.key
+                          ? t(item.key, lang === "en" ? item.labelEn : item.label)
+                          : lang === "en"
+                            ? item.labelEn
+                            : item.label}
+                      </span>
                     </Link>
                   );
                 })}
