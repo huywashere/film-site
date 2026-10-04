@@ -335,9 +335,11 @@ func TestNormalizeVSMov(t *testing.T) {
 	}
 	items, _ := server["server_data"].([]any)
 	ep, _ := items[0].(map[string]any)
-	expectedM3u8 := "https://v9.streamvsmov.com/stream/750a13ae-8811-4e43-8453-c5074046421f/master.m3u8"
-	if m3u8 := fmt.Sprint(ep["link_m3u8"]); m3u8 != expectedM3u8 {
-		t.Fatalf("expected derived link_m3u8 %s, got %s", expectedM3u8, m3u8)
+	if embed := fmt.Sprint(ep["link_embed"]); embed != "https://v9.streamvsmov.com/video/750a13ae-8811-4e43-8453-c5074046421f" {
+		t.Fatalf("expected link_embed preserved, got %s", embed)
+	}
+	if m3u8 := fmt.Sprint(ep["link_m3u8"]); m3u8 != "" {
+		t.Fatalf("expected empty link_m3u8 for VSMov, got %s", m3u8)
 	}
 }
 

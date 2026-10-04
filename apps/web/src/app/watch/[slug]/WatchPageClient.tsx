@@ -65,10 +65,7 @@ import {
   viewApi,
   watchHistoryApi,
 } from '@/lib/api';
-import {
-  canUseUnsandboxedEmbed,
-  deriveVsmovM3u8,
-} from '@/lib/player-source-routing';
+import { canUseUnsandboxedEmbed } from '@/lib/player-source-routing';
 import { extractFilmItems, normalizeText } from '@/lib/movie-normalizer';
 import { resolveImageUrl } from '@/components/film/FilmCard';
 import { TmdbArtwork } from '@/components/film/TmdbArtwork';
@@ -1503,10 +1500,6 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
 
   // Universal Player Container & Gestures (for ALL video players & iframe sources)
   const playerContainerRef = useRef<HTMLDivElement>(null);
-  const [videoAspectRatio, setVideoAspectRatio] = useState<number | null>(null);
-  useEffect(() => {
-    setVideoAspectRatio(null);
-  }, [slug]);
   const commentsSectionRef = useRef<HTMLDivElement>(null);
   const [commentsReadySlug, setCommentsReadySlug] = useState('');
   const commentsReady = commentsReadySlug === slug;
@@ -2398,8 +2391,12 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
         const normalizedItems = rawItems.map((item: any) => {
           const link_embed = String(item?.link_embed || item?.embed || '').trim();
           let link_m3u8 = String(item?.link_m3u8 || item?.m3u8 || '').trim();
-          if (!link_m3u8 && link_embed) {
-            link_m3u8 = deriveVsmovM3u8(link_embed);
+          if (
+            server?._source === 'vsmov' ||
+            link_embed.includes('streamvsmov.com') ||
+            link_embed.includes('vsmov.com')
+          ) {
+            link_m3u8 = '';
           }
           return {
             name: item?.name || '',
@@ -2821,8 +2818,15 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
   const serverData: any[] = useMemo(() => server?.server_data || [], [server]);
   const currentEpData: any = findMatchingEpisode(serverData, currentEp) || serverData[0];
 
-  const m3u8Url: string = currentEpData?.link_m3u8 || '';
-  const m3u8ProxyUrl: string = currentEpData?.link_m3u8_proxy || '';
+  const isVsmovServer =
+    server?._source === 'vsmov' ||
+    Boolean(
+      currentEpData?.link_embed &&
+        (currentEpData.link_embed.includes('streamvsmov.com') ||
+          currentEpData.link_embed.includes('vsmov.com')),
+    );
+  const m3u8Url: string = isVsmovServer ? '' : (currentEpData?.link_m3u8 || '');
+  const m3u8ProxyUrl: string = isVsmovServer ? '' : (currentEpData?.link_m3u8_proxy || '');
   const embedUrl: string = currentEpData?.link_embed || '';
 
   const iframeUrl =
@@ -4159,18 +4163,11 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
           {/* ───── 1. PLAYER ───── */}
           <div
             ref={playerContainerRef}
-            style={
-              !theaterMode && videoAspectRatio
-                ? { aspectRatio: `${videoAspectRatio}` }
-                : undefined
-            }
             className={cn(
               'netphim-watch-player bg-black rounded-none overflow-hidden relative shadow-2xl ring-1 ring-white/[0.06] select-none transition-all duration-300 flex items-center justify-center',
               theaterMode
                 ? 'is-theater col-span-full w-full aspect-[16/9] sm:aspect-auto sm:h-[72vh] lg:h-[78vh] min-h-[400px] max-h-[920px] mx-auto shadow-2xl ring-1 ring-white/10'
-                : videoAspectRatio
-                  ? 'xl:col-start-1 xl:row-start-2 w-full'
-                  : 'xl:col-start-1 xl:row-start-2 w-full aspect-video',
+                : 'xl:col-start-1 xl:row-start-2 w-full aspect-video',
               lightOff ? 'relative z-50 ring-1 ring-white/20 shadow-2xl' : '',
             )}
           >
@@ -4226,7 +4223,6 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                     servers={playerServers}
                     currentServerIndex={currentServer}
                     onSwitchServer={handleSelectServer}
-                    onAspectRatioChange={setVideoAspectRatio}
                     onReady={(player) => {
                       setArtInstance(player);
                       setPlayerReadySlug(slug);

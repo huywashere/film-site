@@ -2,7 +2,6 @@ import {
   createMovieProxyHandler,
   resolveMovieApiOrigins,
 } from "@/lib/movie-proxy";
-import { deriveVsmovM3u8 } from "@/lib/player-source-routing";
 
 /**
  * VSMov API Proxy — https://vsmov.com
@@ -67,10 +66,7 @@ export function normalizeVsmovImages(raw: any, _path: string): any {
           : [];
       const fixedData = rawData.map((ep: any) => {
         const link_embed = String(ep?.link_embed || ep?.embed || "").trim();
-        let link_m3u8 = String(ep?.link_m3u8 || ep?.m3u8 || "").trim();
-        if (!link_m3u8 && link_embed) {
-          link_m3u8 = deriveVsmovM3u8(link_embed);
-        }
+        const link_m3u8 = String(ep?.link_m3u8 || ep?.m3u8 || "").trim();
         return {
           ...ep,
           link_embed,

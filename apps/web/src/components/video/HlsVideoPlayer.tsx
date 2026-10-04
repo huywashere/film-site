@@ -39,7 +39,6 @@ type HlsVideoPlayerProps = {
   servers?: PlayerServerItem[];
   currentServerIndex?: number;
   onSwitchServer?: (index: number) => void;
-  onAspectRatioChange?: (ratio: number) => void;
 };
 
 /**
@@ -75,7 +74,6 @@ export const HlsVideoPlayer = memo(function HlsVideoPlayer({
   servers,
   currentServerIndex,
   onSwitchServer,
-  onAspectRatioChange,
 }: HlsVideoPlayerProps) {
   return (
     <div className="w-full h-full relative">
@@ -100,7 +98,6 @@ export const HlsVideoPlayer = memo(function HlsVideoPlayer({
         servers={servers}
         currentServerIndex={currentServerIndex}
         onSwitchServer={onSwitchServer}
-        onAspectRatioChange={onAspectRatioChange}
         isTheaterMode={isTheaterMode}
         onTheaterModeToggle={onTheaterModeToggle}
         onReady={(player) => {
