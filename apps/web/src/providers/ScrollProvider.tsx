@@ -143,8 +143,10 @@ export function ScrollProvider({ children }: { children: React.ReactNode }) {
         clearTimeout(saveTimeout);
         saveTimeout = null;
       }
-      if (scrollFrameRef.current !== null) {
-        window.cancelAnimationFrame(scrollFrameRef.current);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      const frame = scrollFrameRef.current;
+      if (frame !== null) {
+        window.cancelAnimationFrame(frame);
       }
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("popstate", handlePopState);

@@ -1372,7 +1372,11 @@ export default function ArtPlayer({
     if (typeof ResizeObserver !== 'undefined' && containerRef.current) {
       resizeObserver = new ResizeObserver(() => {
         try {
-          player.resize();
+          if (typeof (player as any).resize === 'function') {
+            (player as any).resize();
+          } else {
+            (player as any).emit?.('resize');
+          }
         } catch {}
       });
       resizeObserver.observe(containerRef.current);

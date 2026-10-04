@@ -62,6 +62,7 @@ function TopRouteProgressInner() {
     return () => {
       clearTimeout(timer);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname, searchParams]);
 
   if (!loading && progress === 0) return null;
