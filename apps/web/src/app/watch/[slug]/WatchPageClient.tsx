@@ -2440,9 +2440,6 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
         const normalizedItems = rawItems.map((item: any) => {
           const link_embed = String(item?.link_embed || item?.embed || '').trim();
           let link_m3u8 = String(item?.link_m3u8 || item?.m3u8 || '').trim();
-          if (!link_m3u8 && link_embed.includes('playembed.vip')) {
-            link_m3u8 = `/api/xink/hls?url=${encodeURIComponent(link_embed)}`;
-          }
           if (
             server?._source === 'vsmov' ||
             link_embed.includes('streamvsmov.com') ||
@@ -2732,22 +2729,12 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
             : Array.isArray(s?.items)
               ? s.items
               : [];
-          const normalizedServerData = rawItems.map((item: any) => {
-            const link_embed = item?.link_embed || item?.embed || '';
-            const link_m3u8 =
-              item?.link_m3u8 ||
-              (typeof link_embed === 'string' && link_embed.includes('playembed.vip')
-                ? `/api/xink/hls?url=${encodeURIComponent(link_embed)}`
-                : '') ||
-              item?.m3u8 ||
-              '';
-            return {
-              name: item?.name || '',
-              slug: item?.slug || '',
-              link_embed,
-              link_m3u8,
-            };
-          });
+          const normalizedServerData = rawItems.map((item: any) => ({
+            name: item?.name || '',
+            slug: item?.slug || '',
+            link_embed: item?.link_embed || item?.embed || '',
+            link_m3u8: item?.link_m3u8 || item?.m3u8 || '',
+          }));
           return {
             ...s,
             server_name:
