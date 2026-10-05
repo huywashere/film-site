@@ -587,6 +587,14 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
     aspect-ratio: auto;
     margin-inline: 0;
   }
+
+  .netphim-watch-player.is-theater {
+    width: 100% !important;
+    max-width: none !important;
+    height: calc(100svh - 64px) !important;
+    max-height: calc(100svh - 64px) !important;
+    aspect-ratio: auto !important;
+  }
 }
 
 /* ── Highlight & Timeline Markers (Intro & Ads - Netflix & YouTube Standard) ── */
@@ -1887,5 +1895,18 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   .catalog-row-swiper:not(.swiper-initialized) .swiper-slide {
     width: calc((100% - 112px) / 8) !important;
     flex-basis: calc((100% - 112px) / 8) !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   RẠP PHIM (Theater Mode) — Full-Cinema Player
+   Player chiếm toàn bộ chiều cao màn hình trừ header 64px
+═══════════════════════════════════════════════════════ */
+@media (min-width: 640px) {
+  .netphim-watch-player.is-theater {
+    height: calc(100svh - 64px);
+    min-height: 480px;
+    max-height: none;
+    width: 100%;
   }
 }

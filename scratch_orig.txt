@@ -1,0 +1,810 @@
+3941:       <meta name="twitter:card" content="summary_large_image" />
+3942:       <meta name="twitter:title" content={watchSeoTitle} />
+3943:       <meta name="twitter:description" content={watchSeoDescription} />
+3944: 
+3945:       {/* ── MAIN — padded top for navbar (64px) + safe left padding for sidebar (96px) ── */}
+3946:       <main
+3947:         className={cn(
+3948:           'pt-14 sm:pt-[58px] mx-auto px-3 md:px-5 pb-10 transition-all duration-300',
+3949:           theaterMode ? 'w-full lg:pl-20 max-w-none' : 'max-w-[1800px] lg:pl-20',
+3950:         )}
+3951:       >
+3952:         <div
+3953:           className={cn(
+3954:             'grid gap-x-5 gap-y-1 sm:gap-y-1 transition-all duration-300 xl:grid-rows-[min-content_auto_auto]',
+3955:             'grid-cols-1 xl:grid-cols-[minmax(0,1fr)_300px]',
+3956:           )}
+3957:         >
+3958:           {/* ───── 0. TOP CONTROLS & BREADCRUMB BAR (Above Player) ───── */}
+3959:           <div
+3960:             className={cn(
+3961:               'flex h-fit self-start items-center justify-between gap-2 py-1.5 px-3 sm:px-3.5 bg-white/[0.03] border border-white/[0.06] rounded-xl text-xs text-white/60 select-none',
+3962:               theaterMode ? 'col-span-full' : 'xl:col-start-1 xl:row-start-1',
+3963:             )}
+3964:           >
+3965:             <div className="flex items-center gap-2 min-w-0">
+3966:               <button
+3967:                 type="button"
+3968:                 onClick={() => router.back()}
+3969:                 className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white font-semibold transition-all shrink-0 text-xs shadow-sm hover:scale-105 active:scale-95 cursor-pointer border border-white/15"
+3970:               >
+3971:                 <ArrowLeft size={13} />
+3972:                 <span>Quay lại</span>
+3973:               </button>
+3974:             </div>
+3975:             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+3976:               {/* Yêu thích */}
+3977:               <button
+3978:                 type="button"
+3979:                 onClick={handleToggleFavorite}
+3980:                 className={cn(
+3981:                   'flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all font-medium text-xs cursor-pointer select-none border',
+3982:                   isFavorite
+3983:                     ? 'bg-red-500/15 text-red-400 border-red-500/30 font-semibold'
+3984:                     : 'bg-white/[0.04] hover:bg-white/[0.08] text-neutral-300 hover:text-white border-white/[0.06]',
+3985:                 )}
+3986:                 title="Thêm vào danh sách yêu thích"
+3987:               >
+3988:                 <Heart
+3989:                   size={13}
+3990:                   className={cn(
+3991:                     'transition-transform',
+3992:                     isFavorite ? 'fill-red-500 text-red-500' : 'text-neutral-400',
+3993:                   )}
+3994:                 />
+3995:                 <span className="hidden sm:inline">{isFavorite ? 'Đã thích' : 'Yêu thích'}</span>
+3996:               </button>
+3997: 
+3998:               {/* Tủ phim */}
+3999:               <button
+4000:                 type="button"
+4001:                 onClick={handleToggleWatchlist}
+4002:                 className={cn(
+4003:                   'flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all font-medium text-xs cursor-pointer select-none border',
+4004:                   isInWatchlist
+4005:                     ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30 font-semibold'
+4006:                     : 'bg-white/[0.04] hover:bg-white/[0.08] text-neutral-300 hover:text-white border-white/[0.06]',
+4007:                 )}
+4008:                 title="Thêm vào tủ phim"
+4009:               >
+4010:                 {isInWatchlist ? (
+4011:                   <Check size={13} className="text-emerald-400" />
+4012:                 ) : (
+4013:                   <Plus size={13} className="text-neutral-400" />
+4014:                 )}
+4015:                 <span className="hidden sm:inline">{isInWatchlist ? 'Đã lưu' : 'Tủ phim'}</span>
+4016:               </button>
+4017: 
+4018:               {/* Cinema Light-Off Button */}
+4019:               <button
+4020:                 onClick={() => setLightOff(!lightOff)}
+4021:                 className={cn(
+4022:                   'flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all font-medium text-xs cursor-pointer select-none border',
+4023:                   lightOff
+4024:                     ? 'bg-white/10 text-white border-white/20 shadow-sm'
+4025:                     : 'bg-white/[0.04] hover:bg-white/[0.08] text-neutral-400 hover:text-white border-white/[0.06]',
+4026:                 )}
+4027:                 title="Tắt đèn làm mờ xung quanh"
+4028:               >
+4029:                 {lightOff ? (
+4030:                   <LightbulbOff size={13} className="text-neutral-300" />
+4031:                 ) : (
+4032:                   <Lightbulb size={13} className="text-neutral-400" />
+4033:                 )}
+4034:                 <span className="hidden sm:inline">{lightOff ? 'Bật Đèn' : 'Tắt Đèn'}</span>
+4035:               </button>
+4036: 
+4037:               {/* Watch Party / Xem chung Button */}
+4038:               <button
+4039:                 onClick={() => {
+4040:                   if (!wp.roomId) {
+4041:                     setWatchPartyRequested(true);
+4042:                     setManualPartyCreateRequested(true);
+4043:                   } else {
+4044:                     wp.setIsOpen(!wp.isOpen);
+4045:                   }
+4046:                 }}
+4047:                 disabled={!watchPartyEnabled}
+4048:                 className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] hover:text-white/80 transition-colors text-white/60 border border-white/[0.06] disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
+4049:                 title="Phòng xem phim chung cùng bạn bè"
+4050:               >
+4051:                 <Users size={13} className="text-neutral-400" />
+4052:                 <span className="hidden sm:inline">
+4053:                   {wp.roomId ? `Phòng ${wp.roomId}` : 'Xem chung'}
+4054:                 </span>
+4055:               </button>
+4056: 
+4057:               {/* Chế độ Rạp phim (Theater Mode) */}
+4058:               <button
+4059:                 type="button"
+4060:                 onClick={() => {
+4061:                   setTheaterMode((prev) => {
+4062:                     const next = !prev;
+4063:                     toast(
+4064:                       next ? 'Đã bật chế độ Rạp phim mở rộng' : 'Đã tắt chế độ Rạp phim',
+4065:                       'info',
+4066:                     );
+4067:                     return next;
+4068:                   });
+4069:                 }}
+4070:                 className={cn(
+4071:                   'flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all font-medium text-xs cursor-pointer select-none border',
+4072:                   theaterMode
+4073:                     ? 'bg-sky-500/15 text-sky-400 border-sky-500/30 font-semibold shadow-sm'
+4074:                     : 'bg-white/[0.04] hover:bg-white/[0.08] text-neutral-400 hover:text-white border-white/[0.06]',
+4075:                 )}
+4076:                 title="Chế độ rạp phim (Phím T)"
+4077:               >
+4078:                 <Maximize2 size={13} className={theaterMode ? 'text-sky-400' : 'text-neutral-400'} />
+4079:                 <span className="hidden sm:inline">Rạp phim</span>
+4080:               </button>
+4081: 
+4082:               {/* Bảng Phím tắt (Keyboard Shortcuts) */}
+4083:               <button
+4084:                 type="button"
+4085:                 onClick={() => setShowShortcutsGuide((prev) => !prev)}
+4086:                 className={cn(
+4087:                   'flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all font-medium text-xs cursor-pointer select-none border',
+4088:                   showShortcutsGuide
+4089:                     ? 'bg-purple-500/15 text-purple-400 border-purple-500/30 font-semibold shadow-sm'
+4090:                     : 'bg-white/[0.04] hover:bg-white/[0.08] text-neutral-400 hover:text-white border-white/[0.06]',
+4091:                 )}
+4092:                 title="Bảng phím tắt (Phím ?)"
+4093:               >
+4094:                 <Keyboard size={13} className={showShortcutsGuide ? 'text-purple-400' : 'text-neutral-400'} />
+4095:                 <span className="hidden sm:inline">Phím tắt</span>
+4096:               </button>
+4097: 
+4098:               {/* Multi-Platform Share Button & Dropdown */}
+4099:               <div className="relative">
+4100:                 {(() => {
+4101:                   const currentPlaySeconds = Math.floor(
+4102:                     artInstance?.currentTime || lastKnownPlaybackTimeRef.current || 0,
+4103:                   );
+4104:                   let computedShareUrl = '';
+4105:                   if (typeof window !== 'undefined') {
+4106:                     try {
+4107:                       const u = new URL(window.location.href);
+4108:                       if (shareWithTimestamp && currentPlaySeconds > 3) {
+4109:                         u.searchParams.set('t', String(currentPlaySeconds));
+4110:                       } else {
+4111:                         u.searchParams.delete('t');
+4112:                       }
+4113:                       computedShareUrl = u.toString();
+4114:                     } catch {
+4115:                       computedShareUrl = window.location.href;
+4116:                     }
+4117:                   }
+4118: 
+4119:                   return (
+4120:                     <>
+4121:                       <button
+4122:                         type="button"
+4123:                         onClick={() => {
+4124:                           if (typeof navigator !== 'undefined' && navigator.share) {
+4125:                             navigator
+4126:                               .share({
+4127:                                 title: film?.name || 'FlexPhim',
+4128:                                 text: `Xem phim ${film?.name || ''} miễn phí trên FlexPhim!`,
+4129:                                 url: computedShareUrl,
+4130:                               })
+4131:                               .catch(() => setShowShareModal((p) => !p));
+4132:                           } else {
+4133:                             setShowShareModal((p) => !p);
+4134:                           }
+4135:                         }}
+4136:                         className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] hover:text-white transition-colors text-white/50 text-xs font-medium border border-white/[0.06] cursor-pointer"
+4137:                         title="Chia sẻ phim ra các nền tảng"
+4138:                       >
+4139:                         <Share2 size={13} />
+4140:                         <span className="hidden sm:inline">Chia sẻ</span>
+4141:                       </button>
+4142: 
+4143:                       {/* Multi-Platform Share Dropdown */}
+4144:                       {showShareModal && (
+4145:                         <div className="absolute right-0 top-full mt-2 z-50 w-72 p-3.5 rounded-2xl bg-[#111419]/95 border border-white/15 backdrop-blur-xl shadow-2xl space-y-3 animate-in fade-in zoom-in-95 duration-150">
+4146:                           <div className="flex items-center justify-between pb-2 border-b border-white/10">
+4147:                             <span className="text-xs font-bold text-white flex items-center gap-1.5">
+4148:                               <Share2 size={13} className="text-blue-400" /> Chia Sẻ Phim Trực Tiếp
+4149:                             </span>
+4150:                             <button
+4151:                               type="button"
+4152:                               onClick={() => setShowShareModal(false)}
+4153:                               className="text-neutral-400 hover:text-white text-xs px-1.5 py-0.5 rounded hover:bg-white/10"
+4154:                             >
+4155:                               ✕
+4156:                             </button>
+4157:                           </div>
+4158: 
+4159:                           {/* Timestamp Checkbox */}
+4160:                           {currentPlaySeconds > 3 && (
+4161:                             <label className="flex items-center gap-2 p-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 transition-colors cursor-pointer select-none">
+4162:                               <input
+4163:                                 type="checkbox"
+4164:                                 checked={shareWithTimestamp}
+4165:                                 onChange={(e) => setShareWithTimestamp(e.target.checked)}
+4166:                                 className="w-3.5 h-3.5 rounded border-white/20 bg-black/40 text-sky-500 focus:ring-0 cursor-pointer"
+4167:                               />
+4168:                               <span className="text-xs text-neutral-300">
+4169:                                 Bắt đầu tại{' '}
+4170:                                 <strong className="font-mono font-bold text-sky-400">
+4171:                                   {formatTimestampSeconds(currentPlaySeconds)}
+4172:                                 </strong>
+4173:                               </span>
+4174:                             </label>
+4175:                           )}
+4176: 
+4177:                           {/* Direct Platform Links */}
+4178:                           <div className="grid grid-cols-2 gap-2 text-xs font-semibold">
+4179:                             {/* Facebook */}
+4180:                             <a
+4181:                               href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(computedShareUrl)}`}
+4182:                               target="_blank"
+4183:                               rel="noopener noreferrer"
+4184:                               className="flex items-center gap-2 p-2 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 transition-all active:scale-95"
+4185:                             >
+4186:                               <span className="w-5 h-5 rounded-full bg-blue-600 text-white font-black text-[11px] flex items-center justify-center">
+4187:                                 f
+4188:                               </span>
+4189:                               <span>Facebook</span>
+4190:                             </a>
+4191: 
+4192:                             {/* Zalo */}
+4193:                             <a
+4194:                               href={`https://zalo.me/share?url=${encodeURIComponent(computedShareUrl)}`}
+4195:                               target="_blank"
+4196:                               rel="noopener noreferrer"
+4197:                               className="flex items-center gap-2 p-2 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-400/30 transition-all active:scale-95"
+4198:                             >
+4199:                               <span className="w-5 h-5 rounded-full bg-blue-500 text-white font-black text-[10px] flex items-center justify-center">
+4200:                                 Z
+4201:                               </span>
+4202:                               <span>Zalo</span>
+4203:                             </a>
+4204: 
+4205:                             {/* Telegram */}
+4206:                             <a
+4207:                               href={`https://t.me/share/url?url=${encodeURIComponent(computedShareUrl)}&text=${encodeURIComponent(`Xem phim ${film?.name || ''} chất lượng cao!`)}`}
+4208:                               target="_blank"
+4209:                               rel="noopener noreferrer"
+4210:                               className="flex items-center gap-2 p-2 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-400/30 transition-all active:scale-95"
+4211:                             >
+4212:                               <Send size={13} className="text-sky-400" />
+4213:                               <span>Telegram</span>
+4214:                             </a>
+4215: 
+4216:                             {/* Twitter / X */}
+4217:                             <a
+4218:                               href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(computedShareUrl)}&text=${encodeURIComponent(`Xem phim ${film?.name || ''} trên FlexPhim!`)}`}
+4219:                               target="_blank"
+4220:                               rel="noopener noreferrer"
+4221:                               className="flex items-center gap-2 p-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white border border-white/10 transition-all active:scale-95"
+4222:                             >
+4223:                               <span className="font-mono text-xs">𝕏</span>
+4224:                               <span>Twitter / X</span>
+4225:                             </a>
+4226:                           </div>
+4227: 
+4228:                           {/* Copy Link Input Bar */}
+4229:                           <div className="pt-2 border-t border-white/10 flex items-center gap-1.5">
+4230:                             <input
+4231:                               type="text"
+4232:                               readOnly
+4233:                               value={computedShareUrl}
+4234:                               className="w-full bg-black/40 border border-white/10 rounded-lg px-2.5 py-1.5 text-[10px] text-neutral-300 focus:outline-none truncate font-mono"
+4235:                             />
+4236:                             <button
+4237:                               type="button"
+4238:                               onClick={() => {
+4239:                                 navigator.clipboard.writeText(computedShareUrl);
+4240:                                 setCopied(true);
+4241:                                 toast(
+4242:                                   shareWithTimestamp && currentPlaySeconds > 3
+4243:                                     ? `Đã sao chép liên kết tại ${formatTimestampSeconds(currentPlaySeconds)}!`
+4244:                                     : 'Đã sao chép liên kết!',
+4245:                                   'success',
+4246:                                 );
+4247:                                 setTimeout(() => setCopied(false), 2000);
+4248:                               }}
+4249:                               className="flex items-center gap-1 bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg border border-white/15 transition-all shrink-0 active:scale-95"
+4250:                             >
+4251:                               {copied ? (
+4252:                                 <Check size={13} className="text-emerald-400" />
+4253:                               ) : (
+4254:                                 <Copy size={13} />
+4255:                               )}
+4256:                               <span>{copied ? 'Đã chép' : 'Chép'}</span>
+4257:                             </button>
+4258:                           </div>
+4259:                         </div>
+4260:                       )}
+4261:                     </>
+4262:                   );
+4263:                 })()}
+4264:               </div>
+4265: 
+4266:               {/* Kiểm tra Máy Chủ (Admin Only) */}
+4267:               {isAdmin && (
+4268:                 <button
+4269:                   type="button"
+4270:                   onClick={() => setShowServerHealthModal(true)}
+4271:                   className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 hover:text-amber-300 transition-colors text-xs font-semibold border border-amber-500/25 cursor-pointer shadow-sm select-none"
+4272:                   title="Kiểm tra sức khỏe & tốc độ máy chủ (Chỉ dành cho Quản trị viên)"
+4273:                 >
+4274:                   <Activity size={13} className="text-amber-400" />
+4275:                   <span>Kiểm tra</span>
+4276:                 </button>
+4277:               )}
+4278:             </div>
+4279:           </div>
+4280: 
+4281:           {/* ───── 1. PLAYER ───── */}
+4282:           <div
+4283:             ref={playerContainerRef}
+4284:             className={cn(
+4285:               'netphim-watch-player bg-black rounded-none overflow-hidden relative shadow-2xl ring-1 ring-white/[0.06] select-none transition-all duration-300 flex items-center justify-center',
+4286:               theaterMode
+4287:                 ? 'is-theater col-span-full w-full aspect-[16/9] sm:aspect-auto sm:h-[72vh] lg:h-[78vh] min-h-[400px] max-h-[920px] mx-auto shadow-2xl ring-1 ring-white/10'
+4288:                 : 'xl:col-start-1 xl:row-start-2 w-full aspect-video',
+4289:               lightOff ? 'relative z-50 ring-1 ring-white/20 shadow-2xl' : '',
+4290:             )}
+4291:           >
+4292:             {/* Fallback overlay */}
+4293:             {isFallbacking && (
+4294:               <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm gap-3">
+4295:                 <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+4296:                 <p className="text-white/70 text-sm font-medium">
+4297:                   {fallbackMessage || 'Đang chuyển server...'}
+4298:                 </p>
+4299:                 {fallbackAttemptRef.current > 0 && (
+4300:                   <p className="text-white/30 text-xs">Lần thử {fallbackAttemptRef.current + 1}</p>
+4301:                 )}
+4302:               </div>
+4303:             )}
+4304: 
+4305:             {videoUrl ? (
+4306:               <>
+4307:                 {!DISABLE_ARTPLAYER && playerEngine === 'hls' && m3u8Url ? (
+4308:                   <HlsVideoPlayer
+4309:                     key={`hls:${server?._source || 'unknown'}:${currentServer}:${currentEpData?.slug || currentEpData?.name || ''}`}
+4310:                     src={m3u8Url}
+4311:                     proxySrc={m3u8ProxyUrl}
+4312:                     poster={optimizedPlayerPoster || posterUrl}
+4313:                     title={film?.name || film?.title || ''}
+4314:                     subtitle={currentEpData?.name ? `Tập ${currentEpData.name}` : ''}
+4315:                     subtitles={
+4316:                       Array.isArray(currentEpData?.subtitles) ? currentEpData.subtitles : undefined
+4317:                     }
+4318:                     thumbnailVttUrl={[
+4319:                       currentEpData?.thumbnailVttUrl,
+4320:                       currentEpData?.thumbnail_vtt,
+4321:                       currentEpData?.preview_vtt,
+4322:                       currentEpData?.storyboard,
+4323:                     ].find((value) => typeof value === 'string' && value.trim().length > 0)}
+4324:                     skipIntroStart={currentEpData?.intro?.start}
+4325:                     skipIntroEnd={currentEpData?.intro?.end}
+4326:                     skipOutroStart={currentEpData?.outro?.start}
+4327:                     initialTime={
+4328:                       lastKnownPlaybackTimeRef.current ||
+4329:                       (requestedTimestamp > 0 ? requestedTimestamp : resumeAt)
+4330:                     }
+4331:                     autoPlay={autoPlayConfig}
+4332:                     autoSkipAds={useSettingsStore.getState().autoSkipAds ?? true}
+4333:                     isTheaterMode={theaterMode}
+4334:                     onTheaterModeToggle={(active) => {
+4335:                       setTheaterMode(active);
+4336:                       toast(
+4337:                         active ? 'Đã bật chế độ Rạp phim mở rộng' : 'Đã tắt chế độ Rạp phim',
+4338:                         'info',
+4339:                       );
+4340:                     }}
+4341:                     servers={playerServers}
+4342:                     currentServerIndex={currentServer}
+4343:                     onSwitchServer={handleSelectServer}
+4344:                     onReady={(player) => {
+4345:                       setArtInstance(player);
+4346:                       setPlayerReadySlug(slug);
+4347:                       setIsFallbacking(false);
+4348:                       setFallbackMessage('');
+4349:                     }}
+4350:                     onPlaying={() => {
+4351:                       if (requestedTimestamp > 0 && !hasNotifiedTimestampRef.current) {
+4352:                         hasNotifiedTimestampRef.current = true;
+4353:                         toast(
+4354:                           `Đang phát từ ${formatTimestampSeconds(requestedTimestamp)} theo liên kết chia sẻ`,
+4355:                           'info',
+4356:                         );
+4357:                       }
+4358:                       const sourceKey = `${sourceCandidate.source || 'unknown'}:${sourceCandidate.serverName || 'unknown'}`;
+4359:                       if (!playedSourceKeysRef.current.has(sourceKey)) {
+4360:                         playedSourceKeysRef.current.add(sourceKey);
+4361:                         markSourceSuccess(sourceCandidate);
+4362:                         recordTelemetry('watch_now.success', {
+4363:                           source: sourceCandidate.source || 'unknown',
+4364:                           server: sourceCandidate.serverName || 'unknown',
+4365:                           episode: currentEpData?.slug || currentEpData?.name || 'unknown',
+4366:                           start_time_ms: Date.now() - playerLoadStartedAtRef.current,
+4367:                           engine: 'hls',
+4368:                         });
+4369:                         if (!recordedViewRef.current) {
+4370:                           recordedViewRef.current = true;
+4371:                           void viewApi
+4372:                             .record(slug, {
+4373:                               title: film?.name || slug,
+4374:                               originName: film?.origin_name,
+4375:                               posterUrl,
+4376:                               year: Number(film?.year) || undefined,
+4377:                               type: film?.type,
+4378:                               episode: currentEpData?.slug || currentEpData?.name,
+4379:                               serverName: sourceCandidate.serverName,
+4380:                               provider: sourceCandidate.source,
+4381:                             })
+4382:                             .catch(() => {
+4383:                               recordedViewRef.current = false;
+4384:                             });
+4385:                         }
+4386:                       }
+4387:                     }}
+4388:                     onBuffering={(bufferMs) => {
+4389:                       recordTelemetry('player.buffering', {
+4390:                         source: sourceCandidate.source || 'unknown',
+4391:                         server: sourceCandidate.serverName || 'unknown',
+4392:                         episode: currentEpData?.slug || currentEpData?.name || 'unknown',
+4393:                         buffer_ms: bufferMs,
+4394:                         engine: 'hls',
+4395:                       });
+4396:                     }}
+4397:                     onProgress={handlePlaybackProgress}
+4398:                     onEnded={handleVideoEnded}
+4399:                     onStallSuggestServer={handleStallSuggestServer}
+4400:                     onError={(error) => handlePlayerFailure(error.type)}
+4401:                   />
+4402:                 ) : iframeUrl ? (
+4403:                   <div className="relative w-full h-full">
+4404:                     <iframe
+4405:                       key={`iframe:${server?._source || 'unknown'}:${currentServer}:${currentEpData?.slug || currentEpData?.name || ''}`}
+4406:                       src={iframeUrl}
+4407:                       className="w-full h-full border-0"
+4408:                       allowFullScreen
+4409:                       allow="autoplay; fullscreen; picture-in-picture; encrypted-media; gyroscope; accelerometer"
+4410:                       referrerPolicy={
+4411:                         server?._source === 'vsmov' ||
+4412:                         iframeUrl.includes('streamvsmov.com') ||
+4413:                         iframeUrl.includes('vsmov.com')
+4414:                           ? 'no-referrer'
+4415:                           : 'strict-origin-when-cross-origin'
+4416:                       }
+4417:                       sandbox={iframeSandbox}
+4418:                       title={`${film?.name} - ${currentEpData?.name}`}
+4419:                       onLoad={() => {
+4420:                         clearIframeLoadTimeout();
+4421:                         setPlayerReadySlug(slug);
+4422:                         setIsFallbacking(false);
+4423:                         setFallbackMessage('');
+4424:                         const sourceKey = `${sourceCandidate.source || 'unknown'}:${sourceCandidate.serverName || 'unknown'}`;
+4425:                         if (!playedSourceKeysRef.current.has(sourceKey)) {
+4426:                           playedSourceKeysRef.current.add(sourceKey);
+4427:                           markSourceSuccess(sourceCandidate);
+4428:                           recordTelemetry('watch_now.success', {
+4429:                             source: sourceCandidate.source || 'unknown',
+4430:                             server: sourceCandidate.serverName || 'unknown',
+4431:                             episode: currentEpData?.slug || currentEpData?.name || 'unknown',
+4432:                             start_time_ms: Date.now() - playerLoadStartedAtRef.current,
+4433:                             engine: 'iframe',
+4434:                           });
+4435:                           if (!recordedViewRef.current) {
+4436:                             recordedViewRef.current = true;
+4437:                             void viewApi
+4438:                               .record(slug, {
+4439:                                 title: film?.name || slug,
+4440:                                 originName: film?.origin_name,
+4441:                                 posterUrl,
+4442:                                 year: Number(film?.year) || undefined,
+4443:                                 type: film?.type,
+4444:                                 episode: currentEpData?.slug || currentEpData?.name,
+4445:                                 serverName: sourceCandidate.serverName,
+4446:                                 provider: sourceCandidate.source,
+4447:                               })
+4448:                               .catch(() => {
+4449:                                 recordedViewRef.current = false;
+4450:                               });
+4451:                           }
+4452:                         }
+4453:                         recordTelemetry('player.iframe_loaded', {
+4454:                           source: sourceCandidate.source || 'unknown',
+4455:                           server: sourceCandidate.serverName || 'unknown',
+4456:                           episode: currentEpData?.slug || currentEpData?.name || 'unknown',
+4457:                         });
+4458:                       }}
+4459:                       onError={() => {
+4460:                         if (!userManuallySelectedServer) {
+4461:                           handlePlayerFailure('iframe-error');
+4462:                         }
+4463:                       }}
+4464:                     />
+4465:                   </div>
+4466:                 ) : (
+4467:                   <div className="flex flex-col items-center justify-center w-full h-full text-white/30">
+4468:                     <AlertTriangle size={28} className="mb-2" />
+4469:                     <p className="text-xs">Không có nguồn video</p>
+4470:                   </div>
+4471:                 )}
+4472: 
+4473:                 {autoNextCountdown !== null && (
+4474:                   <AutoNextOverlay
+4475:                     seconds={autoNextCountdown}
+4476:                     nextEpisodeTitle={
+4477:                       serverData[currentEpIndex + 1]?.name || serverData[currentEpIndex + 1]?.slug
+4478:                     }
+4479:                     onSkip={goNextEpisode}
+4480:                     onCancel={() => {
+4481:                       autoNextDismissedRef.current = true;
+4482:                       setAutoNextCountdown(null);
+4483:                       toast('Đã hủy tự động chuyển tập cho tập này', 'info');
+4484:                     }}
+4485:                   />
+4486:                 )}
+4487: 
+4488:                 {/* Smart Server Failover Suggestion Toast */}
+4489:                 {suggestedServerToast && (
+4490:                   <div className="absolute bottom-16 left-4 z-50 max-w-sm rounded-2xl border border-sky-500/40 bg-[#12141c]/95 p-3.5 shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-2 duration-300">
+4491:                     <div className="flex items-start gap-3">
+4492:                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-500/20 text-sky-400">
+4493:                         <Sparkles size={18} />
+4494:                       </div>
+4495:                       <div className="min-w-0 flex-1">
+4496:                         <p className="text-xs font-bold text-white">
+4497:                           Đường truyền hiện tại đang chậm
+4498:                         </p>
+4499:                         <p className="mt-0.5 text-[11px] text-neutral-300 leading-snug">
+4500:                           <span className="font-bold text-sky-300">
+4501:                             {suggestedServerToast.serverName}
+4502:                           </span>{' '}
+4503:                           (Ping {suggestedServerToast.ping}ms) đang phản hồi rất nhanh. Bạn có muốn
+4504:                           đổi không?
+4505:                         </p>
+4506:                         <div className="mt-2.5 flex items-center gap-2">
+4507:                           <button
+4508:                             onClick={handleAcceptSuggestedServer}
+4509:                             className="rounded-lg bg-sky-500 hover:bg-sky-400 px-3 py-1.5 text-xs font-extrabold text-white shadow-md transition-colors cursor-pointer"
+4510:                           >
+4511:                             Đổi ngay
+4512:                           </button>
+4513:                           <button
+4514:                             onClick={() => setSuggestedServerToast(null)}
+4515:                             className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-neutral-400 hover:text-white transition-colors cursor-pointer"
+4516:                           >
+4517:                             Bỏ qua
+4518:                           </button>
+4519:                         </div>
+4520:                       </div>
+4521:                     </div>
+4522:                   </div>
+4523:                 )}
+4524:               </>
+4525:             ) : (
+4526:               <div className="flex flex-col items-center justify-center w-full h-full text-white/20">
+4527:                 <Clapperboard size={36} className="mb-2" />
+4528:                 <p className="text-xs">Không tìm thấy nguồn phim</p>
+4529:               </div>
+4530:             )}
+4531:           </div>
+4532: 
+4533:           {/* ── 2. UNDER-PLAYER CONTENT (Title, Episodes, Cast, Comments) ── */}
+4534:           <div
+4535:             className={cn(
+4536:               'space-y-3 min-w-0 mt-0.5 sm:mt-1',
+4537:               theaterMode
+4538:                 ? 'col-span-1 xl:col-start-1 xl:row-start-3'
+4539:                 : 'xl:col-start-1 xl:row-start-3',
+4540:             )}
+4541:           >
+4542:             {/* ── EXPANDABLE SHORTCUTS & GESTURE GUIDE (Premium Clean Cinema Standard) ── */}
+4543:             {showShortcutsGuide && (
+4544:               <div
+4545:                 className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 select-none"
+4546:                 onClick={() => setShowShortcutsGuide(false)}
+4547:               >
+4548:                 <div
+4549:                   className="relative w-full max-w-2xl bg-[#11141c]/95 border border-white/15 rounded-3xl p-5 sm:p-6 shadow-2xl backdrop-blur-2xl space-y-4 animate-in zoom-in-95 duration-200"
+4550:                   onClick={(e) => e.stopPropagation()}
+4551:                 >
+4552:                   <div className="flex items-center justify-between pb-3 border-b border-white/10">
+4553:                     <div className="flex items-center gap-2.5">
+4554:                       <div className="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center">
+4555:                         <Keyboard size={18} />
+4556:                       </div>
+4557:                       <div>
+4558:                         <h3 className="text-sm sm:text-base font-bold text-white">
+4559:                           Bảng Phím Tắt Trình Phát
+4560:                         </h3>
+4561:                         <p className="text-[11px] text-white/50">
+4562:                           Điều khiển xem phim nhanh trên bàn phím (Desktop)
+4563:                         </p>
+4564:                       </div>
+4565:                     </div>
+4566:                     <button
+4567:                       type="button"
+4568:                       onClick={() => setShowShortcutsGuide(false)}
+4569:                       className="w-8 h-8 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+4570:                       title="Đóng bảng phím tắt (Esc)"
+4571:                     >
+4572:                       ✕
+4573:                     </button>
+4574:                   </div>
+4575: 
+4576:                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+4577:                     <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+4578:                       <span className="text-white/70">Phát / Tạm dừng</span>
+4579:                       <kbd className="px-2 py-0.5 rounded bg-white/10 border border-white/15 text-[10px] font-mono font-bold text-white shadow-sm">
+4580:                         Space / K
+4581:                       </kbd>
+4582:                     </div>
+4583:                     <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+4584:                       <span className="text-white/70">Toàn màn hình</span>
+4585:                       <kbd className="px-2 py-0.5 rounded bg-white/10 border border-white/15 text-[10px] font-mono font-bold text-white shadow-sm">
+4586:                         F
+4587:                       </kbd>
+4588:                     </div>
+4589:                     <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+4590:                       <span className="text-white/70">Bật / Tắt tiếng (Mute)</span>
+4591:                       <kbd className="px-2 py-0.5 rounded bg-white/10 border border-white/15 text-[10px] font-mono font-bold text-white shadow-sm">
+4592:                         M
+4593:                       </kbd>
+4594:                     </div>
+4595:                     <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+4596:                       <span className="text-white/70">Tua lùi / Tiến 10 giây</span>
+4597:                       <kbd className="px-2 py-0.5 rounded bg-white/10 border border-white/15 text-[10px] font-mono font-bold text-white shadow-sm">
+4598:                         J / L hoặc ← / →
+4599:                       </kbd>
+4600:                     </div>
+4601:                     <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+4602:                       <span className="text-white/70">Tăng / Giảm âm lượng (+/- 10%)</span>
+4603:                       <kbd className="px-2 py-0.5 rounded bg-white/10 border border-white/15 text-[10px] font-mono font-bold text-white shadow-sm">
+4604:                         ↑ / ↓
+4605:                       </kbd>
+4606:                     </div>
+4607:                     <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+4608:                       <span className="text-white/70">Chuyển tập tiếp theo</span>
+4609:                       <kbd className="px-2 py-0.5 rounded bg-white/10 border border-white/15 text-[10px] font-mono font-bold text-white shadow-sm">
+4610:                         N
+4611:                       </kbd>
+4612:                     </div>
+4613:                     <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+4614:                       <span className="text-white/70">Bật / Tắt phụ đề</span>
+4615:                       <kbd className="px-2 py-0.5 rounded bg-white/10 border border-white/15 text-[10px] font-mono font-bold text-white shadow-sm">
+4616:                         C
+4617:                       </kbd>
+4618:                     </div>
+4619:                     <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+4620:                       <span className="text-white/70">Chế độ Rạp chiếu phim</span>
+4621:                       <kbd className="px-2 py-0.5 rounded bg-white/10 border border-white/15 text-[10px] font-mono font-bold text-white shadow-sm">
+4622:                         T
+4623:                       </kbd>
+4624:                     </div>
+4625:                     <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+4626:                       <span className="text-white/70">Hình trong hình (PiP)</span>
+4627:                       <kbd className="px-2 py-0.5 rounded bg-white/10 border border-white/15 text-[10px] font-mono font-bold text-white shadow-sm">
+4628:                         P
+4629:                       </kbd>
+4630:                     </div>
+4631:                     <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+4632:                       <span className="text-white/70">Mở / Đóng bảng phím tắt này</span>
+4633:                       <kbd className="px-2 py-0.5 rounded bg-white/10 border border-white/15 text-[10px] font-mono font-bold text-white shadow-sm">
+4634:                         ?
+4635:                       </kbd>
+4636:                     </div>
+4637:                   </div>
+4638: 
+4639:                   <div className="pt-2 flex items-center justify-between text-[11px] text-white/40 border-t border-white/10">
+4640:                     <span>
+4641:                       Mẹo: Nhấn phím <kbd className="font-mono text-white/70">?</kbd> bất cứ lúc nào
+4642:                       khi xem phim để mở bảng này.
+4643:                     </span>
+4644:                     <span>
+4645:                       Nhấn <kbd className="font-mono text-white/70">Esc</kbd> để đóng
+4646:                     </span>
+4647:                   </div>
+4648:                 </div>
+4649:               </div>
+4650:             )}
+4651: 
+4652:             {/* 2. TITLE + PREV/NEXT */}
+4653:             <div className="flex items-start gap-3">
+4654:               <div className="flex-1 min-w-0">
+4655:                 <h1 className="text-base md:text-lg font-bold text-white leading-snug truncate">
+4656:                   {film?.name}
+4657:                   {currentEpData?.name && (
+4658:                     <span className="text-white/35 font-normal ml-2 text-sm">
+4659:                       · Tập {currentEpData.name.replace(/^tập\s*/i, '')}
+4660:                     </span>
+4661:                   )}
+4662:                 </h1>
+4663:                 {categories && <p className="text-[11px] text-white/30 mt-0.5">{categories}</p>}
+4664:               </div>
+4665:               <div className="flex items-center gap-2 shrink-0">
+4666:                 {currentEpIndex > 0 && (
+4667:                   <button
+4668:                     onClick={() => {
+4669:                       const p = serverData[currentEpIndex - 1];
+4670:                       navigateToEpisode(p.slug || p.name);
+4671:                     }}
+4672:                     className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-neutral-300 bg-white/[0.04] border border-white/10 rounded-xl hover:text-white hover:bg-white/10 transition-colors"
+4673:                   >
+4674:                     <ChevronLeft size={13} /> {t('watch.prevEpisode', 'Tập trước')}
+4675:                   </button>
+4676:                 )}
+4677:                 {currentEpIndex >= 0 && currentEpIndex < serverData.length - 1 && (
+4678:                   <button
+4679:                     onClick={() => {
+4680:                       const n = serverData[currentEpIndex + 1];
+4681:                       navigateToEpisode(n.slug || n.name);
+4682:                     }}
+4683:                     className="flex items-center gap-1 rounded-xl border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-white/20"
+4684:                   >
+4685:                     {t('watch.nextEpisode', 'Tập tiếp')} <ChevronRight size={13} />
+4686:                   </button>
+4687:                 )}
+4688:               </div>
+4689:             </div>
+4690: 
+4691:             {/* ── Seamless Cinema Navigation Bar ── */}
+4692:             <div className="w-full pb-2.5 sm:pb-3 border-b border-white/[0.08]">
+4693:               <nav
+4694:                 className="flex items-center justify-start md:justify-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar scroll-smooth w-full px-1 sm:px-0 touch-pan-x select-none"
+4695:                 aria-label="Nội dung phim"
+4696:               >
+4697:                 {[
+4698:                   {
+4699:                     id: 'episodes' as const,
+4700:                     label: lang === 'en' ? 'Episodes' : 'Tập phim',
+4701:                     icon: Clapperboard,
+4702:                   },
+4703:                   {
+4704:                     id: 'recommendations' as const,
+4705:                     label: lang === 'en' ? 'For you' : 'Đề xuất',
+4706:                     icon: Sparkles,
+4707:                   },
+4708:                   {
+4709:                     id: 'cast' as const,
+4710:                     label: lang === 'en' ? 'Cast' : 'Diễn viên',
+4711:                     icon: Users,
+4712:                   },
+4713:                   {
+4714:                     id: 'trailer' as const,
+4715:                     label: 'Trailer',
+4716:                     icon: CirclePlay,
+4717:                   },
+4718:                   {
+4719:                     id: 'collection' as const,
+4720:                     label: lang === 'en' ? 'Gallery' : 'Bộ sưu tập',
+4721:                     icon: FolderOpen,
+4722:                   },
+4723:                 ].map((tab) => {
+4724:                   const active = watchContentTab === tab.id;
+4725:                   const IconComponent = tab.icon;
+4726:                   return (
+4727:                     <button
+4728:                       key={tab.id}
+4729:                       type="button"
+4730:                       onClick={() => setWatchContentTab(tab.id)}
+4731:                       aria-current={active ? 'page' : undefined}
+4732:                       className={cn(
+4733:                         'relative flex items-center justify-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-full text-[11.5px] sm:text-xs font-semibold transition-all cursor-pointer select-none shrink-0 whitespace-nowrap',
+4734:                         active
+4735:                           ? 'bg-[#24262c] text-white font-bold shadow-sm ring-1 ring-white/10'
+4736:                           : 'text-neutral-400 hover:text-white hover:bg-[#1a1c22]',
+4737:                       )}
+4738:                     >
+4739:                       <IconComponent size={13} aria-hidden="true" />
+4740:                       <span>{tab.label}</span>
+4741:                     </button>
+4742:                   );
+4743:                 })}
+4744:               </nav>
+4745:             </div>
+4746: 
+4747:             <div className={watchContentTab === 'episodes' ? 'block' : 'hidden'}>
+4748:               <div className="space-y-3.5 py-1">
+4749:                 {/* ── Seamless Cinema Streaming Controls ── */}
+4750:                 {(() => {

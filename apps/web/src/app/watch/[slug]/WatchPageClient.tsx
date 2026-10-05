@@ -56,6 +56,8 @@ import {
   CheckCircle2,
   Loader2,
   Zap,
+  Columns,
+  RectangleHorizontal,
 } from 'lucide-react';
 import {
   kkphimApi,
@@ -1559,6 +1561,34 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
   // Cinema Mode & Player Enhancement States
   const [lightOff, setLightOff] = useState(false);
   const [theaterMode, setTheaterMode] = useState(false);
+  const [watchLayoutMode, setWatchLayoutMode] = useState<'classic' | 'cinema'>('classic');
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('flexphim_watch_layout_mode');
+      if (saved === 'classic' || saved === 'cinema') {
+        setWatchLayoutMode(saved);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const handleToggleLayoutMode = useCallback(() => {
+    setWatchLayoutMode((prev) => {
+      const next = prev === 'classic' ? 'cinema' : 'classic';
+      try {
+        localStorage.setItem('flexphim_watch_layout_mode', next);
+      } catch {}
+      toast(
+        next === 'cinema'
+          ? 'Đã chuyển sang Bố cục Toàn cảnh (Rộng)'
+          : 'Đã chuyển sang Bố cục Tiêu chuẩn (Kèm Sidebar)',
+        'info',
+      );
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     if (lightOff) document.body.dataset.cinemaLights = 'off';
@@ -3965,7 +3995,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
             className={cn(
               'netphim-watch-player bg-black overflow-hidden relative shadow-2xl select-none transition-all duration-300 flex items-center justify-center',
               theaterMode
-                ? 'is-theater w-full aspect-[16/9] sm:aspect-auto sm:h-[72vh] lg:h-[78vh] min-h-[400px] max-h-[920px] shadow-[0_20px_80px_-15px_rgba(0,0,0,0.9)]'
+                ? 'is-theater w-full aspect-[16/9] sm:aspect-auto shadow-[0_20px_80px_-15px_rgba(0,0,0,0.95)]'
                 : 'w-full aspect-video',
               lightOff ? 'relative z-50' : '',
             )}
@@ -4357,26 +4387,48 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                   <span className="hidden md:inline">Tự chuyển</span>
                 </button>
 
-                {/* Rạp phim */}
+                {/* Rạp phim — Full-cinema mode: player chiếm full 100vh */}
                 <button
                   type="button"
                   onClick={() => {
                     setTheaterMode((prev) => {
                       const next = !prev;
-                      toast(next ? 'Đã bật chế độ Rạp phim mở rộng' : 'Đã tắt chế độ Rạp phim', 'info');
+                      toast(next ? 'Đã bật chế độ Rạp Phim toàn màn hình' : 'Đã tắt chế độ Rạp Phim', 'info');
                       return next;
                     });
                   }}
                   className={cn(
                     'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all text-xs cursor-pointer select-none border',
                     theaterMode
-                      ? 'bg-sky-500/15 text-sky-400 border-sky-500/30 font-semibold shadow-sm'
+                      ? 'bg-sky-500/20 text-sky-300 border-sky-400/40 font-bold shadow-[0_0_12px_rgba(14,165,233,0.3)]'
                       : 'bg-white/[0.04] hover:bg-white/[0.08] text-neutral-400 hover:text-white border-white/[0.06]',
                   )}
-                  title="Chế độ rạp phim (Phím T)"
+                  title="Rạp phim: Player chiếm toàn bộ chiều cao màn hình (Phím T)"
                 >
-                  <Maximize2 size={13} className={theaterMode ? 'text-sky-400' : 'text-neutral-400'} />
+                  <Tv size={13} className={theaterMode ? 'text-sky-300' : 'text-neutral-400'} />
                   <span className="hidden lg:inline">Rạp phim</span>
+                </button>
+
+                {/* Chuyển bố cục: Classic (sidebar) ↔ Cinema (toàn cảnh) */}
+                <button
+                  type="button"
+                  onClick={handleToggleLayoutMode}
+                  className={cn(
+                    'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all text-xs cursor-pointer select-none border',
+                    watchLayoutMode === 'cinema'
+                      ? 'bg-violet-500/15 text-violet-400 border-violet-500/30 font-semibold shadow-sm'
+                      : 'bg-white/[0.04] hover:bg-white/[0.08] text-neutral-400 hover:text-white border-white/[0.06]',
+                  )}
+                  title={watchLayoutMode === 'cinema' ? 'Bố cục Toàn cảnh — nhấn để về Tiêu chuẩn (kèm Sidebar)' : 'Bố cục Tiêu chuẩn — nhấn để mở rộng Toàn cảnh (ẩn Sidebar)'}
+                >
+                  {watchLayoutMode === 'cinema' ? (
+                    <RectangleHorizontal size={13} className="text-violet-400" />
+                  ) : (
+                    <Columns size={13} className="text-neutral-400" />
+                  )}
+                  <span className="hidden lg:inline">
+                    {watchLayoutMode === 'cinema' ? 'Toàn cảnh' : 'Tiêu chuẩn'}
+                  </span>
                 </button>
 
                 {/* Xem chung */}
@@ -4595,9 +4647,16 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
         ═══════════════════════════════════════════════════════════ */}
         <div className={cn(
           'w-full mx-auto transition-all duration-300',
-          theaterMode ? 'max-w-none' : 'max-w-[1800px]',
+          theaterMode || watchLayoutMode === 'cinema' ? 'max-w-none' : 'max-w-[1800px]',
         )}>
-          <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_280px] gap-x-5 gap-y-3 px-3 md:px-5 lg:px-6 pt-3">
+          <div className={cn(
+            'grid gap-x-5 gap-y-3 px-3 md:px-5 lg:px-6 pt-3 transition-all duration-300',
+            // Classic mode: 2 cột với sidebar bên phải (giữ nguyên layout ban đầu)
+            // Cinema mode: 1 cột toàn cảnh, ẩn sidebar
+            watchLayoutMode === 'cinema' || theaterMode
+              ? 'grid-cols-1'
+              : 'grid-cols-1 xl:grid-cols-[minmax(0,1fr)_280px]',
+          )}>
 
           {/* ── 2. UNDER-PLAYER CONTENT (Episodes, Cast, Comments) ── */}
           <div className="space-y-3 min-w-0">
@@ -5569,27 +5628,27 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
           </div>
           {/* END: Left content column */}
 
-          {/* ───── 3. RIGHT SIDEBAR ───── */}
-          <div className="space-y-4 min-w-0">
-            {/* Film Info */}
-            <SidebarFilmCard film={film} slug={slug} />
+          {/* ───── 3. RIGHT SIDEBAR (ẩn khi cinema mode hoặc theater mode) ───── */}
+          {watchLayoutMode !== 'cinema' && !theaterMode && (
+            <div className="space-y-4 min-w-0">
+              {/* Film Info */}
+              <SidebarFilmCard film={film} slug={slug} />
 
-            {/* Quick actions moved to sub-bar above — sidebar now clean */}
-
-            {/* Recommendations */}
-            {recsData?.items && recsData.items.length > 0 && (
-              <div className="space-y-3 pt-2">
-                <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-wider px-1">
-                  {matchedKeyword ? `Thêm về "${matchedKeyword}"` : 'Phim tương tự'}
-                </h3>
-                <div className="space-y-1">
-                  {recsData.items.slice(0, 8).map((item: any, index: number) => (
-                    <RecMovieItem key={item._id || item.slug} item={item} index={index} />
-                  ))}
+              {/* Recommendations */}
+              {recsData?.items && recsData.items.length > 0 && (
+                <div className="space-y-3 pt-2">
+                  <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-wider px-1">
+                    {matchedKeyword ? `Thêm về "${matchedKeyword}"` : 'Phim tương tự'}
+                  </h3>
+                  <div className="space-y-1">
+                    {recsData.items.slice(0, 8).map((item: any, index: number) => (
+                      <RecMovieItem key={item._id || item.slug} item={item} index={index} />
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
           {/* END: Right sidebar */}
 
           </div>{/* END: body grid */}
