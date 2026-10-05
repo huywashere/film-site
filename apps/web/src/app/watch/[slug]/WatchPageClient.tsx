@@ -2466,12 +2466,30 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       });
     };
     // Extract exclusive FlexPhim / FP servers or custom upload sources
-    const customEpisodesRaw =
+    const allCustomCandidates =
       (Array.isArray(data?.episodes) && data.episodes.length > 0 ? data.episodes : []) ||
       (Array.isArray(data?.movie?.episodes) && data.movie.episodes.length > 0 ? data.movie.episodes : []) ||
       (Array.isArray(initialData?.episodes) && initialData.episodes.length > 0 ? initialData.episodes : []);
+
+    const isExplicitFPSource =
+      primarySource === 'fp' ||
+      primarySource === 'flexphim' ||
+      primarySource === 'manual' ||
+      primarySource === 'custom';
+
+    const customEpisodesRaw = isExplicitFPSource
+      ? allCustomCandidates
+      : allCustomCandidates.filter((server: any) => {
+          const name = String(server?.server_name || '');
+          return (
+            server?._isFP ||
+            server?._source === 'fp' ||
+            /fp|flexphim|độc quyền/i.test(name)
+          );
+        });
+
     const fpEps = extractEpisodes({ episodes: customEpisodesRaw });
-    const kkphimEps = extractEpisodes(kkphimData);
+    const kkphimEps = isExplicitFPSource ? [] : extractEpisodes(kkphimData);
     const xinkEps = extractEpisodes(xinkData);
     const nguoncEps = extractEpisodes(nguoncData);
     const vsmovEps = extractEpisodes(vsmovData);
@@ -2781,8 +2799,14 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
 
     // Deduplicate any repeated servers in combined
     const seenServerKeys = new Set<string>();
+    const seenStreamUrls = new Set<string>();
     const deduplicated = combined.filter((srv) => {
       const firstStream = srv.server_data?.[0]?.link_m3u8 || srv.server_data?.[0]?.link_embed || '';
+      if (firstStream) {
+        const streamKey = `${srv._type || 'vietsub'}:${firstStream}`;
+        if (seenStreamUrls.has(streamKey)) return false;
+        seenStreamUrls.add(streamKey);
+      }
       const key = `${srv._source}:${srv.server_name}:${firstStream}`;
       if (seenServerKeys.has(key)) return false;
       seenServerKeys.add(key);
@@ -4922,7 +4946,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                                     'cursor-not-allowed border-transparent opacity-25 grayscale',
                                 )}
                               >
-                                <span>Server {serverNumber}</span>
+                                <span>{ep.server_name || `Server ${serverNumber}`}</span>
                                 {isActive && (
                                   <CheckCircle2
                                     size={12}
