@@ -62,7 +62,10 @@ function normalizeEpisodes(episodes: unknown): XinkRecord[] {
       const slug = String(ep?.slug || ep?.name || "").trim();
       const filename = String(ep?.filename || ep?.name || "").trim();
       const link_embed = String(ep?.link_embed || ep?.embed || "").trim();
-      const link_m3u8 = String(ep?.link_m3u8 || ep?.m3u8 || "").trim();
+      let link_m3u8 = String(ep?.link_m3u8 || ep?.m3u8 || "").trim();
+      if (!link_m3u8 && link_embed.includes("playembed.vip")) {
+        link_m3u8 = `/api/xink/hls?url=${encodeURIComponent(link_embed)}`;
+      }
 
       return {
         ...ep,
