@@ -5596,12 +5596,12 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                     const el = document.getElementById('watch-servers-section');
                     if (el) {
                       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                      el.classList.add('ring-2', 'ring-amber-400/50', 'rounded-xl', 'transition-all');
+                      el.classList.add('ring-2', 'ring-[#23ade5]/60', 'rounded-xl', 'transition-all');
                       setTimeout(
                         () =>
                           el.classList.remove(
                             'ring-2',
-                            'ring-amber-400/50',
+                            'ring-[#23ade5]/60',
                             'rounded-xl',
                             'transition-all',
                           ),
@@ -5610,9 +5610,9 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                     }
                   }}
                   title="Nếu phim bị lag hoặc không xem được, bấm để đổi sang server khác ở danh sách bên dưới"
-                  className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-[11px] font-semibold text-amber-300/90 hover:text-amber-200 bg-amber-500/[0.06] hover:bg-amber-500/[0.12] border border-amber-500/20 transition-all cursor-pointer active:scale-95 select-none shadow-sm"
+                  className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-[11px] font-semibold text-white bg-white/15 hover:bg-white/20 border border-white/20 shadow-sm transition-all cursor-pointer select-none active:scale-95"
                 >
-                  <RefreshCw size={11} className="text-amber-400 shrink-0" />
+                  <RefreshCw size={12} className="text-white shrink-0" />
                   <span className="truncate">Đổi server nếu lag</span>
                 </button>
               </div>
