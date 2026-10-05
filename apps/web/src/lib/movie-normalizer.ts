@@ -17,6 +17,7 @@ export interface NormalizedFilmItem extends Record<string, unknown> {
 
 const SOURCE_PRIORITY: MovieSource[] = [
   "kkphim",
+  "xink",
   "nguonc",
   "vsmov",
   "ophim",

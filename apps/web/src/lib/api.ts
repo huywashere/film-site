@@ -17,6 +17,7 @@ import type { PaginatedResponse, WatchHistoryItem, WatchlistItem } from '@/types
 import { recordTelemetry } from '@/lib/telemetry';
 import { normalizeNguonCPayload } from '@/lib/nguonc-normalizer';
 import { normalizeVicdnPayload } from '@/lib/vicdn-normalizer';
+import { normalizeXinkPayload } from '@/lib/xink-normalizer';
 import { curateCatalogFilms, type CuratedCatalogKind } from '@/lib/catalog-curation';
 
 // ── Search In-Memory Cache & Deduping ─────────────────────────────
@@ -475,6 +476,55 @@ export const vsmovApi = {
     fetchVsmov(`/tim-kiem?keyword=${encodeURIComponent(keyword)}&page=${page}`),
 };
 
+const fetchXink = async (endpoint: string) => {
+  let proxyStatus = 0;
+  try {
+    const response = await trackedMovieFetch(`/api/xink${endpoint}`);
+    proxyStatus = response.status;
+    if (response.ok) {
+      const payload = await response.json();
+      if (payload?.status !== false && payload?.error !== true) return payload;
+    }
+  } catch {
+    // Proxy fallback handled gracefully
+  }
+
+  if (typeof window === 'undefined') {
+    throw new Error(`Xink API Error: ${proxyStatus || 'proxy unavailable'}`);
+  }
+
+  // Direct client-side CORS fallback to api.xink.pro/api/content
+  const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const directUrl = new URL(normalizedEndpoint.replace(/^\/+/, ''), 'https://api.xink.pro/api/content/');
+  const directResponse = await fetch(directUrl, {
+    headers: { Accept: 'application/json' },
+    credentials: 'omit',
+    mode: 'cors',
+    signal: AbortSignal.timeout(8000),
+  });
+  if (!directResponse.ok) {
+    throw new Error(`Xink direct API Error: ${directResponse.status}`);
+  }
+  return normalizeXinkPayload(await directResponse.json());
+};
+
+export const xinkApi = {
+  getLatest: (page = 1, limit = 24) => fetchXink(`/phim-moi-cap-nhat/page/${page}?limit=${limit}`),
+  getDangChieu: (page = 1, limit = 24) => fetchXink(`/phim-dang-chieu/page/${page}?limit=${limit}`),
+  getSeries: (page = 1, limit = 24) => fetchXink(`/phim-bo/page/${page}?limit=${limit}`),
+  getSingle: (page = 1, limit = 24) => fetchXink(`/phim-le/page/${page}?limit=${limit}`),
+  getChieuRap: (page = 1, limit = 24) => fetchXink(`/phim-chieu-rap/page/${page}?limit=${limit}`),
+  getDetail: (slug: string) => fetchXink(`/phim/${slug}`),
+  getByGenre: (slug: string, page = 1, limit = 24) =>
+    fetchXink(`/the-loai/${slug}/page/${page}?limit=${limit}`),
+  getByCountry: (slug: string, page = 1, limit = 24) =>
+    fetchXink(`/quoc-gia/${slug}/page/${page}?limit=${limit}`),
+  getByYear: (year: number, page = 1, limit = 24) =>
+    fetchXink(`/nam/${year}/page/${page}?limit=${limit}`),
+  search: (keyword: string, page = 1, limit = 24) =>
+    fetchXink(`/tim-kiem?keyword=${encodeURIComponent(keyword)}&page=${page}&limit=${limit}`),
+};
+
 const fetchVicdn = async (endpoint: string) => {
   let proxyStatus = 0;
   try {
@@ -754,6 +804,10 @@ async function searchAllSources(
       request: () => kkphimApi.search(primaryKeyword, page, limit),
     },
     {
+      source: 'xink',
+      request: () => xinkApi.search(primaryKeyword, page, limit).catch(() => null),
+    },
+    {
       source: 'nguonc',
       // NguonC API hoạt động tốt nhất với từ khoá không dấu
       request: () =>
@@ -876,6 +930,10 @@ async function getDetailFromAnySource(slug: string, preferredSource?: MovieSourc
       source: 'kkphim',
       request: () => kkphimApi.getDetail(slug),
     },
+    {
+      source: 'xink',
+      request: () => xinkApi.getDetail(slug),
+    },
     ...(ENABLE_OPHIM
       ? [
           {
@@ -989,6 +1047,7 @@ async function getDetailFromSource(source: MovieSource, slug: string) {
   if (!slug) return null;
   const requests: Record<MovieSource, () => Promise<unknown>> = {
     kkphim: () => kkphimApi.getDetail(slug),
+    xink: () => xinkApi.getDetail(slug),
     nguonc: () => fetchNguonc(`/film/${slug}`),
     vsmov: () => vsmovApi.getDetail(slug),
     ophim: () => fetchOphim(`/phim/${slug}`),

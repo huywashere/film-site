@@ -118,6 +118,7 @@ export function getSourceAbbr(source?: string): string {
   const s = source.toLowerCase();
   if (s.includes("fp") || s.includes("flexphim")) return "FP";
   if (s.includes("kkphim") || s === "kp") return "KP";
+  if (s.includes("xink") || s === "xk") return "XK";
   if (s.includes("nguonc") || s === "nc") return "NC";
   if (s.includes("vsmov") || s === "vs") return "VS";
   if (s.includes("ophim") || s === "op") return "OP";
@@ -133,6 +134,7 @@ export function getSourceLabel(source?: string): string {
   const value = normalizePlayerLabel(source || "");
   if (value.includes("fp") || value.includes("flexphim")) return "Server FP";
   if (value.includes("kkphim") || value === "kp") return "KKPhim";
+  if (value.includes("xink") || value === "xk") return "Xink";
   if (value.includes("nguonc") || value === "nc") return "NguonC";
   if (value.includes("vsmov") || value === "vs") return "VSMov";
   if (value.includes("ophim") || value === "op") return "OPhim";
@@ -150,6 +152,7 @@ const PROVIDER_PRIORITY: Record<string, number> = {
   manual: 90,
   custom: 80,
   kkphim: 40,
+  xink: 38,
   nguonc: 35,
   vsmov: 30,
   ophim: 25,
@@ -161,6 +164,7 @@ const PROVIDER_PRIORITY: Record<string, number> = {
 };
 
 const UNSANDBOXED_EMBED_HOST_SUFFIXES: Record<string, string[]> = {
+  xink: ["playembed.vip", "xink.pro"],
   vidsrc: ["vidsrc.sbs"],
   vidlink: ["vidlink.pro"],
   "2embed": ["2embed.cc", "2embed.skin"],
@@ -452,6 +456,9 @@ export function canUseUnsandboxedEmbed(source: string | undefined, url: string) 
       return true;
     }
     if ((!normalizedSource || normalizedSource === "ophim") && /^([a-z0-9-]+\.)?opstream\d*\.com$/.test(hostname)) {
+      return true;
+    }
+    if ((!normalizedSource || normalizedSource === "xink") && /^([a-z0-9-]+\.)?playembed\.vip$/.test(hostname)) {
       return true;
     }
 

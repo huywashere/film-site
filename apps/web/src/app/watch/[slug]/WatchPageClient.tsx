@@ -1441,7 +1441,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     return true;
   });
   const [autoPlayConfig, setAutoPlayConfig] = useState(true);
-  const [providerPriority, setProviderPriority] = useState(['kkphim', 'nguonc', 'vsmov', 'ophim']);
+  const [providerPriority, setProviderPriority] = useState(['kkphim', 'xink', 'nguonc', 'vsmov', 'ophim']);
   const [watchPartyEnabled, setWatchPartyEnabled] = useState(true);
   const [secondaryDataSlug, setSecondaryDataSlug] = useState('');
   const secondaryDataReady = secondaryDataSlug === slug;
@@ -1912,6 +1912,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       secondaryDataReady &&
       Boolean(cleanTitle) &&
       (!bootstrapProviders.kkphim ||
+        !bootstrapProviders.xink ||
         !bootstrapProviders.nguonc ||
         !bootstrapProviders.vsmov ||
         !bootstrapProviders.ophim),
@@ -2023,6 +2024,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
   );
 
   const kkphimSlug = sourceSlugFor('kkphim');
+  const xinkSlug = sourceSlugFor('xink');
   const ophimSlug = sourceSlugFor('ophim');
   const nguoncSlug = sourceSlugFor('nguonc');
   const vsmovSlug = sourceSlugFor('vsmov');
@@ -2035,6 +2037,18 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       Boolean(kkphimSlug) &&
       primarySource !== 'kkphim' &&
       !bootstrapProviders.kkphim,
+    staleTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    retry: 1,
+  });
+  const { data: xinkFetchedData, isFetching: isXinkFetching } = useQuery({
+    queryKey: ['film-xink', xinkSlug],
+    queryFn: () => movieApi.getDetailFromSource('xink', xinkSlug).then((r) => r.data),
+    enabled:
+      secondaryDataReady &&
+      Boolean(xinkSlug) &&
+      primarySource !== 'xink' &&
+      !bootstrapProviders.xink,
     staleTime: 1000 * 60 * 10,
     refetchOnWindowFocus: false,
     retry: 1,
@@ -2078,6 +2092,8 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
 
   const kkphimData =
     bootstrapProviders.kkphim || (primarySource === 'kkphim' ? data : kkphimFetchedData);
+  const xinkData =
+    bootstrapProviders.xink || (primarySource === 'xink' ? data : xinkFetchedData);
   const ophimData =
     bootstrapProviders.ophim || (primarySource === 'ophim' ? data : ophimFetchedData);
   const nguoncData =
@@ -2116,6 +2132,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     !secondaryDataReady ||
     isSourceLookupFetching ||
     isKKPhimFetching ||
+    isXinkFetching ||
     isOPhimFetching ||
     isNguonCFetching ||
     isVSMovFetching ||
@@ -2455,6 +2472,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       (Array.isArray(initialData?.episodes) && initialData.episodes.length > 0 ? initialData.episodes : []);
     const fpEps = extractEpisodes({ episodes: customEpisodesRaw });
     const kkphimEps = extractEpisodes(kkphimData);
+    const xinkEps = extractEpisodes(xinkData);
     const nguoncEps = extractEpisodes(nguoncData);
     const vsmovEps = extractEpisodes(vsmovData);
     const ophimEps = extractEpisodes(ophimData);
@@ -2750,6 +2768,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     const combined = [
       ...tagSource(fpEps, 'fp'),
       ...tagSource(kkphimEps, 'kkphim'),
+      ...tagSource(xinkEps, 'xink'),
       ...tagSource(nguoncEps, 'nguonc'),
       ...tagSource(vsmovEps, 'vsmov'),
       ...tagSource(ophimEps, 'ophim'),
@@ -2803,6 +2822,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     data?.movie?.episodes,
     initialData?.episodes,
     kkphimData,
+    xinkData,
     nguoncData,
     ophimData,
     tmdbId,

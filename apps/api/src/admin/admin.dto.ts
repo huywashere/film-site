@@ -186,7 +186,7 @@ export class UpdateMovieSourcesDto {
 
 export class ManualSyncDto {
   @IsString()
-  @IsIn(["kkphim", "ophim", "nguonc", "vsmov", "vicdn"])
+  @IsIn(["kkphim", "xink", "ophim", "nguonc", "vsmov", "vicdn"])
   source: string;
 
   @IsOptional()
@@ -198,7 +198,7 @@ export class ManualSyncDto {
 
 export class PlaybackSourceDto {
   @IsString()
-  @IsIn(["kkphim", "ophim", "nguonc", "vsmov", "vicdn", "vidsrc", "custom"])
+  @IsIn(["kkphim", "xink", "ophim", "nguonc", "vsmov", "vicdn", "vidsrc", "custom"])
   provider: string;
 
   @IsString()
