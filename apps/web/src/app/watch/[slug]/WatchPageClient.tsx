@@ -55,6 +55,7 @@ import {
   Gauge,
   CheckCircle2,
   Loader2,
+  Zap,
 } from 'lucide-react';
 import {
   kkphimApi,
@@ -843,15 +844,39 @@ function ServerHealthSpeedModal({
                 )}
               >
                 <div className="flex items-center gap-3.5 min-w-0">
-                  <div className="flex flex-col items-center justify-center w-10 h-10 rounded-xl bg-black/50 border border-white/10 shrink-0">
-                    <Server size={16} className="text-purple-400" />
-                    <span className="text-[8px] text-neutral-400">#{idx + 1}</span>
+                  <div
+                    className={cn(
+                      'flex flex-col items-center justify-center w-10 h-10 rounded-xl shrink-0 border transition-all',
+                      srv._isFP
+                        ? 'bg-amber-500/10 border-amber-500/40 text-amber-400 shadow-sm shadow-amber-500/15'
+                        : 'bg-black/50 border-white/10',
+                    )}
+                  >
+                    {srv._isFP ? (
+                      <Zap size={16} className="text-amber-400 fill-amber-400/20" />
+                    ) : (
+                      <Server size={16} className="text-purple-400" />
+                    )}
+                    <span
+                      className={cn(
+                        'text-[8px]',
+                        srv._isFP ? 'text-amber-400 font-bold' : 'text-neutral-400',
+                      )}
+                    >
+                      {srv._isFP ? 'FP VIP' : `#${idx + 1}`}
+                    </span>
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-bold text-white truncate">
                         {srv.server_name || `Server ${idx + 1}`}
                       </span>
+                      {srv._isFP && (
+                        <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500/25 to-yellow-500/25 text-amber-300 border border-amber-500/50 shadow-sm shrink-0 flex items-center gap-1">
+                          <Zap size={9} className="fill-amber-400 text-amber-400" />
+                          Độc Quyền FP
+                        </span>
+                      )}
                       {isCurrent && (
                         <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-purple-500/25 text-purple-300 border border-purple-500/40 shrink-0">
                           Đang phát
@@ -1035,7 +1060,14 @@ function ReportStreamModal({
                       : 'bg-white/[0.03] border-white/[0.08] text-white/70 hover:bg-white/10 hover:text-white',
                   )}
                 >
-                  <span className="truncate">{srv.server_name || `Server #${idx + 1}`}</span>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    {srv._isFP && (
+                      <span className="text-[8px] font-black px-1.5 py-0.5 rounded bg-amber-500/25 text-amber-400 border border-amber-500/40 shrink-0">
+                        ⚡ FP
+                      </span>
+                    )}
+                    <span className="truncate">{srv.server_name || `Server #${idx + 1}`}</span>
+                  </div>
                   {isCurrent ? (
                     <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-extrabold">
                       Đang dùng
@@ -2416,6 +2448,12 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
         };
       });
     };
+    // Extract exclusive FlexPhim / FP servers or custom upload sources
+    const customEpisodesRaw =
+      (Array.isArray(data?.episodes) && data.episodes.length > 0 ? data.episodes : []) ||
+      (Array.isArray(data?.movie?.episodes) && data.movie.episodes.length > 0 ? data.movie.episodes : []) ||
+      (Array.isArray(initialData?.episodes) && initialData.episodes.length > 0 ? initialData.episodes : []);
+    const fpEps = extractEpisodes({ episodes: customEpisodesRaw });
     const kkphimEps = extractEpisodes(kkphimData);
     const nguoncEps = extractEpisodes(nguoncData);
     const vsmovEps = extractEpisodes(vsmovData);
@@ -2680,23 +2718,37 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
         .map((s, i): SourceServer => {
           const originalName = String(s.server_name || '').trim();
           const serverData = s.server_data;
+          const isFPServer =
+            sourceKey === 'fp' ||
+            sourceKey === 'flexphim' ||
+            sourceKey === 'manual' ||
+            s._source === 'fp' ||
+            s._isFP ||
+            /fp|flexphim|độc quyền/i.test(originalName);
+
           return {
             ...s,
-            server_name: `Server ${i + 1}`,
+            server_name: isFPServer
+              ? (originalName.toLowerCase().includes('fp')
+                  ? originalName
+                  : 'Server FP (Độc Quyền)')
+              : `Server ${i + 1}`,
             server_data: serverData,
-            _source: sourceKey,
+            _source: isFPServer ? 'fp' : sourceKey,
+            _isFP: isFPServer,
             _type: resolveServerType(
               sourceKey,
               originalName,
               s.lang || s.language || s.audio || '',
             ),
             key: `${sourceKey}:${originalName || i}`,
-            priority: sourcePriority(sourceKey, serverData, currentEp),
+            priority: isFPServer ? 1000 : sourcePriority(sourceKey, serverData, currentEp),
           };
         });
     };
 
     const combined = [
+      ...tagSource(fpEps, 'fp'),
       ...tagSource(kkphimEps, 'kkphim'),
       ...tagSource(nguoncEps, 'nguonc'),
       ...tagSource(vsmovEps, 'vsmov'),
@@ -2707,16 +2759,35 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       ...tagSource(twoEmbedEps, '2embed'),
       ...tagSource(vidcoreEps, 'vidcore'),
     ];
-    const rank = new Map(providerPriority.map((source, index) => [source, index]));
-    const sorted = combined.sort(
-      (left, right) =>
-        (rank.get(left._source || '') ?? 999) - (rank.get(right._source || '') ?? 999) ||
-        (right.priority ?? 0) - (left.priority ?? 0),
-    );
 
-    // Number servers sequentially per version type (e.g. Vietsub: Server 1, Server 2, Server 3, Server 4)
+    // Deduplicate any repeated servers in combined
+    const seenServerKeys = new Set<string>();
+    const deduplicated = combined.filter((srv) => {
+      const firstStream = srv.server_data?.[0]?.link_m3u8 || srv.server_data?.[0]?.link_embed || '';
+      const key = `${srv._source}:${srv.server_name}:${firstStream}`;
+      if (seenServerKeys.has(key)) return false;
+      seenServerKeys.add(key);
+      return true;
+    });
+
+    const rank = new Map(providerPriority.map((source, index) => [source, index]));
+    const sorted = deduplicated.sort((left, right) => {
+      // FP Exclusive Server ALWAYS takes #1 spot
+      if (left._isFP && !right._isFP) return -1;
+      if (!left._isFP && right._isFP) return 1;
+
+      return (
+        (rank.get(left._source || '') ?? 999) - (rank.get(right._source || '') ?? 999) ||
+        (right.priority ?? 0) - (left.priority ?? 0)
+      );
+    });
+
+    // Number servers sequentially per version type, preserving FP exclusive brand name
     const byTypeCount = new Map<string, number>();
     return sorted.map((item) => {
+      if (item._isFP) {
+        return item; // Keep "Server FP" or "Server FP (Độc Quyền)"
+      }
       const typeKey = item._type || 'vietsub';
       const count = (byTypeCount.get(typeKey) || 0) + 1;
       byTypeCount.set(typeKey, count);
@@ -2728,6 +2799,9 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
   }, [
     autoPlayConfig,
     currentEp,
+    data?.episodes,
+    data?.movie?.episodes,
+    initialData?.episodes,
     kkphimData,
     nguoncData,
     ophimData,

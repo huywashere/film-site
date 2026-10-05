@@ -12,6 +12,7 @@ export type SourceServer = {
   server_name?: string;
   server_data?: EpisodeItem[];
   _source?: string;
+  _isFP?: boolean;
   _type: ServerType;
   key: string;
   priority?: number;
@@ -115,6 +116,7 @@ export function deriveVsmovM3u8(embedUrl: string): string {
 export function getSourceAbbr(source?: string): string {
   if (!source) return "KP";
   const s = source.toLowerCase();
+  if (s.includes("fp") || s.includes("flexphim")) return "FP";
   if (s.includes("kkphim") || s === "kp") return "KP";
   if (s.includes("nguonc") || s === "nc") return "NC";
   if (s.includes("vsmov") || s === "vs") return "VS";
@@ -129,6 +131,7 @@ export function getSourceAbbr(source?: string): string {
 
 export function getSourceLabel(source?: string): string {
   const value = normalizePlayerLabel(source || "");
+  if (value.includes("fp") || value.includes("flexphim")) return "Server FP";
   if (value.includes("kkphim") || value === "kp") return "KKPhim";
   if (value.includes("nguonc") || value === "nc") return "NguonC";
   if (value.includes("vsmov") || value === "vs") return "VSMov";
@@ -142,6 +145,10 @@ export function getSourceLabel(source?: string): string {
 }
 
 const PROVIDER_PRIORITY: Record<string, number> = {
+  fp: 100,
+  flexphim: 100,
+  manual: 90,
+  custom: 80,
   kkphim: 40,
   nguonc: 35,
   vsmov: 30,

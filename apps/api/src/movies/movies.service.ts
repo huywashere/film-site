@@ -389,7 +389,7 @@ export class MoviesService {
       if (source.episodeKey === 'catalog' || !source.streamUrl) {
         continue;
       }
-      const serverKey = source.serverName || 'FlexPhim VIP';
+      const serverKey = source.serverName || 'Server FP';
       if (!serverMap.has(serverKey)) {
         serverMap.set(serverKey, []);
       }
@@ -442,15 +442,22 @@ export class MoviesService {
       });
     }
 
-    return Array.from(serverMap.entries()).map(([serverName, serverData]) => ({
-      server_name: serverName,
-      server_data: serverData.sort((a, b) => {
-        const numA = parseInt(a.slug, 10);
-        const numB = parseInt(b.slug, 10);
-        if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
-        return a.slug.localeCompare(b.slug);
-      }),
-    }));
+    return Array.from(serverMap.entries())
+      .map(([serverName, serverData]) => {
+        const isFP = /fp|flexphim/i.test(serverName);
+        return {
+          server_name: serverName,
+          _source: isFP ? 'fp' : 'custom',
+          _isFP: isFP,
+          server_data: serverData.sort((a, b) => {
+            const numA = parseInt(a.slug, 10);
+            const numB = parseInt(b.slug, 10);
+            if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+            return a.slug.localeCompare(b.slug);
+          }),
+        };
+      })
+      .sort((a, b) => (b._isFP ? 1 : 0) - (a._isFP ? 1 : 0));
   }
 
   // GET /phim/:slug

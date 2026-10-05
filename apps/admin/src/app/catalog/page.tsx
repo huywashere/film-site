@@ -92,7 +92,7 @@ export default function CatalogPage() {
   // Form: Custom Video Source & Subtitles
   const [customSource, setCustomSource] = useState({
     movieId: "",
-    serverName: "VIP Server Direct #1",
+    serverName: "Server FP",
     provider: "custom",
     episodeKey: "full",
     episodeName: "Full HD",
@@ -558,14 +558,43 @@ export default function CatalogPage() {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Tên Server hiển thị
-                </label>
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Tên Server hiển thị
+                  </label>
+                  <span className="text-[10px] text-amber-600 font-bold flex items-center gap-1">
+                    <IconBolt size={12} className="text-amber-500 fill-amber-500" />
+                    Độc quyền FP
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
+                  {[
+                    { label: "⚡ Server FP (Độc quyền)", value: "Server FP" },
+                    { label: "FlexPhim VIP", value: "FlexPhim VIP" },
+                    { label: "VIP Server Direct #1", value: "VIP Server Direct #1" },
+                  ].map((preset) => {
+                    const isSelected = customSource.serverName === preset.value;
+                    return (
+                      <button
+                        key={preset.value}
+                        type="button"
+                        onClick={() => setCustomSource({ ...customSource, serverName: preset.value })}
+                        className={`px-2 py-0.5 text-[11px] font-semibold rounded-lg border transition-all cursor-pointer ${
+                          isSelected
+                            ? "bg-amber-500/15 border-amber-500/50 text-amber-800 font-bold ring-1 ring-amber-500/30"
+                            : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50"
+                        }`}
+                      >
+                        {preset.label}
+                      </button>
+                    );
+                  })}
+                </div>
                 <input
                   type="text"
                   required
-                  placeholder="Ví dụ: VIP Server Bản Rạp #1"
+                  placeholder="Ví dụ: Server FP"
                   value={customSource.serverName}
                   onChange={(e) => setCustomSource({ ...customSource, serverName: e.target.value })}
                   className="admin-control w-full px-3 py-2 text-xs font-semibold"

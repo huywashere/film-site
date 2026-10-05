@@ -14,6 +14,8 @@ import {
   IconTrash as Trash,
   IconUpload as Upload,
   IconX as X,
+  IconBolt as Zap,
+  IconSparkles as Sparkles,
 } from "@tabler/icons-react";
 import { adminFetch, queryString } from "@/lib/admin-api";
 
@@ -156,7 +158,7 @@ export default function MovieManagementPage() {
     genres: "Hành Động, Viễn Tưởng",
     countries: "Hàn Quốc",
     description: "",
-    serverName: "FlexPhim VIP",
+    serverName: "Server FP",
     episodeKey: "full",
     episodeName: "Tập Full",
     streamUrl: "",
@@ -166,6 +168,64 @@ export default function MovieManagementPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [newMovie, setNewMovie] = useState(initialNewMovieState);
   const [newMovieFile, setNewMovieFile] = useState<File | null>(null);
+  const [tmdbLookupQuery, setTmdbLookupQuery] = useState("");
+  const [isFetchingTmdb, setIsFetchingTmdb] = useState(false);
+  const [tmdbLookupError, setTmdbLookupError] = useState("");
+  const [tmdbLookupSuccess, setTmdbLookupSuccess] = useState("");
+  const [tmdbCandidates, setTmdbCandidates] = useState<any[]>([]);
+
+    const handleTmdbLookup = async (overrideQuery?: string, pickFirst?: boolean) => {
+    const q = (overrideQuery || tmdbLookupQuery).trim();
+    if (!q) {
+      setTmdbLookupError("Vui lòng nhập TMDB ID, link TMDB hoặc tên phim");
+      return;
+    }
+    setIsFetchingTmdb(true);
+    setTmdbLookupError("");
+    setTmdbLookupSuccess("");
+    setTmdbCandidates([]);
+
+    try {
+      const url = `/api/tmdb-lookup?query=${encodeURIComponent(q)}${pickFirst ? "&pick=first" : ""}`;
+      const res = await fetch(url);
+      const json = await res.json();
+
+      if (!res.ok) {
+        throw new Error(json.error || "Không tìm thấy dữ liệu từ TMDB");
+      }
+
+      if (json.hasMultiple && Array.isArray(json.candidates) && json.candidates.length > 0) {
+        setTmdbCandidates(json.candidates);
+        setTmdbLookupSuccess(`Tìm thấy ${json.candidates.length} kết quả phù hợp. Hãy chọn đúng phim bên dưới:`);
+        return;
+      }
+
+      if (json.success && json.data) {
+        const d = json.data;
+        setNewMovie((prev) => ({
+          ...prev,
+          title: d.title || prev.title,
+          originName: d.originName || prev.originName,
+          slug: d.slug || prev.slug,
+          type: d.type || prev.type,
+          year: d.year || prev.year,
+          quality: d.quality || prev.quality,
+          language: d.language || prev.language,
+          posterUrl: d.posterUrl || prev.posterUrl,
+          trailerUrl: d.trailerUrl || prev.trailerUrl,
+          genres: d.genres || prev.genres,
+          countries: d.countries || prev.countries,
+          description: d.description || prev.description,
+        }));
+        setTmdbCandidates([]);
+        setTmdbLookupSuccess(`Đã tự động điền thành công: "${d.title}" (${d.year})!`);
+      }
+    } catch (err: any) {
+      setTmdbLookupError(err.message || "Lỗi khi lấy thông tin từ TMDB");
+    } finally {
+      setIsFetchingTmdb(false);
+    }
+  };
 
   const openCreateModal = () => {
     setNewMovie({
@@ -173,6 +233,10 @@ export default function MovieManagementPage() {
       year: new Date().getFullYear(),
     });
     setNewMovieFile(null);
+    setTmdbLookupQuery("");
+    setTmdbLookupError("");
+    setTmdbLookupSuccess("");
+    setTmdbCandidates([]);
     setIsCreating(true);
   };
 
@@ -852,6 +916,150 @@ export default function MovieManagementPage() {
               </button>
             </header>
             <div className="grid max-h-[72vh] gap-4 overflow-y-auto p-5 sm:grid-cols-2">
+              {/* TMDB 1-Click Auto-Fill Tool */}
+              <div className="sm:col-span-2 rounded-xl border border-blue-200 bg-gradient-to-br from-blue-50/70 via-indigo-50/30 to-slate-50 p-4 shadow-sm space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-blue-600 text-white shadow-sm">
+                      <Sparkles size={16} />
+                    </div>
+                    <div>
+                      <h3 className="text-[13px] font-bold text-slate-800">
+                        ⚡ Công cụ Tự Động Lấy Thông Tin Phim từ TMDB (1-Click)
+                      </h3>
+                      <p className="text-[11px] text-slate-500">
+                        Nhập TMDB ID (ví dụ: <code className="bg-white/80 px-1 py-0.5 rounded font-mono text-[10px]">1022789</code>), link phim TMDB hoặc tên phim. Hệ thống sẽ tự động điền tiêu đề, áp phích, trailer, thể loại, quốc gia, tóm tắt và tên tiếng Anh.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                  <div className="relative flex-1">
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      value={tmdbLookupQuery}
+                      onChange={(e) => setTmdbLookupQuery(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          void handleTmdbLookup();
+                        }
+                      }}
+                      placeholder="Nhập TMDB ID (1022789), link TMDB hoặc tên phim (Inside Out 2, Squid Game...)"
+                      className="admin-control w-full pl-8 pr-3 text-[12px] bg-white"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void handleTmdbLookup()}
+                    disabled={isFetchingTmdb || !tmdbLookupQuery.trim()}
+                    className="inline-flex items-center justify-center gap-1.5 h-9 rounded-lg bg-blue-600 px-4 text-[12px] font-bold text-white hover:bg-blue-700 disabled:opacity-50 transition shadow-sm shrink-0 cursor-pointer"
+                  >
+                    {isFetchingTmdb ? (
+                      <RefreshCw size={13} className="animate-spin" />
+                    ) : (
+                      <Sparkles size={13} />
+                    )}
+                    {isFetchingTmdb ? "Đang tải TMDB..." : "Lấy thông tin TMDB"}
+                  </button>
+                </div>
+
+                {/* Example Quick Chips */}
+                <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-slate-500">
+                  <span className="font-semibold">Gợi ý thử:</span>
+                  {[
+                    { label: "Inside Out 2 (1022789)", q: "1022789" },
+                    { label: "Arcane (94605)", q: "tv/94605" },
+                    { label: "Lật Mặt 7", q: "Lat Mat 7" },
+                  ].map((chip) => (
+                    <button
+                      key={chip.q}
+                      type="button"
+                      onClick={() => {
+                        setTmdbLookupQuery(chip.q);
+                        void handleTmdbLookup(chip.q, true);
+                      }}
+                      className="rounded bg-white px-2 py-0.5 border border-slate-200 hover:border-blue-400 hover:text-blue-600 transition cursor-pointer"
+                    >
+                      {chip.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Success Notice */}
+                {tmdbLookupSuccess && (
+                  <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-2.5 text-[11px] font-medium text-emerald-800 flex items-center gap-2">
+                    <Check size={14} className="text-emerald-600 shrink-0" />
+                    <span>{tmdbLookupSuccess}</span>
+                  </div>
+                )}
+
+                {/* Error Notice */}
+                {tmdbLookupError && (
+                  <div className="rounded-lg bg-rose-50 border border-rose-200 p-2.5 text-[11px] font-medium text-rose-700 flex items-center gap-2">
+                    <X size={14} className="text-rose-500 shrink-0" />
+                    <span>{tmdbLookupError}</span>
+                  </div>
+                )}
+
+                {/* Candidate Selection Cards */}
+                {tmdbCandidates.length > 0 && (
+                  <div className="space-y-2 pt-2 border-t border-blue-200/60">
+                    <p className="text-[11px] font-bold text-slate-700">
+                      Chọn đúng phim từ danh sách TMDB:
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-52 overflow-y-auto pr-1">
+                      {tmdbCandidates.map((cand) => (
+                        <div
+                          key={`${cand.mediaType}-${cand.id}`}
+                          onClick={() => void handleTmdbLookup(`${cand.mediaType}/${cand.id}`)}
+                          className="flex items-center gap-2.5 p-2 rounded-lg border border-slate-200 bg-white hover:border-blue-500 hover:bg-blue-50/50 transition cursor-pointer"
+                        >
+                          {cand.posterUrl ? (
+                            <img
+                              src={cand.posterUrl}
+                              alt={cand.title}
+                              className="w-10 h-14 object-cover rounded shrink-0 shadow-sm"
+                            />
+                          ) : (
+                            <div className="w-10 h-14 bg-slate-100 rounded shrink-0 flex items-center justify-center text-[10px] text-slate-400">
+                              No Art
+                            </div>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[12px] font-bold text-slate-800 truncate">
+                              {cand.title}
+                            </p>
+                            <p className="text-[10px] text-slate-500 truncate">
+                              {cand.originName || cand.title}
+                            </p>
+                            <div className="flex items-center gap-2 mt-1 text-[10px] text-slate-400">
+                              <span className="font-semibold text-blue-600">
+                                {cand.mediaType === "tv" ? "Phim bộ" : "Phim lẻ"}
+                              </span>
+                              <span>•</span>
+                              <span>{cand.year || "N/A"}</span>
+                              {cand.voteAverage > 0 && (
+                                <>
+                                  <span>•</span>
+                                  <span className="text-amber-500 font-bold">★ {cand.voteAverage.toFixed(1)}</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            className="px-2.5 py-1 text-[10px] font-bold rounded bg-blue-600 text-white hover:bg-blue-700 shrink-0"
+                          >
+                            Chọn
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
               <label className="block text-[11px] font-semibold text-slate-600">
                 Tên phim
                 <input
@@ -1006,26 +1214,48 @@ export default function MovieManagementPage() {
                       từng nguồn.
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setPlaybackSources((items) => [
-                        ...items,
-                        {
-                          provider: "custom",
-                          providerSlug: editing.id,
-                          episodeKey: "full",
-                          episodeName: "Tập Full",
-                          serverName: "Server mới",
-                          adCuePoints: [],
-                          priority: items.length,
-                        },
-                      ])
-                    }
-                    className="admin-control inline-flex items-center gap-1.5 px-3 text-[11px] font-semibold"
-                  >
-                    <Plus size={14} /> Thêm nguồn
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setPlaybackSources((items) => [
+                          ...items,
+                          {
+                            provider: "custom",
+                            providerSlug: editing.id,
+                            episodeKey: editing.type === "single" ? "full" : String(items.length + 1).padStart(2, "0"),
+                            episodeName: editing.type === "single" ? "Tập Full" : `Tập ${String(items.length + 1).padStart(2, "0")}`,
+                            serverName: "Server FP",
+                            adCuePoints: [],
+                            priority: 0,
+                          },
+                        ])
+                      }
+                      className="admin-control inline-flex items-center gap-1.5 px-3 py-1 text-[11px] font-bold text-amber-800 bg-amber-50 border-amber-300 hover:bg-amber-100 transition cursor-pointer"
+                    >
+                      <Zap size={13} className="fill-amber-500 text-amber-500" /> + Server FP (Độc quyền)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setPlaybackSources((items) => [
+                          ...items,
+                          {
+                            provider: "custom",
+                            providerSlug: editing.id,
+                            episodeKey: editing.type === "single" ? "full" : String(items.length + 1).padStart(2, "0"),
+                            episodeName: editing.type === "single" ? "Tập Full" : `Tập ${String(items.length + 1).padStart(2, "0")}`,
+                            serverName: "Server Dự Phòng",
+                            adCuePoints: [],
+                            priority: items.length + 10,
+                          },
+                        ])
+                      }
+                      className="admin-control inline-flex items-center gap-1.5 px-3 py-1 text-[11px] font-semibold cursor-pointer"
+                    >
+                      <Plus size={14} /> Thêm nguồn khác
+                    </button>
+                  </div>
                 </div>
                 {playbackSources.length === 0 ? (
                   <div className="rounded-xl border border-dashed border-[var(--admin-line)] px-4 py-8 text-center text-[12px] text-slate-400">
