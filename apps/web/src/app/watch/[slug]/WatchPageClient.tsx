@@ -3945,348 +3945,29 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       {/* ── MAIN — padded top for navbar (64px) + safe left padding for sidebar (96px) ── */}
       <main
         className={cn(
-          'pt-14 sm:pt-[58px] mx-auto px-3 md:px-5 pb-10 transition-all duration-300',
-          theaterMode ? 'w-full lg:pl-20 max-w-none' : 'max-w-[1800px] lg:pl-20',
+          'pt-14 sm:pt-[58px] pb-10 transition-all duration-300',
+          theaterMode ? 'w-full lg:pl-20' : 'lg:pl-20',
         )}
       >
-        <div
-          className={cn(
-            'grid gap-x-5 gap-y-1 sm:gap-y-1 transition-all duration-300 xl:grid-rows-[min-content_auto_auto]',
-            'grid-cols-1 xl:grid-cols-[minmax(0,1fr)_300px]',
-          )}
-        >
-          {/* ───── 0. TOP CONTROLS & BREADCRUMB BAR (Above Player) ───── */}
-          <div
-            className={cn(
-              'flex h-fit self-start items-center justify-between gap-2 py-1.5 px-3 sm:px-3.5 bg-white/[0.03] border border-white/[0.06] rounded-xl text-xs text-white/60 select-none',
-              theaterMode ? 'col-span-full' : 'xl:col-start-1 xl:row-start-1',
-            )}
-          >
-            <div className="flex items-center gap-2 min-w-0">
-              <button
-                type="button"
-                onClick={() => router.back()}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white font-semibold transition-all shrink-0 text-xs shadow-sm hover:scale-105 active:scale-95 cursor-pointer border border-white/15"
-              >
-                <ArrowLeft size={13} />
-                <span>Quay lại</span>
-              </button>
-            </div>
-            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-              {/* Yêu thích */}
-              <button
-                type="button"
-                onClick={handleToggleFavorite}
-                className={cn(
-                  'flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all font-medium text-xs cursor-pointer select-none border',
-                  isFavorite
-                    ? 'bg-red-500/15 text-red-400 border-red-500/30 font-semibold'
-                    : 'bg-white/[0.04] hover:bg-white/[0.08] text-neutral-300 hover:text-white border-white/[0.06]',
-                )}
-                title="Thêm vào danh sách yêu thích"
-              >
-                <Heart
-                  size={13}
-                  className={cn(
-                    'transition-transform',
-                    isFavorite ? 'fill-red-500 text-red-500' : 'text-neutral-400',
-                  )}
-                />
-                <span className="hidden sm:inline">{isFavorite ? 'Đã thích' : 'Yêu thích'}</span>
-              </button>
+        {/* ═══════════════════════════════════════════════════════════
+             ZONE 1: FULL-WIDTH PLAYER (Netflix/Crunchyroll style)
+             Player spans the entire content width for cinematic feel
+        ═══════════════════════════════════════════════════════════ */}
+        <div className={cn(
+          'w-full mx-auto transition-all duration-300',
+          theaterMode ? 'max-w-none' : 'max-w-[1800px]',
+        )}>
 
-              {/* Tủ phim */}
-              <button
-                type="button"
-                onClick={handleToggleWatchlist}
-                className={cn(
-                  'flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all font-medium text-xs cursor-pointer select-none border',
-                  isInWatchlist
-                    ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30 font-semibold'
-                    : 'bg-white/[0.04] hover:bg-white/[0.08] text-neutral-300 hover:text-white border-white/[0.06]',
-                )}
-                title="Thêm vào tủ phim"
-              >
-                {isInWatchlist ? (
-                  <Check size={13} className="text-emerald-400" />
-                ) : (
-                  <Plus size={13} className="text-neutral-400" />
-                )}
-                <span className="hidden sm:inline">{isInWatchlist ? 'Đã lưu' : 'Tủ phim'}</span>
-              </button>
 
-              {/* Cinema Light-Off Button */}
-              <button
-                onClick={() => setLightOff(!lightOff)}
-                className={cn(
-                  'flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all font-medium text-xs cursor-pointer select-none border',
-                  lightOff
-                    ? 'bg-white/10 text-white border-white/20 shadow-sm'
-                    : 'bg-white/[0.04] hover:bg-white/[0.08] text-neutral-400 hover:text-white border-white/[0.06]',
-                )}
-                title="Tắt đèn làm mờ xung quanh"
-              >
-                {lightOff ? (
-                  <LightbulbOff size={13} className="text-neutral-300" />
-                ) : (
-                  <Lightbulb size={13} className="text-neutral-400" />
-                )}
-                <span className="hidden sm:inline">{lightOff ? 'Bật Đèn' : 'Tắt Đèn'}</span>
-              </button>
-
-              {/* Watch Party / Xem chung Button */}
-              <button
-                onClick={() => {
-                  if (!wp.roomId) {
-                    setWatchPartyRequested(true);
-                    setManualPartyCreateRequested(true);
-                  } else {
-                    wp.setIsOpen(!wp.isOpen);
-                  }
-                }}
-                disabled={!watchPartyEnabled}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] hover:text-white/80 transition-colors text-white/60 border border-white/[0.06] disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
-                title="Phòng xem phim chung cùng bạn bè"
-              >
-                <Users size={13} className="text-neutral-400" />
-                <span className="hidden sm:inline">
-                  {wp.roomId ? `Phòng ${wp.roomId}` : 'Xem chung'}
-                </span>
-              </button>
-
-              {/* Chế độ Rạp phim (Theater Mode) */}
-              <button
-                type="button"
-                onClick={() => {
-                  setTheaterMode((prev) => {
-                    const next = !prev;
-                    toast(
-                      next ? 'Đã bật chế độ Rạp phim mở rộng' : 'Đã tắt chế độ Rạp phim',
-                      'info',
-                    );
-                    return next;
-                  });
-                }}
-                className={cn(
-                  'flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all font-medium text-xs cursor-pointer select-none border',
-                  theaterMode
-                    ? 'bg-sky-500/15 text-sky-400 border-sky-500/30 font-semibold shadow-sm'
-                    : 'bg-white/[0.04] hover:bg-white/[0.08] text-neutral-400 hover:text-white border-white/[0.06]',
-                )}
-                title="Chế độ rạp phim (Phím T)"
-              >
-                <Maximize2 size={13} className={theaterMode ? 'text-sky-400' : 'text-neutral-400'} />
-                <span className="hidden sm:inline">Rạp phim</span>
-              </button>
-
-              {/* Bảng Phím tắt (Keyboard Shortcuts) */}
-              <button
-                type="button"
-                onClick={() => setShowShortcutsGuide((prev) => !prev)}
-                className={cn(
-                  'flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all font-medium text-xs cursor-pointer select-none border',
-                  showShortcutsGuide
-                    ? 'bg-purple-500/15 text-purple-400 border-purple-500/30 font-semibold shadow-sm'
-                    : 'bg-white/[0.04] hover:bg-white/[0.08] text-neutral-400 hover:text-white border-white/[0.06]',
-                )}
-                title="Bảng phím tắt (Phím ?)"
-              >
-                <Keyboard size={13} className={showShortcutsGuide ? 'text-purple-400' : 'text-neutral-400'} />
-                <span className="hidden sm:inline">Phím tắt</span>
-              </button>
-
-              {/* Multi-Platform Share Button & Dropdown */}
-              <div className="relative">
-                {(() => {
-                  const currentPlaySeconds = Math.floor(
-                    artInstance?.currentTime || lastKnownPlaybackTimeRef.current || 0,
-                  );
-                  let computedShareUrl = '';
-                  if (typeof window !== 'undefined') {
-                    try {
-                      const u = new URL(window.location.href);
-                      if (shareWithTimestamp && currentPlaySeconds > 3) {
-                        u.searchParams.set('t', String(currentPlaySeconds));
-                      } else {
-                        u.searchParams.delete('t');
-                      }
-                      computedShareUrl = u.toString();
-                    } catch {
-                      computedShareUrl = window.location.href;
-                    }
-                  }
-
-                  return (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (typeof navigator !== 'undefined' && navigator.share) {
-                            navigator
-                              .share({
-                                title: film?.name || 'FlexPhim',
-                                text: `Xem phim ${film?.name || ''} miễn phí trên FlexPhim!`,
-                                url: computedShareUrl,
-                              })
-                              .catch(() => setShowShareModal((p) => !p));
-                          } else {
-                            setShowShareModal((p) => !p);
-                          }
-                        }}
-                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] hover:text-white transition-colors text-white/50 text-xs font-medium border border-white/[0.06] cursor-pointer"
-                        title="Chia sẻ phim ra các nền tảng"
-                      >
-                        <Share2 size={13} />
-                        <span className="hidden sm:inline">Chia sẻ</span>
-                      </button>
-
-                      {/* Multi-Platform Share Dropdown */}
-                      {showShareModal && (
-                        <div className="absolute right-0 top-full mt-2 z-50 w-72 p-3.5 rounded-2xl bg-[#111419]/95 border border-white/15 backdrop-blur-xl shadow-2xl space-y-3 animate-in fade-in zoom-in-95 duration-150">
-                          <div className="flex items-center justify-between pb-2 border-b border-white/10">
-                            <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                              <Share2 size={13} className="text-blue-400" /> Chia Sẻ Phim Trực Tiếp
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => setShowShareModal(false)}
-                              className="text-neutral-400 hover:text-white text-xs px-1.5 py-0.5 rounded hover:bg-white/10"
-                            >
-                              ✕
-                            </button>
-                          </div>
-
-                          {/* Timestamp Checkbox */}
-                          {currentPlaySeconds > 3 && (
-                            <label className="flex items-center gap-2 p-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 transition-colors cursor-pointer select-none">
-                              <input
-                                type="checkbox"
-                                checked={shareWithTimestamp}
-                                onChange={(e) => setShareWithTimestamp(e.target.checked)}
-                                className="w-3.5 h-3.5 rounded border-white/20 bg-black/40 text-sky-500 focus:ring-0 cursor-pointer"
-                              />
-                              <span className="text-xs text-neutral-300">
-                                Bắt đầu tại{' '}
-                                <strong className="font-mono font-bold text-sky-400">
-                                  {formatTimestampSeconds(currentPlaySeconds)}
-                                </strong>
-                              </span>
-                            </label>
-                          )}
-
-                          {/* Direct Platform Links */}
-                          <div className="grid grid-cols-2 gap-2 text-xs font-semibold">
-                            {/* Facebook */}
-                            <a
-                              href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(computedShareUrl)}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-2 p-2 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 transition-all active:scale-95"
-                            >
-                              <span className="w-5 h-5 rounded-full bg-blue-600 text-white font-black text-[11px] flex items-center justify-center">
-                                f
-                              </span>
-                              <span>Facebook</span>
-                            </a>
-
-                            {/* Zalo */}
-                            <a
-                              href={`https://zalo.me/share?url=${encodeURIComponent(computedShareUrl)}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-2 p-2 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-400/30 transition-all active:scale-95"
-                            >
-                              <span className="w-5 h-5 rounded-full bg-blue-500 text-white font-black text-[10px] flex items-center justify-center">
-                                Z
-                              </span>
-                              <span>Zalo</span>
-                            </a>
-
-                            {/* Telegram */}
-                            <a
-                              href={`https://t.me/share/url?url=${encodeURIComponent(computedShareUrl)}&text=${encodeURIComponent(`Xem phim ${film?.name || ''} chất lượng cao!`)}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-2 p-2 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-400/30 transition-all active:scale-95"
-                            >
-                              <Send size={13} className="text-sky-400" />
-                              <span>Telegram</span>
-                            </a>
-
-                            {/* Twitter / X */}
-                            <a
-                              href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(computedShareUrl)}&text=${encodeURIComponent(`Xem phim ${film?.name || ''} trên FlexPhim!`)}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-2 p-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white border border-white/10 transition-all active:scale-95"
-                            >
-                              <span className="font-mono text-xs">𝕏</span>
-                              <span>Twitter / X</span>
-                            </a>
-                          </div>
-
-                          {/* Copy Link Input Bar */}
-                          <div className="pt-2 border-t border-white/10 flex items-center gap-1.5">
-                            <input
-                              type="text"
-                              readOnly
-                              value={computedShareUrl}
-                              className="w-full bg-black/40 border border-white/10 rounded-lg px-2.5 py-1.5 text-[10px] text-neutral-300 focus:outline-none truncate font-mono"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => {
-                                navigator.clipboard.writeText(computedShareUrl);
-                                setCopied(true);
-                                toast(
-                                  shareWithTimestamp && currentPlaySeconds > 3
-                                    ? `Đã sao chép liên kết tại ${formatTimestampSeconds(currentPlaySeconds)}!`
-                                    : 'Đã sao chép liên kết!',
-                                  'success',
-                                );
-                                setTimeout(() => setCopied(false), 2000);
-                              }}
-                              className="flex items-center gap-1 bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg border border-white/15 transition-all shrink-0 active:scale-95"
-                            >
-                              {copied ? (
-                                <Check size={13} className="text-emerald-400" />
-                              ) : (
-                                <Copy size={13} />
-                              )}
-                              <span>{copied ? 'Đã chép' : 'Chép'}</span>
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  );
-                })()}
-              </div>
-
-              {/* Kiểm tra Máy Chủ (Admin Only) */}
-              {isAdmin && (
-                <button
-                  type="button"
-                  onClick={() => setShowServerHealthModal(true)}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 hover:text-amber-300 transition-colors text-xs font-semibold border border-amber-500/25 cursor-pointer shadow-sm select-none"
-                  title="Kiểm tra sức khỏe & tốc độ máy chủ (Chỉ dành cho Quản trị viên)"
-                >
-                  <Activity size={13} className="text-amber-400" />
-                  <span>Kiểm tra</span>
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* ───── 1. PLAYER ───── */}
+          {/* ───── 1. PLAYER — Full-width cinema zone ───── */}
           <div
             ref={playerContainerRef}
             className={cn(
-              'netphim-watch-player bg-black rounded-none overflow-hidden relative shadow-2xl ring-1 ring-white/[0.06] select-none transition-all duration-300 flex items-center justify-center',
+              'netphim-watch-player bg-black overflow-hidden relative shadow-2xl select-none transition-all duration-300 flex items-center justify-center',
               theaterMode
-                ? 'is-theater col-span-full w-full aspect-[16/9] sm:aspect-auto sm:h-[72vh] lg:h-[78vh] min-h-[400px] max-h-[920px] mx-auto shadow-2xl ring-1 ring-white/10'
-                : 'xl:col-start-1 xl:row-start-2 w-full aspect-video',
-              lightOff ? 'relative z-50 ring-1 ring-white/20 shadow-2xl' : '',
+                ? 'is-theater w-full aspect-[16/9] sm:aspect-auto sm:h-[72vh] lg:h-[78vh] min-h-[400px] max-h-[920px] shadow-[0_20px_80px_-15px_rgba(0,0,0,0.9)]'
+                : 'w-full aspect-video',
+              lightOff ? 'relative z-50' : '',
             )}
           >
             {/* Fallback overlay */}
@@ -4529,16 +4210,397 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
               </div>
             )}
           </div>
+        </div>
+        {/* END ZONE 1: Full-width player */}
 
-          {/* ── 2. UNDER-PLAYER CONTENT (Title, Episodes, Cast, Comments) ── */}
-          <div
-            className={cn(
-              'space-y-3 min-w-0 mt-0.5 sm:mt-1',
-              theaterMode
-                ? 'col-span-1 xl:col-start-1 xl:row-start-3'
-                : 'xl:col-start-1 xl:row-start-3',
-            )}
-          >
+        {/* ═══════════════════════════════════════════════════════════
+             ZONE 2: SUB-BAR — Title + Episode Nav + Quick Actions
+             Tight, compact strip directly below player
+        ═══════════════════════════════════════════════════════════ */}
+        <div className={cn(
+          'w-full mx-auto transition-all duration-300',
+          theaterMode ? 'max-w-none' : 'max-w-[1800px]',
+        )}>
+          <div className="px-3 md:px-5 lg:px-6">
+            {/* Sub-bar: title row + all action buttons in one horizontal strip */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-2.5 border-b border-white/[0.07]">
+              {/* Left: Title + episode info */}
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <button
+                  type="button"
+                  onClick={() => router.back()}
+                  className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/[0.04] hover:bg-white/10 text-white/60 hover:text-white text-xs font-medium transition-all shrink-0 border border-white/[0.06]"
+                >
+                  <ArrowLeft size={12} />
+                </button>
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-sm md:text-base font-bold text-white leading-tight truncate">
+                    {film?.name}
+                    {currentEpData?.name && (
+                      <span className="text-white/35 font-normal ml-2 text-xs">
+                        · Tập {currentEpData.name.replace(/^tập\s*/i, '')}
+                      </span>
+                    )}
+                  </h1>
+                  {categories && <p className="text-[10px] text-white/30 truncate">{categories}</p>}
+                </div>
+              </div>
+
+              {/* Right: Episode nav + Quick action buttons */}
+              <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+                {/* Prev Episode */}
+                {currentEpIndex > 0 && (
+                  <button
+                    onClick={() => {
+                      const p = serverData[currentEpIndex - 1];
+                      navigateToEpisode(p.slug || p.name);
+                    }}
+                    className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-neutral-300 bg-white/[0.04] border border-white/10 rounded-lg hover:text-white hover:bg-white/10 transition-colors"
+                  >
+                    <ChevronLeft size={12} /> {t('watch.prevEpisode', 'Tập trước')}
+                  </button>
+                )}
+                {/* Next Episode */}
+                {currentEpIndex >= 0 && currentEpIndex < serverData.length - 1 && (
+                  <button
+                    onClick={() => {
+                      const n = serverData[currentEpIndex + 1];
+                      navigateToEpisode(n.slug || n.name);
+                    }}
+                    className="flex items-center gap-1 rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-white/20"
+                  >
+                    {t('watch.nextEpisode', 'Tập tiếp')} <ChevronRight size={12} />
+                  </button>
+                )}
+
+                {/* Divider */}
+                <span className="h-4 w-px bg-white/10 mx-0.5 hidden sm:block" />
+
+                {/* Yêu thích */}
+                <button
+                  type="button"
+                  onClick={handleToggleFavorite}
+                  className={cn(
+                    'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all text-xs cursor-pointer select-none border',
+                    isFavorite
+                      ? 'bg-red-500/15 text-red-400 border-red-500/30 font-semibold'
+                      : 'bg-white/[0.04] hover:bg-white/[0.08] text-neutral-400 hover:text-white border-white/[0.06]',
+                  )}
+                  title="Thêm vào danh sách yêu thích"
+                >
+                  <Heart
+                    size={13}
+                    className={cn(isFavorite ? 'fill-red-500 text-red-500' : 'text-neutral-400')}
+                  />
+                  <span className="hidden md:inline">{isFavorite ? 'Đã thích' : 'Yêu thích'}</span>
+                </button>
+
+                {/* Tủ phim */}
+                <button
+                  type="button"
+                  onClick={handleToggleWatchlist}
+                  className={cn(
+                    'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all text-xs cursor-pointer select-none border',
+                    isInWatchlist
+                      ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30 font-semibold'
+                      : 'bg-white/[0.04] hover:bg-white/[0.08] text-neutral-400 hover:text-white border-white/[0.06]',
+                  )}
+                  title="Thêm vào tủ phim"
+                >
+                  {isInWatchlist ? (
+                    <Check size={13} className="text-emerald-400" />
+                  ) : (
+                    <Plus size={13} className="text-neutral-400" />
+                  )}
+                  <span className="hidden md:inline">{isInWatchlist ? 'Đã lưu' : 'Tủ phim'}</span>
+                </button>
+
+                {/* Tắt đèn */}
+                <button
+                  onClick={() => setLightOff(!lightOff)}
+                  className={cn(
+                    'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all text-xs cursor-pointer select-none border',
+                    lightOff
+                      ? 'bg-white/10 text-white border-white/20 shadow-sm'
+                      : 'bg-white/[0.04] hover:bg-white/[0.08] text-neutral-400 hover:text-white border-white/[0.06]',
+                  )}
+                  title="Tắt đèn làm mờ xung quanh"
+                >
+                  {lightOff ? (
+                    <LightbulbOff size={13} className="text-neutral-300" />
+                  ) : (
+                    <Lightbulb size={13} className="text-neutral-400" />
+                  )}
+                  <span className="hidden md:inline">{lightOff ? 'Bật Đèn' : 'Tắt Đèn'}</span>
+                </button>
+
+                {/* Tự chuyển tập */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = !autoNextConfig;
+                    setAutoNextConfig(next);
+                    if (typeof window !== 'undefined') {
+                      localStorage.setItem('netphim_auto_next', String(next));
+                    }
+                    toast(next ? 'Đã bật Tự động chuyển tập' : 'Đã tắt Tự động chuyển tập', 'info');
+                  }}
+                  title={autoNextConfig ? 'Tắt tự động chuyển tập' : 'Bật tự động chuyển tập'}
+                  className={cn(
+                    'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer select-none border',
+                    autoNextConfig
+                      ? 'bg-white/15 text-white border-white/20 shadow-sm'
+                      : 'bg-white/[0.03] hover:bg-white/[0.07] text-neutral-400 hover:text-neutral-200 border-white/[0.06]',
+                  )}
+                >
+                  <SkipForward size={13} className={autoNextConfig ? 'text-white' : 'text-neutral-400'} />
+                  <span className="hidden md:inline">Tự chuyển</span>
+                </button>
+
+                {/* Rạp phim */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTheaterMode((prev) => {
+                      const next = !prev;
+                      toast(next ? 'Đã bật chế độ Rạp phim mở rộng' : 'Đã tắt chế độ Rạp phim', 'info');
+                      return next;
+                    });
+                  }}
+                  className={cn(
+                    'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all text-xs cursor-pointer select-none border',
+                    theaterMode
+                      ? 'bg-sky-500/15 text-sky-400 border-sky-500/30 font-semibold shadow-sm'
+                      : 'bg-white/[0.04] hover:bg-white/[0.08] text-neutral-400 hover:text-white border-white/[0.06]',
+                  )}
+                  title="Chế độ rạp phim (Phím T)"
+                >
+                  <Maximize2 size={13} className={theaterMode ? 'text-sky-400' : 'text-neutral-400'} />
+                  <span className="hidden lg:inline">Rạp phim</span>
+                </button>
+
+                {/* Xem chung */}
+                <button
+                  onClick={() => {
+                    if (!wp.roomId) {
+                      setWatchPartyRequested(true);
+                      setManualPartyCreateRequested(true);
+                    } else {
+                      wp.setIsOpen(!wp.isOpen);
+                    }
+                  }}
+                  disabled={!watchPartyEnabled}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] hover:text-white/80 transition-colors text-white/60 text-xs border border-white/[0.06] disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
+                  title="Phòng xem phim chung cùng bạn bè"
+                >
+                  <Users size={13} className="text-neutral-400" />
+                  <span className="hidden md:inline">
+                    {wp.roomId ? `Phòng ${wp.roomId}` : 'Xem chung'}
+                  </span>
+                </button>
+
+                {/* Chia sẻ */}
+                <div className="relative">
+                  {(() => {
+                    const currentPlaySeconds = Math.floor(
+                      artInstance?.currentTime || lastKnownPlaybackTimeRef.current || 0,
+                    );
+                    let computedShareUrl = '';
+                    if (typeof window !== 'undefined') {
+                      try {
+                        const u = new URL(window.location.href);
+                        if (shareWithTimestamp && currentPlaySeconds > 3) {
+                          u.searchParams.set('t', String(currentPlaySeconds));
+                        } else {
+                          u.searchParams.delete('t');
+                        }
+                        computedShareUrl = u.toString();
+                      } catch {
+                        computedShareUrl = window.location.href;
+                      }
+                    }
+                    return (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (typeof navigator !== 'undefined' && navigator.share) {
+                              navigator
+                                .share({
+                                  title: film?.name || 'FlexPhim',
+                                  text: `Xem phim ${film?.name || ''} miễn phí trên FlexPhim!`,
+                                  url: computedShareUrl,
+                                })
+                                .catch(() => setShowShareModal((p) => !p));
+                            } else {
+                              setShowShareModal((p) => !p);
+                            }
+                          }}
+                          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] hover:text-white transition-colors text-white/50 text-xs border border-white/[0.06] cursor-pointer"
+                          title="Chia sẻ phim ra các nền tảng"
+                        >
+                          <Share2 size={13} />
+                          <span className="hidden lg:inline">Chia sẻ</span>
+                        </button>
+
+                        {/* Share Dropdown */}
+                        {showShareModal && (
+                          <div className="absolute right-0 top-full mt-2 z-50 w-72 p-3.5 rounded-2xl bg-[#111419]/95 border border-white/15 backdrop-blur-xl shadow-2xl space-y-3 animate-in fade-in zoom-in-95 duration-150">
+                            <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                              <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                                <Share2 size={13} className="text-blue-400" /> Chia Sẻ Phim Trực Tiếp
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => setShowShareModal(false)}
+                                className="text-neutral-400 hover:text-white text-xs px-1.5 py-0.5 rounded hover:bg-white/10"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                            {currentPlaySeconds > 3 && (
+                              <label className="flex items-center gap-2 p-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 transition-colors cursor-pointer select-none">
+                                <input
+                                  type="checkbox"
+                                  checked={shareWithTimestamp}
+                                  onChange={(e) => setShareWithTimestamp(e.target.checked)}
+                                  className="w-3.5 h-3.5 rounded border-white/20 bg-black/40 text-sky-500 focus:ring-0 cursor-pointer"
+                                />
+                                <span className="text-xs text-neutral-300">
+                                  Bắt đầu tại{' '}
+                                  <strong className="font-mono font-bold text-sky-400">
+                                    {formatTimestampSeconds(currentPlaySeconds)}
+                                  </strong>
+                                </span>
+                              </label>
+                            )}
+                            <div className="grid grid-cols-2 gap-2 text-xs font-semibold">
+                              <a
+                                href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(computedShareUrl)}`}
+                                target="_blank" rel="noopener noreferrer"
+                                className="flex items-center gap-2 p-2 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 transition-all active:scale-95"
+                              >
+                                <span className="w-5 h-5 rounded-full bg-blue-600 text-white font-black text-[11px] flex items-center justify-center">f</span>
+                                <span>Facebook</span>
+                              </a>
+                              <a
+                                href={`https://zalo.me/share?url=${encodeURIComponent(computedShareUrl)}`}
+                                target="_blank" rel="noopener noreferrer"
+                                className="flex items-center gap-2 p-2 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-400/30 transition-all active:scale-95"
+                              >
+                                <span className="w-5 h-5 rounded-full bg-blue-500 text-white font-black text-[10px] flex items-center justify-center">Z</span>
+                                <span>Zalo</span>
+                              </a>
+                              <a
+                                href={`https://t.me/share/url?url=${encodeURIComponent(computedShareUrl)}&text=${encodeURIComponent(`Xem phim ${film?.name || ''} chất lượng cao!`)}`}
+                                target="_blank" rel="noopener noreferrer"
+                                className="flex items-center gap-2 p-2 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-400/30 transition-all active:scale-95"
+                              >
+                                <Send size={13} className="text-sky-400" />
+                                <span>Telegram</span>
+                              </a>
+                              <a
+                                href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(computedShareUrl)}&text=${encodeURIComponent(`Xem phim ${film?.name || ''} trên FlexPhim!`)}`}
+                                target="_blank" rel="noopener noreferrer"
+                                className="flex items-center gap-2 p-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white border border-white/10 transition-all active:scale-95"
+                              >
+                                <span className="font-mono text-xs">𝕏</span>
+                                <span>Twitter / X</span>
+                              </a>
+                            </div>
+                            <div className="pt-2 border-t border-white/10 flex items-center gap-1.5">
+                              <input
+                                type="text" readOnly value={computedShareUrl}
+                                className="w-full bg-black/40 border border-white/10 rounded-lg px-2.5 py-1.5 text-[10px] text-neutral-300 focus:outline-none truncate font-mono"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(computedShareUrl);
+                                  setCopied(true);
+                                  toast(shareWithTimestamp && currentPlaySeconds > 3 ? `Đã sao chép liên kết tại ${formatTimestampSeconds(currentPlaySeconds)}!` : 'Đã sao chép liên kết!', 'success');
+                                  setTimeout(() => setCopied(false), 2000);
+                                }}
+                                className="flex items-center gap-1 bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg border border-white/15 transition-all shrink-0 active:scale-95"
+                              >
+                                {copied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+                                <span>{copied ? 'Đã chép' : 'Chép'}</span>
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+
+                {/* Phím tắt */}
+                <button
+                  type="button"
+                  onClick={() => setShowShortcutsGuide((prev) => !prev)}
+                  className={cn(
+                    'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all text-xs cursor-pointer select-none border',
+                    showShortcutsGuide
+                      ? 'bg-purple-500/15 text-purple-400 border-purple-500/30 font-semibold shadow-sm'
+                      : 'bg-white/[0.04] hover:bg-white/[0.08] text-neutral-400 hover:text-white border-white/[0.06]',
+                  )}
+                  title="Bảng phím tắt (Phím ?)"
+                >
+                  <Keyboard size={13} className={showShortcutsGuide ? 'text-purple-400' : 'text-neutral-400'} />
+                  <span className="hidden lg:inline">Phím tắt</span>
+                </button>
+
+                {/* Admin: Kiểm tra */}
+                {isAdmin && (
+                  <button
+                    type="button"
+                    onClick={() => setShowServerHealthModal(true)}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 hover:text-amber-300 transition-colors text-xs font-semibold border border-amber-500/25 cursor-pointer shadow-sm select-none"
+                    title="Kiểm tra sức khỏe & tốc độ máy chủ (Chỉ dành cho Quản trị viên)"
+                  >
+                    <Activity size={13} className="text-amber-400" />
+                    <span className="hidden lg:inline">Kiểm tra</span>
+                  </button>
+                )}
+
+                {/* Đổi server nếu lag */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setWatchContentTab('episodes');
+                    toast('Nếu video bị lag hoặc gián đoạn, bạn hãy đổi sang Server khác ở danh sách bên dưới nhé!', 'info');
+                    const el = document.getElementById('watch-servers-section');
+                    if (el) {
+                      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      el.classList.add('ring-2', 'ring-[#23ade5]/60', 'rounded-xl', 'transition-all');
+                      setTimeout(() => el.classList.remove('ring-2', 'ring-[#23ade5]/60', 'rounded-xl', 'transition-all'), 2500);
+                    }
+                  }}
+                  title="Nếu phim bị lag hoặc không xem được, bấm để đổi sang server khác ở danh sách bên dưới"
+                  className="flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-lg text-xs font-semibold text-white bg-white/15 hover:bg-white/20 border border-white/20 shadow-sm transition-all cursor-pointer select-none active:scale-95"
+                >
+                  <RefreshCw size={12} className="text-white shrink-0" />
+                  <span className="hidden lg:inline">Đổi server</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        {/* END ZONE 2: Sub-bar */}
+
+        {/* ═══════════════════════════════════════════════════════════
+             ZONE 3: BODY — 2-column layout
+             Left: Tabs + Episodes + Comments
+             Right: Film info sidebar + Recommendations
+        ═══════════════════════════════════════════════════════════ */}
+        <div className={cn(
+          'w-full mx-auto transition-all duration-300',
+          theaterMode ? 'max-w-none' : 'max-w-[1800px]',
+        )}>
+          <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_280px] gap-x-5 gap-y-3 px-3 md:px-5 lg:px-6 pt-3">
+
+          {/* ── 2. UNDER-PLAYER CONTENT (Episodes, Cast, Comments) ── */}
+          <div className="space-y-3 min-w-0">
             {/* ── EXPANDABLE SHORTCUTS & GESTURE GUIDE (Premium Clean Cinema Standard) ── */}
             {showShortcutsGuide && (
               <div
@@ -4649,44 +4711,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
               </div>
             )}
 
-            {/* 2. TITLE + PREV/NEXT */}
-            <div className="flex items-start gap-3">
-              <div className="flex-1 min-w-0">
-                <h1 className="text-base md:text-lg font-bold text-white leading-snug truncate">
-                  {film?.name}
-                  {currentEpData?.name && (
-                    <span className="text-white/35 font-normal ml-2 text-sm">
-                      · Tập {currentEpData.name.replace(/^tập\s*/i, '')}
-                    </span>
-                  )}
-                </h1>
-                {categories && <p className="text-[11px] text-white/30 mt-0.5">{categories}</p>}
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                {currentEpIndex > 0 && (
-                  <button
-                    onClick={() => {
-                      const p = serverData[currentEpIndex - 1];
-                      navigateToEpisode(p.slug || p.name);
-                    }}
-                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-neutral-300 bg-white/[0.04] border border-white/10 rounded-xl hover:text-white hover:bg-white/10 transition-colors"
-                  >
-                    <ChevronLeft size={13} /> {t('watch.prevEpisode', 'Tập trước')}
-                  </button>
-                )}
-                {currentEpIndex >= 0 && currentEpIndex < serverData.length - 1 && (
-                  <button
-                    onClick={() => {
-                      const n = serverData[currentEpIndex + 1];
-                      navigateToEpisode(n.slug || n.name);
-                    }}
-                    className="flex items-center gap-1 rounded-xl border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-white/20"
-                  >
-                    {t('watch.nextEpisode', 'Tập tiếp')} <ChevronRight size={13} />
-                  </button>
-                )}
-              </div>
-            </div>
+            {/* Title is now in the sub-bar above — no duplicate needed here */}
 
             {/* ── Seamless Cinema Navigation Bar ── */}
             <div className="w-full pb-2.5 sm:pb-3 border-b border-white/[0.08]">
@@ -5542,81 +5567,14 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
               )}
             </div>
           </div>
+          {/* END: Left content column */}
 
-          {/* ───── 3. RIGHT SIDEBAR (Always available in both normal & theater mode) ───── */}
-          <div
-            className={cn(
-              'space-y-4 min-w-0',
-              theaterMode
-                ? 'col-span-1 xl:col-start-2 xl:row-start-3 mt-1 sm:mt-1.5'
-                : 'xl:col-start-2 xl:row-start-1 xl:row-span-3',
-            )}
-          >
+          {/* ───── 3. RIGHT SIDEBAR ───── */}
+          <div className="space-y-4 min-w-0">
             {/* Film Info */}
             <SidebarFilmCard film={film} slug={slug} />
 
-            {/* ── PLAYER QUICK ACTIONS PANEL (TỰ CHUYỂN & BÁO LỖI) ── */}
-            <div className="pb-3 border-b border-white/[0.08] select-none">
-              <div className="grid grid-cols-2 gap-1.5">
-                {/* Tự động chuyển tập */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    const next = !autoNextConfig;
-                    setAutoNextConfig(next);
-                    if (typeof window !== 'undefined') {
-                      localStorage.setItem('netphim_auto_next', String(next));
-                    }
-                    toast(next ? 'Đã bật Tự động chuyển tập' : 'Đã tắt Tự động chuyển tập', 'info');
-                  }}
-                  title={autoNextConfig ? 'Tắt tự động chuyển tập' : 'Bật tự động chuyển tập'}
-                  className={cn(
-                    'flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-[11px] font-semibold transition-all cursor-pointer select-none active:scale-95 border',
-                    autoNextConfig
-                      ? 'bg-white/15 text-white border-white/20 shadow-sm'
-                      : 'bg-white/[0.03] hover:bg-white/[0.07] text-neutral-400 hover:text-neutral-200 border-white/[0.06]',
-                  )}
-                >
-                  <SkipForward
-                    size={12}
-                    className={autoNextConfig ? 'text-white' : 'text-neutral-400'}
-                  />
-                  <span className="truncate">Tự chuyển</span>
-                </button>
-
-                {/* Đổi server nếu lag */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setWatchContentTab('episodes');
-                    toast(
-                      'Nếu video bị lag hoặc gián đoạn, bạn hãy đổi sang Server khác ở danh sách bên dưới nhé!',
-                      'info',
-                    );
-                    const el = document.getElementById('watch-servers-section');
-                    if (el) {
-                      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                      el.classList.add('ring-2', 'ring-[#23ade5]/60', 'rounded-xl', 'transition-all');
-                      setTimeout(
-                        () =>
-                          el.classList.remove(
-                            'ring-2',
-                            'ring-[#23ade5]/60',
-                            'rounded-xl',
-                            'transition-all',
-                          ),
-                        2500,
-                      );
-                    }
-                  }}
-                  title="Nếu phim bị lag hoặc không xem được, bấm để đổi sang server khác ở danh sách bên dưới"
-                  className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-[11px] font-semibold text-white bg-white/15 hover:bg-white/20 border border-white/20 shadow-sm transition-all cursor-pointer select-none active:scale-95"
-                >
-                  <RefreshCw size={12} className="text-white shrink-0" />
-                  <span className="truncate">Đổi server nếu lag</span>
-                </button>
-              </div>
-            </div>
+            {/* Quick actions moved to sub-bar above — sidebar now clean */}
 
             {/* Recommendations */}
             {recsData?.items && recsData.items.length > 0 && (
@@ -5632,7 +5590,10 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
               </div>
             )}
           </div>
-        </div>
+          {/* END: Right sidebar */}
+
+          </div>{/* END: body grid */}
+        </div>{/* END ZONE 3: Body */}
       </main>
 
       {/* Server Health & Speed Monitor Modal */}
