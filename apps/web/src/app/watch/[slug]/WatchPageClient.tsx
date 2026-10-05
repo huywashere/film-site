@@ -4899,6 +4899,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                       {/* Server Selection */}
                       {activeGroup.length > 0 && (
                         <div
+                          id="watch-servers-section"
                           className="flex items-center justify-center gap-1 sm:gap-1.5 overflow-x-auto no-scrollbar w-full sm:w-auto px-1 sm:px-0 touch-pan-x"
                           role="radiogroup"
                           aria-label="Máy chủ phát"
@@ -5583,14 +5584,36 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                   <span className="truncate">Tự chuyển</span>
                 </button>
 
-                {/* Báo lỗi */}
+                {/* Đổi server nếu lag */}
                 <button
                   type="button"
-                  onClick={() => setShowReportModal(true)}
-                  className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-[11px] font-medium text-neutral-400 hover:text-neutral-200 bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.05] transition-all cursor-pointer active:scale-95"
+                  onClick={() => {
+                    setWatchContentTab('episodes');
+                    toast(
+                      'Nếu video bị lag hoặc gián đoạn, bạn hãy đổi sang Server khác ở danh sách bên dưới nhé!',
+                      'info',
+                    );
+                    const el = document.getElementById('watch-servers-section');
+                    if (el) {
+                      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      el.classList.add('ring-2', 'ring-amber-400/50', 'rounded-xl', 'transition-all');
+                      setTimeout(
+                        () =>
+                          el.classList.remove(
+                            'ring-2',
+                            'ring-amber-400/50',
+                            'rounded-xl',
+                            'transition-all',
+                          ),
+                        2500,
+                      );
+                    }
+                  }}
+                  title="Nếu phim bị lag hoặc không xem được, bấm để đổi sang server khác ở danh sách bên dưới"
+                  className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-[11px] font-semibold text-amber-300/90 hover:text-amber-200 bg-amber-500/[0.06] hover:bg-amber-500/[0.12] border border-amber-500/20 transition-all cursor-pointer active:scale-95 select-none shadow-sm"
                 >
-                  <Bug size={12} className="text-neutral-400 shrink-0" />
-                  <span>Báo lỗi</span>
+                  <RefreshCw size={11} className="text-amber-400 shrink-0" />
+                  <span className="truncate">Đổi server nếu lag</span>
                 </button>
               </div>
             </div>
