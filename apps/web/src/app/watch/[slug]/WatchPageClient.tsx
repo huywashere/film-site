@@ -1561,28 +1561,32 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
   // Cinema Mode & Player Enhancement States
   const [lightOff, setLightOff] = useState(false);
   const [theaterMode, setTheaterMode] = useState(false);
-  // Layout mode: 'classic' (bản gốc ban đầu) vs 'cinema' (bản mở rộng toàn cảnh)
+  // Layout mode: 'classic' (player bên trái, thanh dọc thông tin bên phải) vs 'cinema' (bản mở rộng toàn cảnh)
   const [watchLayoutMode, setWatchLayoutMode] = useState<'classic' | 'cinema'>('classic');
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('flexphim_watch_layout_mode');
+      const saved = localStorage.getItem('flexphim_watch_layout_mode_v2');
       if (saved === 'classic' || saved === 'cinema') {
         setWatchLayoutMode(saved);
+      } else {
+        setWatchLayoutMode('classic');
       }
-    } catch {}
+    } catch {
+      setWatchLayoutMode('classic');
+    }
   }, []);
 
   const handleToggleLayoutMode = useCallback(() => {
     setWatchLayoutMode((prev) => {
       const next = prev === 'classic' ? 'cinema' : 'classic';
       try {
-        localStorage.setItem('flexphim_watch_layout_mode', next);
+        localStorage.setItem('flexphim_watch_layout_mode_v2', next);
       } catch {}
       toast(
         next === 'cinema'
           ? 'Đã chuyển sang Giao diện Rạp phim (Toàn cảnh)'
-          : 'Đã chuyển sang Giao diện Tiêu chuẩn (Gốc ban đầu)',
+          : 'Đã chuyển sang Giao diện Tiêu chuẩn (Player bên trái, Thông tin bên phải)',
         'info',
       );
       return next;
@@ -3968,15 +3972,15 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
         >
           <div
             className={cn(
-              'grid gap-x-5 gap-y-1 sm:gap-y-1 transition-all duration-300 xl:grid-rows-[min-content_auto_auto]',
-              'grid-cols-1 xl:grid-cols-[minmax(0,1fr)_300px]',
+              'grid gap-x-5 gap-y-1.5 transition-all duration-300 lg:grid-rows-[min-content_auto_auto]',
+              'grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_330px] 2xl:grid-cols-[minmax(0,1fr)_360px]',
             )}
           >
             {/* ───── 0. TOP CONTROLS & BREADCRUMB BAR (Above Player) ───── */}
           <div
             className={cn(
               'flex h-fit self-start items-center justify-between gap-2 py-1.5 px-3 sm:px-3.5 bg-white/[0.03] border border-white/[0.06] rounded-xl text-xs text-white/60 select-none',
-              theaterMode ? 'col-span-full' : 'xl:col-start-1 xl:row-start-1',
+              theaterMode ? 'col-span-full' : 'lg:col-start-1 lg:row-start-1',
             )}
           >
             <div className="flex items-center gap-2 min-w-0">
@@ -4316,7 +4320,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                 'netphim-watch-player bg-black rounded-none overflow-hidden relative shadow-2xl ring-1 ring-white/[0.06] select-none transition-all duration-300 flex items-center justify-center',
                 theaterMode
                   ? 'is-theater col-span-full w-full aspect-[16/9] sm:aspect-auto sm:h-[calc(100svh-64px)] min-h-[480px] mx-auto shadow-2xl ring-1 ring-white/10'
-                  : 'xl:col-start-1 xl:row-start-2 w-full aspect-video',
+                  : 'lg:col-start-1 lg:row-start-2 w-full aspect-video',
                 lightOff ? 'relative z-50 ring-1 ring-white/20 shadow-2xl' : '',
               )}
             >
@@ -4566,8 +4570,8 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
               className={cn(
                 'space-y-3 min-w-0 mt-0.5 sm:mt-1',
                 theaterMode
-                  ? 'col-span-1 xl:col-start-1 xl:row-start-3'
-                  : 'xl:col-start-1 xl:row-start-3',
+                  ? 'col-span-1 lg:col-start-1 lg:row-start-3'
+                  : 'lg:col-start-1 lg:row-start-3',
               )}
             >
             {/* ── EXPANDABLE SHORTCUTS & GESTURE GUIDE (Premium Clean Cinema Standard) ── */}
@@ -5579,8 +5583,8 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
               className={cn(
                 'space-y-4 min-w-0',
                 theaterMode
-                  ? 'col-span-1 xl:col-start-2 xl:row-start-3 mt-1 sm:mt-1.5'
-                  : 'xl:col-start-2 xl:row-start-1 xl:row-span-3',
+                  ? 'col-span-1 lg:col-start-2 lg:row-start-3 mt-1 sm:mt-1.5'
+                  : 'lg:col-start-2 lg:row-start-1 lg:row-span-3',
               )}
             >
             {/* Film Info */}
@@ -6332,7 +6336,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
             'w-full mx-auto transition-all duration-300',
             theaterMode ? 'max-w-none' : 'max-w-[1800px]',
           )}>
-            <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_300px] gap-x-5 gap-y-3 px-3 md:px-5 lg:px-6 pt-3">
+            <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_330px] gap-x-5 gap-y-3 px-3 md:px-5 lg:px-6 pt-3">
               {/* Left Column: Shortcuts Guide + Tabs + Comments */}
               <div className="space-y-3 min-w-0">
             {/* ── EXPANDABLE SHORTCUTS & GESTURE GUIDE (Premium Clean Cinema Standard) ── */}
