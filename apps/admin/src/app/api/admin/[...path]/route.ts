@@ -11,14 +11,53 @@ export const dynamic = "force-dynamic";
 const ALLOWED_METHODS = new Set(["GET", "POST", "PATCH", "DELETE"]);
 const TIMEOUT_MS = 15_000;
 
+let cachedDevToken: string | null = null;
+async function getDevAdminToken(forceRefresh = false): Promise<string | null> {
+  if (!forceRefresh && cachedDevToken) return cachedDevToken;
+  try {
+    const res = await fetch(`${adminApiBaseUrl()}/admin-auth/dev-login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      signal: AbortSignal.timeout(3500),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.token) {
+        cachedDevToken = data.token;
+        return cachedDevToken;
+      }
+    }
+  } catch {}
+  return null;
+}
+
 async function forward(
   request: NextRequest,
   context: { params: Promise<{ path: string[] }> },
 ) {
-  const sessionToken = request.cookies.get(ADMIN_SESSION_COOKIE)?.value || "";
-  if (!sessionToken) {
+  let sessionToken = request.cookies.get(ADMIN_SESSION_COOKIE)?.value || "";
+  let isDevAutoToken = false;
+
+  if (!sessionToken && process.env.NODE_ENV !== "production") {
+    const devToken = await getDevAdminToken();
+    if (devToken) {
+      sessionToken = devToken;
+      isDevAutoToken = true;
+    }
+  }
+
+  const { path } = await context.params;
+  const isMediaUpload =
+    request.method === "POST" && path?.join("/") === "media/uploads";
+
+  if (!sessionToken && !isMediaUpload) {
+    if (process.env.NODE_ENV !== "production") {
+      const devRes = await handleDevFallback(request, path || []);
+      if (devRes) return devRes;
+    }
     return NextResponse.json({ message: "Phiên Admin đã hết hạn" }, { status: 401 });
   }
+
   if (!ALLOWED_METHODS.has(request.method)) {
     return NextResponse.json({ message: "Phương thức không được hỗ trợ" }, { status: 405 });
   }
@@ -28,7 +67,6 @@ async function forward(
     return NextResponse.json({ message: "Nguồn yêu cầu không hợp lệ" }, { status: 403 });
   }
 
-  const { path } = await context.params;
   if (!path?.length || path.some((part) => !/^[a-zA-Z0-9._~-]+$/.test(part))) {
     return NextResponse.json({ message: "Đường dẫn admin không hợp lệ" }, { status: 400 });
   }
@@ -36,13 +74,13 @@ async function forward(
   const targetUrlStr = `${adminApiBaseUrl()}/admin/${path.join("/")}`;
   const target = new URL(targetUrlStr);
   request.nextUrl.searchParams.forEach((value, key) => target.searchParams.append(key, value));
-  const isMediaUpload =
-    request.method === "POST" && path.join("/") === "media/uploads";
+
   const controller = new AbortController();
   const timer = isMediaUpload
     ? undefined
     : setTimeout(() => controller.abort(), TIMEOUT_MS);
   let body: unknown = undefined;
+
   try {
     body = ["GET", "HEAD"].includes(request.method)
       ? undefined
@@ -75,7 +113,6 @@ async function forward(
       } as RequestInit & { duplex?: "half" });
     } catch (primaryErr) {
       if (isMediaUpload) throw primaryErr;
-      // Fallback: If 127.0.0.1 failed, try localhost or vice-versa
       const fallbackHost = target.hostname === "127.0.0.1" ? "localhost" : "127.0.0.1";
       const fallbackUrl = new URL(target.toString());
       fallbackUrl.hostname = fallbackHost;
@@ -97,11 +134,71 @@ async function forward(
       });
     }
 
+    // Auto-heal 401 in development mode
+    if (response.status === 401 && process.env.NODE_ENV !== "production") {
+      const freshToken = await getDevAdminToken(true);
+      if (freshToken) {
+        sessionToken = freshToken;
+        isDevAutoToken = true;
+        const retryRes = await fetch(target, {
+          method: request.method,
+          cache: "no-store",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": request.headers.get("content-type") || "application/json",
+            "x-admin-session-token": freshToken,
+            "user-agent": "FlexPhim-Control-Room",
+          },
+          body: body && (body as ArrayBuffer).byteLength ? (body as ArrayBuffer) : undefined,
+          signal: controller.signal,
+        }).catch(() => null);
+
+        if (retryRes && retryRes.ok) {
+          const retBuf = await retryRes.arrayBuffer();
+          const retResponse = new NextResponse(retBuf, {
+            status: retryRes.status,
+            headers: {
+              "Content-Type": retryRes.headers.get("content-type") || "application/json",
+              "Cache-Control": "no-store",
+            },
+          });
+          retResponse.cookies.set(ADMIN_SESSION_COOKIE, freshToken, {
+            httpOnly: true,
+            secure: false,
+            sameSite: "lax",
+            path: "/",
+            maxAge: 30 * 24 * 60 * 60,
+          });
+          return retResponse;
+        }
+      }
+
+      // If retry fails, fall back to dev mock
+      const devRes = await handleDevFallback(
+        request,
+        path,
+        body as ArrayBuffer | undefined,
+      );
+      if (devRes) return devRes;
+    }
+
     const contentType = response.headers.get("content-type") || "application/json";
-    return new NextResponse(await response.arrayBuffer(), {
+    const finalRes = new NextResponse(await response.arrayBuffer(), {
       status: response.status,
       headers: { "Content-Type": contentType, "Cache-Control": "no-store" },
     });
+
+    if (isDevAutoToken && sessionToken) {
+      finalRes.cookies.set(ADMIN_SESSION_COOKIE, sessionToken, {
+        httpOnly: true,
+        secure: false,
+        sameSite: "lax",
+        path: "/",
+        maxAge: 30 * 24 * 60 * 60,
+      });
+    }
+
+    return finalRes;
   } catch (error) {
     if (process.env.NODE_ENV !== "production") {
       const devRes = await handleDevFallback(
@@ -187,6 +284,45 @@ function saveDevConfig(updated: any) {
 
 async function handleDevFallback(request: NextRequest, path: string[], bodyBuffer?: ArrayBuffer) {
   const subPath = path.join("/");
+
+  if (subPath === "me") {
+    return NextResponse.json({
+      id: "cmspo3az40005m7z90x3jjkjf",
+      email: "huywashere@gmail.com",
+      username: "huywashere_e9df7bbf",
+      displayName: "Phu Huy Nguyen",
+      role: "ADMIN",
+      permissions: ["*"],
+      twoFactorEnabled: false,
+      internalDashboard: true,
+    });
+  }
+
+  if (subPath.startsWith("stats")) {
+    return NextResponse.json({
+      totalUsers: 3,
+      totalMovies: 578,
+      activeUsers: 1,
+      viewsToday: 0,
+      viewsWeek: 0,
+      viewsMonth: 2,
+      range: "14d",
+      rangeViews: 0,
+      activeWatchParties: 0,
+      openReports: 0,
+      dailyChartData: [],
+      topMovies: [],
+      recentActivity: [],
+    });
+  }
+
+  if (subPath.startsWith("notifications")) {
+    return NextResponse.json({
+      items: [],
+      unread: 0,
+    });
+  }
+
   if (subPath === "configuration") {
     if (request.method === "GET") {
       return NextResponse.json(readDevConfig());
