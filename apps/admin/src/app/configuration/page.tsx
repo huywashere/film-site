@@ -13,6 +13,7 @@ import {
 } from "@tabler/icons-react";
 import { adminFetch } from "@/lib/admin-api";
 import { configurationUpdatePayload } from "@/lib/configuration-payload";
+import { HeroBannerStudio } from "@/components/HeroBannerStudio";
 
 type Configuration = {
   maintenanceMode: boolean;
@@ -355,29 +356,10 @@ export default function ConfigurationPage() {
           </div>
         </article>
       </section>
-      <section className="admin-card p-5">
-        <h2 className="text-[14px] font-bold text-slate-800">
-          Hero banner được ghim
-        </h2>
-        <p className="mt-1 text-[11px] text-slate-400">
-          Mỗi dòng một slug phim, tối đa 12. Để trống để hệ thống tự chọn.
-        </p>
-        <textarea
-          value={config.heroMovieSlugs.join("\n")}
-          onChange={(event) =>
-            update(
-              "heroMovieSlugs",
-              event.target.value
-                .split(/\r?\n/)
-                .map((item) => item.trim())
-                .filter(Boolean)
-                .slice(0, 12),
-            )
-          }
-          className="admin-control mt-4 min-h-36 w-full resize-y px-3 py-3 font-mono text-[12px]"
-          placeholder={"slug-phim-1\nslug-phim-2"}
-        />
-      </section>
+      <HeroBannerStudio
+        heroMovieSlugs={config.heroMovieSlugs}
+        onChange={(slugs) => update("heroMovieSlugs", slugs)}
+      />
       <section className="admin-card p-5">
         <div className="flex items-center gap-2">
           <SlidersHorizontal size={17} className="text-blue-600" />

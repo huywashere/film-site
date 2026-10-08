@@ -1,15 +1,75 @@
 import HomePageClient from "./HomePageClient";
-import type { PublicSiteConfiguration } from "@/lib/api";
-import { CURATED_HERO_FRANCHISE_POOL } from "@/lib/curated-hero-pool";
+import { movieApi, type PublicSiteConfiguration } from "@/lib/api";
+import { CURATED_HERO_FRANCHISE_POOL, type CuratedHeroMovie } from "@/lib/curated-hero-pool";
 import { localImageProxyUrl } from "@/lib/image-cdn";
 
 export const revalidate = 60;
 
-function getDefaultHeroFilms() {
+function getDefaultHeroFilms(): CuratedHeroMovie[] {
   // Keep the server paint identical across hard reloads. Browsers retain the
   // previous document while the next response is loading, so a randomized
   // playlist made the old banner visibly flash before the new page appeared.
   return CURATED_HERO_FRANCHISE_POOL.slice(0, 6);
+}
+
+async function resolveInitialHeroFilms(heroSlugs?: string[]): Promise<CuratedHeroMovie[]> {
+  if (!heroSlugs || !heroSlugs.length) return getDefaultHeroFilms();
+
+  const resolved = await Promise.all(
+    heroSlugs.slice(0, 6).map(async (slug) => {
+      const cleanSlug = slug.trim();
+      if (!cleanSlug) return null;
+
+      // 1. Check curated pool first (immediate return with curated high-res artwork)
+      const curated = CURATED_HERO_FRANCHISE_POOL.find((film) => film.slug === cleanSlug);
+      if (curated) return curated;
+
+      // 2. Fetch from movie detail API for any custom film
+      try {
+        const detailRes = await Promise.race([
+          movieApi.getDetail(cleanSlug),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 1200)),
+        ]);
+        if (!detailRes) return null;
+
+        const data = (detailRes as any)?.data;
+        const movie = data?.movie || data?.data?.movie || data?.data?.item || data?.item;
+        if (!movie || !movie.name) return null;
+
+        const thumb = movie.thumb_url || movie.poster_url;
+        const poster = movie.poster_url || movie.thumb_url;
+
+        const film: CuratedHeroMovie = {
+          _id: movie._id || movie.id || cleanSlug,
+          name: movie.name,
+          origin_name: movie.origin_name || movie.name,
+          slug: movie.slug || cleanSlug,
+          type: movie.type || "single",
+          tmdbId: movie.tmdb?.id ? Number(movie.tmdb.id) : 0,
+          tmdb: movie.tmdb,
+          trailer_url: movie.trailer_url,
+          poster_url: poster,
+          thumb_url: thumb,
+          heroBackdrop: thumb,
+          quality: movie.quality || "HD",
+          lang: movie.lang || "Vietsub",
+          year: movie.year || undefined,
+          vote_average: movie.vote_average || 8.0,
+          rating: movie.rating || 8.0,
+          content: movie.content,
+          genres: Array.isArray(movie.category)
+            ? movie.category.map((c: any) => c.name || c)
+            : [],
+        };
+        return film;
+      } catch {
+        return null;
+      }
+    }),
+  );
+
+  const valid = resolved.filter((film): film is CuratedHeroMovie => Boolean(film));
+  return valid.length > 0 ? valid : getDefaultHeroFilms();
 }
 
 async function getInitialPublicConfiguration(): Promise<PublicSiteConfiguration | null> {
@@ -35,13 +95,7 @@ async function getInitialPublicConfiguration(): Promise<PublicSiteConfiguration 
 
 export default async function HomePage() {
   const initialPublicConfig = await getInitialPublicConfiguration();
-  const pinnedHeroFilms = (initialPublicConfig?.heroMovieSlugs || [])
-    .map((slug) => CURATED_HERO_FRANCHISE_POOL.find((film) => film.slug === slug))
-    .filter((film): film is (typeof CURATED_HERO_FRANCHISE_POOL)[number] => Boolean(film))
-    .slice(0, 6);
-  const initialHeroFilms = pinnedHeroFilms.length
-    ? pinnedHeroFilms
-    : getDefaultHeroFilms();
+  const initialHeroFilms = await resolveInitialHeroFilms(initialPublicConfig?.heroMovieSlugs);
   const initialHero = initialHeroFilms[0];
   const initialDesktopBackdrop = initialHero?.heroBackdrop
     ? localImageProxyUrl(initialHero.heroBackdrop, { strict: true })

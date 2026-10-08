@@ -16,8 +16,10 @@ import {
   IconX as X,
   IconBolt as Zap,
   IconSparkles as Sparkles,
+  IconPin as Pin,
 } from "@tabler/icons-react";
 import { adminFetch, queryString } from "@/lib/admin-api";
+import { configurationUpdatePayload } from "@/lib/configuration-payload";
 
 export type SubtitleItem = {
   label: string;
@@ -144,6 +146,7 @@ export default function MovieManagementPage() {
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
+  const [pinnedHeroSlugs, setPinnedHeroSlugs] = useState<string[]>([]);
 
   const initialNewMovieState = {
     title: "",
@@ -326,22 +329,56 @@ export default function MovieManagementPage() {
   const load = useCallback(async () => {
     setError("");
     try {
-      const [movies, syncJobs, uploads] = await Promise.all([
+      const [movies, syncJobs, uploads, siteConfig] = await Promise.all([
         adminFetch<PageData>(
           `movies?${queryString({ page, limit: 15, search, type, isHidden: hidden })}`,
         ),
         adminFetch<SyncJob[]>("sync-jobs?limit=8"),
         adminFetch<MediaUploadJob[]>("media/uploads"),
+        adminFetch<{ heroMovieSlugs?: string[] }>("configuration").catch(() => null),
       ]);
       setData(movies);
       setJobs(syncJobs);
       setMediaJobs(uploads);
+      if (Array.isArray(siteConfig?.heroMovieSlugs)) {
+        setPinnedHeroSlugs(siteConfig.heroMovieSlugs);
+      }
     } catch (cause) {
       setError(
         cause instanceof Error ? cause.message : "Không thể tải thư viện",
       );
     }
   }, [hidden, page, search, type]);
+
+  const togglePinHero = async (movie: Movie) => {
+    setBusy(`pin:${movie.id}`);
+    try {
+      const config = await adminFetch<any>("configuration");
+      const current = Array.isArray(config.heroMovieSlugs) ? config.heroMovieSlugs : [];
+      const isPinned = current.includes(movie.id);
+      if (!isPinned && current.length >= 12) {
+        throw new Error("Đã đạt tối đa 12 phim trên Hero Banner. Vui lòng gỡ bớt phim cũ trước.");
+      }
+      const updated = isPinned
+        ? current.filter((s: string) => s !== movie.id)
+        : [...current, movie.id];
+
+      await adminFetch("configuration", {
+        method: "PATCH",
+        body: JSON.stringify(configurationUpdatePayload({ ...config, heroMovieSlugs: updated })),
+      });
+      setPinnedHeroSlugs(updated);
+      setNotice(
+        isPinned
+          ? `Đã bỏ ghim "${movie.title}" khỏi Hero Banner.`
+          : `Đã ghim "${movie.title}" lên Hero Banner trang chủ!`,
+      );
+    } catch (err: any) {
+      setError(err?.message || "Không thể cập nhật Hero Banner");
+    } finally {
+      setBusy("");
+    }
+  };
 
   useEffect(() => {
     if (!mediaJobs.some((job) => job.status === "QUEUED" || job.status === "PROCESSING")) return;
@@ -763,6 +800,25 @@ export default function MovieManagementPage() {
                   </td>
                   <td className="px-5 py-3">
                     <div className="flex justify-end gap-1">
+                      <button
+                        disabled={busy === `pin:${movie.id}`}
+                        onClick={() => void togglePinHero(movie)}
+                        className={`admin-icon-button !h-8 !w-8 transition-colors ${
+                          pinnedHeroSlugs.includes(movie.id)
+                            ? "!text-amber-500 !bg-amber-50 hover:!bg-amber-100"
+                            : "text-slate-400 hover:text-amber-500"
+                        }`}
+                        title={
+                          pinnedHeroSlugs.includes(movie.id)
+                            ? "Đang ghim trên Hero Banner (bấm để gỡ)"
+                            : "Ghim lên Hero Banner trang chủ"
+                        }
+                      >
+                        <Pin
+                          size={14}
+                          className={pinnedHeroSlugs.includes(movie.id) ? "fill-amber-500 text-amber-500" : ""}
+                        />
+                      </button>
                       <button
                         disabled={busy === `open:${movie.id}`}
                         onClick={() => void openEditor(movie)}

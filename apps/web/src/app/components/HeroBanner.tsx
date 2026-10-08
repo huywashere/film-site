@@ -1393,7 +1393,12 @@ export default function HeroBanner({
                       detail?.data?.item ||
                       detail?.item;
                     return movie?.name
-                      ? ({ ...movie, slug: movie.slug || slug } as HeroFilm)
+                      ? ({
+                          ...movie,
+                          slug: movie.slug || slug,
+                          heroBackdrop:
+                            movie.heroBackdrop || movie.thumb_url || movie.poster_url,
+                        } as HeroFilm)
                       : null;
                   } catch {
                     return null;
