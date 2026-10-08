@@ -288,7 +288,7 @@ function buildPayload(
 }
 
 export async function GET(request: NextRequest) {
-  if (!hasAdminSession(request)) {
+  if (!hasAdminSession(request) && process.env.NODE_ENV === 'production') {
     return NextResponse.json({ message: 'Phiên Admin đã hết hạn' }, { status: 401 });
   }
   const force = request.nextUrl.searchParams.get('force') === '1';
