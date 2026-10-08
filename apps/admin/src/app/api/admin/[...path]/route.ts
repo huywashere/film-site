@@ -1,3 +1,5 @@
+import fs from "fs";
+import pathModule from "path";
 import { NextRequest, NextResponse } from "next/server";
 import {
   ADMIN_SESSION_COOKIE,
@@ -40,8 +42,9 @@ async function forward(
   const timer = isMediaUpload
     ? undefined
     : setTimeout(() => controller.abort(), TIMEOUT_MS);
+  let body: unknown = undefined;
   try {
-    const body = ["GET", "HEAD"].includes(request.method)
+    body = ["GET", "HEAD"].includes(request.method)
       ? undefined
       : isMediaUpload
         ? request.body
@@ -100,6 +103,14 @@ async function forward(
       headers: { "Content-Type": contentType, "Cache-Control": "no-store" },
     });
   } catch (error) {
+    if (process.env.NODE_ENV !== "production") {
+      const devRes = await handleDevFallback(
+        request,
+        path,
+        body as ArrayBuffer | undefined,
+      );
+      if (devRes) return devRes;
+    }
     console.error(`[Admin Proxy Error] ${request.method} ${targetUrlStr}:`, error);
     return NextResponse.json(
       {
@@ -115,6 +126,129 @@ async function forward(
   } finally {
     if (timer) clearTimeout(timer);
   }
+}
+
+function getDevConfigFile() {
+  const dir = pathModule.resolve(process.cwd(), "../../.local-data");
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  return pathModule.join(dir, "dev-site-config.json");
+}
+
+function readDevConfig() {
+  const file = getDevConfigFile();
+  const defaultConfig = {
+    maintenanceMode: false,
+    maintenanceNotice: "",
+    announcementText: "",
+    announcementLink: "",
+    homePopupEnabled: false,
+    homePopupTitle: "Thông báo từ FlexPhim",
+    homePopupBody: "Chào mừng bạn đến với FlexPhim Control Room.",
+    homePopupLink: "",
+    homePopupLinkLabel: "",
+    homePopupDismissLabel: "Đã hiểu",
+    homePopupVersion: 1,
+    heroMovieSlugs: [
+      "oppenheimer",
+      "dune-hanh-tinh-cat-2",
+      "avatar-2-dong-chay-cua-nuoc",
+      "ho-den-tu-than",
+    ],
+    providerPriority: ["kkphim", "ophim", "nguonc", "vsmov"],
+    autoSkipIntro: true,
+    watchPartyEnabled: true,
+    homeTop10Slugs: [],
+    homeSectionOrder: ["top10", "continue", "schedule", "latest", "vfx"],
+    homeHiddenSections: [],
+    homeFeaturedRows: {},
+    seoTitle: "FlexPhim - Xem phim trực tuyến",
+    seoDescription: "",
+    cacheVersion: 1,
+    updatedAt: new Date().toISOString(),
+  };
+
+  try {
+    if (fs.existsSync(file)) {
+      return { ...defaultConfig, ...JSON.parse(fs.readFileSync(file, "utf8")) };
+    }
+  } catch {}
+  return defaultConfig;
+}
+
+function saveDevConfig(updated: any) {
+  const file = getDevConfigFile();
+  const current = readDevConfig();
+  const merged = { ...current, ...updated, updatedAt: new Date().toISOString() };
+  try {
+    fs.writeFileSync(file, JSON.stringify(merged, null, 2), "utf8");
+  } catch {}
+  return merged;
+}
+
+async function handleDevFallback(request: NextRequest, path: string[], bodyBuffer?: ArrayBuffer) {
+  const subPath = path.join("/");
+  if (subPath === "configuration") {
+    if (request.method === "GET") {
+      return NextResponse.json(readDevConfig());
+    }
+    if (request.method === "PATCH") {
+      try {
+        const text = new TextDecoder().decode(bodyBuffer);
+        const json = JSON.parse(text);
+        const saved = saveDevConfig(json);
+        return NextResponse.json(saved);
+      } catch {
+        return NextResponse.json(readDevConfig());
+      }
+    }
+  }
+
+  if (subPath.startsWith("configuration/revisions")) {
+    return NextResponse.json([]);
+  }
+
+  if (subPath === "movies") {
+    const search = request.nextUrl.searchParams.get("search");
+    if (search) {
+      try {
+        const kkRes = await fetch(
+          `https://phimapi.com/v1/api/tim-kiem?keyword=${encodeURIComponent(search)}&limit=10`,
+          { signal: AbortSignal.timeout(3500) },
+        );
+        if (kkRes.ok) {
+          const json = await kkRes.json();
+          const items = (json?.data?.items || []).map((m: any) => ({
+            id: m.slug,
+            title: m.name,
+            originName: m.origin_name || m.slug,
+            posterUrl: m.poster_url?.startsWith("http")
+              ? m.poster_url
+              : `https://phimimg.com/${m.poster_url}`,
+            thumbUrl: m.thumb_url?.startsWith("http")
+              ? m.thumb_url
+              : `https://phimimg.com/${m.thumb_url}`,
+            year: m.year,
+            type: m.type || "single",
+            quality: m.quality || "HD",
+          }));
+          return NextResponse.json({
+            items,
+            pagination: { page: 1, total: items.length, totalPages: 1 },
+          });
+        }
+      } catch {}
+    }
+    return NextResponse.json({
+      items: [],
+      pagination: { page: 1, total: 0, totalPages: 0 },
+    });
+  }
+
+  if (subPath === "sync-jobs" || subPath === "media/uploads") {
+    return NextResponse.json([]);
+  }
+
+  return null;
 }
 
 export const GET = forward;
