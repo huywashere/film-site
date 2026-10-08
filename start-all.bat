@@ -52,21 +52,25 @@ if errorlevel 1 start "FlexPhim - Media Gateway (8081)" /min cmd /k "cd /d servi
 echo [5/7] Kiem tra NestJS API (3001)...
 curl.exe -fsS --max-time 4 http://127.0.0.1:3001/api/v1/health >nul 2>&1
 if errorlevel 1 (
-  for /f "tokens=5" %%P in ('netstat -ano ^| findstr ":3001 " ^| findstr "LISTENING"') do taskkill /PID %%P /T /F >nul 2>&1
-  start "FlexPhim - API (3001)" /min cmd /k "pnpm --filter api build && pnpm --filter api start"
+  powershell -NoProfile -ExecutionPolicy Bypass -Command "Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Where-Object { $_.LocalPort -eq 3001 } | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }" >nul 2>&1
+  if not exist "apps\api\dist\src\main.js" (
+    echo [API] Bien dich NestJS API lan dau...
+    call pnpm --filter api build
+  )
+  start "FlexPhim - API (3001)" /min cmd /k "pnpm --filter api start"
 )
 
 echo [6/7] Kiem tra Next.js Web (3000)...
 curl.exe -fsS --max-time 8 http://127.0.0.1:3000/api/health >nul 2>&1
 if errorlevel 1 (
-  for /f "tokens=5" %%P in ('netstat -ano ^| findstr ":3000 " ^| findstr "LISTENING"') do taskkill /PID %%P /T /F >nul 2>&1
+  powershell -NoProfile -ExecutionPolicy Bypass -Command "Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Where-Object { $_.LocalPort -eq 3000 } | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }" >nul 2>&1
   start "FlexPhim - Web (3000)" /min cmd /k "set MEDIA_GATEWAY_INTERNAL_URL=http://127.0.0.1:8081&& pnpm --filter web dev"
 )
 
 echo [7/7] Kiem tra Admin (3002)...
 curl.exe -fsS --max-time 5 http://127.0.0.1:3002/login >nul 2>&1
 if errorlevel 1 (
-  for /f "tokens=5" %%P in ('netstat -ano ^| findstr ":3002 " ^| findstr "LISTENING"') do taskkill /PID %%P /T /F >nul 2>&1
+  powershell -NoProfile -ExecutionPolicy Bypass -Command "Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Where-Object { $_.LocalPort -eq 3002 } | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }" >nul 2>&1
   start "FlexPhim - Admin (3002)" /min cmd /k "pnpm --dir apps/admin dev"
 )
 
