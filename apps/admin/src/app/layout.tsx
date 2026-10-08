@@ -43,6 +43,7 @@ import {
   IconSpeakerphone,
   IconCamera,
   IconCameraOff,
+  IconSparkles,
 } from "@tabler/icons-react";
 import flexphimLogo from "../../../web/public/flexphim-logo.png";
 import { adminFetch } from "@/lib/admin-api";
@@ -119,7 +120,13 @@ const NAV_GROUPS: Array<{
         label: { vi: "Thư viện phim", en: "Movie Library" },
         icon: IconMovie,
       },
-              {
+      {
+        href: "/hero-banner",
+        label: { vi: "Hero Banner Studio", en: "Hero Banner Studio" },
+        icon: IconSparkles,
+        badge: "HOT",
+      },
+      {
         href: "/crawler",
         label: { vi: "Tools Cào phim & Ingest", en: "Crawler Center" },
         icon: IconWorldDownload,

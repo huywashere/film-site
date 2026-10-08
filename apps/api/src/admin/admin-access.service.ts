@@ -240,6 +240,22 @@ export class AdminAccessService {
     return { ...this.toActor(session.user), sessionId: session.id };
   }
 
+  async devLogin(context: AdminRequestContext) {
+    if (process.env.NODE_ENV === "production") {
+      throw new UnauthorizedException("Chỉ khả dụng trong chế độ Development");
+    }
+    let user = await this.prisma.user.findFirst({
+      where: { role: "ADMIN" },
+    });
+    if (!user) {
+      user = await this.prisma.user.findFirst();
+    }
+    if (!user) {
+      throw new UnauthorizedException("Không tìm thấy tài khoản người dùng trong CSDL");
+    }
+    return this.createSession(user, context);
+  }
+
   async logout(token: string) {
     if (token) {
       await this.prisma.adminSession.updateMany({

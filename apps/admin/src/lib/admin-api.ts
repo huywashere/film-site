@@ -16,7 +16,10 @@ export async function adminFetch<T>(
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
     if (response.status === 401 && typeof window !== "undefined") {
-      window.location.assign(`/login?next=${encodeURIComponent(window.location.pathname)}`);
+      document.cookie = "netphim_admin_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+      if (window.location.pathname !== "/login") {
+        window.location.assign(`/login?next=${encodeURIComponent(window.location.pathname)}`);
+      }
     }
     throw new Error(payload?.message || `Yêu cầu thất bại (HTTP ${response.status})`);
   }

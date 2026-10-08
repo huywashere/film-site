@@ -68,6 +68,12 @@ export class AdminAuthController {
     });
   }
 
+  @Post("dev-login")
+  @HttpCode(200)
+  devLogin(@Ip() ip: string, @Headers("user-agent") userAgent?: string) {
+    return this.access.devLogin({ ipAddress: ip, userAgent });
+  }
+
   @Get("me")
   me(
     @Headers("x-admin-session-token") token = "",

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import {
   IconAlertTriangle,
   IconArrowDownRight,
@@ -10,6 +11,7 @@ import {
   IconEye,
   IconMovie as IconFilm,
   IconRefresh,
+  IconSparkles,
   IconUsers,
 } from "@tabler/icons-react";
 import { adminFetch } from "@/lib/admin-api";
@@ -132,6 +134,30 @@ export default function AdminDashboardPage() {
           {error}
         </div>
       )}
+
+      {/* Quick Action: Hero Banner Studio */}
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-blue-500/20 bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-purple-600/10 p-4 backdrop-blur-sm">
+        <div className="flex items-center gap-3">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-blue-600 text-white shadow-md shadow-blue-500/25">
+            <IconSparkles size={20} />
+          </span>
+          <div>
+            <h3 className="text-[13px] font-bold text-slate-800 dark:text-white">
+              Hero Banner Studio — Đổi phim nổi bật trang chủ
+            </h3>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              Chọn bất kỳ phim nào để đưa lên Banner đầu trang chủ kèm backdrop 4K & thứ tự ưu tiên #1 LCP.
+            </p>
+          </div>
+        </div>
+        <Link
+          href="/hero-banner"
+          className="admin-primary-button inline-flex items-center gap-1.5 px-4 py-2 text-[12px] font-bold"
+        >
+          <span>Mở Hero Banner Studio</span>
+          <IconChevronRight size={14} />
+        </Link>
+      </div>
 
       <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
         {cards.map(({ label, value, detail, icon: Icon, accent, visual }) => (
