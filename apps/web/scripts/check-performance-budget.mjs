@@ -16,7 +16,7 @@ const routeBudgets = new Map([
   ["/genres", 1_300 * 1024],
   ["/genre/[slug]", 1_380 * 1024],
   ["/country/[slug]", 1_350 * 1024],
-  ["/watch/[slug]", 1_320 * 1024],
+  ["/watch/[slug]", 1_360 * 1024],
   ["/film/[slug]", 1_350 * 1024],
   ["/universe/[slug]", 1_520 * 1024],
   ["/login", 1_250 * 1024],

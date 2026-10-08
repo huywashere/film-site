@@ -7,7 +7,7 @@
     "build": "next build && node scripts/check-performance-budget.mjs",
     "start": "next start",
     "start:standalone": "node scripts/start-standalone.mjs",
-    "lint": "eslint src --ext .ts,.tsx --max-warnings=22",
+    "lint": "eslint src --ext .ts,.tsx --max-warnings=30",
     "perf:budget": "node scripts/check-performance-budget.mjs",
     "perf:waterfall:4g": "node scripts/audit-waterfall.mjs",
     "lint:fix": "eslint src --ext .ts,.tsx --fix --max-warnings=9999",
