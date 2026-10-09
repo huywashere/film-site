@@ -325,7 +325,7 @@ export default function CrawlerPage() {
             </span>
             <span className="flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Engine Online (KKPhim + NguonC + OPhim)
+              Engine Online (KKPhim + NguonC + OPhim + OnFlix)
             </span>
           </div>
           <h1 className="text-xl font-bold text-slate-900 dark:text-white mt-1">
@@ -474,6 +474,14 @@ export default function CrawlerPage() {
                     >
                       squid-game
                     </button>
+                    •
+                    <button
+                      type="button"
+                      onClick={() => setSingleInput("nguoi-nhen-khoi-dau-moi")}
+                      className="text-emerald-500 font-medium hover:underline"
+                    >
+                      nguoi-nhen-khoi-dau-moi (OnFlix)
+                    </button>
                   </div>
                 </div>
 
@@ -487,6 +495,7 @@ export default function CrawlerPage() {
                     className="w-full rounded-lg border border-[var(--admin-line)] bg-[var(--admin-surface)] p-2.5 text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="auto">Tự động nhận diện theo URL (Auto)</option>
+                    <option value="onflix">OnFlix (onflix.lat) — Đa nguồn NC/OP/PA/SN + TMDB</option>
                     <option value="kkphim">KKPhim (phimapi.com) — Nguồn nhanh, ổn định</option>
                     <option value="nguonc">NguonC (phim.nguonc.com) — Đa dạng phim bộ</option>
                     <option value="ophim">OPhim (ophim1.com) — Kho phim kinh điển</option>
@@ -634,6 +643,7 @@ export default function CrawlerPage() {
                   onChange={(e) => setBatchProvider(e.target.value)}
                   className="w-full rounded-lg border border-[var(--admin-line)] bg-[var(--admin-surface)] p-2.5 text-[12px]"
                 >
+                  <option value="onflix">OnFlix (Hơn 59.000 phim, Đa nguồn Stream NC/OP/PA/SN)</option>
                   <option value="kkphim">KKPhim (Hơn 20.000 phim, ổn định nhất)</option>
                   <option value="nguonc">NguonC (Nhiều phim bộ, cập nhật nhanh)</option>
                 </select>

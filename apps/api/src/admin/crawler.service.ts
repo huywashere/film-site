@@ -109,6 +109,15 @@ export class CrawlerService {
     if (provider === "ophim") {
       return `https://img.ophim.live/uploads/movies/${trimmed.replace(/^\/+/, "")}`;
     }
+    if (provider === "onflix") {
+      if (trimmed.startsWith("/")) {
+        return `https://onflix.lat${trimmed}`;
+      }
+      if (trimmed.startsWith("images/")) {
+        return `https://sf-static.onflixcdn.com/${trimmed}`;
+      }
+      return trimmed;
+    }
     return trimmed;
   }
 
@@ -137,6 +146,11 @@ export class CrawlerService {
           const slug = parts[parts.length - 1];
           return { slug, provider: explicitProvider || "nguonc" };
         }
+        if (parsed.hostname.includes("onflix")) {
+          const parts = parsed.pathname.split("/").filter(Boolean);
+          const slug = parts[parts.length - 1];
+          return { slug, provider: explicitProvider || "onflix" };
+        }
       } catch {
         // Fall through to plain slug
       }
@@ -161,6 +175,9 @@ export class CrawlerService {
     }
     if (provider === "ophim") {
       return this.fetchOPhimDetail(slug);
+    }
+    if (provider === "onflix") {
+      return this.fetchOnFlixDetail(slug);
     }
     throw new Error(`Nhà cung cấp '${provider}' chưa được hỗ trợ`);
   }
@@ -368,6 +385,163 @@ export class CrawlerService {
       }
     }
     throw new Error(`Không thể cào OPhim (các mirror đều bận hoặc chặn IP): ${lastErr}`);
+  }
+
+  private extractBalancedBrackets(str: string, startIdx: number, openChar: string, closeChar: string): string | null {
+    let depth = 0;
+    let inString = false;
+    let escape = false;
+    for (let i = startIdx; i < str.length; i++) {
+      const c = str[i];
+      if (escape) {
+        escape = false;
+        continue;
+      }
+      if (c === "\\") {
+        escape = true;
+        continue;
+      }
+      if (c === '"') {
+        inString = !inString;
+        continue;
+      }
+      if (!inString) {
+        if (c === openChar) depth++;
+        else if (c === closeChar) {
+          depth--;
+          if (depth === 0) {
+            return str.substring(startIdx, i + 1);
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  private decodeBase64StreamUrl(rawUrl: string): string {
+    const trimmed = (rawUrl || "").trim();
+    if (!trimmed) return "";
+    const proxyMatch = trimmed.match(/[?&]url=([a-zA-Z0-9+/=]+)/);
+    if (proxyMatch && proxyMatch[1]) {
+      try {
+        const decoded = Buffer.from(proxyMatch[1], "base64").toString("utf8");
+        if (decoded.startsWith("http")) return decoded;
+      } catch {
+        // Fall back to original
+      }
+    }
+    return trimmed;
+  }
+
+  private async fetchOnFlixDetail(slug: string): Promise<CrawlMovieResult> {
+    const cleanSlug = slug.replace(/^phim\//i, "").trim();
+    const url = `https://onflix.lat/phim/${encodeURIComponent(cleanSlug)}`;
+
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 FlexPhim-Crawler/2.0",
+        RSC: "1",
+        "Next-Url": `/phim/${cleanSlug}`,
+      },
+      signal: AbortSignal.timeout(15_000),
+    });
+
+    if (!res.ok) {
+      throw new Error(`OnFlix trả về HTTP ${res.status} cho slug '${cleanSlug}'`);
+    }
+
+    const flightText = await res.text();
+
+    const movieStart = flightText.indexOf('"movie":{');
+    if (movieStart === -1) {
+      throw new Error(`Không thể tìm thấy thông tin phim trên OnFlix cho slug '${cleanSlug}'`);
+    }
+
+    const movieJsonStr = this.extractBalancedBrackets(flightText, movieStart + 8, "{", "}");
+    if (!movieJsonStr) {
+      throw new Error(`Lỗi phân tích cú pháp dữ liệu phim OnFlix cho slug '${cleanSlug}'`);
+    }
+
+    const m = JSON.parse(movieJsonStr) as Record<string, unknown>;
+
+    const epStart = flightText.indexOf('"episodes":[');
+    let rawEpisodes: Array<Record<string, unknown>> = [];
+    if (epStart !== -1) {
+      const epJsonStr = this.extractBalancedBrackets(flightText, epStart + 11, "[", "]");
+      if (epJsonStr) {
+        try {
+          rawEpisodes = JSON.parse(epJsonStr) as Array<Record<string, unknown>>;
+        } catch {
+          rawEpisodes = [];
+        }
+      }
+    }
+
+    const episodes: CrawlEpisodeItem[] = [];
+    for (const ep of rawEpisodes) {
+      const rawStream = String(ep.link_m3u8 || ep.link_embed || "").trim();
+      const streamUrl = this.decodeBase64StreamUrl(rawStream);
+      if (!streamUrl) continue;
+
+      const rawEmbed = ep.link_embed ? String(ep.link_embed).trim() : undefined;
+      const embedUrl = rawEmbed ? this.decodeBase64StreamUrl(rawEmbed) : undefined;
+      const serverName = String(ep.server_name || "Server VIP (OnFlix)").trim();
+      const epName = String(ep.name || "Full").trim();
+      const epSlug = String(ep.slug || `tap-${epName}`).trim().toLowerCase();
+
+      episodes.push({
+        name: epName,
+        slug: epSlug,
+        serverName,
+        streamUrl,
+        embedUrl,
+      });
+    }
+
+    const rawYear = Number(m.year);
+    const parsedTotal = parseInt(String(m.total_episode || m.episode_total || "").replace(/\D/g, ""), 10);
+
+    const categoriesList = Array.isArray(m.categories)
+      ? m.categories.map((c: any) => (typeof c === "object" && c ? c.name : String(c))).filter(Boolean)
+      : typeof m.categories === "string"
+      ? m.categories.split(",").map((s) => s.trim()).filter(Boolean)
+      : [];
+
+    const countriesList = Array.isArray(m.countries)
+      ? m.countries.map((c: any) => (typeof c === "object" && c ? c.name : String(c))).filter(Boolean)
+      : typeof m.countries === "string"
+      ? m.countries.split(",").map((s) => s.trim()).filter(Boolean)
+      : [];
+
+    const actorsList = Array.isArray(m.actors)
+      ? m.actors.map((a: any) => (typeof a === "object" && a ? a.name : String(a))).filter(Boolean)
+      : [];
+
+    const directorsList = typeof m.directors === "string"
+      ? m.directors.split(",").map((d) => d.trim()).filter(Boolean)
+      : [];
+
+    return {
+      slug: String(m.slug || cleanSlug).trim(),
+      title: String(m.title || m.name || cleanSlug).trim(),
+      originName: m.original_title ? String(m.original_title).trim() : undefined,
+      year: Number.isFinite(rawYear) && rawYear > 0 ? Math.trunc(rawYear) : undefined,
+      type: String(m.type || "single").trim(),
+      status: String(m.episode_status || m.episode_current || "completed").trim(),
+      totalEpisodes: Number.isFinite(parsedTotal) && parsedTotal > 0 ? parsedTotal : undefined,
+      quality: m.quality ? String(m.quality).trim() : "HD",
+      language: m.lang ? String(m.lang).trim() : "Vietsub",
+      posterUrl: this.normalizeImageUrl(typeof m.poster_url === "string" ? m.poster_url : undefined, "onflix"),
+      thumbUrl: this.normalizeImageUrl(typeof m.thumb_url === "string" ? m.thumb_url : undefined, "onflix"),
+      description: this.cleanDescription(typeof m.content === "string" ? m.content : undefined),
+      genres: categoriesList,
+      countries: countriesList,
+      actors: actorsList,
+      directors: directorsList,
+      trailerUrl: typeof m.trailer_url === "string" ? m.trailer_url.trim() : undefined,
+      episodes,
+      provider: "onflix",
+    };
   }
 
   /**
@@ -586,6 +760,30 @@ export class CrawlerService {
               items = rawItems.map((i) => ({
                 slug: String(i.slug).trim(),
                 name: String(i.name || i.slug).trim(),
+              }));
+            }
+          } else if (job.provider === "onflix") {
+            let path = `https://k8s.onflixcdn.com/api/movies?page=${page}&limit=24`;
+            if (job.category === "phim-bo") {
+              path = `https://k8s.onflixcdn.com/api/movies?type=phim-bo&page=${page}&limit=24`;
+            } else if (job.category === "phim-le") {
+              path = `https://k8s.onflixcdn.com/api/movies?type=phim-le&page=${page}&limit=24`;
+            } else if (job.category === "hoat-hinh") {
+              path = `https://k8s.onflixcdn.com/api/movies?type=hoathinh&page=${page}&limit=24`;
+            }
+            const res = await fetch(path, {
+              headers: {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) FlexPhim-Crawler/2.0",
+                "X-Api-Token": "013b541ac53a4f1b78798db35e284da4a40488b92f9aaa9abc1345690083f6e9",
+              },
+              signal: AbortSignal.timeout(15_000),
+            });
+            if (res.ok) {
+              const data = (await res.json()) as { data?: Array<Record<string, unknown>> };
+              const rawItems = Array.isArray(data.data) ? data.data : [];
+              items = rawItems.map((i) => ({
+                slug: String(i.slug || i.id).trim(),
+                name: String(i.title || i.name || i.slug).trim(),
               }));
             }
           }
