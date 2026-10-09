@@ -15,8 +15,16 @@ export class UsersController {
 
   // ── 🏆 Leaderboard Top Watchers (Public & Cached) ─────────────────
   @Get('leaderboard')
-  getLeaderboard() {
-    return this.usersService.getLeaderboard();
+  getLeaderboard(
+    @Query('range') range?: string,
+    @Query('limit') limit?: string,
+    @Query('user') user?: string,
+  ) {
+    return this.usersService.getLeaderboard(
+      range,
+      limit ? parseInt(limit, 10) : 10,
+      user,
+    );
   }
 
   // ── 📊 Real User Stats ────────────────────────────────────────────

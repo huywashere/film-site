@@ -50,6 +50,7 @@ import {
   Menu,
   ChevronDown,
   Download,
+  Calendar,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuthStore } from "@/store/authStore";
@@ -486,6 +487,7 @@ export default function UserDashboardPage() {
       [
         "account",
         "stats",
+        "leaderboard",
         "security",
         "favorites",
         "watchlist",
@@ -496,6 +498,8 @@ export default function UserDashboardPage() {
       setActiveTab(tabParam);
     }
   }, [tabParam]);
+
+  const [leaderboardRange, setLeaderboardRange] = useState<"day" | "week" | "month" | "all">("all");
 
   const {
     autoplay,
@@ -850,18 +854,32 @@ export default function UserDashboardPage() {
     staleTime: 60_000,
   });
 
-  const { data: leaderboard = [], isLoading: loadingLeaderboard } = useQuery({
-    queryKey: ["leaderboard-top-watchers"],
+  const { data: leaderboardData, isLoading: loadingLeaderboard } = useQuery({
+    queryKey: ["leaderboard-top-watchers", leaderboardRange, user?.username],
     queryFn: async () => {
       try {
-        const res = await api.get("/users/leaderboard");
-        return Array.isArray(res.data) ? res.data : [];
+        const queryParams = new URLSearchParams({ range: leaderboardRange });
+        if (user?.username) {
+          queryParams.set("user", user.username);
+        }
+        const res = await api.get(`/users/leaderboard?${queryParams.toString()}`);
+        return res.data;
       } catch {
-        return [];
+        return { items: [], range: leaderboardRange };
       }
     },
     staleTime: 60_000,
   });
+
+  const leaderboard: any[] = Array.isArray(leaderboardData)
+    ? leaderboardData
+    : Array.isArray(leaderboardData?.items)
+    ? leaderboardData.items
+    : [];
+  const myLeaderboardRank =
+    !Array.isArray(leaderboardData) && leaderboardData?.myRank
+      ? leaderboardData.myRank
+      : null;
 
   const performProfileUpdate = async (options?: {
     avatar?: string;
@@ -1166,6 +1184,15 @@ export default function UserDashboardPage() {
                 ) : (
                   <span className="inline-flex items-center gap-1 rounded-full bg-white/[0.06] border border-white/10 px-2.5 py-0.5 text-[11px] font-medium text-neutral-300">
                     <Crown size={11} className="text-amber-400" /> VIP
+                  </span>
+                )}
+                {userStats?.level && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-500/25 px-2.5 py-0.5 text-[11px] font-semibold text-amber-300 shadow-sm">
+                    <span>{userStats.rankBadge}</span>
+                    <span>Level {userStats.level}</span>
+                    <span className="text-amber-400/60 font-normal hidden sm:inline">
+                      • {userStats.rankTitle}
+                    </span>
                   </span>
                 )}
               </div>
@@ -1536,17 +1563,92 @@ export default function UserDashboardPage() {
               </form>
             )}
 
-            {/* TAB: THỐNG KÊ (DATA THẬT) */}
+            {/* TAB: THỐNG KÊ (DATA THẬT & GAMIFICATION) */}
             {activeTab === "stats" && (
               <div className="max-w-3xl animate-fade-in space-y-6 rounded-2xl border border-white/10 bg-black p-6 sm:p-8 shadow-2xl">
                 <div className="border-b border-white/[0.07] pb-4 flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <h2 className="text-lg font-bold text-white">Thống kê xem phim</h2>
-                    <p className="mt-1 text-sm text-neutral-500">Tổng quan hành trình điện ảnh thực tế của bạn trên FlexPhim.</p>
+                    <p className="mt-1 text-sm text-neutral-500">
+                      Tổng quan hành trình điện ảnh thực tế và cấp độ cày phim của bạn trên FlexPhim.
+                    </p>
                   </div>
                   <div className="flex items-center gap-2 text-xs font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-3.5 py-1.5 rounded-xl shadow-sm">
                     <span className="text-sm">{userStats?.rankBadge || (historyItems.length >= 20 ? "👑" : "🌱")}</span>
                     <span>{userStats?.rankTitle || (historyItems.length >= 20 ? "Đại Cao Thủ 4K" : historyItems.length >= 5 ? "Cinephile Chính Hiệu" : "Mọt Phim Tập Sự")}</span>
+                  </div>
+                </div>
+
+                {/* ── THẺ TIẾN TRÌNH LEVEL & CHUỖI XEM PHIM ── */}
+                <div className="rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-black p-5 sm:p-6 space-y-4 shadow-xl">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="h-12 w-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-300 flex items-center justify-center text-black font-black text-2xl shadow-lg shadow-amber-500/30">
+                        {userStats?.rankBadge || "🌱"}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-black uppercase tracking-wider text-amber-400">
+                            Cấp độ điện ảnh
+                          </span>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300">
+                            {userStats?.levelName || "Level 1"}
+                          </span>
+                        </div>
+                        <h3 className="text-lg font-black text-white">
+                          {userStats?.rankTitle || "Mọt Phim Tập Sự"}
+                        </h3>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      {/* Chuỗi xem phim */}
+                      <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/[0.04] border border-white/10">
+                        <Flame size={16} className="text-orange-400 animate-pulse" />
+                        <div className="text-left">
+                          <div className="text-[10px] text-neutral-400 uppercase font-semibold">Chuỗi cày</div>
+                          <div className="text-xs font-black text-white">
+                            {userStats?.streakDays || 0} ngày liên tiếp
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Điểm XP */}
+                      <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/[0.04] border border-white/10">
+                        <Zap size={16} className="text-amber-400" />
+                        <div className="text-left">
+                          <div className="text-[10px] text-neutral-400 uppercase font-semibold">Điểm XP</div>
+                          <div className="text-xs font-black text-amber-300">
+                            {userStats?.totalXp ? userStats.totalXp.toLocaleString() : 0} XP
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Thanh tiến trình tới Level kế tiếp */}
+                  <div className="space-y-1.5 pt-1">
+                    <div className="flex justify-between text-xs font-semibold">
+                      <span className="text-neutral-300">
+                        Tiến trình thăng cấp
+                      </span>
+                      <span className="text-amber-300 font-mono">
+                        {userStats?.level && userStats.level >= 5
+                          ? "Cấp độ Tối Đa (Max Level)"
+                          : `${userStats?.totalHours || 0} / ${userStats?.nextLevelHours || 5} giờ (${userStats?.levelProgress || 0}%)`}
+                      </span>
+                    </div>
+                    <div className="h-2.5 w-full bg-white/[0.08] rounded-full overflow-hidden p-0.5">
+                      <div
+                        className="h-full bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-300 rounded-full transition-all duration-700 shadow-[0_0_12px_rgba(251,191,36,0.5)]"
+                        style={{ width: `${Math.max(userStats?.levelProgress || 5, 5)}%` }}
+                      />
+                    </div>
+                    {userStats?.level && userStats.level < 5 && (userStats?.hoursToNextLevel ?? 0) > 0 && (
+                      <p className="text-[11px] text-neutral-400 text-right">
+                        Cần thêm <strong className="text-amber-300 font-bold">{userStats.hoursToNextLevel} giờ</strong> xem phim để thăng cấp tiếp theo!
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -1586,6 +1688,72 @@ export default function UserDashboardPage() {
                       <div className="text-2xl font-black text-white">{value}</div>
                     </div>
                   ))}
+                </div>
+
+                {/* BẢNG HUY HIỆU VINH DANH (GAMIFICATION BADGES) */}
+                <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-5 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="flex items-center gap-2 text-sm font-bold text-white">
+                      <Award size={16} className="text-amber-400" /> Bộ Sưu Tập Huy Hiệu
+                    </h3>
+                    <span className="text-xs text-neutral-400 font-medium">
+                      Đã mở khóa: {userStats?.badges?.filter((b: any) => b.unlocked).length || 0}/{userStats?.badges?.length || 8}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {(userStats?.badges || [
+                      { id: "first_step", name: "Bước Đầu Điện Ảnh", description: "Xem bộ phim đầu tiên trên nền tảng", icon: "🎬", unlocked: historyItems.length >= 1, progress: `${Math.min(historyItems.length, 1)}/1` },
+                      { id: "marathon", name: "Chiến Thần Marathon", description: "Đã cày từ 5 tập phim trở lên", icon: "⚡", unlocked: historyItems.length >= 5, progress: `${Math.min(historyItems.length, 5)}/5` },
+                      { id: "night_owl", name: "Cú Đêm Điện Ảnh", description: "Xem phim vào khung giờ đêm (23h - 04h)", icon: "🌙", unlocked: false, progress: "0/1" },
+                      { id: "cinephile", name: "Bậc Thầy Giờ Xem", description: "Tích lũy trên 20 giờ cày phim", icon: "⏱️", unlocked: false, progress: "0/20h" },
+                      { id: "critic", name: "Nhà Phê Bình Tinh Tế", description: "Viết bình luận / đánh giá cảm nhận về phim", icon: "✍️", unlocked: false, progress: "0/1" },
+                      { id: "judge", name: "Giám Khảo Khó Tính", description: "Đã chấm điểm đánh giá từ 3 bộ phim trở lên", icon: "⭐", unlocked: false, progress: "0/3" },
+                      { id: "collector", name: "Nhà Sưu Tầm Phim", description: "Lưu từ 5 bộ phim yêu thích vào Tủ phim", icon: "🍿", unlocked: watchlistItems.length >= 5, progress: `${Math.min(watchlistItems.length, 5)}/5` },
+                      { id: "streak_master", name: "Khán Giả Kiên Trì", description: "Duy trì chuỗi xem phim liên tiếp từ 3 ngày trở lên", icon: "🔥", unlocked: false, progress: "0/3 ngày" },
+                    ]).map((badge: any) => (
+                      <div
+                        key={badge.id}
+                        className={cn(
+                          "flex items-center gap-3 p-3 rounded-xl border transition-all",
+                          badge.unlocked
+                            ? "border-amber-400/30 bg-gradient-to-r from-amber-400/10 to-amber-500/5 shadow-sm"
+                            : "border-white/[0.05] bg-white/[0.02] opacity-60",
+                        )}
+                      >
+                        <div
+                          className={cn(
+                            "h-10 w-10 rounded-xl flex items-center justify-center text-xl shrink-0",
+                            badge.unlocked
+                              ? "bg-amber-400/20 border border-amber-400/40 shadow-[0_0_15px_rgba(251,191,36,0.3)]"
+                              : "bg-white/[0.05] border border-white/10 grayscale",
+                          )}
+                        >
+                          {badge.icon}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-1">
+                            <strong className="text-xs font-bold text-white truncate">
+                              {badge.name}
+                            </strong>
+                            <span
+                              className={cn(
+                                "text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0",
+                                badge.unlocked
+                                  ? "bg-amber-400/20 text-amber-300"
+                                  : "bg-white/[0.06] text-neutral-400",
+                              )}
+                            >
+                              {badge.progress}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-neutral-400 truncate mt-0.5">
+                            {badge.description}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Thể loại xem nhiều nhất (Data thật) */}
@@ -1638,7 +1806,7 @@ export default function UserDashboardPage() {
                         </span>
                       </h4>
                       <p className="text-xs text-neutral-400 mt-0.5">
-                        Xem danh sách Top 10 khán giả xem phim nhiều nhất & vị trí của bạn!
+                        Xem danh sách Top khán giả cày phim nhiều nhất & vị trí thứ hạng của bạn!
                       </p>
                     </div>
                   </div>
@@ -1677,18 +1845,109 @@ export default function UserDashboardPage() {
                   </div>
                 </div>
 
+                {/* ── BỘ CHỌN KHUNG GIỜ XEM (TIMEFRAME SELECTOR) ── */}
+                <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-2xl bg-white/[0.03] border border-white/[0.08]">
+                  {[
+                    { id: "all", label: "Tất cả (Bảng Vàng)", icon: Trophy },
+                    { id: "month", label: "Tháng này", icon: TrendingUp },
+                    { id: "week", label: "Tuần này", icon: Calendar },
+                    { id: "day", label: "Hôm nay (24h)", icon: Clock },
+                  ].map((tab) => {
+                    const Icon = tab.icon;
+                    const isActive = leaderboardRange === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setLeaderboardRange(tab.id as any)}
+                        className={cn(
+                          "flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer active:scale-95",
+                          isActive
+                            ? "bg-amber-400 text-black shadow-lg shadow-amber-400/20 font-black"
+                            : "text-neutral-400 hover:text-white hover:bg-white/[0.06]",
+                        )}
+                      >
+                        <Icon size={14} className={isActive ? "text-black" : "text-neutral-400"} />
+                        <span>{tab.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* ── BANNER VỊ TRÍ CỦA BẠN (MY RANK STATS) ── */}
+                {user && (
+                  <div className="rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-500/15 via-yellow-500/5 to-neutral-900/40 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl">
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <div className="h-12 w-12 rounded-full overflow-hidden ring-2 ring-amber-400 shrink-0 bg-neutral-900 shadow-[0_0_15px_rgba(251,191,36,0.3)]">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={
+                            user.avatarUrl ||
+                            `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                              user.displayName || user.username,
+                            )}&background=f59e0b&color=000000&size=100`
+                          }
+                          alt={user.username}
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <strong className="text-sm font-bold text-white truncate">
+                            {user.displayName || user.username}
+                          </strong>
+                          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-400 text-black">
+                            BẠN
+                          </span>
+                        </div>
+                        <p className="text-xs text-neutral-400 truncate mt-0.5">
+                          {myLeaderboardRank
+                            ? `Đang xếp hạng #${myLeaderboardRank.rank} • ${myLeaderboardRank.totalHours} giờ xem • ${myLeaderboardRank.totalEpisodes} tập`
+                            : "Chưa có xếp hạng trong khung thời gian này • Hãy xem thêm phim để lọt Top!"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 self-end sm:self-auto shrink-0">
+                      <div className="text-right">
+                        <div className="text-[10px] uppercase font-semibold text-neutral-400">
+                          Thứ hạng
+                        </div>
+                        <div className="text-base font-black text-amber-400">
+                          {myLeaderboardRank ? `#${myLeaderboardRank.rank}` : "Chưa xếp"}
+                        </div>
+                      </div>
+                      <Link
+                        href="/films"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/20 text-white transition-all active:scale-95"
+                      >
+                        <Film size={13} />
+                        <span>Cày phim ngay</span>
+                      </Link>
+                    </div>
+                  </div>
+                )}
+
                 {/* ── PODIUM TOP 1, 2, 3 HIGHLIGHT ── */}
-                {leaderboard.length > 0 && (
+                {loadingLeaderboard ? (
+                  <div className="flex flex-col items-center justify-center py-12 gap-3 text-neutral-400">
+                    <Loader2 size={24} className="animate-spin text-amber-400" />
+                    <span className="text-xs">Đang cập nhật bảng xếp hạng...</span>
+                  </div>
+                ) : leaderboard.length > 0 ? (
                   <div className="pt-6 pb-2">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-end max-w-2xl mx-auto">
                       {/* TOP 2 (BẠC - BÊN TRÁI) */}
                       {leaderboard[1] ? (
-                        <div className="order-2 md:order-1 flex flex-col items-center text-center p-4 rounded-2xl border border-slate-300/20 bg-gradient-to-b from-slate-400/10 to-slate-900/60 shadow-xl relative">
+                        <Link
+                          href={`/user/${encodeURIComponent(leaderboard[1].username)}`}
+                          className="group order-2 md:order-1 flex flex-col items-center text-center p-4 rounded-2xl border border-slate-300/20 bg-gradient-to-b from-slate-400/10 to-slate-900/60 shadow-xl relative transition-all duration-300 hover:border-slate-300/40 hover:-translate-y-1"
+                        >
                           <span className="text-[11px] font-black tracking-wider px-3 py-0.5 rounded-full bg-slate-300 text-black shadow-md mb-3 inline-flex items-center gap-1">
                             🥈 TOP 2
                           </span>
                           <div className="relative mb-3">
-                            <div className="h-16 w-16 rounded-full overflow-hidden ring-2 ring-slate-300 shadow-[0_0_20px_rgba(203,213,225,0.3)] bg-neutral-900">
+                            <div className="h-16 w-16 rounded-full overflow-hidden ring-2 ring-slate-300 shadow-[0_0_20px_rgba(203,213,225,0.3)] bg-neutral-900 group-hover:scale-105 transition-transform">
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
                                 src={
@@ -1702,7 +1961,7 @@ export default function UserDashboardPage() {
                               />
                             </div>
                           </div>
-                          <strong className="text-sm font-bold text-white truncate max-w-[160px]">
+                          <strong className="text-sm font-bold text-white truncate max-w-[160px] group-hover:text-slate-200 transition-colors">
                             {leaderboard[1].displayName || leaderboard[1].username}
                           </strong>
                           <span className="text-[11px] text-neutral-400 font-mono truncate max-w-[140px]">
@@ -1714,7 +1973,7 @@ export default function UserDashboardPage() {
                           <span className="mt-1 text-[10px] text-slate-400 px-2 py-0.5 rounded bg-white/5 border border-white/10">
                             {leaderboard[1].rankBadge} {leaderboard[1].rankTitle}
                           </span>
-                        </div>
+                        </Link>
                       ) : (
                         <div className="order-2 md:order-1 opacity-40 p-4 text-center rounded-2xl border border-white/5 bg-white/[0.02]">
                           <span className="text-xs text-neutral-500">Đang chờ Top 2</span>
@@ -1723,13 +1982,16 @@ export default function UserDashboardPage() {
 
                       {/* TOP 1 (VÀNG - CHÍNH GIỮA, CAO NHẤT, RỰC RỠ NHẤT) */}
                       {leaderboard[0] ? (
-                        <div className="order-1 md:order-2 flex flex-col items-center text-center p-5 rounded-2xl border-2 border-amber-400/60 bg-gradient-to-b from-amber-400/20 via-amber-500/10 to-black shadow-[0_0_40px_rgba(251,191,36,0.3)] relative -translate-y-2">
+                        <Link
+                          href={`/user/${encodeURIComponent(leaderboard[0].username)}`}
+                          className="group order-1 md:order-2 flex flex-col items-center text-center p-5 rounded-2xl border-2 border-amber-400/60 bg-gradient-to-b from-amber-400/20 via-amber-500/10 to-black shadow-[0_0_40px_rgba(251,191,36,0.3)] relative -translate-y-2 transition-all duration-300 hover:border-amber-400 hover:shadow-[0_0_50px_rgba(251,191,36,0.5)] hover:-translate-y-3"
+                        >
                           <Crown size={28} className="text-amber-400 animate-bounce mb-1 drop-shadow-[0_0_12px_rgba(251,191,36,0.8)]" />
                           <span className="text-xs font-black tracking-wider px-3.5 py-1 rounded-full bg-gradient-to-r from-amber-300 via-amber-400 to-yellow-500 text-black shadow-lg mb-3 inline-flex items-center gap-1">
                             🥇 QUÁN QUÂN TOP 1
                           </span>
                           <div className="relative mb-3">
-                            <div className="h-20 w-20 rounded-full overflow-hidden ring-4 ring-amber-400 shadow-[0_0_30px_rgba(251,191,36,0.5)] bg-neutral-900">
+                            <div className="h-20 w-20 rounded-full overflow-hidden ring-4 ring-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.6)] bg-neutral-900 group-hover:scale-105 transition-transform">
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
                                 src={
@@ -1743,7 +2005,7 @@ export default function UserDashboardPage() {
                               />
                             </div>
                           </div>
-                          <strong className="text-base font-black text-white truncate max-w-[180px]">
+                          <strong className="text-base font-black text-white truncate max-w-[180px] group-hover:text-amber-300 transition-colors">
                             {leaderboard[0].displayName || leaderboard[0].username}
                           </strong>
                           <span className="text-xs text-amber-300/80 font-mono truncate max-w-[150px]">
@@ -1755,7 +2017,7 @@ export default function UserDashboardPage() {
                           <span className="mt-1 text-[11px] font-bold text-amber-300 px-2.5 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/30">
                             👑 {leaderboard[0].rankTitle}
                           </span>
-                        </div>
+                        </Link>
                       ) : (
                         <div className="order-1 md:order-2 opacity-40 p-5 text-center rounded-2xl border border-white/5 bg-white/[0.02]">
                           <span className="text-xs text-neutral-500">Đang chờ Quán Quân</span>
@@ -1764,12 +2026,15 @@ export default function UserDashboardPage() {
 
                       {/* TOP 3 (ĐỒNG - BÊN PHẢI) */}
                       {leaderboard[2] ? (
-                        <div className="order-3 flex flex-col items-center text-center p-4 rounded-2xl border border-amber-700/30 bg-gradient-to-b from-amber-700/15 to-neutral-900/60 shadow-xl relative">
+                        <Link
+                          href={`/user/${encodeURIComponent(leaderboard[2].username)}`}
+                          className="group order-3 flex flex-col items-center text-center p-4 rounded-2xl border border-amber-700/30 bg-gradient-to-b from-amber-700/15 to-neutral-900/60 shadow-xl relative transition-all duration-300 hover:border-amber-700/50 hover:-translate-y-1"
+                        >
                           <span className="text-[11px] font-black tracking-wider px-3 py-0.5 rounded-full bg-gradient-to-r from-amber-700 to-amber-800 text-amber-100 shadow-md mb-3 inline-flex items-center gap-1">
                             🥉 TOP 3
                           </span>
                           <div className="relative mb-3">
-                            <div className="h-16 w-16 rounded-full overflow-hidden ring-2 ring-amber-700 shadow-[0_0_20px_rgba(180,83,9,0.3)] bg-neutral-900">
+                            <div className="h-16 w-16 rounded-full overflow-hidden ring-2 ring-amber-700 shadow-[0_0_20px_rgba(180,83,9,0.3)] bg-neutral-900 group-hover:scale-105 transition-transform">
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
                                 src={
@@ -1783,19 +2048,19 @@ export default function UserDashboardPage() {
                               />
                             </div>
                           </div>
-                          <strong className="text-sm font-bold text-white truncate max-w-[160px]">
+                          <strong className="text-sm font-bold text-white truncate max-w-[160px] group-hover:text-amber-200 transition-colors">
                             {leaderboard[2].displayName || leaderboard[2].username}
                           </strong>
                           <span className="text-[11px] text-neutral-400 font-mono truncate max-w-[140px]">
                             @{leaderboard[2].username}
                           </span>
-                          <div className="mt-2 text-xs font-black text-amber-600 dark:text-amber-400">
+                          <div className="mt-2 text-xs font-black text-amber-500 dark:text-amber-400">
                             {leaderboard[2].totalHours} giờ xem
                           </div>
                           <span className="mt-1 text-[10px] text-slate-400 px-2 py-0.5 rounded bg-white/5 border border-white/10">
                             {leaderboard[2].rankBadge} {leaderboard[2].rankTitle}
                           </span>
-                        </div>
+                        </Link>
                       ) : (
                         <div className="order-3 opacity-40 p-4 text-center rounded-2xl border border-white/5 bg-white/[0.02]">
                           <span className="text-xs text-neutral-500">Đang chờ Top 3</span>
@@ -1803,87 +2068,103 @@ export default function UserDashboardPage() {
                       )}
                     </div>
                   </div>
+                ) : (
+                  <div className="text-center py-12 rounded-2xl border border-white/5 bg-white/[0.02]">
+                    <Trophy size={36} className="text-neutral-600 mx-auto mb-2" />
+                    <p className="text-sm text-neutral-400 font-semibold">
+                      Chưa có khán giả nào ghi nhận giờ xem trong khung giờ này.
+                    </p>
+                    <p className="text-xs text-neutral-500 mt-1">
+                      Hãy là người đầu tiên cày phim để giành ngôi Quán Quân!
+                    </p>
+                  </div>
                 )}
 
                 {/* ── BẢNG TOÀN BỘ TOP 10 ── */}
-                <div className="space-y-3">
-                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                    <Medal size={16} className="text-amber-400" /> Danh Sách Chi Tiết Top 10
-                  </h3>
+                {leaderboard.length > 0 && (
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                      <Medal size={16} className="text-amber-400" /> Danh Sách Chi Tiết Top 10
+                    </h3>
 
-                  <div className="divide-y divide-white/[0.06] rounded-2xl border border-white/10 bg-white/[0.02] overflow-hidden">
-                    {leaderboard.map((item: any) => {
-                      const isCurrentUser = user && (user.id === item.id || user.username === item.username);
-                      return (
-                        <div
-                          key={item.id}
-                          className={`p-3.5 sm:p-4 flex items-center justify-between gap-3 transition-colors ${
-                            isCurrentUser ? "bg-amber-400/[0.08] border-l-4 border-l-amber-400" : "hover:bg-white/[0.02]"
-                          }`}
-                        >
-                          <div className="flex items-center gap-3 min-w-0 flex-1">
-                            <span
-                              className={`w-7 text-center font-black text-sm shrink-0 ${
-                                item.rank === 1
-                                  ? "text-amber-400 text-base"
-                                  : item.rank === 2
-                                  ? "text-slate-300 text-base"
-                                  : item.rank === 3
-                                  ? "text-amber-600 text-base"
-                                  : "text-neutral-500"
-                              }`}
-                            >
-                              {item.medal || `#${item.rank}`}
-                            </span>
+                    <div className="divide-y divide-white/[0.06] rounded-2xl border border-white/10 bg-white/[0.02] overflow-hidden">
+                      {leaderboard.map((item: any) => {
+                        const isCurrentUser =
+                          user && (user.id === item.id || user.username === item.username);
+                        return (
+                          <Link
+                            key={item.id}
+                            href={`/user/${encodeURIComponent(item.username)}`}
+                            className={`p-3.5 sm:p-4 flex items-center justify-between gap-3 transition-colors block ${
+                              isCurrentUser
+                                ? "bg-amber-400/[0.08] border-l-4 border-l-amber-400"
+                                : "hover:bg-white/[0.03]"
+                            }`}
+                          >
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              <span
+                                className={`w-7 text-center font-black text-sm shrink-0 ${
+                                  item.rank === 1
+                                    ? "text-amber-400 text-base"
+                                    : item.rank === 2
+                                    ? "text-slate-300 text-base"
+                                    : item.rank === 3
+                                    ? "text-amber-600 text-base"
+                                    : "text-neutral-500"
+                                }`}
+                              >
+                                {item.medal || `#${item.rank}`}
+                              </span>
 
-                            <div className="h-10 w-10 rounded-full overflow-hidden bg-neutral-900 shrink-0 border border-white/10">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
-                                src={
-                                  item.avatarUrl ||
-                                  `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                                    item.displayName || item.username,
-                                  )}&background=8b5cf6&color=ffffff&size=80`
-                                }
-                                alt={item.username}
-                                className="h-full w-full object-cover"
-                              />
-                            </div>
+                              <div className="h-10 w-10 rounded-full overflow-hidden bg-neutral-900 shrink-0 border border-white/10">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={
+                                    item.avatarUrl ||
+                                    `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                      item.displayName || item.username,
+                                    )}&background=8b5cf6&color=ffffff&size=80`
+                                  }
+                                  alt={item.username}
+                                  className="h-full w-full object-cover"
+                                />
+                              </div>
 
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2">
-                                <strong className="text-xs sm:text-sm font-bold text-white truncate">
-                                  {item.displayName || item.username}
-                                </strong>
-                                {isCurrentUser && (
-                                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-400 text-black">
-                                    BẠN
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2">
+                                  <strong className="text-xs sm:text-sm font-bold text-white truncate hover:underline">
+                                    {item.displayName || item.username}
+                                  </strong>
+                                  {isCurrentUser && (
+                                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-400 text-black">
+                                      BẠN
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2 text-[11px] text-neutral-400">
+                                  <span>@{item.username}</span>
+                                  <span>•</span>
+                                  <span className="text-amber-400/80 font-medium">
+                                    {item.rankBadge} {item.rankTitle}
                                   </span>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-2 text-[11px] text-neutral-400">
-                                <span>@{item.username}</span>
-                                <span>•</span>
-                                <span className="text-amber-400/80 font-medium">
-                                  {item.rankBadge} {item.rankTitle}
-                                </span>
+                                </div>
                               </div>
                             </div>
-                          </div>
 
-                          <div className="text-right shrink-0">
-                            <strong className="text-xs sm:text-sm font-black text-white block">
-                              {item.totalHours} giờ
-                            </strong>
-                            <span className="text-[10px] text-neutral-500 font-mono">
-                              {item.totalEpisodes} tập đã xem
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
+                            <div className="text-right shrink-0">
+                              <strong className="text-xs sm:text-sm font-black text-white block">
+                                {item.totalHours} giờ
+                              </strong>
+                              <span className="text-[10px] text-neutral-500 font-mono">
+                                {item.totalEpisodes} tập đã xem
+                              </span>
+                            </div>
+                          </Link>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             )}
 
