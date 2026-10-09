@@ -39,6 +39,7 @@ export const vi = {
     lists: "Danh Sách",
     members: "Thành Viên",
     reviews: "Đánh Giá",
+    most_viewed_country: "Nhiều người xem nhất",
   },
   home: {
     watchNow: "Xem Ngay",

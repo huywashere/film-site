@@ -39,6 +39,7 @@ export const en = {
     lists: "Lists",
     members: "Members",
     reviews: "Reviews",
+    most_viewed_country: "Most watched movies",
   },
   home: {
     watchNow: "Watch Now",

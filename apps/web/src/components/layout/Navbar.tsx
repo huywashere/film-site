@@ -33,6 +33,8 @@ import {
   CalendarDays,
   Tv,
   SlidersHorizontal,
+  Flame,
+  Globe,
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useAuthModalStore } from "@/store/authModalStore";
@@ -181,10 +183,17 @@ export const GENRES_LIST = [
   { label: "Âm Nhạc", slug: "am-nhac" },
 ];
 
-export const COUNTRIES_LIST = [
-  { label: "Âu Mỹ", slug: "au-my", code: "us" },
-  { label: "Hàn Quốc", slug: "han-quoc", code: "kr" },
-  { label: "Trung Quốc", slug: "trung-quoc", code: "cn" },
+export interface CountryItem {
+  label: string;
+  slug: string;
+  code: string;
+  isHot?: boolean;
+}
+
+export const COUNTRIES_LIST: CountryItem[] = [
+  { label: "Âu Mỹ", slug: "au-my", code: "us", isHot: true },
+  { label: "Hàn Quốc", slug: "han-quoc", code: "kr", isHot: true },
+  { label: "Trung Quốc", slug: "trung-quoc", code: "cn", isHot: true },
   { label: "Nhật Bản", slug: "nhat-ban", code: "jp" },
   { label: "Thái Lan", slug: "thai-lan", code: "th" },
   { label: "Việt Nam", slug: "viet-nam", code: "vn" },
@@ -220,66 +229,53 @@ export const COUNTRIES_LIST = [
   { label: "Quốc Gia Khác", slug: "quoc-gia-khac", code: "un" },
 ];
 
-const COUNTRY_EMOJIS: Record<string, string> = {
-  gb: "🇬🇧",
-  pl: "🇵🇱",
-  br: "🇧🇷",
-  pt: "🇵🇹",
-  ca: "🇨🇦",
-  za: "🇿🇦",
-  nl: "🇳🇱",
-  kr: "🇰🇷",
-  hk: "🇭🇰",
-  id: "🇮🇩",
-  my: "🇲🇾",
-  mx: "🇲🇽",
-  no: "🇳🇴",
-  ru: "🇷🇺",
-  jp: "🇯🇵",
-  ph: "🇵🇭",
-  fr: "🇫🇷",
-  un: "🌐",
-  th: "🇹🇭",
-  tr: "🇹🇷",
-  ch: "🇨🇭",
-  se: "🇸🇪",
-  cn: "🇨🇳",
-  es: "🇪🇸",
-  ae: "🇦🇪",
-  ua: "🇺🇦",
-  vn: "🇻🇳",
-  us: "🇺🇸",
-  au: "🇦🇺",
-  it: "🇮🇹",
-  dk: "🇩🇰",
-  tw: "🇹🇼",
-  de: "🇩🇪",
-  sa: "🇸🇦",
-  in: "🇮🇳",
-};
-
 export function CountryFlagImage({
   code,
   label,
-  className = "w-5 h-3.5 object-cover rounded-[3px] border border-white/20 shrink-0 shadow-sm",
+  className = "w-5 h-3.5 object-cover rounded-[2.5px] border border-white/20 shrink-0 shadow-sm",
 }: {
   code: string;
   label: string;
   className?: string;
 }) {
-  const flagCode = code?.toLowerCase();
-  const emoji = flagCode ? COUNTRY_EMOJIS[flagCode] || "🌐" : "🌐";
+  const flagCode = code?.trim().toLowerCase();
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    setHasError(false);
+  }, [flagCode]);
+
+  if (!flagCode || flagCode === "un" || hasError) {
+    return (
+      <span
+        className={cn(
+          "inline-flex w-5 h-3.5 shrink-0 items-center justify-center rounded-[2.5px] bg-white/5 border border-white/15",
+          className,
+        )}
+        title={label}
+        aria-label={label}
+      >
+        <Globe className="w-3 h-3 text-sky-400 shrink-0" aria-hidden="true" />
+      </span>
+    );
+  }
+
   return (
-    <span
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={`https://flagcdn.com/w40/${flagCode}.png`}
+      srcSet={`https://flagcdn.com/w80/${flagCode}.png 2x`}
+      alt={label}
+      width={20}
+      height={14}
+      loading="lazy"
+      decoding="async"
+      onError={() => setHasError(true)}
       className={cn(
-        "inline-flex h-4 w-5 shrink-0 select-none items-center justify-center text-sm leading-none",
+        "w-5 h-3.5 object-cover rounded-[2.5px] border border-white/20 shadow-sm shrink-0 select-none",
         className,
       )}
-      role="img"
-      aria-label={label}
-    >
-      {emoji}
-    </span>
+    />
   );
 }
 
@@ -861,7 +857,7 @@ export function Navbar() {
                   className="transition-transform duration-200 group-hover:rotate-180 text-neutral-400"
                 />
               </button>
-              <div className="absolute top-[85%] left-1/2 -translate-x-1/2 mt-0 w-[640px] p-4 bg-[#090c15]/65 backdrop-blur-3xl border border-white/15 shadow-[0_25px_60px_rgba(0,0,0,0.6)] rounded-2xl ring-1 ring-white/10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 grid grid-cols-4 gap-y-1.5 gap-x-2 z-50 max-h-[75vh] overflow-y-auto scrollbar-thin">
+              <div className="absolute top-[85%] left-1/2 -translate-x-1/2 mt-0 w-[660px] p-4 bg-[#090c15]/85 backdrop-blur-3xl border border-white/15 shadow-[0_25px_60px_rgba(0,0,0,0.6)] rounded-2xl ring-1 ring-white/10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 grid grid-cols-4 gap-y-1.5 gap-x-2 z-50 max-h-[75vh] overflow-y-auto scrollbar-thin">
                 {COUNTRIES_LIST.map((item) => (
                   <Link
                     key={item.slug}
@@ -869,16 +865,32 @@ export function Navbar() {
                     prefetch={false}
                     onMouseEnter={() => prefetchNav(`/country/${item.slug}`)}
                     onPointerDown={() => prefetchNav(`/country/${item.slug}`)}
-                    className="px-3 py-2 rounded-xl text-xs font-semibold text-neutral-300 hover:text-white hover:bg-white/15 hover:backdrop-blur-md hover:translate-x-1 transition-all duration-200 flex items-center gap-2.5 truncate group/flag"
+                    className={cn(
+                      "px-3 py-2 rounded-xl text-xs font-semibold hover:translate-x-0.5 transition-all duration-200 flex items-center gap-2.5 truncate group/flag",
+                      item.isHot
+                        ? "text-amber-100/95 bg-amber-500/[0.08] border border-amber-500/25 hover:bg-amber-500/20 hover:border-amber-400/50 hover:text-white"
+                        : "text-neutral-300 hover:text-white hover:bg-white/15 hover:backdrop-blur-md",
+                    )}
                   >
                     <CountryFlagImage
                       code={item.code}
                       label={t(`countries_list.${item.slug}`, item.label)}
                       className="group-hover/flag:scale-110 transition-transform"
                     />
-                    <span className="truncate">
+                    <span className="truncate flex-1">
                       {t(`countries_list.${item.slug}`, item.label)}
                     </span>
+                    {item.isHot && (
+                      <span
+                        title={t("nav.most_viewed_country", "Nhiều người xem nhất")}
+                        className="inline-flex items-center shrink-0 ml-auto"
+                      >
+                        <Flame
+                          size={13}
+                          className="text-amber-400 fill-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.65)] group-hover/flag:scale-110 transition-transform"
+                        />
+                      </span>
+                    )}
                   </Link>
                 ))}
               </div>

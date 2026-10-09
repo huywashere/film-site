@@ -9,10 +9,20 @@ import { detectExplicitHlsAdRanges, inspectHlsAdRanges } from '@/lib/hls-ad-filt
 import { isTerminalHlsHttpStatus, selectInitialHlsTransport } from '@/lib/player-source-routing';
 import {
   ARTPLAYER_EDITOR_LOADING_GIF,
+  ARTPLAYER_PLAY_SVG,
+  ARTPLAYER_PAUSE_SVG,
+  ARTPLAYER_STATE_TV_SVG,
   ARTPLAYER_SEEK_BACKWARD_10_SVG,
   ARTPLAYER_SEEK_FORWARD_10_SVG,
+  ARTPLAYER_VOLUME_SVG,
+  ARTPLAYER_VOLUME_CLOSE_SVG,
   ARTPLAYER_SCREENSHOT_SVG,
+  ARTPLAYER_SETTING_WITH_BADGE_HTML,
   ARTPLAYER_PIP_SVG,
+  ARTPLAYER_FULLSCREEN_ON_SVG,
+  ARTPLAYER_FULLSCREEN_OFF_SVG,
+  ARTPLAYER_NEXT_EPISODE_SVG,
+  ARTPLAYER_INDICATOR_SVG,
 } from './artplayer-editor-assets';
 import { attachNightModeAudio, isNightModeEnabled, setNightMode } from '@/lib/audio-effects';
 import { setupScrubberPreview } from './scrubber-preview';
@@ -77,6 +87,7 @@ export interface ArtPlayerProps {
   servers?: PlayerServerItem[];
   currentServerIndex?: number;
   onSwitchServer?: (index: number) => void;
+  onNextEpisode?: () => void;
 }
 
 export default function ArtPlayer({
@@ -93,6 +104,7 @@ export default function ArtPlayer({
   dbProgress,
   initialTime,
   onEnded,
+  onNextEpisode,
   onProgress,
   onReady,
   onPlaybackStart,
@@ -159,6 +171,7 @@ export default function ArtPlayer({
 
   const onReadyRef = useRef(onReady);
   const onEndedRef = useRef(onEnded);
+  const onNextEpisodeRef = useRef(onNextEpisode);
   const onProgressRef = useRef(onProgress);
   const onErrorRef = useRef(onError);
   const onPlaybackStartRef = useRef(onPlaybackStart);
@@ -166,6 +179,7 @@ export default function ArtPlayer({
   const onPlaybackStateChangeRef = useRef(onPlaybackStateChange);
   onReadyRef.current = onReady;
   onEndedRef.current = onEnded;
+  onNextEpisodeRef.current = onNextEpisode;
   onProgressRef.current = onProgress;
   onErrorRef.current = onError;
   onPlaybackStartRef.current = onPlaybackStart;
@@ -461,6 +475,14 @@ export default function ArtPlayer({
           const currentQualityHtml =
             built.find((quality) => quality.default)?.html ?? built[0]?.html ?? 'HD';
 
+          const qualityBadge =
+            player?.template?.$container?.querySelector<HTMLElement>('.art-quality-badge');
+          if (qualityBadge) {
+            qualityBadge.textContent = hls.autoLevelEnabled
+              ? 'Auto'
+              : currentQualityHtml.replace(/p$/i, 'p');
+          }
+
           player.setting.update({
             name: 'quality',
             html: 'Chất lượng',
@@ -473,6 +495,11 @@ export default function ArtPlayer({
             })),
             onSelect(item: { level: number; html: string }) {
               hls.currentLevel = item.level;
+              const badge =
+                player?.template?.$container?.querySelector<HTMLElement>('.art-quality-badge');
+              if (badge) {
+                badge.textContent = item.level === -1 ? 'Auto' : item.html.replace(/p$/i, 'p');
+              }
               return item.html;
             },
           } as any);
@@ -825,6 +852,20 @@ export default function ArtPlayer({
       aspectRatio: true,
       fullscreen: true,
       fullscreenWeb: false,
+      theme: '#23ade5',
+      icons: {
+        loading: `<img class="art-loading-mascot" src="${ARTPLAYER_EDITOR_LOADING_GIF}" style="width: 76px; height: 76px; object-fit: contain; filter: drop-shadow(0 4px 14px rgba(0,0,0,0.5));" alt="Đang tải..." />`,
+        state: ARTPLAYER_STATE_TV_SVG,
+        play: ARTPLAYER_PLAY_SVG,
+        pause: ARTPLAYER_PAUSE_SVG,
+        volume: ARTPLAYER_VOLUME_SVG,
+        volumeClose: ARTPLAYER_VOLUME_CLOSE_SVG,
+        setting: ARTPLAYER_SETTING_WITH_BADGE_HTML,
+        pip: ARTPLAYER_PIP_SVG,
+        fullscreenOn: ARTPLAYER_FULLSCREEN_ON_SVG,
+        fullscreenOff: ARTPLAYER_FULLSCREEN_OFF_SVG,
+        indicator: ARTPLAYER_INDICATOR_SVG,
+      },
       controls: [
         {
           name: 'backward-10',
@@ -906,6 +947,22 @@ export default function ArtPlayer({
               } catch {
                 playerRef.current.notice.show = 'Không thể chụp ảnh';
               }
+            }
+          },
+        },
+        {
+          name: 'next-episode',
+          position: 'right',
+          index: 25,
+          html: `<span class="art-icon" style="display:inline-flex;align-items:center;justify-content:center;cursor:pointer;">${ARTPLAYER_NEXT_EPISODE_SVG}</span>`,
+          tooltip: 'Tập tiếp theo',
+          click: function () {
+            if (onNextEpisodeRef.current) {
+              onNextEpisodeRef.current();
+            } else if (onEndedRef.current) {
+              onEndedRef.current();
+            } else if (playerRef.current) {
+              playerRef.current.notice.show = 'Đây là tập cuối!';
             }
           },
         },

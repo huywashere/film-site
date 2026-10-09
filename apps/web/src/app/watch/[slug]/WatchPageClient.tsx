@@ -4411,6 +4411,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                     }}
                     onProgress={handlePlaybackProgress}
                     onEnded={handleVideoEnded}
+                    onNextEpisode={handleVideoEnded}
                     onStallSuggestServer={handleStallSuggestServer}
                     onError={(error) => handlePlayerFailure(error.type)}
                   />

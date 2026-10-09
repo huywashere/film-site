@@ -30,6 +30,7 @@ import {
   UserCheck,
   CalendarDays,
   SlidersHorizontal,
+  Flame,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/authStore";
@@ -373,7 +374,9 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                       "flex items-center space-x-2 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all border truncate",
                       pathname === `/country/${c.slug}`
                         ? "bg-white/15 border-white/30 text-white font-bold"
-                        : "border-white/5 bg-white/[0.02] text-neutral-400 hover:text-white hover:bg-white/10",
+                        : c.isHot
+                          ? "border-amber-500/25 bg-amber-500/[0.08] text-amber-200 hover:text-white hover:bg-amber-500/15"
+                          : "border-white/5 bg-white/[0.02] text-neutral-400 hover:text-white hover:bg-white/10",
                     )}
                     onClick={onClose}
                   >
@@ -382,9 +385,15 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                       label={t(`countries_list.${c.slug}`, c.label)}
                       className="w-4 h-3 object-cover rounded-[2px] shrink-0"
                     />
-                    <span className="truncate">
+                    <span className="truncate flex-1">
                       {t(`countries_list.${c.slug}`, c.label)}
                     </span>
+                    {c.isHot && (
+                      <Flame
+                        size={12}
+                        className="text-amber-400 fill-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.65)] shrink-0 ml-auto"
+                      />
+                    )}
                   </Link>
                 ))}
               </div>

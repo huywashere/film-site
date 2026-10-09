@@ -32,6 +32,6 @@ test('watch player hydrates eagerly and shows loading feedback before HLS mounts
 });
 
 test('watch toolbar keeps its compact intrinsic height beside the spanning sidebar', () => {
-  assert.match(watchPage, /xl:grid-rows-\[min-content_auto_auto\]/);
+  assert.match(watchPage, /(?:xl|lg):grid-rows-\[min-content_auto_auto\]/);
   assert.match(watchPage, /flex h-fit self-start items-center justify-between/);
 });

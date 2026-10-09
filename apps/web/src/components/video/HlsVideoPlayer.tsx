@@ -26,6 +26,7 @@ type HlsVideoPlayerProps = {
   onBuffering?: (durationMs: number) => void;
   onProgress?: (currentTime: number, duration: number) => void;
   onEnded?: () => void;
+  onNextEpisode?: () => void;
   onError: (error: HlsPlaybackError) => void;
   isTheaterMode?: boolean;
   onTheaterModeToggle?: (active: boolean) => void;
@@ -61,6 +62,7 @@ export const HlsVideoPlayer = memo(function HlsVideoPlayer({
   onBuffering,
   onProgress,
   onEnded,
+  onNextEpisode,
   onError,
   isTheaterMode = false,
   onTheaterModeToggle,
@@ -109,6 +111,7 @@ export const HlsVideoPlayer = memo(function HlsVideoPlayer({
         onBuffering={onBuffering}
         onProgress={onProgress}
         onEnded={onEnded}
+        onNextEpisode={onNextEpisode}
         onError={(err) => {
           onError({
             type: typeof err === "string" ? err : "hls_playback_error",

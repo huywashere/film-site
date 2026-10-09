@@ -824,6 +824,7 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
 .art-video-player .art-control-playAndPause,
 .art-video-player .art-control-backward-10,
 .art-video-player .art-control-forward-10,
+.art-video-player .art-control-next-episode,
 .art-video-player .art-control-volume,
 .art-video-player .art-control-time,
 .art-video-player .art-control-subtitle-toggle,
@@ -837,10 +838,37 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
 .art-video-player.art-mobile .art-control-playAndPause,
 .art-video-player.art-mobile .art-control-backward-10,
 .art-video-player.art-mobile .art-control-forward-10,
+.art-video-player.art-mobile .art-control-next-episode,
 .art-video-player.art-mobile .art-control-volume,
 .art-video-player.art-mobile .art-control-time,
 .art-video-player.art-mobile .art-control-subtitle-toggle {
   display: inline-flex !important;
+}
+
+.art-video-player .art-quality-badge {
+  font-family: inherit;
+  font-feature-settings: 'tnum';
+  user-select: none;
+  pointer-events: none;
+}
+
+.art-video-player .art-loading-mascot {
+  width: 76px;
+  height: 76px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.5));
+  animation: artLoadingBlink 2.4s ease-in-out infinite alternate;
+}
+
+@keyframes artLoadingBlink {
+  0% { transform: scale(0.96); opacity: 0.92; }
+  100% { transform: scale(1.03); opacity: 1; }
+}
+
+.art-video-player .art-progress-indicator svg {
+  width: 18px;
+  height: 18px;
+  display: block;
 }
 
 /* Mobile & Touch Controls Layout: Proportional, all controls visible, smooth scroll fallback */
