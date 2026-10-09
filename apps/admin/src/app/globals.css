@@ -3,14 +3,14 @@
 @tailwind utilities;
 
 :root {
-  --admin-canvas: #f6f7fb;
+  --admin-canvas: #f4f6fa;
   --admin-surface: #ffffff;
-  --admin-surface-muted: #f8f9fc;
-  --admin-sidebar: #263244;
-  --admin-sidebar-raised: #344155;
-  --admin-ink: #31334a;
-  --admin-muted: #9ba6b7;
-  --admin-line: #e7e9ee;
+  --admin-surface-muted: #f8fafc;
+  --admin-sidebar: #17202f;
+  --admin-sidebar-raised: #222e42;
+  --admin-ink: #2d3748;
+  --admin-muted: #8090a7;
+  --admin-line: #e8ecf2;
   --admin-brand: #2878ee;
   --admin-brand-strong: #236dc9;
   --admin-success: #02a98d;
@@ -18,20 +18,96 @@
   --admin-danger: #f7577e;
   --admin-cyan: #46adc9;
   --admin-chart-track: #eef1f5;
+  --admin-card-radius: 8px;
+  --admin-card-shadow: 0 2px 5px rgba(57, 62, 80, 0.06);
 }
 
-html[data-admin-theme="dark"] {
-  --admin-canvas: #17181e;
-  --admin-surface: #1e1f27;
-  --admin-surface-muted: #252831;
-  --admin-sidebar: #222d3d;
-  --admin-sidebar-raised: #344155;
-  --admin-ink: #d7dee8;
-  --admin-muted: #8391a2;
-  --admin-line: #2d333c;
+/* 1. Flat Skin (Light) */
+html[data-admin-skin="flat"] {
+  --admin-canvas: #f6f8fa;
+  --admin-surface: #ffffff;
+  --admin-surface-muted: #f8fafd;
+  --admin-sidebar: #1f2733;
+  --admin-sidebar-raised: #2a3545;
+  --admin-ink: #3c4253;
+  --admin-muted: #8c97a8;
+  --admin-line: #edf0f5;
+  --admin-card-radius: 6px;
+  --admin-card-shadow: 0 1px 3px rgba(130, 143, 163, 0.08);
+}
+/* 1. Flat Skin (Dark) */
+html[data-admin-skin="flat"][data-admin-theme="dark"] {
+  --admin-canvas: #12161f;
+  --admin-surface: #1a202c;
+  --admin-surface-muted: #212938;
+  --admin-sidebar: #151a24;
+  --admin-sidebar-raised: #212938;
+  --admin-ink: #e2e8f0;
+  --admin-muted: #8c9cb0;
+  --admin-line: #273142;
+  --admin-card-radius: 6px;
+  --admin-card-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+/* 2. Galaxy Skin (Light) */
+html[data-admin-skin="galaxy"] {
+  --admin-canvas: #f4f7fb;
+  --admin-surface: #ffffff;
+  --admin-surface-muted: #f7f9fd;
+  --admin-sidebar: #131929;
+  --admin-sidebar-raised: #1e263d;
+  --admin-ink: #333a4d;
+  --admin-muted: #7f8ca3;
+  --admin-line: #e4e9f2;
+  --admin-card-radius: 8px;
+  --admin-card-shadow: 0 4px 12px rgba(99, 102, 241, 0.06);
+}
+/* 2. Galaxy Skin (Dark) */
+html[data-admin-skin="galaxy"][data-admin-theme="dark"] {
+  --admin-canvas: #090d16;
+  --admin-surface: #111726;
+  --admin-surface-muted: #172033;
+  --admin-sidebar: #0d121f;
+  --admin-sidebar-raised: #182035;
+  --admin-ink: #e6edf8;
+  --admin-muted: #8595b2;
+  --admin-line: rgba(148, 163, 184, 0.16);
+  --admin-card-radius: 8px;
+  --admin-card-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+html[data-admin-skin="galaxy"] .admin-card {
+  border-style: dashed;
+}
+
+/* 3. Matrix Skin (Light) */
+html[data-admin-skin="matrix"] {
+  --admin-canvas: #f4f6fa;
+  --admin-surface: #ffffff;
+  --admin-surface-muted: #f8fafc;
+  --admin-sidebar: #17202f;
+  --admin-sidebar-raised: #222e42;
+  --admin-ink: #2d3748;
+  --admin-muted: #8090a7;
+  --admin-line: #e8ecf2;
+  --admin-card-radius: 8px;
+  --admin-card-shadow: 0 2px 5px rgba(57, 62, 80, 0.06);
+}
+/* 3. Matrix Skin (Dark) / Default Dark */
+html[data-admin-skin="matrix"][data-admin-theme="dark"],
+html[data-admin-theme="dark"]:not([data-admin-skin]) {
+  --admin-canvas: #0d131f;
+  --admin-surface: #141c2c;
+  --admin-surface-muted: #1a253a;
+  --admin-sidebar: #0f1624;
+  --admin-sidebar-raised: #1b263b;
+  --admin-ink: #e2e8f0;
+  --admin-muted: #8899b0;
+  --admin-line: #223047;
   --admin-brand: #4b8df8;
   --admin-brand-strong: #397fe9;
   --admin-chart-track: #30343d;
+  --admin-card-radius: 8px;
+  --admin-card-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
 }
 
 * { box-sizing: border-box; }
@@ -42,10 +118,11 @@ body {
   overflow-x: hidden;
   color: var(--admin-ink);
   background: var(--admin-canvas);
-  font-family: var(--font-admin-nunito), "Nunito", sans-serif;
-  font-size: 14px;
+  font-family: var(--font-admin-sans), "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 13.5px;
   font-weight: 400;
   line-height: 1.5;
+  letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
   transition: color 150ms ease, background-color 150ms ease;
 }
@@ -62,8 +139,9 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .admin-card {
   background: var(--admin-surface);
   border: 1px solid var(--admin-line);
-  border-radius: 6px;
-  box-shadow: 0 2px 5px rgba(44, 55, 74, .075);
+  border-radius: var(--admin-card-radius, 8px);
+  box-shadow: var(--admin-card-shadow, 0 2px 5px rgba(44, 55, 74, .075));
+  transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
 }
 
 .admin-topbar-button,

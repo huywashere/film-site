@@ -3,7 +3,6 @@
 import "./globals.css";
 import Link from "next/link";
 import Image from "next/image";
-import { Nunito } from "next/font/google";
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -51,14 +50,24 @@ import { AdminDevToolsGuard } from "@/components/security/AdminDevToolsGuard";
 import { AdminIdleLock } from "@/components/security/AdminIdleLock";
 import { AdminAntiScreenshot } from "@/components/security/AdminAntiScreenshot";
 
-const nunito = Nunito({
+import { IBM_Plex_Sans, Plus_Jakarta_Sans } from "next/font/google";
+
+const ibmPlexSans = IBM_Plex_Sans({
   subsets: ["latin", "vietnamese"],
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
-  variable: "--font-admin-nunito",
+  variable: "--font-admin-sans",
+});
+
+const plusJakartaSans = Plus_Jakarta_Sans({
+  subsets: ["latin", "vietnamese"],
+  weight: ["500", "600", "700", "800"],
+  display: "swap",
+  variable: "--font-admin-display",
 });
 
 type Locale = "vi" | "en";
+type Skin = "flat" | "galaxy" | "matrix";
 type TopbarMenu = "apps" | "notifications" | "palette" | "profile" | null;
 type LocalizedText = { vi: string; en: string };
 type AdminNotification = {
@@ -229,6 +238,7 @@ export default function AdminRootLayout({
   const [search, setSearch] = useState("");
   const [darkMode, setDarkMode] = useState(false);
   const [locale, setLocale] = useState<Locale>("vi");
+  const [skin, setSkin] = useState<Skin>("matrix");
   const [openMenu, setOpenMenu] = useState<TopbarMenu>(null);
   const [fullscreen, setFullscreen] = useState(false);
   const [accent, setAccent] = useState("blue");
@@ -273,6 +283,22 @@ export default function AdminRootLayout({
   useEffect(() => {
     if (pathname === "/login") return;
     setDarkMode(document.documentElement.dataset.adminTheme === "dark");
+
+    // Detect skin from URL query param ?flat, ?galaxy, ?matrix or localStorage
+    let nextSkin: Skin = "matrix";
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.has("flat")) nextSkin = "flat";
+    else if (searchParams.has("galaxy")) nextSkin = "galaxy";
+    else if (searchParams.has("matrix")) nextSkin = "matrix";
+    else {
+      const storedSkin = localStorage.getItem("netphim-admin-skin");
+      if (storedSkin === "flat" || storedSkin === "galaxy" || storedSkin === "matrix") {
+        nextSkin = storedSkin;
+      }
+    }
+    document.documentElement.dataset.adminSkin = nextSkin;
+    setSkin(nextSkin);
+
     const storedLocale = localStorage.getItem("netphim-admin-locale");
     const nextLocale: Locale = storedLocale === "en" ? "en" : "vi";
     setLocale(nextLocale);
@@ -363,6 +389,12 @@ export default function AdminRootLayout({
     }
   };
 
+  const chooseSkin = (nextSkin: Skin) => {
+    document.documentElement.dataset.adminSkin = nextSkin;
+    localStorage.setItem("netphim-admin-skin", nextSkin);
+    setSkin(nextSkin);
+  };
+
   const chooseAccent = (id: string) => {
     const option =
       ACCENT_OPTIONS.find((item) => item.id === id) || ACCENT_OPTIONS[0];
@@ -421,7 +453,7 @@ export default function AdminRootLayout({
           <meta name="viewport" content="width=device-width, initial-scale=1" />
           <link rel="icon" href={flexphimLogo.src} />
         </head>
-        <body className={nunito.variable}>
+        <body className={`${ibmPlexSans.variable} ${plusJakartaSans.variable}`}>
           <AdminDevToolsGuard />
           <AdminAntiScreenshot enabled={screenshotProtectionEnabled} />
           {children}
@@ -441,11 +473,11 @@ export default function AdminRootLayout({
         <link rel="apple-touch-icon" href={flexphimLogo.src} />
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var oldPrefix=['cine','verse'].join(''),newPrefix='netphim',keys=[];for(var i=0;i<localStorage.length;i++){var key=localStorage.key(i);if(key&&key.indexOf(oldPrefix)===0)keys.push(key)}keys.forEach(function(key){var next=newPrefix+key.slice(oldPrefix.length);if(localStorage.getItem(next)===null)localStorage.setItem(next,localStorage.getItem(key));localStorage.removeItem(key)});var saved=localStorage.getItem('netphim-admin-theme');var theme=saved||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.dataset.adminTheme=theme;document.documentElement.style.colorScheme=theme;var locale=localStorage.getItem('netphim-admin-locale')||'vi';document.documentElement.lang=locale;var accents={blue:['#2878ee','#236dc9'],violet:['#7b70ef','#695fcb'],teal:['#02a98d','#028a74'],rose:['#f7577e','#dc4168'],amber:['#eaa638','#c9871e']};var accent=accents[localStorage.getItem('netphim-admin-accent')]||accents.blue;document.documentElement.style.setProperty('--admin-brand',accent[0]);document.documentElement.style.setProperty('--admin-brand-strong',accent[1])}catch(e){}})();`,
+            __html: `(function(){try{var oldPrefix=['cine','verse'].join(''),newPrefix='netphim',keys=[];for(var i=0;i<localStorage.length;i++){var key=localStorage.key(i);if(key&&key.indexOf(oldPrefix)===0)keys.push(key)}keys.forEach(function(key){var next=newPrefix+key.slice(oldPrefix.length);if(localStorage.getItem(next)===null)localStorage.setItem(next,localStorage.getItem(key));localStorage.removeItem(key)});var saved=localStorage.getItem('netphim-admin-theme');var theme=saved||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.dataset.adminTheme=theme;document.documentElement.style.colorScheme=theme;var sp=new URLSearchParams(window.location.search);var skin='matrix';if(sp.has('flat'))skin='flat';else if(sp.has('galaxy'))skin='galaxy';else if(sp.has('matrix'))skin='matrix';else{var sk=localStorage.getItem('netphim-admin-skin');if(sk==='flat'||sk==='galaxy'||sk==='matrix')skin=sk;}document.documentElement.dataset.adminSkin=skin;var locale=localStorage.getItem('netphim-admin-locale')||'vi';document.documentElement.lang=locale;var accents={blue:['#2878ee','#236dc9'],violet:['#7b70ef','#695fcb'],teal:['#02a98d','#028a74'],rose:['#f7577e','#dc4168'],amber:['#eaa638','#c9871e']};var accent=accents[localStorage.getItem('netphim-admin-accent')]||accents.blue;document.documentElement.style.setProperty('--admin-brand',accent[0]);document.documentElement.style.setProperty('--admin-brand-strong',accent[1])}catch(e){}})();`,
           }}
         />
       </head>
-      <body className={nunito.variable}>
+      <body className={`${ibmPlexSans.variable} ${plusJakartaSans.variable}`}>
         <AdminDevToolsGuard />
         <AdminIdleLock />
         <AdminAntiScreenshot enabled={screenshotProtectionEnabled} />
@@ -890,6 +922,35 @@ export default function AdminRootLayout({
                               <IconMoon size={16} />
                               Tối
                             </button>
+                          </div>
+
+                          <div className="mt-4 border-t border-[var(--admin-line)] pt-3">
+                            <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-[var(--admin-muted)]">
+                              {locale === "vi" ? "Giao diện Paces Theme" : "Paces Theme Skin"}
+                            </p>
+                            <div className="grid grid-cols-3 gap-2">
+                              <button
+                                type="button"
+                                onClick={() => chooseSkin("flat")}
+                                className={`admin-theme-choice !h-9 text-[11px] ${skin === "flat" ? "is-active" : ""}`}
+                              >
+                                Flat
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => chooseSkin("galaxy")}
+                                className={`admin-theme-choice !h-9 text-[11px] ${skin === "galaxy" ? "is-active" : ""}`}
+                              >
+                                Galaxy
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => chooseSkin("matrix")}
+                                className={`admin-theme-choice !h-9 text-[11px] ${skin === "matrix" ? "is-active" : ""}`}
+                              >
+                                Matrix
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </>

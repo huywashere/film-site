@@ -94,66 +94,77 @@ export default function HeroBannerPage() {
   };
 
   return (
-    <div className="admin-fade-in space-y-6">
-      {/* Header */}
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-[18px] font-extrabold text-[#31334a] dark:text-white">
+    <div className="admin-fade-in space-y-5">
+      {/* Paces Style Breadcrumb & Header */}
+      <header className="flex flex-wrap items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400">
+            <Link href="/" className="hover:text-[var(--admin-brand)] transition-colors">
+              Quản lý
+            </Link>
+            <IconChevronRight size={12} className="opacity-60" />
+            <span className="text-slate-600 dark:text-slate-300">Hero Banner Studio</span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-[20px] font-bold tracking-tight text-slate-800 dark:text-slate-100">
               Hero Banner Studio
             </h1>
-            <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 dark:bg-blue-900/40 px-2.5 py-0.5 text-[10px] font-extrabold text-blue-700 dark:text-blue-300">
-              <IconSparkles size={12} /> Trang chủ Web
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Live on Web
             </span>
           </div>
-          <p className="mt-1 text-[12px] text-slate-500 dark:text-slate-400">
-            Tùy biến phim nổi bật trình chiếu trên đầu trang chủ FlexPhim với hình ảnh backdrop 4K và hiệu ứng cinematic.
+
+          <p className="text-[12.5px] text-slate-500 dark:text-slate-400">
+            Tùy biến danh sách phim nổi bật trình chiếu đầu trang chủ với hình ảnh backdrop 4K HDR và tối ưu LCP.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           <a
             href="http://localhost:3000"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-[12px] font-bold text-slate-700 dark:text-slate-200 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition"
+            className="inline-flex h-[38px] items-center gap-1.5 rounded-lg border border-[var(--admin-line)] bg-[var(--admin-surface)] px-3.5 text-[12px] font-semibold text-slate-700 hover:text-[var(--admin-brand)] hover:border-[var(--admin-brand)] dark:text-slate-200 shadow-sm transition-all"
           >
-            <ExternalLink size={14} /> Xem thử Trang Chủ
+            <ExternalLink size={14} />
+            <span>Xem thử Trang Chủ</span>
           </a>
 
           <button
             onClick={() => void save()}
             disabled={saving || !config}
-            className="admin-primary-button flex items-center gap-2 px-4 py-2 text-[12px]"
+            className="admin-primary-button !h-[38px] px-4 text-[12px] font-semibold shadow-sm"
           >
             {saving ? (
               <RefreshCw size={15} className="animate-spin" />
             ) : (
               <Save size={15} />
             )}
-            Lưu thay đổi
+            <span>Lưu thay đổi</span>
           </button>
         </div>
       </header>
 
       {/* Alerts */}
       {notice && (
-        <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 dark:bg-emerald-950/30 dark:border-emerald-800 px-4 py-3 text-[12px] font-semibold text-emerald-800 dark:text-emerald-300">
-          <IconCheck size={18} className="shrink-0" />
+        <div className="flex items-center gap-2.5 rounded-lg border border-emerald-200 bg-emerald-50/80 dark:bg-emerald-950/20 dark:border-emerald-800/60 px-4 py-3 text-[12px] font-semibold text-emerald-800 dark:text-emerald-300 shadow-xs">
+          <IconCheck size={18} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
           <span>{notice}</span>
         </div>
       )}
 
       {error && (
-        <div className="flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 dark:bg-rose-950/30 dark:border-rose-800 px-4 py-3 text-[12px] font-semibold text-rose-800 dark:text-rose-300">
-          <IconAlertTriangle size={18} className="shrink-0" />
+        <div className="flex items-center gap-2.5 rounded-lg border border-rose-200 bg-rose-50/80 dark:bg-rose-950/20 dark:border-rose-800/60 px-4 py-3 text-[12px] font-semibold text-rose-800 dark:text-rose-300 shadow-xs">
+          <IconAlertTriangle size={18} className="shrink-0 text-rose-600 dark:text-rose-400" />
           <span>{error}</span>
         </div>
       )}
 
       {/* Hero Banner Studio Component */}
       {config && (
-        <div className="space-y-6">
+        <div className="space-y-5">
           <HeroBannerStudio
             heroMovieSlugs={config.heroMovieSlugs}
             onChange={(slugs) => {
@@ -162,15 +173,15 @@ export default function HeroBannerPage() {
             }}
           />
 
-          <div className="flex items-center justify-between rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white/70 dark:bg-slate-900/60 p-4">
-            <div className="text-[12px] text-slate-500 dark:text-slate-400">
-              Mẹo: Phim đầu tiên <strong className="text-blue-600 dark:text-blue-400">#1 LCP Hero</strong> sẽ được tối ưu tải trước (preload) để đạt điểm số tốc độ Google Core Web Vitals cao nhất.
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--admin-line)] bg-[var(--admin-surface)] p-3.5 text-[12px]">
+            <div className="text-slate-500 dark:text-slate-400">
+              Mẹo vận hành: Phim đầu tiên <strong className="text-[var(--admin-brand)]">#01 Primary LCP</strong> sẽ tự động được preload hình ảnh chất lượng cao để đạt tốc độ hiển thị nhanh nhất.
             </div>
             <Link
               href="/configuration"
-              className="text-[12px] font-bold text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1"
+              className="font-semibold text-[var(--admin-brand)] hover:underline inline-flex items-center gap-1 text-[12px]"
             >
-              Cấu hình các thành phần khác <IconChevronRight size={14} />
+              Cấu hình các thành phần khác <IconChevronRight size={13} />
             </Link>
           </div>
         </div>
