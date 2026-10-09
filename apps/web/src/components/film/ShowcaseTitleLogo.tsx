@@ -82,9 +82,11 @@ export function ShowcaseTitleLogo({
   // The visual mode is locked for this keyed slide. A late TMDB response is
   // cached for the next visit instead of replacing visible text mid-slide.
   const [displayLogo] = useState(() => initialLogo);
+  const [liveLogo, setLiveLogo] = useState<string | null>(null);
+  const currentLogo = displayLogo || liveLogo;
 
   // 2. Dynamic TMDB logo resolution if not pre-seeded
-  const shouldQueryTmdb = nearViewport && !initialLogo && Boolean(film?.slug);
+  const shouldQueryTmdb = nearViewport && !currentLogo && Boolean(film?.slug);
   const { bestLogo } = useTmdb({
     film: shouldQueryTmdb ? film : null,
     enabled: shouldQueryTmdb,
@@ -132,7 +134,10 @@ export function ShowcaseTitleLogo({
       if (url) {
         const primary = buildCandidates(url)[0] || url;
         void preloadMovieLogo(primary).then((ready) => {
-          if (ready && film.slug) setMovieLogo(film.slug, url);
+          if (ready && film.slug) {
+            setMovieLogo(film.slug, url);
+            setLiveLogo(url);
+          }
         });
       }
     }
@@ -151,9 +156,9 @@ export function ShowcaseTitleLogo({
 
   // 3. Fallback candidates & error handling
   const candidates = useMemo(() => {
-    if (!displayLogo) return [];
-    return buildCandidates(displayLogo);
-  }, [displayLogo]);
+    if (!currentLogo) return [];
+    return buildCandidates(currentLogo);
+  }, [currentLogo]);
 
   const [candidateIdx, setCandidateIdx] = useState(0);
   const [hasError, setHasError] = useState(false);
@@ -165,7 +170,7 @@ export function ShowcaseTitleLogo({
   useEffect(() => {
     setCandidateIdx(0);
     setHasError(false);
-  }, [film.slug, displayLogo]);
+  }, [film.slug, currentLogo]);
 
   useEffect(() => {
     setIsLoaded(Boolean(currentSrc && isMovieLogoPreloaded(currentSrc)));
@@ -191,7 +196,7 @@ export function ShowcaseTitleLogo({
     return () => window.clearTimeout(timer);
   }, [candidateIdx, candidates.length, currentSrc, hasError, isLoaded]);
 
-  const hasLogoCandidate = Boolean(currentSrc) && !hasError;
+  const hasLogoCandidate = Boolean(currentSrc) && !hasError && isLoaded;
 
   return (
     <div ref={containerRef} className={cn('relative select-none', className)}>
@@ -208,7 +213,7 @@ export function ShowcaseTitleLogo({
           {film.name}
         </h3>
 
-        {hasLogoCandidate && currentSrc && (
+        {Boolean(currentSrc) && !hasError && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             data-showcase-title-logo={film.slug}
@@ -249,7 +254,7 @@ export function ShowcaseTitleLogo({
             subtitleClassName,
           )}
         >
-          {isLoaded ? film.name : film.origin_name}
+          {hasLogoCandidate ? film.name : film.origin_name}
         </p>
       )}
     </div>

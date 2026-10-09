@@ -50,11 +50,28 @@ function normalizeTmdbTitle(value: unknown): string {
     .toLowerCase();
 }
 
+function cleanTmdbSearchTitle(raw: unknown): string {
+  if (!raw) return "";
+  return String(raw)
+    .replace(/\s*\([^)]*\)/g, " ")
+    .replace(/(?:[\s:\-–]+)?(?:season|phần|tập|ss|s)\s*\d+.*$/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function pickBestTmdbResult(results: any[], film: any) {
   if (!results?.length) return null;
-  const names = [film?.origin_name, film?.title, film?.name]
+  const rawNames = [film?.origin_name, film?.title, film?.name].filter(Boolean);
+  const cleanedNames = rawNames.map(cleanTmdbSearchTitle).filter(Boolean);
+  const prefixNames = rawNames
+    .map((n) => String(n).split(/[:\-–]/)[0].trim())
+    .filter(Boolean);
+  const names = [...rawNames, ...cleanedNames, ...prefixNames]
     .map(normalizeTmdbTitle)
     .filter(Boolean);
+  const isTv =
+    String(film?.type || film?.tmdb?.type || "").toLowerCase().includes("tv") ||
+    String(film?.type || "").toLowerCase().includes("series");
   const expectedYear = Number(film?.year) || 0;
 
   return [...results].sort((a, b) => {
@@ -82,7 +99,11 @@ function pickBestTmdbResult(results: any[], film: any) {
       );
       if (expectedYear && candidateYear) {
         const yearGap = Math.abs(expectedYear - candidateYear);
-        value += yearGap === 0 ? 30 : yearGap === 1 ? 12 : -yearGap;
+        if (isTv && candidateYear <= expectedYear && candidateYear >= expectedYear - 12) {
+          value += yearGap === 0 ? 30 : 20;
+        } else {
+          value += yearGap === 0 ? 30 : yearGap === 1 ? 12 : -yearGap;
+        }
       }
       value += Math.min(Number(item?.popularity || 0) / 100, 10);
       return value;
@@ -119,10 +140,17 @@ export function useTmdb({
     queryKey: ["tmdb-search-title", searchTitle, type],
     queryFn: async () => {
       if (!searchTitle) return null;
-      const cleanTitle = searchTitle.replace(/\s*\([^)]*\)/g, "").trim();
+      const cleanTitle = cleanTmdbSearchTitle(searchTitle) || searchTitle.replace(/\s*\([^)]*\)/g, "").trim();
       if (type === "tv") {
         const tvRes = await tmdbApi.searchTv(cleanTitle);
         if (tvRes?.results?.length) return tvRes;
+        if (cleanTitle.includes(":") || cleanTitle.includes("-")) {
+          const mainPrefix = cleanTitle.split(/[:\-–]/)[0].trim();
+          if (mainPrefix && mainPrefix.length >= 2 && mainPrefix !== cleanTitle) {
+            const prefixRes = await tmdbApi.searchTv(mainPrefix);
+            if (prefixRes?.results?.length) return prefixRes;
+          }
+        }
       }
       const movieRes = await tmdbApi.searchMovie(cleanTitle);
       if (movieRes?.results?.length) return movieRes;
