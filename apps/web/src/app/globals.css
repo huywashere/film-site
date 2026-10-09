@@ -562,6 +562,42 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   border-radius: 0 !important;
 }
 
+/* ── ArtPlayer Dual Subtitles (Song Ngữ Chuẩn Điện Ảnh) ── */
+.art-video-player .art-subtitle {
+  bottom: 8% !important;
+  pointer-events: none !important;
+  text-align: center !important;
+  padding: 0 16px !important;
+}
+
+.art-video-player .art-subtitle p {
+  background: transparent !important;
+  line-height: 1.35 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.art-video-player .art-subtitle .sub-sec {
+  display: block;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: clamp(14px, 3.2vw, 19px);
+  font-weight: 500;
+  color: #fbbf24; /* Amber 400 - Chuẩn màu thoại ngoại ngữ song ngữ */
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95), 0 0 6px rgba(0, 0, 0, 0.85);
+  margin-bottom: 3px;
+  letter-spacing: 0.01em;
+}
+
+.art-video-player .art-subtitle .sub-pri {
+  display: block;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: clamp(16px, 3.8vw, 22px);
+  font-weight: 600;
+  color: #ffffff; /* Sắc nét trắng viền đổ bóng điện ảnh */
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95), 0 0 6px rgba(0, 0, 0, 0.85);
+  letter-spacing: 0.01em;
+}
+
 /* ── Mobile Player Controls: Lower seek bar & spacing ── */
 @media (max-width: 768px) {
   .art-video-player.art-mobile,

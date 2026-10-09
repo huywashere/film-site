@@ -4315,7 +4315,20 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                     title={film?.name || film?.title || ''}
                     subtitle={currentEpData?.name ? `Tập ${currentEpData.name}` : ''}
                     subtitles={
-                      Array.isArray(currentEpData?.subtitles) ? currentEpData.subtitles : undefined
+                      Array.isArray(currentEpData?.subtitles) && currentEpData.subtitles.length > 0
+                        ? currentEpData.subtitles
+                        : Array.isArray((film as any)?.subtitles) && (film as any).subtitles.length > 0
+                        ? (film as any).subtitles
+                        : (currentEpData?.sub_url || currentEpData?.subtitle_url)
+                        ? [
+                            {
+                              url: currentEpData.sub_url || currentEpData.subtitle_url,
+                              language: "vi",
+                              label: "Tiếng Việt",
+                              default: true,
+                            },
+                          ]
+                        : undefined
                     }
                     thumbnailVttUrl={[
                       currentEpData?.thumbnailVttUrl,

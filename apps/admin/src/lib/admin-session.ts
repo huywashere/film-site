@@ -10,7 +10,10 @@ export function hasAdminSession(request: { cookies: { get(name: string): { value
 
 export function adminApiBaseUrl() {
   const configured =
-    process.env.NETPHIM_API_URL || "http://127.0.0.1:3001/api/v1";
+    process.env.NETPHIM_API_URL ||
+    process.env.CINEVERSE_API_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    "http://127.0.0.1:3001/api/v1";
   try {
     const parsed = new URL(configured);
     if (parsed.protocol === "http:" || parsed.protocol === "https:") {

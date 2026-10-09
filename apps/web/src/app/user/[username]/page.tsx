@@ -3,7 +3,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useSearchParams } from "next/navigation";
 import { api, watchHistoryApi, watchlistApi, authApi } from "@/lib/api";
-import { useState, useEffect, startTransition } from "react";
+import { useState, useEffect, useMemo, startTransition } from "react";
 import {
   User,
   Bookmark,
@@ -72,6 +72,7 @@ import {
 } from "@/lib/profile-appearance";
 import {
   guestDataStorage,
+  getAllGuestWatchHistoryEntries,
   type GuestWatchlistItem,
 } from "@/lib/user-data";
 
@@ -871,15 +872,11 @@ export default function UserDashboardPage() {
     staleTime: 60_000,
   });
 
-  const leaderboard: any[] = Array.isArray(leaderboardData)
+  const rawLeaderboard: any[] = Array.isArray(leaderboardData)
     ? leaderboardData
     : Array.isArray(leaderboardData?.items)
     ? leaderboardData.items
     : [];
-  const myLeaderboardRank =
-    !Array.isArray(leaderboardData) && leaderboardData?.myRank
-      ? leaderboardData.myRank
-      : null;
 
   const performProfileUpdate = async (options?: {
     avatar?: string;
@@ -1023,8 +1020,399 @@ export default function UserDashboardPage() {
     }
   };
 
-  const historyItems = historyData?.items || [];
-  const watchlistItems = watchlistData?.items || [];
+  const [localHistory, setLocalHistory] = useState<any[]>([]);
+  const [localWatchlist, setLocalWatchlist] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!isOwnProfile) return;
+    const syncLocalData = () => {
+      try {
+        const guestHistory = getAllGuestWatchHistoryEntries().map((e) => ({
+          id: `${e.slug}-${e.epSlug || "full"}`,
+          movieId: e.slug,
+          movieTitle: e.title,
+          movieThumb: e.thumb || e.poster,
+          episode: e.epSlug,
+          progress: e.currentTime,
+          duration: e.duration,
+          updatedAt: e.updatedAt,
+        }));
+        setLocalHistory(guestHistory);
+
+        const guestWatchlist = guestDataStorage.getWatchlist().map((w) => ({
+          id: w.id,
+          movieId: w.movieId,
+          title: w.movieData?.title || w.movieId,
+          thumbUrl: w.movieData?.thumbUrl || w.movieData?.posterUrl,
+          movieData: w.movieData,
+          addedAt: w.addedAt,
+        }));
+        setLocalWatchlist(guestWatchlist);
+      } catch {}
+    };
+
+    syncLocalData();
+    window.addEventListener("storage", syncLocalData);
+    window.addEventListener("netphim_watchlist_changed", syncLocalData);
+    window.addEventListener("netphim_favorites_changed", syncLocalData);
+    return () => {
+      window.removeEventListener("storage", syncLocalData);
+      window.removeEventListener("netphim_watchlist_changed", syncLocalData);
+      window.removeEventListener("netphim_favorites_changed", syncLocalData);
+    };
+  }, [isOwnProfile]);
+
+  const historyItems = useMemo(() => {
+    if (historyData?.items && historyData.items.length > 0) {
+      return historyData.items;
+    }
+    return isOwnProfile ? localHistory : [];
+  }, [historyData?.items, isOwnProfile, localHistory]);
+
+  const watchlistItems = useMemo(() => {
+    if (watchlistData?.items && watchlistData.items.length > 0) {
+      return watchlistData.items;
+    }
+    return isOwnProfile ? localWatchlist : [];
+  }, [watchlistData?.items, isOwnProfile, localWatchlist]);
+
+  const computedStats = useMemo(() => {
+    let totalSeconds = 0;
+    const genreTally = new Map<string, number>();
+    const watchDates = new Set<string>();
+    let nightWatchCount = 0;
+
+    for (const h of historyItems) {
+      const dur =
+        h.progress && h.progress > 60
+          ? h.progress
+          : h.duration && h.duration > 60
+          ? h.duration * 0.8
+          : 45 * 60;
+      totalSeconds += dur;
+
+      const dateVal = h.updatedAt || h.watchedAt;
+      if (dateVal) {
+        const d = new Date(dateVal);
+        watchDates.add(d.toISOString().split("T")[0]);
+        const hour = d.getHours();
+        if (hour >= 23 || hour <= 4) {
+          nightWatchCount++;
+        }
+      }
+
+      const genres: string[] = Array.isArray(h.genres)
+        ? h.genres
+        : h.category
+        ? [h.category]
+        : [];
+      for (const g of genres) {
+        genreTally.set(g, (genreTally.get(g) || 0) + 1);
+      }
+    }
+
+    const totalHours = Math.round((totalSeconds / 3600) * 10) / 10;
+    const hoursInt = Math.floor(totalSeconds / 3600);
+    const minutesInt = Math.floor((totalSeconds % 3600) / 60);
+    const watchTimeString = `${hoursInt}h ${minutesInt}m`;
+
+    let level = 1;
+    let levelName = "Level 1";
+    let rankTitle = "Mọt Phim Tập Sự";
+    let rankBadge = "🌱";
+    let currentLevelMinHours = 0;
+    let nextLevelHours = 5;
+
+    if (totalHours >= 100) {
+      level = 5;
+      levelName = "Level 5";
+      rankTitle = "Đại Sư Điện Ảnh";
+      rankBadge = "👑";
+      currentLevelMinHours = 100;
+      nextLevelHours = 100;
+    } else if (totalHours >= 50) {
+      level = 4;
+      levelName = "Level 4";
+      rankTitle = "Mọt Phim Thượng Thừa";
+      rankBadge = "🏆";
+      currentLevelMinHours = 50;
+      nextLevelHours = 100;
+    } else if (totalHours >= 20) {
+      level = 3;
+      levelName = "Level 3";
+      rankTitle = "Cinephile Chính Hiệu";
+      rankBadge = "⭐";
+      currentLevelMinHours = 20;
+      nextLevelHours = 50;
+    } else if (totalHours >= 5) {
+      level = 2;
+      levelName = "Level 2";
+      rankTitle = "Khán Giả Chuyên Cần";
+      rankBadge = "🎬";
+      currentLevelMinHours = 5;
+      nextLevelHours = 20;
+    }
+
+    const hoursInCurrentLevel = Math.max(0, totalHours - currentLevelMinHours);
+    const levelRange = Math.max(1, nextLevelHours - currentLevelMinHours);
+    const levelProgress =
+      level >= 5
+        ? 100
+        : Math.min(100, Math.round((hoursInCurrentLevel / levelRange) * 100));
+    const hoursToNextLevel =
+      level >= 5
+        ? 0
+        : Math.max(0, Math.round((nextLevelHours - totalHours) * 10) / 10);
+
+    let streakDays = 0;
+    const now = new Date();
+    const todayStr = now.toISOString().split("T")[0];
+    const yesterday = new Date(now.getTime() - 86400000);
+    const yesterdayStr = yesterday.toISOString().split("T")[0];
+
+    const startStreakDate = watchDates.has(todayStr)
+      ? now
+      : watchDates.has(yesterdayStr)
+      ? yesterday
+      : null;
+
+    if (startStreakDate) {
+      let curr = new Date(startStreakDate.getTime());
+      while (true) {
+        const s = curr.toISOString().split("T")[0];
+        if (watchDates.has(s)) {
+          streakDays++;
+          curr = new Date(curr.getTime() - 86400000);
+        } else {
+          break;
+        }
+      }
+    }
+
+    const reviewsCount = profile._count?.reviews || 0;
+    const badges = [
+      {
+        id: "first_step",
+        name: "Bước Đầu Điện Ảnh",
+        description: "Xem bộ phim đầu tiên trên nền tảng",
+        icon: "🎬",
+        unlocked: historyItems.length >= 1,
+        progress: `${Math.min(historyItems.length, 1)}/1`,
+      },
+      {
+        id: "marathon",
+        name: "Chiến Thần Marathon",
+        description: "Đã cày từ 5 tập phim trở lên",
+        icon: "⚡",
+        unlocked: historyItems.length >= 5,
+        progress: `${Math.min(historyItems.length, 5)}/5`,
+      },
+      {
+        id: "night_owl",
+        name: "Cú Đêm Điện Ảnh",
+        description: "Xem phim vào khung giờ đêm (23h - 04h)",
+        icon: "🌙",
+        unlocked: nightWatchCount >= 1,
+        progress: nightWatchCount >= 1 ? "1/1" : "0/1",
+      },
+      {
+        id: "cinephile",
+        name: "Bậc Thầy Giờ Xem",
+        description: "Tích lũy trên 20 giờ cày phim",
+        icon: "⏱️",
+        unlocked: totalHours >= 20,
+        progress: `${Math.min(totalHours, 20)}/20h`,
+      },
+      {
+        id: "critic",
+        name: "Nhà Phê Bình Tinh Tế",
+        description: "Viết bình luận / đánh giá cảm nhận về phim",
+        icon: "✍️",
+        unlocked: reviewsCount >= 1,
+        progress: `${Math.min(reviewsCount, 1)}/1`,
+      },
+      {
+        id: "judge",
+        name: "Giám Khảo Khó Tính",
+        description: "Đã chấm điểm đánh giá từ 3 bộ phim trở lên",
+        icon: "⭐",
+        unlocked: reviewsCount >= 3,
+        progress: `${Math.min(reviewsCount, 3)}/3`,
+      },
+      {
+        id: "collector",
+        name: "Nhà Sưu Tầm Phim",
+        description: "Lưu từ 5 bộ phim yêu thích vào Tủ phim",
+        icon: "🍿",
+        unlocked: watchlistItems.length >= 5,
+        progress: `${Math.min(watchlistItems.length, 5)}/5`,
+      },
+      {
+        id: "streak_master",
+        name: "Khán Giả Kiên Trì",
+        description: "Duy trì chuỗi xem phim liên tiếp từ 3 ngày trở lên",
+        icon: "🔥",
+        unlocked: streakDays >= 3,
+        progress: `${Math.min(streakDays, 3)}/3 ngày`,
+      },
+    ];
+
+    let topGenres: any[] = [];
+    if (genreTally.size > 0) {
+      const totalHits = Array.from(genreTally.values()).reduce((a, b) => a + b, 0);
+      topGenres = Array.from(genreTally.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 4)
+        .map(([name, count]) => {
+          const pct = Math.round((count / totalHits) * 100);
+          const hours = Math.round(totalHours * (pct / 100) * 10) / 10;
+          return {
+            name,
+            percentage: pct,
+            hoursText: `${pct}% • ${hours} giờ`,
+          };
+        });
+    }
+
+    if (!topGenres.length) {
+      topGenres = [
+        {
+          name: "Phim Chiếu Rạp & Bom Tấn",
+          percentage: 45,
+          hoursText: `45% • ${Math.round(totalHours * 0.45 * 10) / 10} giờ`,
+        },
+        {
+          name: "Phim Bộ Hàn & Trung Quốc",
+          percentage: 35,
+          hoursText: `35% • ${Math.round(totalHours * 0.35 * 10) / 10} giờ`,
+        },
+        {
+          name: "Hoạt Hình Anime",
+          percentage: 20,
+          hoursText: `20% • ${Math.round(totalHours * 0.2 * 10) / 10} giờ`,
+        },
+      ];
+    }
+
+    const totalXp = Math.round(
+      totalHours * 60 +
+        historyItems.length * 15 +
+        reviewsCount * 50 +
+        watchlistItems.length * 10,
+    );
+
+    return {
+      totalHours,
+      watchTimeString,
+      totalEpisodes: historyItems.length,
+      watchlistCount: watchlistItems.length,
+      level,
+      levelName,
+      rankTitle,
+      rankBadge,
+      levelProgress,
+      hoursToNextLevel,
+      nextLevelHours,
+      streakDays,
+      totalXp,
+      badges,
+      topGenres,
+      averageRating: 9.8,
+    };
+  }, [historyItems, watchlistItems, profile]);
+
+  const effectiveStats = userStats || computedStats;
+
+  const communityFallbackLeaderboard = useMemo(() => {
+    const defaultCommunityUsers = [
+      {
+        id: "usr-comm-1",
+        username: "huywashere",
+        displayName: "Phu Huy Nguyen",
+        avatarUrl: "/avatars/admin-mascot-riso.png",
+        totalHours: 128.5,
+        totalEpisodes: 164,
+        rankTitle: "Đại Sư Điện Ảnh",
+        rankBadge: "👑",
+      },
+      {
+        id: "usr-comm-2",
+        username: "mod_cine",
+        displayName: "Kiểm Duyệt Viên",
+        avatarUrl: null,
+        totalHours: 64.2,
+        totalEpisodes: 88,
+        rankTitle: "Mọt Phim Thượng Thừa",
+        rankBadge: "🏆",
+      },
+      {
+        id: "usr-comm-3",
+        username: "member_vip",
+        displayName: "Mọt Phim 4K",
+        avatarUrl: null,
+        totalHours: 32.0,
+        totalEpisodes: 45,
+        rankTitle: "Cinephile Chính Hiệu",
+        rankBadge: "⭐",
+      },
+      {
+        id: "usr-comm-4",
+        username: "an_nguyen_cine",
+        displayName: "An Nguyễn Phim Lẻ",
+        avatarUrl: null,
+        totalHours: 24.5,
+        totalEpisodes: 32,
+        rankTitle: "Cinephile Chính Hiệu",
+        rankBadge: "⭐",
+      },
+      {
+        id: "usr-comm-5",
+        username: "tran_hoang_anime",
+        displayName: "Trần Hoàng Anime",
+        avatarUrl: null,
+        totalHours: 18.0,
+        totalEpisodes: 28,
+        rankTitle: "Khán Giả Chuyên Cần",
+        rankBadge: "🎬",
+      },
+    ];
+
+    const currentEntry = {
+      id: user?.id || "guest-user",
+      username: user?.username || profile?.username || "ban",
+      displayName: user?.displayName || profile?.displayName || "Bạn",
+      avatarUrl: user?.avatarUrl || profile?.avatarUrl,
+      totalHours: effectiveStats.totalHours,
+      totalEpisodes: effectiveStats.totalEpisodes,
+      rankTitle: effectiveStats.rankTitle,
+      rankBadge: effectiveStats.rankBadge,
+    };
+
+    const combined = [
+      ...defaultCommunityUsers.filter((u) => u.username !== currentEntry.username),
+      currentEntry,
+    ]
+      .sort((a, b) => b.totalHours - a.totalHours)
+      .map((item, index) => ({
+        ...item,
+        rank: index + 1,
+        isTop1: index === 0,
+        isTop2: index === 1,
+        isTop3: index === 2,
+        medal: index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : null,
+      }));
+
+    return combined;
+  }, [user, profile, effectiveStats]);
+
+  const leaderboard: any[] =
+    rawLeaderboard.length > 0 ? rawLeaderboard : communityFallbackLeaderboard;
+  const myLeaderboardRank =
+    (!Array.isArray(leaderboardData) && leaderboardData?.myRank) ||
+    leaderboard.find(
+      (u: any) => u.username === (user?.username || profile?.username),
+    ) ||
+    null;
 
   const isAdmin = Boolean(
     user?.email?.toLowerCase() === "huywashere@gmail.com" ||
@@ -1186,12 +1574,12 @@ export default function UserDashboardPage() {
                     <Crown size={11} className="text-amber-400" /> VIP
                   </span>
                 )}
-                {userStats?.level && (
+                {effectiveStats?.level && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-500/25 px-2.5 py-0.5 text-[11px] font-semibold text-amber-300 shadow-sm">
-                    <span>{userStats.rankBadge}</span>
-                    <span>Level {userStats.level}</span>
+                    <span>{effectiveStats.rankBadge}</span>
+                    <span>Level {effectiveStats.level}</span>
                     <span className="text-amber-400/60 font-normal hidden sm:inline">
-                      • {userStats.rankTitle}
+                      • {effectiveStats.rankTitle}
                     </span>
                   </span>
                 )}
@@ -1574,8 +1962,8 @@ export default function UserDashboardPage() {
                     </p>
                   </div>
                   <div className="flex items-center gap-2 text-xs font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-3.5 py-1.5 rounded-xl shadow-sm">
-                    <span className="text-sm">{userStats?.rankBadge || (historyItems.length >= 20 ? "👑" : "🌱")}</span>
-                    <span>{userStats?.rankTitle || (historyItems.length >= 20 ? "Đại Cao Thủ 4K" : historyItems.length >= 5 ? "Cinephile Chính Hiệu" : "Mọt Phim Tập Sự")}</span>
+                    <span className="text-sm">{effectiveStats.rankBadge}</span>
+                    <span>{effectiveStats.rankTitle}</span>
                   </div>
                 </div>
 
@@ -1584,7 +1972,7 @@ export default function UserDashboardPage() {
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <div className="h-12 w-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-300 flex items-center justify-center text-black font-black text-2xl shadow-lg shadow-amber-500/30">
-                        {userStats?.rankBadge || "🌱"}
+                        {effectiveStats.rankBadge}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
@@ -1592,11 +1980,11 @@ export default function UserDashboardPage() {
                             Cấp độ điện ảnh
                           </span>
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300">
-                            {userStats?.levelName || "Level 1"}
+                            {effectiveStats.levelName}
                           </span>
                         </div>
                         <h3 className="text-lg font-black text-white">
-                          {userStats?.rankTitle || "Mọt Phim Tập Sự"}
+                          {effectiveStats.rankTitle}
                         </h3>
                       </div>
                     </div>
@@ -1608,7 +1996,7 @@ export default function UserDashboardPage() {
                         <div className="text-left">
                           <div className="text-[10px] text-neutral-400 uppercase font-semibold">Chuỗi cày</div>
                           <div className="text-xs font-black text-white">
-                            {userStats?.streakDays || 0} ngày liên tiếp
+                            {effectiveStats.streakDays} ngày liên tiếp
                           </div>
                         </div>
                       </div>
@@ -1619,7 +2007,7 @@ export default function UserDashboardPage() {
                         <div className="text-left">
                           <div className="text-[10px] text-neutral-400 uppercase font-semibold">Điểm XP</div>
                           <div className="text-xs font-black text-amber-300">
-                            {userStats?.totalXp ? userStats.totalXp.toLocaleString() : 0} XP
+                            {effectiveStats.totalXp.toLocaleString()} XP
                           </div>
                         </div>
                       </div>
@@ -1633,20 +2021,20 @@ export default function UserDashboardPage() {
                         Tiến trình thăng cấp
                       </span>
                       <span className="text-amber-300 font-mono">
-                        {userStats?.level && userStats.level >= 5
+                        {effectiveStats.level >= 5
                           ? "Cấp độ Tối Đa (Max Level)"
-                          : `${userStats?.totalHours || 0} / ${userStats?.nextLevelHours || 5} giờ (${userStats?.levelProgress || 0}%)`}
+                          : `${effectiveStats.totalHours} / ${effectiveStats.nextLevelHours} giờ (${effectiveStats.levelProgress}%)`}
                       </span>
                     </div>
                     <div className="h-2.5 w-full bg-white/[0.08] rounded-full overflow-hidden p-0.5">
                       <div
                         className="h-full bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-300 rounded-full transition-all duration-700 shadow-[0_0_12px_rgba(251,191,36,0.5)]"
-                        style={{ width: `${Math.max(userStats?.levelProgress || 5, 5)}%` }}
+                        style={{ width: `${Math.max(effectiveStats.levelProgress, 5)}%` }}
                       />
                     </div>
-                    {userStats?.level && userStats.level < 5 && (userStats?.hoursToNextLevel ?? 0) > 0 && (
+                    {effectiveStats.level < 5 && effectiveStats.hoursToNextLevel > 0 && (
                       <p className="text-[11px] text-neutral-400 text-right">
-                        Cần thêm <strong className="text-amber-300 font-bold">{userStats.hoursToNextLevel} giờ</strong> xem phim để thăng cấp tiếp theo!
+                        Cần thêm <strong className="text-amber-300 font-bold">{effectiveStats.hoursToNextLevel} giờ</strong> xem phim để thăng cấp tiếp theo!
                       </p>
                     )}
                   </div>
@@ -1657,25 +2045,28 @@ export default function UserDashboardPage() {
                   {[
                     {
                       label: "Thời gian xem",
-                      value: userStats?.watchTimeString || `${Math.floor((historyItems.length * 45) / 60)}h ${(historyItems.length * 45) % 60}m`,
+                      value: effectiveStats.watchTimeString,
                       icon: Clock,
                       color: "text-amber-400",
                     },
                     {
                       label: "Tập đã xem",
-                      value: userStats?.totalEpisodes ?? historyItems.length,
+                      value: effectiveStats.totalEpisodes,
                       icon: Film,
                       color: "text-blue-400",
                     },
                     {
                       label: "Tủ phim",
-                      value: userStats?.watchlistCount ?? watchlistItems.length,
+                      value: effectiveStats.watchlistCount,
                       icon: Bookmark,
                       color: "text-purple-400",
                     },
                     {
                       label: "Điểm đánh giá TB",
-                      value: userStats?.averageRating ? `${userStats.averageRating} ★` : "9.8 ★",
+                      value:
+                        typeof effectiveStats.averageRating === "number"
+                          ? `${effectiveStats.averageRating} ★`
+                          : effectiveStats.averageRating,
                       icon: Award,
                       color: "text-emerald-400",
                     },
@@ -1697,21 +2088,12 @@ export default function UserDashboardPage() {
                       <Award size={16} className="text-amber-400" /> Bộ Sưu Tập Huy Hiệu
                     </h3>
                     <span className="text-xs text-neutral-400 font-medium">
-                      Đã mở khóa: {userStats?.badges?.filter((b: any) => b.unlocked).length || 0}/{userStats?.badges?.length || 8}
+                      Đã mở khóa: {effectiveStats.badges.filter((b: any) => b.unlocked).length}/{effectiveStats.badges.length}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {(userStats?.badges || [
-                      { id: "first_step", name: "Bước Đầu Điện Ảnh", description: "Xem bộ phim đầu tiên trên nền tảng", icon: "🎬", unlocked: historyItems.length >= 1, progress: `${Math.min(historyItems.length, 1)}/1` },
-                      { id: "marathon", name: "Chiến Thần Marathon", description: "Đã cày từ 5 tập phim trở lên", icon: "⚡", unlocked: historyItems.length >= 5, progress: `${Math.min(historyItems.length, 5)}/5` },
-                      { id: "night_owl", name: "Cú Đêm Điện Ảnh", description: "Xem phim vào khung giờ đêm (23h - 04h)", icon: "🌙", unlocked: false, progress: "0/1" },
-                      { id: "cinephile", name: "Bậc Thầy Giờ Xem", description: "Tích lũy trên 20 giờ cày phim", icon: "⏱️", unlocked: false, progress: "0/20h" },
-                      { id: "critic", name: "Nhà Phê Bình Tinh Tế", description: "Viết bình luận / đánh giá cảm nhận về phim", icon: "✍️", unlocked: false, progress: "0/1" },
-                      { id: "judge", name: "Giám Khảo Khó Tính", description: "Đã chấm điểm đánh giá từ 3 bộ phim trở lên", icon: "⭐", unlocked: false, progress: "0/3" },
-                      { id: "collector", name: "Nhà Sưu Tầm Phim", description: "Lưu từ 5 bộ phim yêu thích vào Tủ phim", icon: "🍿", unlocked: watchlistItems.length >= 5, progress: `${Math.min(watchlistItems.length, 5)}/5` },
-                      { id: "streak_master", name: "Khán Giả Kiên Trì", description: "Duy trì chuỗi xem phim liên tiếp từ 3 ngày trở lên", icon: "🔥", unlocked: false, progress: "0/3 ngày" },
-                    ]).map((badge: any) => (
+                    {effectiveStats.badges.map((badge: any) => (
                       <div
                         key={badge.id}
                         className={cn(
@@ -1740,8 +2122,8 @@ export default function UserDashboardPage() {
                               className={cn(
                                 "text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0",
                                 badge.unlocked
-                                  ? "bg-amber-400/20 text-amber-300"
-                                  : "bg-white/[0.06] text-neutral-400",
+                              ? "bg-amber-400/20 text-amber-300"
+                              : "bg-white/[0.06] text-neutral-400",
                               )}
                             >
                               {badge.progress}
@@ -1762,12 +2144,7 @@ export default function UserDashboardPage() {
                     <Flame size={15} className="text-amber-400" /> Thể loại xem nhiều nhất
                   </h3>
                   <div className="space-y-3.5">
-                    {(userStats?.topGenres || [
-                      { name: "Phim Hàn Quốc", percentage: 40, hoursText: "40% • 28 giờ" },
-                      { name: "Phim Trung Quốc", percentage: 30, hoursText: "30% • 19 giờ" },
-                      { name: "Hành Động & Viễn Tưởng", percentage: 20, hoursText: "20% • 12 giờ" },
-                      { name: "Khác", percentage: 10, hoursText: "10% • 8 giờ" },
-                    ]).map((g: any, idx: number) => {
+                    {effectiveStats.topGenres.map((g: any, idx: number) => {
                       const colors = [
                         "from-amber-500 to-yellow-400",
                         "from-blue-500 to-cyan-400",

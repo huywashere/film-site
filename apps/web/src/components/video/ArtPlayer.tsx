@@ -18,6 +18,13 @@ import { attachNightModeAudio, isNightModeEnabled, setNightMode } from '@/lib/au
 import { setupScrubberPreview } from './scrubber-preview';
 import { setupMobileCenterControls } from './mobile-center-controls';
 import PlayerServerHealthPanel, { type PlayerServerItem } from './PlayerServerHealthPanel';
+import {
+  decryptSubtitle,
+  parseSubtitleCues,
+  mergeDualSubtitleCues,
+  buildWebVttString,
+  createVttBlobUrl,
+} from '@/lib/subtitles/dual-subtitles';
 
 export type { PlayerServerItem } from './PlayerServerHealthPanel';
 
@@ -26,6 +33,7 @@ export type { PlayerServerItem } from './PlayerServerHealthPanel';
 const HLS_STARTUP_TIMEOUT_MS = 5_000;
 
 export interface SubtitleTrack {
+  id?: number | string;
   label: string;
   url: string;
   language?: string;
@@ -121,6 +129,7 @@ export default function ArtPlayer({
   const onStallSuggestServerRef = useRef(onStallSuggestServer);
   onStallSuggestServerRef.current = onStallSuggestServer;
   const stallIncidentTimesRef = useRef<number[]>([]);
+  const subtitleBlobsRef = useRef<string[]>([]);
 
   const detectedAdRangesRef = useRef<
     Array<{
@@ -709,11 +718,73 @@ export default function ArtPlayer({
         ? subtitles
         : typeof subtitle === 'string' &&
             (subtitle.startsWith('http') || subtitle.endsWith('.vtt') || subtitle.endsWith('.srt'))
-          ? [{ label: 'Vietsub', url: subtitle, default: true }]
+          ? [{ label: 'Vietsub', url: subtitle, default: true, language: 'vi' }]
           : []
     ).filter((track) => Boolean(track.url));
 
+    // Dual subtitle detection (Anh - Việt / Song Ngữ)
+    const viTrack = effectiveSubtitles.find(
+      (t) => t.language === 'vi' || t.label.toLowerCase().includes('việt')
+    );
+    const enTrack = effectiveSubtitles.find(
+      (t) =>
+        t.language === 'en' ||
+        t.label.toLowerCase().includes('anh') ||
+        t.label.toLowerCase().includes('eng')
+    );
+    const canDual = Boolean(
+      (viTrack && enTrack && viTrack.url !== enTrack.url) ||
+      effectiveSubtitles.length >= 2
+    );
+    const primaryTrack = viTrack || effectiveSubtitles[0];
+    const secondaryTrack =
+      enTrack && enTrack.url !== primaryTrack?.url
+        ? enTrack
+        : effectiveSubtitles.find((t) => t.url !== primaryTrack?.url) || null;
+
     const defaultSubtitle = effectiveSubtitles.find((t) => t.default) || effectiveSubtitles[0];
+
+    const fetchDecryptedTrackContent = async (subUrl: string): Promise<string> => {
+      try {
+        let reqUrl = subUrl;
+        if (
+          subUrl.startsWith('/subs/') ||
+          (typeof window !== 'undefined' && subUrl.startsWith('http') && !subUrl.includes(window.location.host))
+        ) {
+          reqUrl = `/api/subtitles?url=${encodeURIComponent(subUrl)}`;
+        }
+        const resp = await fetch(reqUrl);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const raw = await resp.text();
+        return decryptSubtitle(raw);
+      } catch (err) {
+        console.error('Không thể nạp phụ đề:', err);
+        return '';
+      }
+    };
+
+    const prepareSingleTrack = async (track: SubtitleTrack): Promise<string> => {
+      if (track.url.startsWith('blob:')) return track.url;
+      const content = await fetchDecryptedTrackContent(track.url);
+      if (!content) return track.url;
+      const { url: blobUrl } = createVttBlobUrl(content);
+      subtitleBlobsRef.current.push(blobUrl);
+      return blobUrl;
+    };
+
+    const prepareDualTrack = async (pri: SubtitleTrack, sec: SubtitleTrack): Promise<string> => {
+      const [contentPri, contentSec] = await Promise.all([
+        fetchDecryptedTrackContent(pri.url),
+        fetchDecryptedTrackContent(sec.url),
+      ]);
+      const cuesPri = parseSubtitleCues(contentPri);
+      const cuesSec = parseSubtitleCues(contentSec);
+      const merged = mergeDualSubtitleCues(cuesPri, cuesSec);
+      const vtt = buildWebVttString(merged);
+      const { url: blobUrl } = createVttBlobUrl(vtt);
+      subtitleBlobsRef.current.push(blobUrl);
+      return blobUrl;
+    };
 
     const serverHealthIconMarkup = createLucideElement(activityIconNode, {
       width: 22,
@@ -863,9 +934,7 @@ export default function ArtPlayer({
         },
       ],
       subtitleOffset: true,
-      // Keep the canvas completely clean while controls are idle. The regular
-      // timeline still appears with the control layer after pointer/touch input.
-      miniProgressBar: false,
+      miniProgressBar: true,
       mutex: true,
       backdrop: true,
       playsInline: true,
@@ -878,24 +947,81 @@ export default function ArtPlayer({
                 html: 'Phụ đề',
                 tooltip: defaultSubtitle ? defaultSubtitle.label : 'Tắt',
                 selector: [
-                  { html: 'Tắt', url: '', default: !defaultSubtitle },
+                  { html: 'Tắt', mode: 'off', default: !defaultSubtitle },
+                  ...(canDual && secondaryTrack && primaryTrack
+                    ? [
+                        {
+                          html: 'Song ngữ (Anh - Việt)',
+                          mode: 'dual',
+                          default: false,
+                        },
+                      ]
+                    : []),
                   ...effectiveSubtitles.map((track) => ({
                     html: track.label,
-                    url: track.url,
+                    mode: track.url,
                     default: defaultSubtitle?.url === track.url,
                   })),
                 ],
-                onSelect: function (item: any) {
+                onSelect: async function (item: any) {
                   const art = playerRef.current;
                   if (!art) return item.html;
-                  if (!item.url) {
+
+                  if (item.mode === 'off' || !item.mode) {
                     art.subtitle.show = false;
                     art.notice.show = 'Đã tắt phụ đề';
+                    if (typeof window !== 'undefined') {
+                      localStorage.setItem('flexphim_sub_mode', 'off');
+                    }
                     return 'Tắt';
                   }
-                  art.subtitle.show = true;
-                  void art.subtitle.switch(item.url, { name: item.html });
-                  art.notice.show = `Phụ đề: ${item.html}`;
+
+                  if (item.mode === 'dual' && secondaryTrack && primaryTrack) {
+                    art.notice.show = 'Đang đồng bộ Song ngữ...';
+                    try {
+                      const dualBlobUrl = await prepareDualTrack(primaryTrack, secondaryTrack);
+                      await art.subtitle.switch(dualBlobUrl, {
+                        name: 'Song ngữ (Anh - Việt)',
+                        type: 'vtt',
+                        escape: false,
+                      });
+                      art.subtitle.show = true;
+                      art.notice.show = 'Đã bật: Song ngữ (Anh - Việt)';
+                      if (typeof window !== 'undefined') {
+                        localStorage.setItem('flexphim_sub_mode', 'dual');
+                      }
+                      return 'Song ngữ (Anh - Việt)';
+                    } catch {
+                      art.notice.show = 'Lỗi nạp phụ đề song ngữ';
+                      return item.html;
+                    }
+                  }
+
+                  const selectedTrack = effectiveSubtitles.find(
+                    (t) => t.url === item.mode || t.label === item.html
+                  );
+                  if (selectedTrack) {
+                    try {
+                      const singleBlobUrl = await prepareSingleTrack(selectedTrack);
+                      await art.subtitle.switch(singleBlobUrl, {
+                        name: selectedTrack.label,
+                        type: 'vtt',
+                        escape: false,
+                      });
+                      art.subtitle.show = true;
+                      art.notice.show = `Phụ đề: ${selectedTrack.label}`;
+                      if (typeof window !== 'undefined') {
+                        localStorage.setItem(
+                          'flexphim_sub_mode',
+                          selectedTrack.language || selectedTrack.label
+                        );
+                      }
+                      return selectedTrack.label;
+                    } catch {
+                      art.notice.show = `Không thể nạp ${selectedTrack.label}`;
+                      return item.html;
+                    }
+                  }
                   return item.html;
                 },
               },
@@ -950,8 +1076,8 @@ export default function ArtPlayer({
           },
         },
       ],
-      // FlexPhim purple is shared by the timeline, scrubber and active controls.
-      theme: '#8b5cf6',
+      // ArtPlayer default theme adheres strictly to official Editor cyan standard
+      theme: '#23ade5',
       lang: 'vi',
       i18n: { vi },
       icons: {
@@ -979,11 +1105,12 @@ export default function ArtPlayer({
               style: {
                 color: '#ffffff',
                 fontSize: '20px',
-                textShadow: '0 1px 2px rgba(0, 0, 0, 0.9), 0 0 4px rgba(0, 0, 0, 0.7)',
+                textShadow: '0 2px 4px rgba(0, 0, 0, 0.95), 0 0 6px rgba(0, 0, 0, 0.85)',
                 fontWeight: '500',
               },
               encoding: 'utf-8',
-              escape: true,
+              escape: false,
+              onVttLoad: (vtt: string) => decryptSubtitle(vtt),
             },
           }
         : {}),
@@ -1424,6 +1551,25 @@ export default function ArtPlayer({
       });
     }
 
+    if (canDual && secondaryTrack && primaryTrack) {
+      const preferredMode =
+        typeof window !== 'undefined' ? localStorage.getItem('flexphim_sub_mode') : null;
+      if (preferredMode === 'dual') {
+        player.on('ready', () => {
+          void prepareDualTrack(primaryTrack, secondaryTrack).then((dualBlobUrl) => {
+            if (playerRef.current) {
+              void playerRef.current.subtitle.switch(dualBlobUrl, {
+                name: 'Song ngữ (Anh - Việt)',
+                type: 'vtt',
+                escape: false,
+              });
+              playerRef.current.subtitle.show = true;
+            }
+          });
+        });
+      }
+    }
+
     // -- Save progress --
     let lastSave = 0;
     player.on('video:timeupdate', () => {
@@ -1452,6 +1598,12 @@ export default function ArtPlayer({
     });
 
     return () => {
+      subtitleBlobsRef.current.forEach((blobUrl) => {
+        try {
+          URL.revokeObjectURL(blobUrl);
+        } catch {}
+      });
+      subtitleBlobsRef.current = [];
       if (playerRef.current) {
         const video = playerRef.current.video;
         if (video && (video as any).hls) {
