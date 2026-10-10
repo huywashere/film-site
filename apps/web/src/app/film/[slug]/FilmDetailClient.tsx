@@ -52,7 +52,7 @@ import { FilmNotFound } from '@/components/film/FilmNotFound';
 import { FilmTitleLogo } from '@/components/film/FilmTitleLogo';
 import { getMovieLogo } from '@/lib/movie-logo-cache';
 import { StarRating } from '@/components/film/StarRating';
-import { resolveImageUrl } from '@/components/film/FilmCard';
+import { resolveImageUrl, type FilmItem } from '@/components/film/FilmCard';
 import { alternateMovieArtworkUrl } from '@/lib/movie-image-url';
 import { useAuthStore } from '@/store/authStore';
 import { useAuthModalStore } from '@/store/authModalStore';
@@ -1250,11 +1250,16 @@ export default function FilmDetailPage({
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [showAllGallery, setShowAllGallery] = useState(false);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const [activeMobileFilm, setActiveMobileFilm] = useState<FilmItem | null>(null);
+  const handleActiveMobileFilmChange = useCallback((filmItem: FilmItem) => {
+    setActiveMobileFilm(filmItem);
+  }, []);
   const [secondaryReadySlug, setSecondaryReadySlug] = useState('');
   const secondaryReady = secondaryReadySlug === slug;
 
   // Always reset scroll position to top when entering or switching movie detail pages
   useEffect(() => {
+    setActiveMobileFilm(null);
     if (typeof window !== 'undefined' && !window.location.hash) {
       window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
       const raf = requestAnimationFrame(() => {
@@ -1857,6 +1862,7 @@ export default function FilmDetailPage({
                     setLightboxIndex(0);
                     setLightboxOpen(true);
                   }}
+                  onActiveFilmChange={handleActiveMobileFilmChange}
                 />
               ) : (
               <div className="hidden sm:block lg:hidden w-40 aspect-[2/3] rounded-2xl overflow-hidden border border-white/15 bg-neutral-900 shadow-2xl shrink-0 relative group mx-auto sm:mx-0">
@@ -1875,128 +1881,169 @@ export default function FilmDetailPage({
               </div>
               )}
 
-              <div className="flex flex-col space-y-2 sm:space-y-3 min-w-0 flex-1 items-center sm:items-start">
-                <FilmTitleLogo
-                  key={`${film.slug}-${bestLogo?.file_path || getMovieLogo(film.slug) || 'text'}`}
-                  path={bestLogo?.file_path || getMovieLogo(film.slug)}
-                  title={film.name}
-                />
+              {(() => {
+                const displayFilm = (isMobileViewport && activeMobileFilm) ? activeMobileFilm : film;
+                const isViewingOriginalFilm = !isMobileViewport || !activeMobileFilm || activeMobileFilm.slug === film.slug;
+                const displayTmdbScore = isViewingOriginalFilm
+                  ? tmdbRatingLabel
+                  : (displayFilm.tmdb?.vote_average
+                      ? Number(displayFilm.tmdb.vote_average).toFixed(1)
+                      : (displayFilm.vote_average ? Number(displayFilm.vote_average).toFixed(1) : null));
+                const displayImdbScore = isViewingOriginalFilm
+                  ? imdbRatingLabel
+                  : (displayFilm.imdb?.vote_average
+                      ? Number(displayFilm.imdb.vote_average).toFixed(1)
+                      : (displayFilm.imdb_rating ? Number(displayFilm.imdb_rating).toFixed(1) : null));
 
-                {film.origin_name && (
-                  <p className="text-xs sm:text-base text-neutral-300 font-medium tracking-wide italic line-clamp-2">
-                    {film.origin_name}
-                  </p>
-                )}
-
-                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 sm:gap-2 text-xs font-bold pt-1">
-                  {film.quality && (
-                    <span
-                      className={cn(
-                        'rounded px-2 py-0.5 text-[10px] sm:text-[11px] font-black uppercase tracking-wide shadow-sm select-none',
-                        film.quality.toUpperCase().includes('4K')
-                          ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-black'
-                          : film.quality.toUpperCase().includes('FHD')
-                            ? 'bg-[#00c5ff] text-black'
-                            : film.quality.toUpperCase().includes('HD')
-                              ? 'bg-[#00b4d8] text-black'
-                              : 'bg-cyan-500 text-black',
-                      )}
-                    >
-                      {film.quality}
-                    </span>
-                  )}
-                  {film.lang && (
-                    <span
-                      className={cn(
-                        'rounded px-2 py-0.5 text-[10px] sm:text-[11px] font-black tracking-tight inline-flex items-center gap-1 shadow-sm select-none',
-                        film.lang.toLowerCase().includes('song ngữ')
-                          ? 'bg-[#c084fc] text-purple-950'
-                          : film.lang.toLowerCase().includes('thuyết minh') ||
-                              film.lang.toLowerCase().includes('lồng tiếng')
-                            ? 'bg-[#fde047] text-amber-950'
-                            : 'bg-[#86efac] text-emerald-950',
-                      )}
-                    >
-                      {film.lang.toLowerCase().includes('song ngữ') ? (
-                        <span className="text-[9px] font-black bg-purple-950/20 px-1 py-0.2 rounded leading-none">
-                          文A
-                        </span>
-                      ) : film.lang.toLowerCase().includes('thuyết minh') ||
-                        film.lang.toLowerCase().includes('lồng tiếng') ? (
-                        <Mic size={11} className="stroke-[2.5]" />
-                      ) : (
-                        <Subtitles size={11} className="stroke-[2.5]" />
-                      )}
-                      <span>{film.lang}</span>
-                    </span>
-                  )}
-                  {film.episode_current &&
-                    film.episode_current !== 'Full' &&
-                    film.episode_current !== 'HD' && (
-                      <span className="bg-[#27272a] text-white border border-white/20 px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-bold shadow-sm select-none">
-                        {film.episode_current}
-                      </span>
+                return (
+                  <div className="flex flex-col space-y-2 sm:space-y-3 min-w-0 flex-1 items-center sm:items-start">
+                    {!isViewingOriginalFilm && (
+                      <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-purple-500/20 to-indigo-500/20 border border-purple-500/30 text-purple-300 text-[11px] font-bold shadow-sm animate-in fade-in duration-200 select-none">
+                        <Sparkles size={12} className="text-purple-400" />
+                        <span>Gợi ý cùng chủ đề</span>
+                      </div>
                     )}
-                  {film.year && (
-                    <span className="bg-white text-neutral-950 font-black px-2 py-0.5 rounded text-[10px] sm:text-[11px] shadow-sm select-none">
-                      {film.year}
-                    </span>
-                  )}
-                  {film.time && (
-                    <span className="bg-white/10 text-neutral-200 border border-white/15 px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-semibold backdrop-blur-sm shadow-sm select-none">
-                      {film.time}
-                    </span>
-                  )}
-                  {tmdbRatingLabel && (
-                    <span
-                      className="inline-flex items-center gap-1.5 rounded bg-[#01b4e4]/15 border border-[#01b4e4]/40 px-2 py-0.5 text-[10px] sm:text-[11px] font-bold text-cyan-300 shadow-sm select-none"
-                      title={
-                        tmdbVoteCount > 0
-                          ? `${tmdbVoteCount.toLocaleString('vi-VN')} ${t('film.votes', 'lượt đánh giá trên TMDB')}`
-                          : t('film.tmdbScore', 'Điểm TMDB')
-                      }
-                    >
-                      <span className="bg-[#01b4e4] text-black font-black px-1 rounded text-[9px] leading-tight">
-                        TMDB
-                      </span>
-                      <span>{tmdbRatingLabel}/10</span>
-                    </span>
-                  )}
-                  {imdbRatingLabel && (
-                    <span
-                      className="inline-flex items-center gap-1.5 rounded bg-[#f5c518]/15 border border-[#f5c518]/40 px-2 py-0.5 text-[10px] sm:text-[11px] font-bold text-amber-300 shadow-sm select-none"
-                      title={
-                        imdbVoteCount > 0
-                          ? `${imdbVoteCount.toLocaleString('vi-VN')} ${t('film.votes', 'lượt đánh giá trên IMDb')}`
-                          : t('film.imdbScore', 'Điểm IMDb')
-                      }
-                    >
-                      <span className="bg-[#f5c518] text-black font-black px-1 rounded text-[9px] leading-tight">
-                        IMDb
-                      </span>
-                      <span>{imdbRatingLabel}/10</span>
-                    </span>
-                  )}
-                </div>
-              </div>
+
+                    <FilmTitleLogo
+                      key={`${displayFilm.slug}-${isViewingOriginalFilm ? (bestLogo?.file_path || getMovieLogo(film.slug)) : 'text'}`}
+                      path={isViewingOriginalFilm ? (bestLogo?.file_path || getMovieLogo(film.slug)) : undefined}
+                      title={displayFilm.name || displayFilm.title || ''}
+                    />
+
+                    {displayFilm.origin_name && (
+                      <p className="text-xs sm:text-base text-neutral-300 font-medium tracking-wide italic line-clamp-2">
+                        {displayFilm.origin_name}
+                      </p>
+                    )}
+
+                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 sm:gap-2 text-xs font-bold pt-1">
+                      {displayFilm.quality && (
+                        <span
+                          className={cn(
+                            'rounded px-2 py-0.5 text-[10px] sm:text-[11px] font-black uppercase tracking-wide shadow-sm select-none',
+                            displayFilm.quality.toUpperCase().includes('4K')
+                              ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-black'
+                              : displayFilm.quality.toUpperCase().includes('FHD')
+                                ? 'bg-[#00c5ff] text-black'
+                                : displayFilm.quality.toUpperCase().includes('HD')
+                                  ? 'bg-[#00b4d8] text-black'
+                                  : 'bg-cyan-500 text-black',
+                          )}
+                        >
+                          {displayFilm.quality}
+                        </span>
+                      )}
+                      {displayFilm.lang && (
+                        <span
+                          className={cn(
+                            'rounded px-2 py-0.5 text-[10px] sm:text-[11px] font-black tracking-tight inline-flex items-center gap-1 shadow-sm select-none',
+                            displayFilm.lang.toLowerCase().includes('song ngữ')
+                              ? 'bg-[#c084fc] text-purple-950'
+                              : displayFilm.lang.toLowerCase().includes('thuyết minh') ||
+                                  displayFilm.lang.toLowerCase().includes('lồng tiếng')
+                                ? 'bg-[#fde047] text-amber-950'
+                                : 'bg-[#86efac] text-emerald-950',
+                          )}
+                        >
+                          {displayFilm.lang.toLowerCase().includes('song ngữ') ? (
+                            <span className="text-[9px] font-black bg-purple-950/20 px-1 py-0.2 rounded leading-none">
+                              文A
+                            </span>
+                          ) : displayFilm.lang.toLowerCase().includes('thuyết minh') ||
+                            displayFilm.lang.toLowerCase().includes('lồng tiếng') ? (
+                            <Mic size={11} className="stroke-[2.5]" />
+                          ) : (
+                            <Subtitles size={11} className="stroke-[2.5]" />
+                          )}
+                          <span>{displayFilm.lang}</span>
+                        </span>
+                      )}
+                      {displayFilm.episode_current &&
+                        displayFilm.episode_current !== 'Full' &&
+                        displayFilm.episode_current !== 'HD' && (
+                          <span className="bg-[#27272a] text-white border border-white/20 px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-bold shadow-sm select-none">
+                            {displayFilm.episode_current}
+                          </span>
+                        )}
+                      {displayFilm.year && (
+                        <span className="bg-white text-neutral-950 font-black px-2 py-0.5 rounded text-[10px] sm:text-[11px] shadow-sm select-none">
+                          {displayFilm.year}
+                        </span>
+                      )}
+                      {displayFilm.time && (
+                        <span className="bg-white/10 text-neutral-200 border border-white/15 px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-semibold backdrop-blur-sm shadow-sm select-none">
+                          {displayFilm.time}
+                        </span>
+                      )}
+                      {displayTmdbScore && (
+                        <span
+                          className="inline-flex items-center gap-1.5 rounded bg-[#01b4e4]/15 border border-[#01b4e4]/40 px-2 py-0.5 text-[10px] sm:text-[11px] font-bold text-cyan-300 shadow-sm select-none"
+                          title="Điểm TMDB"
+                        >
+                          <span className="bg-[#01b4e4] text-black font-black px-1 rounded text-[9px] leading-tight">
+                            TMDB
+                          </span>
+                          <span>{displayTmdbScore}/10</span>
+                        </span>
+                      )}
+                      {displayImdbScore && (
+                        <span
+                          className="inline-flex items-center gap-1.5 rounded bg-[#f5c518]/15 border border-[#f5c518]/40 px-2 py-0.5 text-[10px] sm:text-[11px] font-bold text-amber-300 shadow-sm select-none"
+                          title="Điểm IMDb"
+                        >
+                          <span className="bg-[#f5c518] text-black font-black px-1 rounded text-[9px] leading-tight">
+                            IMDb
+                          </span>
+                          <span>{displayImdbScore}/10</span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
-            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 pt-2 w-full">
-              <Link
-                href={watchLink}
-                className="flex items-center space-x-2 rounded-full bg-white px-7 py-2.5 text-xs font-extrabold text-[#111317] transition-colors hover:bg-neutral-200 active:scale-[0.98] sm:py-3 shadow-lg"
-                onMouseEnter={prefetchWatchData}
-              >
-                <Play size={14} fill="currentColor" />
-                <span>{t('watch.watchFilm', 'Xem phim')}</span>
-              </Link>
+            {(() => {
+              const displayFilm = (isMobileViewport && activeMobileFilm) ? activeMobileFilm : film;
+              const isViewingOriginalFilm = !isMobileViewport || !activeMobileFilm || activeMobileFilm.slug === film.slug;
 
-              <button
-                onClick={() => setShowTrailer(true)}
-                className="bg-[#181b22] hover:bg-[#222731] text-white px-6 py-2.5 sm:py-3 rounded-full font-extrabold tracking-wider uppercase text-xs border border-white/10 hover:border-white/20 transition-all cursor-pointer active:scale-95 shadow-md"
-              >
-                {t('film.trailer', 'Trailer')}
-              </button>
+              if (!isViewingOriginalFilm) {
+                return (
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 pt-2 w-full animate-in fade-in duration-200">
+                    <Link
+                      href={`/film/${displayFilm.slug}`}
+                      className="flex items-center space-x-2 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-400 hover:to-indigo-400 text-white px-7 py-2.5 text-xs font-black shadow-lg shadow-purple-900/40 transition-transform active:scale-95"
+                    >
+                      <Play size={14} fill="currentColor" />
+                      <span>Xem phim này</span>
+                    </Link>
+                    <Link
+                      href={`/watch/${displayFilm.slug}`}
+                      className="bg-[#181b22] hover:bg-[#222731] text-white px-6 py-2.5 rounded-full font-extrabold tracking-wider uppercase text-xs border border-white/10 hover:border-white/20 transition-all cursor-pointer active:scale-95 shadow-md flex items-center gap-1.5"
+                    >
+                      <span>Phát ngay</span>
+                    </Link>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 pt-2 w-full">
+                  <Link
+                    href={watchLink}
+                    className="flex items-center space-x-2 rounded-full bg-white px-7 py-2.5 text-xs font-extrabold text-[#111317] transition-colors hover:bg-neutral-200 active:scale-[0.98] sm:py-3 shadow-lg"
+                    onMouseEnter={prefetchWatchData}
+                  >
+                    <Play size={14} fill="currentColor" />
+                    <span>{t('watch.watchFilm', 'Xem phim')}</span>
+                  </Link>
+
+                  <button
+                    onClick={() => setShowTrailer(true)}
+                    className="bg-[#181b22] hover:bg-[#222731] text-white px-6 py-2.5 sm:py-3 rounded-full font-extrabold tracking-wider uppercase text-xs border border-white/10 hover:border-white/20 transition-all cursor-pointer active:scale-95 shadow-md"
+                  >
+                    {t('film.trailer', 'Trailer')}
+                  </button>
 
               <div className="flex items-center space-x-3 sm:ml-2">
                 <div className="flex flex-col items-center gap-1 group">
@@ -2105,6 +2152,8 @@ export default function FilmDetailPage({
                 </div>
               </div>
             </div>
+          );
+        })()}
 
             {/* ── OMDB Ratings (below action buttons) ── */}
             <AnimatePresence>

@@ -1,12 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { A11y, EffectCoverflow } from 'swiper/modules';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
-import { movieApi } from '@/lib/api';
+import type { Swiper as SwiperCore } from 'swiper';
+import { ChevronLeft, ChevronRight, Play, RotateCcw } from 'lucide-react';
+import { movieApi, kkphimApi } from '@/lib/api';
 import { extractFilmItems } from '@/lib/movie-normalizer';
 import { deduplicateSectionRow } from '@/lib/recommendation-engine';
 import { TmdbArtwork } from '@/components/film/TmdbArtwork';
@@ -21,49 +22,7 @@ interface MobileRelatedCarouselProps {
   currentPosterUrl?: string | null;
   onOpenCurrentPoster?: () => void;
   enabled?: boolean;
-}
-
-const MOBILE_DISCOVERY_FALLBACKS: FilmItem[] = [
-  {
-    slug: 'oppenheimer',
-    name: 'Oppenheimer',
-    origin_name: 'Oppenheimer',
-    type: 'single',
-    year: 2023,
-    poster_url: 'https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg',
-    vote_average: 8.9,
-  },
-  {
-    slug: 'nguoi-ve-tu-coi-chet',
-    name: 'Người Về Từ Cõi Chết',
-    origin_name: 'The Revenant',
-    type: 'single',
-    year: 2015,
-    poster_url: 'https://image.tmdb.org/t/p/w500/ji3ecJphATlVgWNY0B0RVXZizdf.jpg',
-    vote_average: 8,
-  },
-  {
-    slug: 'soi-gia-pho-wall',
-    name: 'Sói Già Phố Wall',
-    origin_name: 'The Wolf of Wall Street',
-    type: 'single',
-    year: 2013,
-    poster_url: 'https://image.tmdb.org/t/p/w500/kW9LmvYHAaS9iA0tHmZVq8hQYoq.jpg',
-    vote_average: 8.2,
-  },
-  {
-    slug: 'chuyen-ngay-xua-o-hollywood',
-    name: 'Chuyện Ngày Xưa Ở Hollywood',
-    origin_name: 'Once Upon a Time in Hollywood',
-    type: 'single',
-    year: 2019,
-    poster_url: 'https://image.tmdb.org/t/p/w500/8j58iEBw9pOXFD2L0nt0ZXeHviB.jpg',
-    vote_average: 7.6,
-  },
-];
-
-function discoveryFallbacks(slug: string) {
-  return MOBILE_DISCOVERY_FALLBACKS.filter((film) => film.slug !== slug);
+  onActiveFilmChange?: (film: FilmItem, isOriginal: boolean) => void;
 }
 
 function hashSeed(value: string) {
@@ -93,7 +52,7 @@ function shuffleWithSeed<T>(items: T[], seed: number) {
 
 function getRecommendationSessionSeed() {
   if (typeof window === 'undefined') return 'netphim-seed';
-  const storageKey = 'netphim-mobile-related-seed-v1';
+  const storageKey = 'netphim-mobile-related-seed-v2';
   try {
     const stored = window.sessionStorage.getItem(storageKey);
     if (stored) return stored;
@@ -117,82 +76,146 @@ function getRating(film: FilmItem) {
   return Number.isFinite(value) && value > 0 ? value.toFixed(1) : null;
 }
 
-function isSeries(film: FilmItem) {
-  const type = String(film.type || '').toLowerCase();
-  return (
-    /series|tv|phim-bo|hoathinh|anime/.test(type) || /tập|episode/i.test(film.episode_current || '')
-  );
-}
-
-function belongsToGenre(film: FilmItem, genreSlug: string) {
-  return film.category?.some((category) => category.slug === genreSlug) ?? false;
-}
-
-async function getCatalogFilms(request: () => Promise<{ data: unknown }>) {
+async function getCatalogFilms(request: () => Promise<any>): Promise<FilmItem[]> {
   try {
     const response = await request();
-    return extractFilmItems(response.data) as FilmItem[];
+    const payload = response?.data !== undefined ? response.data : response;
+    const items = extractFilmItems(payload);
+    return (items || []) as FilmItem[];
   } catch {
     return [] as FilmItem[];
   }
 }
 
-async function loadRelatedFilms(film: FilmItem, slug: string, sessionSeed: string) {
-  const genreSlugs = (film.category || [])
-    .map((category) => category.slug)
-    .filter((genreSlug): genreSlug is string => Boolean(genreSlug));
-  const seed = hashSeed(`${sessionSeed}:${slug}`);
-  const genreSlug = genreSlugs.length ? genreSlugs[seed % genreSlugs.length] : '';
-  
-  let candidates = genreSlug
-    ? await getCatalogFilms(() => movieApi.getByGenre(genreSlug, 1))
-    : [];
+/**
+ * Intelligent recommendation loader:
+ * Guarantees films match the current film's genre, universe, country, and theme.
+ * E.g., Chinese Donghua gets other Chinese Donghua/anime; K-dramas get K-dramas; horror gets horror.
+ */
+async function loadRelatedFilms(film: FilmItem, slug: string, sessionSeed: string): Promise<FilmItem[]> {
+  const categories = (film.category || [])
+    .map((c) => c.slug)
+    .filter((slugItem): slugItem is string => Boolean(slugItem));
+  const countries = (film.country || [])
+    .map((c) => c.slug)
+    .filter((slugItem): slugItem is string => Boolean(slugItem));
 
-  candidates = deduplicateSectionRow(candidates).filter(
-    (item) => item.slug !== slug,
+  const isAnimation =
+    film.type === 'hoathinh' ||
+    film.type === 'anime' ||
+    categories.some((c) => c === 'hoat-hinh' || c === 'anime');
+  const isChinese =
+    countries.includes('trung-quoc') ||
+    (film.country || []).some((c) => /trung quốc|china/i.test(c.name || ''));
+  const isKorean =
+    countries.includes('han-quoc') ||
+    (film.country || []).some((c) => /hàn quốc|korea/i.test(c.name || ''));
+  const isSeries =
+    /series|tv|phim-bo/.test(String(film.type || '').toLowerCase()) ||
+    /tập|episode/i.test(film.episode_current || '');
+
+  const seed = hashSeed(`${sessionSeed}:${slug}`);
+  const requests: Array<() => Promise<any>> = [];
+
+  // 1. Core theme & category requests
+  if (isAnimation) {
+    // Animation / Donghua / Anime: Always query dedicated anime/donghua endpoints
+    requests.push(() => movieApi.getAnime(1));
+    if (isChinese) {
+      requests.push(() => movieApi.getByCountry('trung-quoc', 1));
+    } else {
+      requests.push(() => kkphimApi.getAnime(1));
+    }
+  } else {
+    // Live action: query matching genres & country
+    if (categories.length > 0) {
+      const topGenre = categories[seed % categories.length];
+      requests.push(() => movieApi.getByGenre(topGenre, 1));
+      if (categories.length > 1) {
+        const secondGenre = categories[(seed + 1) % categories.length];
+        requests.push(() => movieApi.getByGenre(secondGenre, 1));
+      }
+    }
+    if (countries.length > 0) {
+      requests.push(() => movieApi.getByCountry(countries[0], 1));
+    } else if (isSeries) {
+      requests.push(() => movieApi.getSeries(1));
+    } else {
+      requests.push(() => movieApi.getSingle(1));
+    }
+  }
+
+  // Execute requests in parallel
+  const settled = await Promise.allSettled(requests.map((r) => getCatalogFilms(r)));
+  let candidatePool: FilmItem[] = [];
+  for (const res of settled) {
+    if (res.status === 'fulfilled' && Array.isArray(res.value)) {
+      candidatePool.push(...res.value);
+    }
+  }
+
+  // Deduplicate and remove the currently viewed film
+  candidatePool = deduplicateSectionRow(candidatePool).filter(
+    (item) => item.slug && item.slug !== slug,
   );
 
-  if (candidates.length === 0) {
-    const sameType = await getCatalogFilms(() =>
-      isSeries(film) ? movieApi.getSeries(1) : movieApi.getSingle(1),
-    );
-    candidates = deduplicateSectionRow([...candidates, ...sameType]).filter(
-      (item) => item.slug !== slug,
+  // If candidate pool is still low, fetch thematic backup pool
+  if (candidatePool.length < 6) {
+    const backupRequest = isAnimation
+      ? () => movieApi.getAnime(1)
+      : isChinese
+        ? () => movieApi.getByCountry('trung-quoc', 1)
+        : isKorean
+          ? () => movieApi.getByCountry('han-quoc', 1)
+          : isSeries
+            ? () => movieApi.getSeries(1)
+            : () => movieApi.getSingle(1);
+
+    const backupFilms = await getCatalogFilms(backupRequest);
+    candidatePool = deduplicateSectionRow([...candidatePool, ...backupFilms]).filter(
+      (item) => item.slug && item.slug !== slug,
     );
   }
 
-  if (candidates.length === 0) return discoveryFallbacks(slug);
-  return shuffleWithSeed(candidates, seed).slice(0, 12);
-}
+  // If still empty, fall back to general latest catalog
+  if (candidatePool.length === 0) {
+    const latestFilms = await getCatalogFilms(() => movieApi.getLatest(1));
+    candidatePool = deduplicateSectionRow(latestFilms).filter(
+      (item) => item.slug && item.slug !== slug,
+    );
+  }
 
-function RecommendationSkeleton({ film, onOpen }: { film: FilmItem; onOpen?: () => void }) {
-  return (
-    <section
-      className="w-screen max-w-none shrink-0 overflow-hidden py-2 sm:hidden"
-      aria-label="Đang tải phim gợi ý"
-    >
-      <div className="flex items-center justify-center gap-2 px-2">
-        <div className="h-60 w-[26vw] max-w-28 -rotate-6 animate-pulse rounded-[20px] border border-white/10 bg-white/[0.05]" />
-        <button
-          type="button"
-          onClick={onOpen}
-          aria-label={`Mở poster phim ${film.name || film.title || ''}`}
-          className="relative aspect-[2/3] w-[58vw] min-w-[196px] max-w-[228px] shrink-0 overflow-hidden rounded-[22px] border border-violet-300/55 bg-[#111318] shadow-[0_24px_70px_rgba(0,0,0,0.68)]"
-        >
-          <TmdbArtwork
-            film={film}
-            kind="poster"
-            alt={film.name || film.title || ''}
-            priority
-            allowTitleLookup
-            className="absolute inset-0 h-full w-full"
-          />
+  // Theme relevance scoring
+  const scored = candidatePool.map((item) => {
+    let score = 0;
+    const itemIsAnim =
+      item.type === 'hoathinh' ||
+      item.type === 'anime' ||
+      (item.category || []).some((c: any) => c.slug === 'hoat-hinh' || c.slug === 'anime');
+    if (isAnimation) {
+      if (itemIsAnim) score += 6;
+      else score -= 4; // Penalize non-animated movies if current is animation
+    } else if (itemIsAnim) {
+      score -= 3;
+    }
 
-        </button>
-        <div className="h-60 w-[26vw] max-w-28 rotate-6 animate-pulse rounded-[20px] border border-white/10 bg-white/[0.05]" />
-      </div>
-    </section>
-  );
+    const itemCountries = (item.country || []).map((c: any) => c.slug || '');
+    if (isChinese && itemCountries.includes('trung-quoc')) score += 4;
+    if (isKorean && itemCountries.includes('han-quoc')) score += 4;
+
+    const itemCats = (item.category || []).map((c: any) => c.slug || '');
+    for (const cat of categories) {
+      if (itemCats.includes(cat)) score += 2;
+    }
+
+    return { item, score };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+
+  // Take the top matched films and gently shuffle top tier with seed
+  const topTier = scored.slice(0, 14).map((s) => s.item);
+  return shuffleWithSeed(topTier, seed).slice(0, 10);
 }
 
 export function MobileRelatedCarousel({
@@ -201,10 +224,12 @@ export function MobileRelatedCarousel({
   currentPosterUrl,
   onOpenCurrentPoster,
   enabled = true,
+  onActiveFilmChange,
 }: MobileRelatedCarouselProps) {
   const [reduceMotion, setReduceMotion] = useState(false);
   const [activeSlideIndex, setActiveSlideIndex] = useState(1);
   const [sessionSeed] = useState(getRecommendationSessionSeed);
+  const swiperRef = useRef<SwiperCore | null>(null);
 
   useEffect(() => {
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -214,28 +239,24 @@ export function MobileRelatedCarousel({
     return () => media.removeEventListener('change', syncMotionPreference);
   }, []);
 
-  useEffect(() => {
-    setActiveSlideIndex(1);
-  }, [slug]);
-
   const genreKey = (currentFilm.category || [])
     .map((category) => category.slug)
     .filter(Boolean)
     .join(',');
+
   const { data: relatedFilms = [] } = useQuery({
     queryKey: [
-      'film-detail-mobile-related-v3',
+      'film-detail-mobile-related-v5',
       slug,
       genreKey,
       currentFilm.type || '',
       sessionSeed,
     ],
     queryFn: () => loadRelatedFilms(currentFilm, slug, sessionSeed),
-    initialData: () => discoveryFallbacks(slug),
     enabled: enabled && Boolean(slug),
     staleTime: 10 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
-    retry: 0,
+    retry: 1,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
@@ -252,71 +273,123 @@ export function MobileRelatedCarousel({
   const films = useMemo(() => {
     if (relatedFilms.length === 0) return [currentCard];
 
-    // Put the current film between two real recommendations so both side cards
-    // are already visible when the carousel first appears.
+    // Put the current film between two relevant recommendations so both side cards
+    // are immediately visible and tilted when the carousel first mounts.
     return [relatedFilms[0], currentCard, ...relatedFilms.slice(1)];
   }, [currentCard, relatedFilms]);
+
+  const originalIndex = useMemo(() => {
+    const idx = films.findIndex((f) => f.slug === slug);
+    return idx >= 0 ? idx : films.length > 1 ? 1 : 0;
+  }, [films, slug]);
+
+  const onActiveFilmChangeRef = useRef(onActiveFilmChange);
+  useEffect(() => {
+    onActiveFilmChangeRef.current = onActiveFilmChange;
+  }, [onActiveFilmChange]);
+
+  const hasInitializedRef = useRef(false);
+
+  // Reset when slug changes
+  useEffect(() => {
+    hasInitializedRef.current = false;
+    setActiveSlideIndex(originalIndex);
+    if (swiperRef.current && !swiperRef.current.destroyed) {
+      swiperRef.current.slideTo(originalIndex, 0);
+    }
+    const initialActive = films[originalIndex] || currentCard;
+    onActiveFilmChangeRef.current?.(initialActive, true);
+  }, [slug, originalIndex, currentCard]);
+
+  // When films load with multiple items, ensure initial slide is aligned
+  useEffect(() => {
+    if (!hasInitializedRef.current && films.length > 1) {
+      hasInitializedRef.current = true;
+      setActiveSlideIndex(originalIndex);
+      if (swiperRef.current && !swiperRef.current.destroyed) {
+        swiperRef.current.slideTo(originalIndex, 0);
+      }
+      const initialActive = films[originalIndex] || currentCard;
+      onActiveFilmChangeRef.current?.(initialActive, true);
+    }
+  }, [films, originalIndex, currentCard]);
+
+  const handleSlideChange = (swiper: SwiperCore) => {
+    const newIdx = swiper.activeIndex;
+    setActiveSlideIndex(newIdx);
+    const active = films[newIdx] || currentCard;
+    const isOriginal = active.slug === slug;
+    onActiveFilmChangeRef.current?.(active, isOriginal);
+  };
 
   if (!enabled) {
     return null;
   }
 
+  const isCurrentActive = activeSlideIndex === originalIndex;
+
   return (
     <section
-      className="w-screen max-w-none shrink-0 overflow-hidden py-2 sm:hidden"
-      aria-label="Poster phim và gợi ý kế bên"
+      className="w-screen max-w-none shrink-0 overflow-hidden py-2 sm:hidden select-none"
+      aria-label="Poster phim và gợi ý cùng chủ đề"
     >
       <Swiper
+        onSwiper={(swiper) => {
+          swiperRef.current = swiper;
+        }}
         modules={[EffectCoverflow, A11y]}
         effect="coverflow"
         centeredSlides
         slidesPerView="auto"
-        initialSlide={films.length > 1 ? 1 : 0}
-        speed={reduceMotion ? 0 : 520}
-        threshold={6}
-        resistanceRatio={0.72}
-        longSwipesRatio={0.18}
-        longSwipesMs={180}
-        preventInteractionOnTransition
+        initialSlide={originalIndex}
+        speed={reduceMotion ? 0 : 420}
+        threshold={8}
+        resistanceRatio={0.75}
+        preventInteractionOnTransition={false}
         grabCursor
         watchSlidesProgress
         loop={false}
+        autoplay={false}
+        allowTouchMove={true}
         lazyPreloadPrevNext={2}
-        onSlideChange={(swiper) => setActiveSlideIndex(swiper.activeIndex)}
+        onSlideChange={handleSlideChange}
         coverflowEffect={{
-          rotate: 7,
-          stretch: -18,
-          depth: 90,
+          rotate: 22, // Tilted 3D perspective angle (đổ nghiêng)
+          stretch: -14, // Tight spacing so side tilted cards are visible
+          depth: 130, // 3D depth perception
           modifier: 1,
-          scale: 0.82,
+          scale: 0.84, // Center card prominent
           slideShadows: false,
         }}
-        className="mobile-related-swiper !overflow-visible px-1"
-        aria-label="Vuốt để xem poster phim gợi ý"
+        className="mobile-related-swiper !overflow-visible px-1 [perspective:1200px]"
+        aria-label="Vuốt để xem poster phim gợi ý cùng chủ đề"
       >
         {films.map((film, index) => {
-          const title = film.name || film.title || 'Phim đề xuất';
+          const title = film.name || film.title || 'Phim gợi ý';
           const rating = getRating(film);
           const isCurrentFilm = film.slug === slug;
-          const isNearCenter = Math.abs(index - activeSlideIndex) <= 1;
+          const isActive = index === activeSlideIndex;
+
           const poster = (
             <>
               <TmdbArtwork
                 film={film}
                 kind="poster"
                 alt={title}
-                priority={Math.abs(index - activeSlideIndex) <= 2}
+                priority={Math.abs(index - activeSlideIndex) <= 1}
                 allowTitleLookup={false}
-                className="absolute inset-0 h-full w-full"
+                className="absolute inset-0 h-full w-full object-cover"
               />
 
               <div className="mobile-related-card-shade pointer-events-none absolute inset-0 bg-black/25" />
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black via-black/45 to-transparent" />
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black via-black/40 to-transparent" />
+
               {!isCurrentFilm && rating && (
                 <span className="absolute left-0 top-0 rounded-br-md bg-[#f5c518] px-2 py-1 text-[10px] font-black text-black shadow-md">
                   IMDb {rating}
                 </span>
               )}
+
               {!isCurrentFilm && (
                 <span className="absolute bottom-3 right-3 flex h-9 w-9 items-center justify-center rounded-full border border-white/35 bg-black/65 text-white shadow-lg backdrop-blur-md">
                   <Play size={14} className="ml-0.5 fill-current" aria-hidden="true" />
@@ -327,8 +400,8 @@ export function MobileRelatedCarousel({
 
           return (
             <SwiperSlide
-              key={`${isCurrentFilm ? 'current' : 'related'}-${film.slug}`}
-              className="mobile-related-slide !w-[58vw] !max-w-[228px] !min-w-[196px] transform-gpu transition-opacity duration-500 ease-out motion-reduce:transition-none [&:not(.swiper-slide-active)]:opacity-80"
+              key={`${isCurrentFilm ? 'current' : 'related'}-${film.slug}-${index}`}
+              className="mobile-related-slide !w-[58vw] !max-w-[228px] !min-w-[196px] transform-gpu transition-all duration-300 ease-out motion-reduce:transition-none [&:not(.swiper-slide-active)]:opacity-75"
             >
               <article>
                 {isCurrentFilm ? (
@@ -337,29 +410,54 @@ export function MobileRelatedCarousel({
                     onClick={onOpenCurrentPoster}
                     aria-label={`Mở poster phim ${title}`}
                     aria-current="true"
-                    className="relative block aspect-[2/3] w-full overflow-hidden rounded-[22px] border border-violet-300/55 bg-[#111318] shadow-[0_24px_70px_rgba(0,0,0,0.68)] outline-none transition-transform duration-300 active:scale-[0.985] focus-visible:ring-2 focus-visible:ring-violet-400"
+                    className={`relative block aspect-[2/3] w-full overflow-hidden rounded-[22px] border ${
+                      isActive ? 'border-purple-400/80 shadow-[0_24px_70px_rgba(168,85,247,0.35)]' : 'border-white/20'
+                    } bg-[#111318] shadow-[0_24px_70px_rgba(0,0,0,0.68)] outline-none transition-transform duration-300 active:scale-[0.985]`}
                   >
                     {poster}
                   </button>
                 ) : (
-                  <Link
-                    href={`/film/${film.slug}`}
-                    aria-label={`Xem thông tin phim ${title}`}
-                    className="relative block aspect-[2/3] overflow-hidden rounded-[22px] border border-white/25 bg-[#111318] shadow-[0_18px_48px_rgba(0,0,0,0.58)] outline-none transition-[border-color,transform] duration-300 active:scale-[0.985] focus-visible:ring-2 focus-visible:ring-violet-400"
+                  <div
+                    onClick={() => {
+                      if (!isActive && swiperRef.current) {
+                        swiperRef.current.slideTo(index);
+                      }
+                    }}
+                    className={`relative block aspect-[2/3] overflow-hidden rounded-[22px] border ${
+                      isActive ? 'border-purple-400/80 shadow-[0_24px_70px_rgba(168,85,247,0.35)]' : 'border-white/20'
+                    } bg-[#111318] shadow-[0_18px_48px_rgba(0,0,0,0.58)] outline-none transition-all duration-300 active:scale-[0.985] cursor-pointer`}
                   >
                     {poster}
-                  </Link>
+                  </div>
                 )}
               </article>
             </SwiperSlide>
           );
         })}
       </Swiper>
+
       {films.length > 1 && (
-        <div className="mt-3 flex items-center justify-center gap-2 text-[11px] font-semibold tracking-wide text-white/55">
-          <ChevronLeft size={14} aria-hidden="true" />
-          <span>Vuốt để khám phá phim khác</span>
-          <ChevronRight size={14} aria-hidden="true" />
+        <div className="mt-3 flex items-center justify-center gap-2 text-[11px] font-semibold tracking-wide">
+          {isCurrentActive ? (
+            <div className="flex items-center gap-1.5 text-white/55">
+              <ChevronLeft size={14} aria-hidden="true" />
+              <span>Vuốt để khám phá phim cùng chủ đề</span>
+              <ChevronRight size={14} aria-hidden="true" />
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                if (swiperRef.current) {
+                  swiperRef.current.slideTo(originalIndex);
+                }
+              }}
+              className="flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-purple-500/20 text-purple-300 hover:text-purple-200 border border-purple-500/35 transition-all text-[11px] font-semibold active:scale-95 cursor-pointer shadow-sm animate-in fade-in zoom-in-95 duration-150"
+            >
+              <RotateCcw size={12} />
+              <span>Quay lại: {currentFilm.name}</span>
+            </button>
+          )}
         </div>
       )}
     </section>
