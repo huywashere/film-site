@@ -612,25 +612,39 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   }
 }
 
-/* Keep breadcrumb, player and action bar on one shared horizontal axis. On
-   short desktop viewports only the height compresses, so the player controls
-   remain above the fold without creating uneven side gutters. */
-@media (min-width: 1280px) {
-  .netphim-watch-player:not(.is-theater) {
-    width: 100%;
-    height: auto;
-    max-height: calc(100svh - 156px);
-    aspect-ratio: 16 / 9;
-    margin-inline: 0;
-  }
+/* Maintain strict 16:9 aspect ratio across ALL screen sizes, window resizing and theater mode */
+.netphim-watch-player {
+  position: relative;
+  width: 100% !important;
+  aspect-ratio: 16 / 9 !important;
+  max-height: calc(100svh - 120px) !important;
+  min-height: 0 !important;
+  height: auto !important;
+  border-radius: 0 !important;
+  margin-inline: 0;
+}
 
-  .netphim-watch-player.is-theater {
-    width: 100% !important;
-    max-width: none !important;
-    height: calc(100svh - 64px) !important;
-    max-height: calc(100svh - 64px) !important;
-    aspect-ratio: auto !important;
-  }
+.netphim-watch-player.is-theater {
+  width: 100% !important;
+  max-width: calc((100svh - 70px) * 16 / 9) !important;
+  aspect-ratio: 16 / 9 !important;
+  max-height: calc(100svh - 70px) !important;
+  min-height: 0 !important;
+  height: auto !important;
+  margin-inline: auto !important;
+}
+
+/* Ensure the video inside always scales proportionally without stretching or cropping */
+.art-video-player .art-video,
+.art-video-player video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+}
+
+.art-video-player[data-aspect-ratio] .art-video,
+.art-video-player[data-aspect-ratio] video {
+  object-fit: fill !important;
 }
 
 /* ── Highlight & Timeline Markers (Intro & Ads - Netflix & YouTube Standard) ── */
@@ -1885,16 +1899,9 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
 
 /* ═══════════════════════════════════════════════════════
    RẠP PHIM (Theater Mode) — Full-Cinema Player
-   Player chiếm toàn bộ chiều cao màn hình trừ header 64px
+   Giữ chuẩn tỉ lệ 16:9 cinematic, không kéo dài dọc
 ═══════════════════════════════════════════════════════ */
-@media (min-width: 640px) {
-  .netphim-watch-player.is-theater {
-    height: calc(100svh - 64px) !important;
-    min-height: 500px !important;
-    max-height: none !important;
-    width: 100% !important;
-    background: #000 !important;
-    box-shadow: 0 25px 80px -10px rgba(0, 0, 0, 0.95) !important;
-  }
+.netphim-watch-player.is-theater {
+  box-shadow: 0 25px 80px -10px rgba(0, 0, 0, 0.95) !important;
 }
 

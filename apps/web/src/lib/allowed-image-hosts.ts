@@ -24,6 +24,8 @@ const ALLOWED_IMAGE_HOSTS = [
   // NguonC
   "images.nguonc.com",
   "phim.nguonc.com",
+  "img.nguonc.com",
+  "*.nguonc.com",
   // VSMOV
   "vsmov.com",
   "*.vsmov.com",

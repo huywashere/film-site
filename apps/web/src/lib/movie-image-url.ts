@@ -42,7 +42,7 @@ export function resolveImageUrl(url?: unknown, fallbackUrl?: unknown): string | 
 
   // DIRECT CDN FAST-PATH OPTIMIZATION:
   const isDirectCdnHost =
-    /^(https?:)?\/\/(img\.phimapi\.com|phimimg\.com|img\.ophim\.live|ophim1\.com|images\.nguonc\.com|image\.tmdb\.org|tmdb\.org)\//i.test(
+    /^(https?:)?\/\/(img\.phimapi\.com|phimimg\.com|img\.ophim\.live|ophim1\.com|images\.nguonc\.com|img\.nguonc\.com|image\.tmdb\.org|tmdb\.org)\//i.test(
       resolved,
     );
   if (isDirectCdnHost) {

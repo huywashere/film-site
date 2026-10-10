@@ -27,6 +27,7 @@ const RELIABLE_DIRECT_IMAGE_HOSTS = new Set([
   "ophim1.com",
   "images.nguonc.com",
   "phim.nguonc.com",
+  "img.nguonc.com",
   "vsmov.com",
   "storage.vsmov.com",
 ]);
@@ -191,6 +192,14 @@ function generateCandidateUrls(rawUrl: string): string[] {
     ],
     "ophim1.com": ["img.ophim.live", "phimimg.com", "img.phimapi.com"],
     "images.nguonc.com": [
+      "img.nguonc.com",
+      "phimimg.com",
+      "img.phimapi.com",
+      "ophim1.com",
+      "img.ophim.live",
+    ],
+    "img.nguonc.com": [
+      "images.nguonc.com",
       "phimimg.com",
       "img.phimapi.com",
       "ophim1.com",

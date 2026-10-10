@@ -299,14 +299,44 @@ function movieNameList(value: unknown): string {
     .join(', ');
 }
 
-function SidebarFilmCard({ film, slug }: { film: any; slug: string }) {
-  const overview = cleanMovieDescription(film?.content || film?.description || film?.overview);
+function SidebarFilmCard({
+  film,
+  slug,
+  tmdbOverview,
+}: {
+  film: any;
+  slug: string;
+  tmdbOverview?: string | null;
+}) {
+  const [isOverviewExpanded, setIsOverviewExpanded] = useState(false);
+  const rawContent = cleanMovieDescription(film?.content || film?.description || film?.overview);
+  const overview = useMemo(() => {
+    const isCleanEmptyOrPlaceholder =
+      !rawContent ||
+      rawContent.length < 35 ||
+      rawContent.toLowerCase().includes('đang cập nhật');
+
+    if (isCleanEmptyOrPlaceholder && tmdbOverview) {
+      return cleanMovieDescription(tmdbOverview);
+    }
+    if (
+      tmdbOverview &&
+      rawContent &&
+      (rawContent.length < 80 || (rawContent.endsWith('...') && tmdbOverview.length > rawContent.length + 40))
+    ) {
+      return cleanMovieDescription(tmdbOverview);
+    }
+    return rawContent || (tmdbOverview ? cleanMovieDescription(tmdbOverview) : '');
+  }, [rawContent, tmdbOverview]);
+
   const runtime = film?.time || (film?.runtime ? `${film.runtime} phút` : '');
   const details = [
     { label: 'Thể loại', value: movieNameList(film?.category || film?.genres) },
     { label: 'Quốc gia', value: movieNameList(film?.country || film?.countries) },
     { label: 'Thời lượng', value: String(runtime).trim() },
   ].filter((item) => item.value);
+
+  const isLongOverview = overview.length > 180;
 
   return (
     <section
@@ -373,19 +403,46 @@ function SidebarFilmCard({ film, slug }: { film: any; slug: string }) {
 
       {(overview || details.length > 0) && (
         <div className="border-t border-white/[0.08] pt-3">
-          <div className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-neutral-300">
-            <Film size={13} className="text-purple-300" aria-hidden="true" />
-            <span>Giới thiệu phim</span>
+          <div className="mb-2 flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.08em] text-neutral-300">
+            <div className="flex items-center gap-1.5">
+              <Film size={13} className="text-purple-300" aria-hidden="true" />
+              <span>Giới thiệu phim</span>
+            </div>
+            {isLongOverview && (
+              <button
+                type="button"
+                onClick={() => setIsOverviewExpanded(!isOverviewExpanded)}
+                className="flex items-center gap-1 text-[10px] font-semibold text-purple-400 hover:text-purple-300 transition-colors cursor-pointer select-none"
+              >
+                <span>{isOverviewExpanded ? 'Thu gọn' : 'Xem thêm'}</span>
+                <ChevronDown
+                  size={12}
+                  className={cn(
+                    'transition-transform duration-200',
+                    isOverviewExpanded && 'rotate-180',
+                  )}
+                />
+              </button>
+            )}
           </div>
           {overview && (
-            <p className="line-clamp-5 text-[11px] leading-[1.65] text-neutral-400">{overview}</p>
+            <div className="relative">
+              <p
+                className={cn(
+                  'text-[11px] leading-[1.65] text-neutral-300 transition-all duration-200',
+                  !isOverviewExpanded && isLongOverview ? 'line-clamp-4' : 'whitespace-pre-line',
+                )}
+              >
+                {overview}
+              </p>
+            </div>
           )}
           {details.length > 0 && (
             <dl className="mt-3 space-y-1.5 text-[10px] leading-4">
               {details.map((item) => (
                 <div key={item.label} className="grid grid-cols-[64px_minmax(0,1fr)] gap-2">
                   <dt className="text-neutral-500">{item.label}</dt>
-                  <dd className="line-clamp-2 text-neutral-300">{item.value}</dd>
+                  <dd className="text-neutral-300 break-words leading-relaxed">{item.value}</dd>
                 </div>
               ))}
             </dl>
@@ -1139,55 +1196,8 @@ function ReportStreamModal({
   );
 }
 
-// ── Recommendation Item Component with Fast Direct CDN & Anti-Flicker ──
+// ── Recommendation Item Component with Bulletproof Artwork & Direct CDN ──
 function RecMovieItem({ item, index = 0 }: { item: any; index?: number }) {
-  const itemPoster = item?.poster_url || item?.thumb_url || '';
-  const itemThumb = item?.thumb_url || item?.poster_url || '';
-  const rawPrimary = resolveImageUrl(itemPoster, itemThumb);
-
-  // Fast direct CDN URLs: prioritize direct CDN edge (20-50ms)
-  const candidateUrls = useMemo(() => {
-    const list: string[] = [];
-    const add = (u?: string | null) => {
-      if (!u) return;
-      const clean = u.trim();
-      if (clean && !list.includes(clean)) list.push(clean);
-    };
-
-    // 1. Direct primary image URL (fastest direct CDN)
-    if (rawPrimary) add(rawPrimary);
-
-    // 2. Alternate path for PhimImg (/uploads/movies/ <-> /upload/vod/)
-    if (rawPrimary && typeof rawPrimary === 'string') {
-      if (rawPrimary.includes('/uploads/movies/')) {
-        add(rawPrimary.replace('/uploads/movies/', '/upload/vod/'));
-      } else if (rawPrimary.includes('/upload/vod/')) {
-        add(rawPrimary.replace('/upload/vod/', '/uploads/movies/'));
-      }
-    }
-
-    // 3. Alternate artwork from item if distinct
-    if (itemThumb && itemThumb !== itemPoster) {
-      const resolvedThumb = resolveImageUrl(itemThumb);
-      if (resolvedThumb) add(resolvedThumb);
-    }
-
-    // 4. Same-origin proxy fallback
-    if (rawPrimary) {
-      add(`/api/image-proxy?url=${encodeURIComponent(rawPrimary)}`);
-    }
-
-    return list;
-  }, [rawPrimary, itemPoster, itemThumb]);
-
-  const [srcIndex, setSrcIndex] = useState(0);
-  const currentSrc = candidateUrls[srcIndex] || candidateUrls[0] || '';
-
-  // Reset fallback index only if movie slug actually changes
-  useEffect(() => {
-    setSrcIndex(0);
-  }, [item?.slug]);
-
   const rating = Number(item?.tmdb?.vote_average || item?.vote_average || item?.rating || 0);
 
   return (
@@ -1195,34 +1205,22 @@ function RecMovieItem({ item, index = 0 }: { item: any; index?: number }) {
       href={`/film/${item.slug}`}
       className="flex gap-3 group p-2 rounded-xl hover:bg-white/[0.04] transition-colors duration-150 cursor-pointer select-none"
     >
-      <div className="relative w-16 h-24 rounded-lg bg-neutral-900/90 flex-shrink-0 overflow-hidden border border-white/[0.08] group-hover:border-white/25 shadow-md">
-        {currentSrc ? (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img
-            src={currentSrc}
-            alt={item.name || 'Phim'}
-            referrerPolicy="strict-origin-when-cross-origin"
-            loading={index < 8 ? 'eager' : 'lazy'}
-            fetchPriority={index < 4 ? 'high' : 'auto'}
-            decoding="async"
-            onError={() => {
-              setSrcIndex((prev) => (prev < candidateUrls.length - 1 ? prev + 1 : prev));
-            }}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-          />
-        ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center p-1 text-center bg-neutral-900 text-neutral-500">
-            <Clapperboard size={18} className="mb-0.5" />
-            <span className="text-[9px] font-bold text-neutral-300 leading-tight line-clamp-2">
-              {item.name}
-            </span>
-          </div>
-        )}
+      <div className="relative w-16 h-24 rounded-lg bg-neutral-900/90 flex-shrink-0 overflow-hidden border border-white/[0.08] group-hover:border-purple-400/30 shadow-md">
+        <TmdbArtwork
+          film={item}
+          kind="poster"
+          priority={index < 4}
+          loadImmediately={index < 8}
+          allowTitleLookup={true}
+          sizes="64px"
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+          alt={item.name || 'Phim'}
+        />
       </div>
 
       <div className="flex-1 min-w-0 py-0.5 flex flex-col justify-between">
         <div className="space-y-0.5">
-          <h4 className="text-xs sm:text-sm font-bold text-white group-hover:text-amber-400 line-clamp-1 transition-colors">
+          <h4 className="text-xs sm:text-sm font-bold text-white group-hover:text-purple-300 line-clamp-1 transition-colors">
             {item.name}
           </h4>
           {item.origin_name && (
@@ -2146,12 +2144,14 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     episodeStillsMap,
     cast: tmdbCast,
     trailer: tmdbTrailer,
+    overview: tmdbOverview,
     creditsLoading,
     videosLoading,
   } = useTmdb({
     film,
     seasonNumber: vidsrcSeason || 1,
     enabled: secondaryDataReady && !!film,
+    fetchDetails: true,
     fetchCredits: watchContentTab === 'cast' || tabsPrefetchReady,
     fetchVideos: watchContentTab === 'trailer' || tabsPrefetchReady,
     fetchSeason: true,
@@ -4286,7 +4286,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
             className={cn(
               'netphim-watch-player bg-black rounded-none overflow-hidden relative shadow-2xl ring-1 ring-white/[0.06] select-none transition-all duration-300 flex items-center justify-center',
               theaterMode
-                ? 'is-theater col-span-full w-full aspect-[16/9] sm:aspect-auto sm:h-[calc(100svh-64px)] min-h-[480px] mx-auto shadow-2xl ring-1 ring-white/10'
+                ? 'is-theater col-span-full w-full aspect-video mx-auto shadow-2xl ring-1 ring-white/10'
                 : 'lg:col-start-1 lg:row-start-2 w-full aspect-video',
               lightOff ? 'relative z-50 ring-1 ring-white/20 shadow-2xl' : '',
             )}
@@ -5569,7 +5569,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
             )}
           >
             {/* Film Info */}
-            <SidebarFilmCard film={film} slug={slug} />
+            <SidebarFilmCard film={film} slug={slug} tmdbOverview={tmdbOverview} />
 
             {/* ── PLAYER QUICK ACTIONS PANEL (TỰ CHUYỂN & BÁO LỖI) ── */}
             <div className="pb-3 border-b border-white/[0.08] select-none">
