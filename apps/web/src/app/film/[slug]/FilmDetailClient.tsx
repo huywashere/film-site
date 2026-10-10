@@ -1356,6 +1356,21 @@ export default function FilmDetailPage({
     initialTmdb,
   });
 
+  const isViewingOriginalFilm =
+    !isMobileViewport || !activeMobileFilm || activeMobileFilm.slug === film?.slug;
+
+  const {
+    bestBackdrop: activeMobileBestBackdrop,
+    bestLogo: activeMobileBestLogo,
+  } = useTmdb({
+    film: !isViewingOriginalFilm && activeMobileFilm ? activeMobileFilm : undefined,
+    enabled: !isViewingOriginalFilm && !!activeMobileFilm,
+    fetchImages: true,
+    fetchCredits: false,
+    fetchVideos: false,
+    fetchDetails: false,
+  });
+
   // Hiển thị nội dung đầy đủ: ưu tiên nội dung đã làm sạch, fallback TMDB nếu thiếu
   const displayOverview = useMemo<string>(() => {
     const isCleanEmptyOrPlaceholder =
@@ -1451,6 +1466,58 @@ export default function FilmDetailPage({
     if (providerBackdropUrl && !list.includes(providerBackdropUrl)) list.push(providerBackdropUrl);
     return list;
   }, [tmdbPosterUrl, providerPosterUrl, providerBackdropUrl]);
+
+  const activeLogoPath = useMemo(() => {
+    if (isViewingOriginalFilm) {
+      return bestLogo?.file_path || getMovieLogo(film?.slug);
+    }
+    return (
+      activeMobileBestLogo?.file_path ||
+      (activeMobileFilm as any)?.artwork?.logo?.w500 ||
+      (activeMobileFilm as any)?.titleLogo ||
+      (activeMobileFilm as any)?.logo_path ||
+      (activeMobileFilm as any)?.tmdb?.logo_path ||
+      getMovieLogo(activeMobileFilm?.slug) ||
+      null
+    );
+  }, [isViewingOriginalFilm, bestLogo, film?.slug, activeMobileBestLogo, activeMobileFilm]);
+
+  const displayBackdropCandidates = useMemo(() => {
+    if (isViewingOriginalFilm || !activeMobileFilm) {
+      return [
+        tmdbBackdropUrl,
+        providerBackdropUrl,
+        tmdbPosterUrl,
+        providerPosterUrl,
+      ].filter(Boolean) as string[];
+    }
+
+    const activeBackdropFromTmdb = activeMobileBestBackdrop?.file_path
+      ? tmdbBackdrop(activeMobileBestBackdrop.file_path, 'w1280')
+      : null;
+    const activeArtworkBackdrop = (activeMobileFilm as any)?.artwork?.backdrop?.w1280 || null;
+    const activeProviderThumb = resolveImageUrl(activeMobileFilm.thumb_url, activeMobileFilm.poster_url);
+    const activeProviderPoster = resolveImageUrl(activeMobileFilm.poster_url, activeMobileFilm.thumb_url);
+
+    const candidates = [
+      activeBackdropFromTmdb,
+      activeArtworkBackdrop,
+      activeProviderThumb,
+      activeProviderPoster,
+      tmdbBackdropUrl,
+      providerBackdropUrl,
+    ].filter(Boolean) as string[];
+
+    return Array.from(new Set(candidates));
+  }, [
+    isViewingOriginalFilm,
+    activeMobileFilm,
+    activeMobileBestBackdrop,
+    tmdbBackdropUrl,
+    providerBackdropUrl,
+    tmdbPosterUrl,
+    providerPosterUrl,
+  ]);
 
   // Bộ sưu tập ảnh liên quan (Backdrops & Posters độ phân giải cao từ TMDB)
   const galleryImages = useMemo(() => {
@@ -1785,18 +1852,14 @@ export default function FilmDetailPage({
       <meta name="twitter:description" content={seoDescription} />
       <meta name="twitter:image" content={posterUrl || backdropUrl || undefined} />
       {/* ── Giant Backdrop Banner (Plex Style Left-to-Right Blended Layout) ── */}
-      {(backdropUrl || posterUrl || providerBackdropUrl || providerPosterUrl) && (
+      {(backdropUrl || posterUrl || providerBackdropUrl || providerPosterUrl || displayBackdropCandidates.length > 0) && (
         <div className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[86vh] min-h-[720px] w-full select-none overflow-hidden md:h-[105vh] md:max-h-[1040px]">
           <ResilientDetailImage
-            candidates={[
-              tmdbBackdropUrl,
-              providerBackdropUrl,
-              tmdbPosterUrl,
-              providerPosterUrl,
-            ]}
-            alt={filmName}
+            key={!isViewingOriginalFilm && activeMobileFilm ? activeMobileFilm.slug : (film?.slug || 'banner')}
+            candidates={displayBackdropCandidates}
+            alt={!isViewingOriginalFilm && activeMobileFilm ? (activeMobileFilm.name || activeMobileFilm.title || filmName) : filmName}
             sizes="100vw"
-            className="scale-[1.03] object-cover object-top opacity-55"
+            className="scale-[1.03] object-cover object-top opacity-55 transition-opacity duration-500"
             priority
           />
           <div className="absolute inset-0 bg-[#0d0f12]/55" />
@@ -1883,7 +1946,6 @@ export default function FilmDetailPage({
 
               {(() => {
                 const displayFilm = (isMobileViewport && activeMobileFilm) ? activeMobileFilm : film;
-                const isViewingOriginalFilm = !isMobileViewport || !activeMobileFilm || activeMobileFilm.slug === film.slug;
                 const displayTmdbScore = isViewingOriginalFilm
                   ? tmdbRatingLabel
                   : (displayFilm.tmdb?.vote_average
@@ -1897,16 +1959,9 @@ export default function FilmDetailPage({
 
                 return (
                   <div className="flex flex-col space-y-2 sm:space-y-3 min-w-0 flex-1 items-center sm:items-start">
-                    {!isViewingOriginalFilm && (
-                      <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-purple-500/20 to-indigo-500/20 border border-purple-500/30 text-purple-300 text-[11px] font-bold shadow-sm animate-in fade-in duration-200 select-none">
-                        <Sparkles size={12} className="text-purple-400" />
-                        <span>Gợi ý cùng chủ đề</span>
-                      </div>
-                    )}
-
                     <FilmTitleLogo
-                      key={`${displayFilm.slug}-${isViewingOriginalFilm ? (bestLogo?.file_path || getMovieLogo(film.slug)) : 'text'}`}
-                      path={isViewingOriginalFilm ? (bestLogo?.file_path || getMovieLogo(film.slug)) : undefined}
+                      key={`${displayFilm.slug}-${activeLogoPath || 'text'}`}
+                      path={activeLogoPath}
                       title={displayFilm.name || displayFilm.title || ''}
                     />
 
@@ -2005,21 +2060,20 @@ export default function FilmDetailPage({
 
             {(() => {
               const displayFilm = (isMobileViewport && activeMobileFilm) ? activeMobileFilm : film;
-              const isViewingOriginalFilm = !isMobileViewport || !activeMobileFilm || activeMobileFilm.slug === film.slug;
 
               if (!isViewingOriginalFilm) {
                 return (
                   <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 pt-2 w-full animate-in fade-in duration-200">
                     <Link
                       href={`/film/${displayFilm.slug}`}
-                      className="flex items-center space-x-2 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-400 hover:to-indigo-400 text-white px-7 py-2.5 text-xs font-black shadow-lg shadow-purple-900/40 transition-transform active:scale-95"
+                      className="flex items-center space-x-2 rounded-full bg-white px-7 py-2.5 text-xs font-extrabold text-[#111317] transition-colors hover:bg-neutral-200 active:scale-[0.98] sm:py-3 shadow-lg"
                     >
                       <Play size={14} fill="currentColor" />
                       <span>Xem phim này</span>
                     </Link>
                     <Link
                       href={`/watch/${displayFilm.slug}`}
-                      className="bg-[#181b22] hover:bg-[#222731] text-white px-6 py-2.5 rounded-full font-extrabold tracking-wider uppercase text-xs border border-white/10 hover:border-white/20 transition-all cursor-pointer active:scale-95 shadow-md flex items-center gap-1.5"
+                      className="bg-[#181b22] hover:bg-[#222731] text-white px-6 py-2.5 rounded-full font-extrabold tracking-wider uppercase text-xs border border-white/10 hover:border-white/20 transition-all cursor-pointer active:scale-95 shadow-md flex items-center gap-1.5 sm:py-3"
                     >
                       <span>Phát ngay</span>
                     </Link>

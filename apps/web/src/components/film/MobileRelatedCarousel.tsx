@@ -385,8 +385,8 @@ export function MobileRelatedCarousel({
               <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black via-black/40 to-transparent" />
 
               {!isCurrentFilm && rating && (
-                <span className="absolute left-0 top-0 rounded-br-md bg-[#f5c518] px-2 py-1 text-[10px] font-black text-black shadow-md">
-                  IMDb {rating}
+                <span className="absolute left-0 top-0 rounded-br-lg bg-black/75 backdrop-blur-md px-2 py-0.5 text-[10px] font-bold text-white/90 border-r border-b border-white/15 shadow-sm">
+                  ★ {rating}
                 </span>
               )}
 
@@ -411,8 +411,8 @@ export function MobileRelatedCarousel({
                     aria-label={`Mở poster phim ${title}`}
                     aria-current="true"
                     className={`relative block aspect-[2/3] w-full overflow-hidden rounded-[22px] border ${
-                      isActive ? 'border-purple-400/80 shadow-[0_24px_70px_rgba(168,85,247,0.35)]' : 'border-white/20'
-                    } bg-[#111318] shadow-[0_24px_70px_rgba(0,0,0,0.68)] outline-none transition-transform duration-300 active:scale-[0.985]`}
+                      isActive ? 'border-white/40 ring-1 ring-white/20' : 'border-white/15'
+                    } bg-[#111318] shadow-[0_24px_70px_rgba(0,0,0,0.85)] outline-none transition-transform duration-300 active:scale-[0.985]`}
                   >
                     {poster}
                   </button>
@@ -424,8 +424,8 @@ export function MobileRelatedCarousel({
                       }
                     }}
                     className={`relative block aspect-[2/3] overflow-hidden rounded-[22px] border ${
-                      isActive ? 'border-purple-400/80 shadow-[0_24px_70px_rgba(168,85,247,0.35)]' : 'border-white/20'
-                    } bg-[#111318] shadow-[0_18px_48px_rgba(0,0,0,0.58)] outline-none transition-all duration-300 active:scale-[0.985] cursor-pointer`}
+                      isActive ? 'border-white/40 ring-1 ring-white/20' : 'border-white/15'
+                    } bg-[#111318] shadow-[0_20px_50px_rgba(0,0,0,0.75)] outline-none transition-all duration-300 active:scale-[0.985] cursor-pointer`}
                   >
                     {poster}
                   </div>
@@ -452,10 +452,10 @@ export function MobileRelatedCarousel({
                   swiperRef.current.slideTo(originalIndex);
                 }
               }}
-              className="flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-purple-500/20 text-purple-300 hover:text-purple-200 border border-purple-500/35 transition-all text-[11px] font-semibold active:scale-95 cursor-pointer shadow-sm animate-in fade-in zoom-in-95 duration-150"
+              className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 hover:bg-white/15 text-white/90 border border-white/15 transition-all text-[11px] font-semibold active:scale-95 cursor-pointer shadow-sm animate-in fade-in duration-150"
             >
               <RotateCcw size={12} />
-              <span>Quay lại: {currentFilm.name}</span>
+              <span>Quay lại</span>
             </button>
           )}
         </div>
