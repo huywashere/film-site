@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Activity, RefreshCw } from 'lucide-react';
+import { Gauge, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface PlayerServerItem {
@@ -136,22 +136,28 @@ export default function PlayerServerHealthPanel({
       onPointerDown={(e) => e.stopPropagation()}
       onMouseDown={(e) => e.stopPropagation()}
       className={cn(
-        'absolute bottom-[52px] right-2 sm:right-10 z-[9999] pointer-events-auto',
-        'w-[310px] sm:w-[340px] max-w-[calc(100vw-16px)]',
-        'rounded-[4px] bg-[#151c24]/95 backdrop-blur-md',
-        'border border-white/10 shadow-[0_4px_24px_rgba(0,0,0,0.6)]',
-        'overflow-hidden select-none py-1',
+        'absolute bottom-[54px] right-2 sm:right-10 z-[9999] pointer-events-auto',
+        'w-[320px] sm:w-[350px] max-w-[calc(100vw-16px)]',
+        'rounded-2xl bg-[#0b0f17]/95 backdrop-blur-2xl',
+        'border border-white/[0.12] shadow-[0_20px_50px_rgba(0,0,0,0.85),0_0_1px_rgba(255,255,255,0.2)]',
+        'overflow-hidden select-none p-1.5',
         'animate-in fade-in zoom-in-95 duration-150',
       )}
       style={{ fontFamily: 'inherit' }}
     >
-      {/* Header matching ArtPlayer sub-panel */}
-      <div className="h-[38px] px-3.5 flex items-center justify-between border-b border-white/[0.08] text-white select-none">
-        <div className="flex items-center gap-2 text-[13px] font-medium tracking-wide">
-          <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-[#23ade5]/10 text-[#23ade5]">
-            <Activity size={14} strokeWidth={1.9} aria-hidden="true" />
+      {/* Header */}
+      <div className="px-3 py-2.5 flex items-center justify-between border-b border-white/[0.08] text-white select-none">
+        <div className="flex items-center gap-2.5 text-[13px] font-medium tracking-wide">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-purple-500/15 text-purple-400 ring-1 ring-purple-500/30">
+            <Gauge size={15} strokeWidth={2} aria-hidden="true" />
           </div>
-          <span className="font-medium text-white/95">Sức khỏe luồng phát</span>
+          <div className="flex flex-col">
+            <div className="flex items-center gap-1.5">
+              <span className="font-semibold text-white/95 text-[13px] leading-tight">Sức khỏe luồng phát</span>
+              <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[9.5px] font-medium bg-purple-500/15 text-purple-300 ring-1 ring-purple-500/25">Live</span>
+            </div>
+            <span className="text-[10.5px] text-white/45 leading-tight mt-0.5">Kiểm tra độ trễ phản hồi máy chủ</span>
+          </div>
         </div>
         <button
           type="button"
@@ -162,9 +168,9 @@ export default function PlayerServerHealthPanel({
           title="Đo lại tốc độ ping"
           aria-label="Đo lại tốc độ"
           className={cn(
-            'w-6 h-6 rounded flex items-center justify-center transition-all cursor-pointer',
+            'w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer',
             'text-white/60 hover:text-white hover:bg-white/10 active:scale-90',
-            isTesting && 'text-[#23ade5]',
+            isTesting && 'text-purple-400 bg-purple-500/15',
           )}
         >
           <RefreshCw
@@ -173,14 +179,14 @@ export default function PlayerServerHealthPanel({
             aria-hidden="true"
             className={cn(
               'transition-transform duration-500',
-              isTesting && 'animate-spin text-[#23ade5]',
+              isTesting && 'animate-spin text-sky-400',
             )}
           />
         </button>
       </div>
 
-      {/* Server list items matching ArtPlayer native setting items */}
-      <div className="py-1 max-h-[280px] overflow-y-auto custom-scrollbar">
+      {/* Server list items */}
+      <div className="py-1 px-0.5 max-h-[290px] overflow-y-auto space-y-1 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.18)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-white/20 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent">
         {servers.map((server) => {
           const isActive = server.index === currentServerIndex;
           const ping = latencies[server.index];
@@ -206,37 +212,50 @@ export default function PlayerServerHealthPanel({
                 }
               }}
               className={cn(
-                'group h-[38px] px-3.5 flex items-center justify-between transition-colors cursor-pointer select-none text-[13px]',
-                'hover:bg-white/10',
+                'group h-[42px] px-3 rounded-xl flex items-center justify-between transition-all cursor-pointer select-none text-[13px]',
+                'hover:bg-white/[0.08]',
                 isActive
-                  ? 'text-[#23ade5] font-medium bg-[#23ade5]/[0.06]'
-                  : 'text-white/90 font-normal',
+                  ? 'text-purple-300 font-medium bg-gradient-to-r from-purple-500/15 to-purple-500/5 ring-1 ring-purple-500/30 shadow-none'
+                  : 'text-white/85 font-normal hover:text-white',
               )}
             >
-              {/* Left: Glowing indicator dot + Server Name */}
-              <div className="flex items-center gap-2 min-w-0 flex-1 pr-2">
+              {/* Left: Indicator dot + Server Name */}
+              <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-2">
                 <span
                   className={cn(
-                    'w-1.5 h-1.5 rounded-full shrink-0 transition-all',
+                    'w-2 h-2 rounded-full shrink-0 transition-all',
                     isActive
-                      ? 'bg-[#23ade5] shadow-[0_0_8px_#23ade5]'
-                      : 'bg-white/20 group-hover:bg-white/50',
+                      ? 'bg-purple-400'
+                      : 'bg-white/25 group-hover:bg-white/50',
                   )}
                 />
                 <span className="truncate">{server.name}</span>
                 {server.episodesCount > 1 && (
-                  <span className="text-[11px] text-[#8c979e] shrink-0 font-normal">
+                  <span className="text-[11px] text-white/40 shrink-0 font-normal">
                     ({server.episodesCount} tập)
                   </span>
                 )}
               </div>
 
-              {/* Right: 3-bar signal meter + Latency + State Icon */}
+              {/* Right: Latency & State Icon */}
               <div className="flex items-center gap-2.5 shrink-0">
                 {isTesting && ping === undefined ? (
-                  <span className="inline-block w-3 h-3 border-2 border-[#23ade5] border-t-transparent rounded-full animate-spin" />
+                  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/[0.06] text-white/45 text-[11px] font-mono">
+                    <span className="inline-block w-2.5 h-2.5 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
+                    <span>đo...</span>
+                  </div>
                 ) : ping !== undefined ? (
-                  <div className="flex items-center gap-1.5" title={`Tốc độ phản hồi: ${ping}ms`}>
+                  <div
+                    className={cn(
+                      'flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11.5px] font-mono font-medium tracking-tight',
+                      isFast
+                        ? 'bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/25'
+                        : isMedium
+                        ? 'bg-amber-500/15 text-amber-400 ring-1 ring-amber-500/25'
+                        : 'bg-rose-500/15 text-rose-400 ring-1 ring-rose-500/25',
+                    )}
+                    title={`Tốc độ phản hồi: ${ping}ms`}
+                  >
                     {/* 3-bar cellular/wifi signal strength indicator */}
                     <svg
                       width="12"
@@ -273,32 +292,26 @@ export default function PlayerServerHealthPanel({
                         opacity={isFast ? 1 : 0.25}
                       />
                     </svg>
-                    <span
-                      className={cn(
-                        'text-[11.5px] font-medium tracking-tight font-mono',
-                        isFast ? 'text-emerald-400' : isMedium ? 'text-amber-400' : 'text-rose-400',
-                      )}
-                    >
-                      {ping}ms
-                    </span>
+                    <span>{ping}ms</span>
                   </div>
                 ) : null}
 
                 {/* State Icon: Crisp checkmark vs sleek chevron */}
                 {isActive ? (
-                  <svg
-                    width="15"
-                    height="15"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#23ade5"
-                    strokeWidth="2.4"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="shrink-0"
-                  >
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
+                  <div className="w-5 h-5 rounded-full bg-purple-500/25 flex items-center justify-center shrink-0 text-purple-400">
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  </div>
                 ) : (
                   <svg
                     width="14"
@@ -309,7 +322,7 @@ export default function PlayerServerHealthPanel({
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    className="shrink-0 text-white/30 group-hover:text-white/80 group-hover:translate-x-0.5 transition-all"
+                    className="shrink-0 text-white/20 group-hover:text-white/80 group-hover:translate-x-0.5 transition-all"
                   >
                     <polyline points="9 18 15 12 9 6" />
                   </svg>

@@ -20,10 +20,10 @@ test('player no longer renders skip intro controls', () => {
   assert.doesNotMatch(artPlayer, /netphim-skip-intro|Bỏ qua giới thiệu|Tự động bỏ qua mở đầu/);
 });
 
-test('stream health control uses an activity icon and explicit label', () => {
-  assert.match(artPlayer, /createLucideElement\(activityIconNode/);
+test('stream health control uses a stream health icon and explicit label', () => {
+  assert.match(artPlayer, /createLucideElement\((?:gaugeIconNode|activityIconNode)/);
   assert.match(artPlayer, /tooltip: 'Đo sức khỏe luồng'/);
-  assert.match(healthPanel, /<Activity[\s\S]*Sức khỏe luồng phát/);
+  assert.match(healthPanel, /<(?:Gauge|Activity)[\s\S]*Sức khỏe luồng phát/);
 });
 
 test('watch player hydrates eagerly and shows loading feedback before HLS mounts', () => {

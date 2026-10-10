@@ -4072,12 +4072,12 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                 className={cn(
                   'flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all font-medium text-xs cursor-pointer select-none border',
                   theaterMode
-                    ? 'bg-sky-500/20 text-sky-300 border-sky-400/40 font-bold shadow-[0_0_12px_rgba(14,165,233,0.3)]'
+                    ? 'bg-purple-500/15 text-purple-300 border-purple-500/30 font-semibold'
                     : 'bg-white/[0.04] hover:bg-white/[0.08] text-neutral-400 hover:text-white border-white/[0.06]',
                 )}
                 title="Rạp phim: Mở rộng toàn màn hình (Phím T)"
               >
-                <Tv size={13} className={theaterMode ? 'text-sky-300' : 'text-neutral-400'} />
+                <Tv size={13} className={theaterMode ? 'text-purple-300' : 'text-neutral-400'} />
                 <span className="hidden sm:inline">Rạp phim</span>
               </button>
 

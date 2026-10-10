@@ -3,12 +3,12 @@ import { useEffect, useRef, useState } from 'react';
 import Artplayer from 'artplayer';
 import vi from 'artplayer/i18n/vi';
 import Hls from 'hls.js';
-import { Activity as activityIconNode, createElement as createLucideElement } from 'lucide';
+import { Gauge as gaugeIconNode, createElement as createLucideElement } from 'lucide';
 import { useSettingsStore } from '@/store/settingsStore';
 import { detectExplicitHlsAdRanges, inspectHlsAdRanges } from '@/lib/hls-ad-filter';
 import { isTerminalHlsHttpStatus, selectInitialHlsTransport } from '@/lib/player-source-routing';
 import {
-  ARTPLAYER_EDITOR_LOADING_GIF,
+  ARTPLAYER_LOADING_SVG,
   ARTPLAYER_PLAY_SVG,
   ARTPLAYER_PAUSE_SVG,
   ARTPLAYER_STATE_TV_SVG,
@@ -16,17 +16,16 @@ import {
   ARTPLAYER_SEEK_FORWARD_10_SVG,
   ARTPLAYER_VOLUME_SVG,
   ARTPLAYER_VOLUME_CLOSE_SVG,
-  ARTPLAYER_SCREENSHOT_SVG,
   ARTPLAYER_SETTING_WITH_BADGE_HTML,
   ARTPLAYER_PIP_SVG,
   ARTPLAYER_FULLSCREEN_ON_SVG,
   ARTPLAYER_FULLSCREEN_OFF_SVG,
-  ARTPLAYER_NEXT_EPISODE_SVG,
   ARTPLAYER_INDICATOR_SVG,
+  ARTPLAYER_AMBIENT_ON_SVG,
+  ARTPLAYER_AMBIENT_OFF_SVG,
 } from './artplayer-editor-assets';
 import { attachNightModeAudio, isNightModeEnabled, setNightMode } from '@/lib/audio-effects';
 import { setupScrubberPreview } from './scrubber-preview';
-import { setupMobileCenterControls } from './mobile-center-controls';
 import PlayerServerHealthPanel, { type PlayerServerItem } from './PlayerServerHealthPanel';
 import {
   decryptSubtitle,
@@ -75,6 +74,8 @@ export interface ArtPlayerProps {
   }) => void;
   isTheaterMode?: boolean;
   onTheaterModeToggle?: (active: boolean) => void;
+  ambientGlow?: boolean;
+  onAmbientGlowToggle?: (active: boolean) => void;
   // Skip intro/outro timestamps (giây)
   skipIntroStart?: number;
   skipIntroEnd?: number;
@@ -123,6 +124,8 @@ export default function ArtPlayer({
   onSwitchServer,
   isTheaterMode = false,
   onTheaterModeToggle,
+  ambientGlow = true,
+  onAmbientGlowToggle,
 }: ArtPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<Artplayer | null>(null);
@@ -130,6 +133,10 @@ export default function ArtPlayer({
   isTheaterModeRef.current = isTheaterMode;
   const onTheaterModeToggleRef = useRef(onTheaterModeToggle);
   onTheaterModeToggleRef.current = onTheaterModeToggle;
+  const ambientGlowRef = useRef(ambientGlow);
+  ambientGlowRef.current = ambientGlow;
+  const onAmbientGlowToggleRef = useRef(onAmbientGlowToggle);
+  onAmbientGlowToggleRef.current = onAmbientGlowToggle;
   const [isServerPanelOpen, setIsServerPanelOpen] = useState(false);
   const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
   const toggleServerPanelRef = useRef<() => void>(() => {});
@@ -332,6 +339,21 @@ export default function ArtPlayer({
       startupReadyHandler = clearStartupTimer;
       video.addEventListener('loadedmetadata', startupReadyHandler);
       video.addEventListener('canplay', startupReadyHandler);
+      video.addEventListener('canplay', () => {
+        if (playerRef.current?.loading) {
+          playerRef.current.loading.show = false;
+        }
+      });
+      video.addEventListener('playing', () => {
+        if (playerRef.current?.loading) {
+          playerRef.current.loading.show = false;
+        }
+      });
+      video.addEventListener('waiting', () => {
+        if (playerRef.current?.loading) {
+          playerRef.current.loading.show = true;
+        }
+      });
       video.addEventListener('canplay', () => attachNightModeAudio(video), { once: true });
 
       if (Hls.isSupported()) {
@@ -508,7 +530,7 @@ export default function ArtPlayer({
         hls.on(Hls.Events.MANIFEST_PARSED, (_e, data) => {
           const levels = data.levels ?? [];
 
-          if (playerRef.current?.loading) {
+          if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && playerRef.current?.loading) {
             playerRef.current.loading.show = false;
           }
           if (playerRef.current?.mask) {
@@ -813,10 +835,10 @@ export default function ArtPlayer({
       return blobUrl;
     };
 
-    const serverHealthIconMarkup = createLucideElement(activityIconNode, {
+    const serverHealthIconMarkup = createLucideElement(gaugeIconNode, {
       width: 22,
       height: 22,
-      'stroke-width': 1.9,
+      'stroke-width': 2,
       'aria-hidden': 'true',
     }).outerHTML;
 
@@ -826,9 +848,15 @@ export default function ArtPlayer({
       type: isHls ? 'm3u8' : 'auto',
       customType: {
         m3u8: function (video: HTMLVideoElement, streamUrl: string) {
+          if (playerRef.current?.loading) {
+            playerRef.current.loading.show = true;
+          }
           attachHls(video, streamUrl, hlsTransport.fallback);
         },
         hls: function (video: HTMLVideoElement, streamUrl: string) {
+          if (playerRef.current?.loading) {
+            playerRef.current.loading.show = true;
+          }
           attachHls(video, streamUrl, hlsTransport.fallback);
         },
       },
@@ -852,9 +880,9 @@ export default function ArtPlayer({
       aspectRatio: true,
       fullscreen: true,
       fullscreenWeb: false,
-      theme: '#23ade5',
+      theme: '#a855f7',
       icons: {
-        loading: `<img class="art-loading-mascot" src="${ARTPLAYER_EDITOR_LOADING_GIF}" style="width: 76px; height: 76px; object-fit: contain; filter: drop-shadow(0 4px 14px rgba(0,0,0,0.5));" alt="Đang tải..." />`,
+        loading: ARTPLAYER_LOADING_SVG,
         state: ARTPLAYER_STATE_TV_SVG,
         play: ARTPLAYER_PLAY_SVG,
         pause: ARTPLAYER_PAUSE_SVG,
@@ -935,38 +963,6 @@ export default function ArtPlayer({
             ]
           : []),
         {
-          name: 'screenshot',
-          position: 'right',
-          index: 20,
-          html: `<span class="art-icon" style="display:inline-flex;align-items:center;justify-content:center;">${ARTPLAYER_SCREENSHOT_SVG}</span>`,
-          tooltip: 'Chụp ảnh màn hình',
-          click: function () {
-            if (playerRef.current) {
-              try {
-                playerRef.current.screenshot();
-              } catch {
-                playerRef.current.notice.show = 'Không thể chụp ảnh';
-              }
-            }
-          },
-        },
-        {
-          name: 'next-episode',
-          position: 'right',
-          index: 25,
-          html: `<span class="art-icon" style="display:inline-flex;align-items:center;justify-content:center;cursor:pointer;">${ARTPLAYER_NEXT_EPISODE_SVG}</span>`,
-          tooltip: 'Tập tiếp theo',
-          click: function () {
-            if (onNextEpisodeRef.current) {
-              onNextEpisodeRef.current();
-            } else if (onEndedRef.current) {
-              onEndedRef.current();
-            } else if (playerRef.current) {
-              playerRef.current.notice.show = 'Đây là tập cuối!';
-            }
-          },
-        },
-        {
           name: 'pip',
           position: 'right',
           index: 40,
@@ -989,6 +985,28 @@ export default function ArtPlayer({
             }
           },
         },
+        ...(onAmbientGlowToggle
+          ? [
+              {
+                name: 'ambient-glow',
+                position: 'right',
+                index: 38,
+                html: `<span class="art-icon netphim-ambient-btn ${ambientGlow ? 'is-active text-[#c084fc]' : 'text-white/60'}" style="display:inline-flex;align-items:center;justify-content:center;cursor:pointer;">${ambientGlow ? ARTPLAYER_AMBIENT_ON_SVG : ARTPLAYER_AMBIENT_OFF_SVG}</span>`,
+                tooltip: ambientGlow ? 'Tắt ánh sáng phòng chiếu (Ambilight)' : 'Bật ánh sáng phòng chiếu (Ambilight)',
+                click: function () {
+                  if (onAmbientGlowToggleRef.current) {
+                    const next = !ambientGlowRef.current;
+                    onAmbientGlowToggleRef.current(next);
+                    if (playerRef.current) {
+                      playerRef.current.notice.show = next
+                        ? 'Đã bật ánh sáng phòng chiếu (Ambilight)'
+                        : 'Đã tắt ánh sáng phòng chiếu';
+                    }
+                  }
+                },
+              },
+            ]
+          : []),
       ],
       subtitleOffset: true,
       miniProgressBar: true,
@@ -1133,17 +1151,8 @@ export default function ArtPlayer({
           },
         },
       ],
-      // ArtPlayer default theme adheres strictly to official Editor cyan standard
-      theme: '#23ade5',
       lang: 'vi',
       i18n: { vi },
-      icons: {
-        loading: `<img src="${ARTPLAYER_EDITOR_LOADING_GIF}" alt="" aria-hidden="true">`,
-        state:
-          '<img width="150" height="150" src="/artplayer/state.svg" alt="" aria-hidden="true">',
-        indicator:
-          '<img width="16" height="16" src="/artplayer/indicator.svg" alt="" aria-hidden="true">',
-      },
       moreVideoAttr: {
         playsInline: 'true',
         'webkit-playsinline': 'true',
@@ -1174,6 +1183,33 @@ export default function ArtPlayer({
     } as unknown as ConstructorParameters<typeof Artplayer>[0]);
 
     playerRef.current = player;
+
+    // Filter out redundant play/pause notice text (keeps custom notices like skip intro, resume playback, etc.)
+    try {
+      const proto = Object.getPrototypeOf(player.notice);
+      const originalNoticeShow = Object.getOwnPropertyDescriptor(proto, 'show');
+      if (originalNoticeShow?.set) {
+        Object.defineProperty(player.notice, 'show', {
+          set(msg: string) {
+            if (
+              msg === 'Tạm dừng' ||
+              msg === 'Phát' ||
+              msg === 'Pause' ||
+              msg === 'Play'
+            ) {
+              return;
+            }
+            originalNoticeShow.set!.call(this, msg);
+          },
+          get() {
+            return originalNoticeShow.get ? originalNoticeShow.get.call(this) : '';
+          },
+          configurable: true,
+        });
+      }
+    } catch {
+      // safe fallback
+    }
 
     let lastStablePlaybackTime = 0;
     let seekOriginTime: number | null = null;
@@ -1335,10 +1371,6 @@ export default function ArtPlayer({
       thumbnailVttUrl,
     });
 
-    const teardownMobileCenterControls = setupMobileCenterControls({
-      player,
-      triggerSeekRipple,
-    });
 
     try {
       if ((player as any).hotkey) {
@@ -1371,6 +1403,7 @@ export default function ArtPlayer({
     let touchStartX = 0;
     let touchStartY = 0;
     let touchStartTime = 0;
+    let singleTapTimer: ReturnType<typeof setTimeout> | null = null;
 
     const isInteractiveControl = (target: EventTarget | null) => {
       if (!(target instanceof HTMLElement)) return false;
@@ -1409,6 +1442,10 @@ export default function ArtPlayer({
       if (!rect) return;
 
       if (timeSinceLastTap < 350 && tapDistance < 80) {
+        if (singleTapTimer) {
+          clearTimeout(singleTapTimer);
+          singleTapTimer = null;
+        }
         lastTapTime = 0;
         const x = touch.clientX - rect.left;
         triggerSeekRipple(x < rect.width / 2);
@@ -1418,6 +1455,18 @@ export default function ArtPlayer({
         lastTapTime = now;
         lastTapX = touch.clientX;
         lastTapY = touch.clientY;
+
+        if (singleTapTimer) {
+          clearTimeout(singleTapTimer);
+        }
+
+        singleTapTimer = setTimeout(() => {
+          singleTapTimer = null;
+          const controls = (player as any).control;
+          if (controls) {
+            controls.show = !controls.show;
+          }
+        }, 280);
       }
     };
 
@@ -1517,8 +1566,14 @@ export default function ArtPlayer({
         attachNightModeAudio(player.video);
       }
       onReadyRef.current?.(player);
-      if (player.loading) {
-        player.loading.show = false;
+      if (player.video && player.video.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) {
+        if (player.loading) {
+          player.loading.show = false;
+        }
+      } else {
+        if (player.loading) {
+          player.loading.show = true;
+        }
       }
       if (player.mask) {
         player.mask.show = true;
@@ -1689,12 +1744,15 @@ export default function ArtPlayer({
       }
       seekOverlay.remove();
       clearTimeout(seekTimer);
+      if (singleTapTimer) {
+        clearTimeout(singleTapTimer);
+        singleTapTimer = null;
+      }
       triggerSeekRippleRef.current = null;
       if (playerRef.current) {
         (playerRef.current as any).triggerSeekRipple = null;
       }
       teardownScrubberPreview();
-      teardownMobileCenterControls();
       resizeObserver?.disconnect();
       setPortalContainer(null);
     };
@@ -1706,7 +1764,28 @@ export default function ArtPlayer({
     if (isServerPanelOpen && playerRef.current) {
       playerRef.current.controls.show = true;
     }
+    const btn = playerRef.current?.template?.$player?.querySelector('.netphim-server-health-btn');
+    if (btn) {
+      btn.classList.toggle('is-active', isServerPanelOpen);
+    }
   }, [isServerPanelOpen]);
+
+  useEffect(() => {
+    isTheaterModeRef.current = isTheaterMode;
+  }, [isTheaterMode]);
+
+  useEffect(() => {
+    ambientGlowRef.current = ambientGlow;
+    if (playerRef.current && (playerRef.current.controls as any)?.['ambient-glow']) {
+      try {
+        playerRef.current.controls.update({
+          name: 'ambient-glow',
+          html: `<span class="art-icon netphim-ambient-btn ${ambientGlow ? 'is-active text-[#c084fc]' : 'text-white/60'}" style="display:inline-flex;align-items:center;justify-content:center;cursor:pointer;">${ambientGlow ? ARTPLAYER_AMBIENT_ON_SVG : ARTPLAYER_AMBIENT_OFF_SVG}</span>`,
+          tooltip: ambientGlow ? 'Tắt ánh sáng phòng chiếu (Ambilight)' : 'Bật ánh sáng phòng chiếu (Ambilight)',
+        });
+      } catch {}
+    }
+  }, [ambientGlow]);
 
   return (
     <div ref={containerRef} className="absolute inset-0 h-full min-h-0 w-full overflow-hidden">

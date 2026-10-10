@@ -30,6 +30,8 @@ type HlsVideoPlayerProps = {
   onError: (error: HlsPlaybackError) => void;
   isTheaterMode?: boolean;
   onTheaterModeToggle?: (active: boolean) => void;
+  ambientGlow?: boolean;
+  onAmbientGlowToggle?: (active: boolean) => void;
   skipIntroStart?: number;
   skipIntroEnd?: number;
   skipOutroStart?: number;
@@ -66,6 +68,8 @@ export const HlsVideoPlayer = memo(function HlsVideoPlayer({
   onError,
   isTheaterMode = false,
   onTheaterModeToggle,
+  ambientGlow = true,
+  onAmbientGlowToggle,
   skipIntroStart,
   skipIntroEnd,
   skipOutroStart,
@@ -102,6 +106,8 @@ export const HlsVideoPlayer = memo(function HlsVideoPlayer({
         onSwitchServer={onSwitchServer}
         isTheaterMode={isTheaterMode}
         onTheaterModeToggle={onTheaterModeToggle}
+        ambientGlow={ambientGlow}
+        onAmbientGlowToggle={onAmbientGlowToggle}
         onReady={(player) => {
           onReady?.(player);
         }}

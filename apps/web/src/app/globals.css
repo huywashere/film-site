@@ -618,9 +618,9 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
 @media (min-width: 1280px) {
   .netphim-watch-player:not(.is-theater) {
     width: 100%;
-    height: min(calc(100svh - 156px), calc(56.25vw - 225px));
-    max-height: none;
-    aspect-ratio: auto;
+    height: auto;
+    max-height: calc(100svh - 156px);
+    aspect-ratio: 16 / 9;
     margin-inline: 0;
   }
 
@@ -670,9 +670,9 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   transform: translateX(-50%);
 }
 
-/* Intro uses crisp Cyan/Sky #23ade5 point marker */
+/* Intro uses clean solid purple #a855f7 point marker */
 .art-video-player .netphim-timeline-marker-intro {
-  background: #23ade5;
+  background: #a855f7;
   box-shadow: none;
 }
 
@@ -809,8 +809,96 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
 
 /* Ensure stroke-based player control SVGs preserve fill:none */
 .art-video-player .art-control svg path[fill='none'],
-.art-video-player .art-control svg rect[fill='none'] {
+.art-video-player .art-control svg rect[fill='none'],
+.art-video-player .art-control svg circle[fill='none'] {
   fill: none !important;
+}
+
+/* Ensure setting gear is crisp and clear */
+.art-video-player .art-control-setting svg {
+  display: block;
+  overflow: visible;
+}
+
+/* Server Health Control Button & Icon (Pure purple, no glow) */
+.netphim-server-health-btn {
+  color: rgba(255, 255, 255, 0.85);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.netphim-server-health-btn:hover,
+.netphim-server-health-btn.is-active {
+  color: #a855f7 !important;
+  transform: scale(1.08);
+}
+
+.netphim-server-health-btn svg {
+  display: block;
+  stroke: currentColor !important;
+  fill: none !important;
+  filter: none !important;
+  box-shadow: none !important;
+}
+
+.netphim-server-health-btn svg path,
+.netphim-server-health-btn svg polyline {
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-width: 2 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+}
+
+/* ArtPlayer Notice & Resume Playback Notification (Pure purple, no glow) */
+.art-video-player .art-notice {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  padding: 12px 16px !important;
+  pointer-events: none !important;
+}
+
+.art-video-player .art-notice .art-notice-inner {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 6px 14px !important;
+  border-radius: 9999px !important;
+  background: rgba(18, 19, 26, 0.92) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: blur(8px) !important;
+  color: #f1f5f9 !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  pointer-events: auto !important;
+}
+
+.art-video-player .art-notice a,
+.art-video-player .art-notice-inner a {
+  color: #a855f7 !important;
+  text-decoration: none !important;
+  font-weight: 600 !important;
+  text-shadow: none !important;
+}
+
+.art-video-player .art-notice a:hover,
+.art-video-player .art-notice-inner a:hover {
+  color: #c084fc !important;
+  text-decoration: underline !important;
+}
+
+.art-video-player .art-notice-close,
+.art-video-player .art-notice-close svg {
+  color: rgba(255, 255, 255, 0.6) !important;
+  fill: currentColor !important;
+}
+
+.art-video-player .art-notice-close:hover,
+.art-video-player .art-notice-close:hover svg {
+  color: #a855f7 !important;
+  fill: #a855f7 !important;
 }
 
 /* Universal display rule: Ensure ALL controls remain visible on all screen sizes & mobile */
@@ -824,7 +912,6 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
 .art-video-player .art-control-playAndPause,
 .art-video-player .art-control-backward-10,
 .art-video-player .art-control-forward-10,
-.art-video-player .art-control-next-episode,
 .art-video-player .art-control-volume,
 .art-video-player .art-control-time,
 .art-video-player .art-control-subtitle-toggle,
@@ -838,31 +925,22 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
 .art-video-player.art-mobile .art-control-playAndPause,
 .art-video-player.art-mobile .art-control-backward-10,
 .art-video-player.art-mobile .art-control-forward-10,
-.art-video-player.art-mobile .art-control-next-episode,
 .art-video-player.art-mobile .art-control-volume,
 .art-video-player.art-mobile .art-control-time,
 .art-video-player.art-mobile .art-control-subtitle-toggle {
   display: inline-flex !important;
 }
 
+/* Hide auto quality badge completely */
 .art-video-player .art-quality-badge {
-  font-family: inherit;
-  font-feature-settings: 'tnum';
-  user-select: none;
-  pointer-events: none;
+  display: none !important;
 }
 
 .art-video-player .art-loading-mascot {
   width: 76px;
   height: 76px;
   object-fit: contain;
-  filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.5));
-  animation: artLoadingBlink 2.4s ease-in-out infinite alternate;
-}
-
-@keyframes artLoadingBlink {
-  0% { transform: scale(0.96); opacity: 0.92; }
-  100% { transform: scale(1.03); opacity: 1; }
+  display: block;
 }
 
 .art-video-player .art-progress-indicator svg {
@@ -1109,7 +1187,7 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
 
 .art-video-player .netphim-volume-hud-fill {
   height: 100%;
-  background: #23ade5;
+  background: #a855f7;
   border-radius: 9999px;
   transition: width 100ms ease;
 }
@@ -1561,18 +1639,28 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   color: #ffffff !important;
 }
 
-.art-video-player .art-progress-played {
-  background: var(--art-theme, #8b5cf6) !important;
+.art-video-player .art-progress-played,
+.art-video-player .art-progress-mini .art-progress-played,
+.art-video-player .art-progress-bottom .art-progress-played {
+  background: #a855f7 !important;
   box-shadow: none !important;
 }
 
 .art-video-player .art-progress-indicator {
-  background: var(--art-theme, #8b5cf6) !important;
+  background: #a855f7 !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+.art-video-player .art-progress-hover {
+  background: rgba(168, 85, 247, 0.35) !important;
   box-shadow: none !important;
 }
 
 .art-video-player .art-control-progress:hover .art-progress-indicator {
-  transform: scale(1.15) !important;
+  transform: scale(1.1) !important;
+  box-shadow: none !important;
+  filter: none !important;
 }
 
 .art-video-player .art-progress-tip {
@@ -1749,176 +1837,9 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   display: inline-block;
 }
 
-/* ==========================================================================
-   Mobile Center Quick Controls (rewind / play-pause / forward)
-   Displays when hovering or tapping on player on mobile / touch screens
-   ========================================================================== */
+/* Mobile Center Quick Controls: Hidden (Controls placed on bottom bar) */
 .netphim-mobile-center-controls {
-  display: none;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) scale(0.92);
-  z-index: 25;
-  align-items: center;
-  justify-content: center;
-  gap: clamp(22px, 8vw, 44px);
-  opacity: 0;
-  pointer-events: none;
-  transition:
-    opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-  .netphim-mobile-center-controls {
-    display: flex;
-  }
-
-  /* Hide native TV state icon on mobile to avoid double center icons */
-  .art-video-player .art-state {
-    display: none !important;
-  }
-
-  .art-video-player .art-control-backward-10,
-  .art-video-player .art-control-forward-10 {
-    display: none !important;
-  }
-
-  .netphim-mobile-center-controls.is-visible,
-  .art-video-player.art-hover .netphim-mobile-center-controls,
-  .art-video-player.art-control-show .netphim-mobile-center-controls {
-    opacity: 1;
-    pointer-events: auto;
-    transform: translate(-50%, -50%) scale(1);
-  }
-}
-
-.netphim-mobile-center-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 9999px;
-  color: #ffffff;
-  cursor: pointer;
-  outline: none;
-  border: none;
-  padding: 0;
-  background: #14151b;
-  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.58);
-  transition:
-    transform 0.15s cubic-bezier(0.16, 1, 0.3, 1),
-    background 0.15s ease,
-    border-color 0.15s ease;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.netphim-mobile-center-btn:focus-visible {
-  outline: 2px solid #a78bfa;
-  outline-offset: 3px;
-}
-
-.netphim-mobile-center-btn.is-seek {
-  width: 50px;
-  height: 50px;
-  border: 1px solid rgba(255, 255, 255, 0.34);
-}
-
-.netphim-mobile-center-btn.is-seek svg {
-  width: 27px;
-  height: 27px;
-}
-
-.netphim-mobile-center-btn:active {
-  transform: scale(0.88);
-}
-
-/* Center Play / Pause Button */
-.netphim-mobile-center-btn.is-play-pause {
-  width: 62px;
-  height: 62px;
-  background: #f5f5f5;
-  color: #111217;
-  border: 2px solid rgba(255, 255, 255, 0.85);
-}
-
-.netphim-mobile-center-btn.is-play-pause .netphim-center-icon.is-play {
-  width: 0;
-  height: 0;
-  margin-left: 4px;
-  border-top: 9px solid transparent;
-  border-bottom: 9px solid transparent;
-  border-left: 15px solid currentColor;
-}
-
-.netphim-mobile-center-btn.is-play-pause .netphim-center-icon.is-pause {
-  gap: 5px;
-}
-
-.netphim-mobile-center-btn.is-play-pause .netphim-center-icon.is-pause i {
-  display: block;
-  width: 5px;
-  height: 20px;
-  border-radius: 1px;
-  background: currentColor;
-}
-
-.netphim-mobile-center-btn.is-play-pause:hover {
-  background: #ffffff;
-  border-color: #ffffff;
-}
-
-.netphim-mobile-center-btn.is-play-pause:active {
-  background: #dedede;
-  border-color: #ffffff;
-}
-
-.netphim-mobile-center-btn .netphim-center-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-}
-
-@media (max-width: 480px) {
-  .netphim-mobile-center-controls {
-    gap: clamp(18px, 7vw, 30px);
-  }
-
-  .netphim-mobile-center-btn.is-seek {
-    width: 48px;
-    height: 48px;
-  }
-
-  .netphim-mobile-center-btn.is-play-pause {
-    width: 56px;
-    height: 56px;
-  }
-}
-
-@media (max-height: 430px) and (orientation: landscape) {
-  .netphim-mobile-center-controls {
-    gap: 24px;
-  }
-
-  .netphim-mobile-center-btn.is-seek {
-    width: 46px;
-    height: 46px;
-  }
-
-  .netphim-mobile-center-btn.is-play-pause {
-    width: 54px;
-    height: 54px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .netphim-mobile-center-controls,
-  .netphim-mobile-center-btn {
-    transition: none;
-  }
+  display: none !important;
 }
 /* Keep catalogue rows stable before Swiper hydrates. Without this fallback,
    Swiper's base CSS makes every SSR slide 100% wide and the first poster fills
