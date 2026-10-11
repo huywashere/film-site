@@ -48,6 +48,7 @@
     "prisma": "^6.19.3",
     "qrcode": "^1.5.4",
     "reflect-metadata": "^0.2.1",
+    "resend": "^6.32.1",
     "rxjs": "^7.8.0",
     "socket.io": "^4",
     "tesseract.js": "^7.0.0",

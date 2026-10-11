@@ -51,6 +51,9 @@ import {
   ChevronDown,
   Download,
   Calendar,
+  Star,
+  Moon,
+  MessageSquare,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuthStore } from "@/store/authStore";
@@ -69,6 +72,14 @@ import {
   DEFAULT_AVATAR_FRAME_COLOR,
   DEFAULT_NAME_COLOR,
   PROFILE_COLOR_OPTIONS,
+  NAME_EFFECT_OPTIONS,
+  NAME_SOLID_OPTIONS,
+  ALL_NAME_COLOR_OPTIONS,
+  AVATAR_FRAME_ANIMATED_OPTIONS,
+  AVATAR_FRAME_SOLID_OPTIONS,
+  ALL_AVATAR_FRAME_OPTIONS,
+  getNameColorProps,
+  getAvatarFrameConfig,
 } from "@/lib/profile-appearance";
 import {
   guestDataStorage,
@@ -467,6 +478,119 @@ function PwaInstallModal({
   );
 }
 
+function renderRankIcon(iconType?: string, className?: string) {
+  const iconClass = className || "h-4 w-4";
+  switch (iconType) {
+    case "crown":
+      return <Crown className={iconClass} />;
+    case "trophy":
+      return <Trophy className={iconClass} />;
+    case "star":
+      return <Star className={iconClass} />;
+    case "film":
+      return <Film className={iconClass} />;
+    case "sparkles":
+    case "sprout":
+    default:
+      return <Sparkles className={iconClass} />;
+  }
+}
+
+function renderBadgeIcon(iconType?: string, className?: string) {
+  const iconClass = className || "h-4 w-4";
+  switch (iconType) {
+    case "film":
+      return <Film className={iconClass} />;
+    case "zap":
+      return <Zap className={iconClass} />;
+    case "moon":
+      return <Moon className={iconClass} />;
+    case "clock":
+      return <Clock className={iconClass} />;
+    case "message":
+      return <MessageSquare className={iconClass} />;
+    case "star":
+      return <Star className={iconClass} />;
+    case "bookmark":
+      return <Bookmark className={iconClass} />;
+    case "flame":
+      return <Flame className={iconClass} />;
+    default:
+      return <Award className={iconClass} />;
+  }
+}
+
+function ProfileAvatarRender({
+  avatarSrc,
+  username,
+  displayName,
+  frameValue,
+  sizeClass = "h-24 w-24 sm:h-28 sm:w-28",
+  isAdmin = false,
+}: {
+  avatarSrc?: string | null;
+  username?: string;
+  displayName?: string;
+  frameValue?: string | null;
+  sizeClass?: string;
+  isAdmin?: boolean;
+}) {
+  const frameConfig = getAvatarFrameConfig(frameValue);
+  const isRiso =
+    avatarSrc === "/avatars/admin-mascot-riso.png" ||
+    (isAdmin && !avatarSrc);
+
+  const innerAvatar = isRiso ? (
+    <InteractiveAdminMascot
+      size="100%"
+      className="w-full h-full bg-[#faf9f7]"
+      label="Mascot Cáo Riso (Admin)"
+    />
+  ) : (
+    /* eslint-disable-next-line @next/next/no-img-element */
+    <img
+      src={
+        avatarSrc ||
+        `https://ui-avatars.com/api/?name=${encodeURIComponent(
+          displayName || username || "User",
+        )}&background=8b5cf6&color=ffffff&size=160`
+      }
+      alt={username || "User"}
+      referrerPolicy="no-referrer"
+      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+      onError={(e) => {
+        (e.currentTarget as HTMLImageElement).src =
+          `https://ui-avatars.com/api/?name=${encodeURIComponent(
+            displayName || username || "User",
+          )}&background=8b5cf6&color=ffffff&size=160`;
+      }}
+    />
+  );
+
+  if (frameConfig.isRainbowWrap) {
+    return (
+      <div className={cn("relative shrink-0 anim-frame-rainbow-wrap", sizeClass)}>
+        <div className="w-full h-full rounded-full overflow-hidden bg-neutral-900">
+          {innerAvatar}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={cn(
+        "rounded-full overflow-hidden bg-neutral-900 transition-all duration-300 relative shrink-0",
+        sizeClass,
+        frameConfig.className,
+      )}
+      style={frameConfig.style}
+    >
+      {innerAvatar}
+    </div>
+  );
+}
+
 export default function UserDashboardPage() {
   const params = useParams();
   const router = useReliableNavigation();
@@ -477,10 +601,28 @@ export default function UserDashboardPage() {
 
   const rawUsername = (params?.username as string) || "";
   const decodedUsername = rawUsername ? decodeURIComponent(rawUsername) : "";
-  const username = decodedUsername || user?.username || user?.id || "";
+  const isMeRoute = decodedUsername === "me" || !decodedUsername;
+  const username =
+    (isMeRoute ? user?.username || user?.id : decodedUsername) ||
+    user?.username ||
+    user?.id ||
+    "";
 
   const tabParam = searchParams.get("tab") as TabType;
   const [activeTab, setActiveTab] = useState<TabType>("account");
+
+  useEffect(() => {
+    if (isMeRoute && !user) {
+      const hasSession =
+        typeof document !== "undefined" &&
+        document.cookie
+          .split(";")
+          .some((c) => c.trim().startsWith("netphim-auth=true"));
+      if (!hasSession) {
+        router.replace("/login");
+      }
+    }
+  }, [isMeRoute, user, router]);
 
   useEffect(() => {
     if (
@@ -513,7 +655,7 @@ export default function UserDashboardPage() {
 
   const isOwnProfile = Boolean(
     user &&
-    (!decodedUsername ||
+    (isMeRoute ||
       user.username === decodedUsername ||
       user.email === decodedUsername ||
       user.id === decodedUsername ||
@@ -768,7 +910,7 @@ export default function UserDashboardPage() {
         return null;
       }
     },
-    enabled: Boolean(username),
+    enabled: Boolean(username) && username !== "me",
     retry: false,
   });
 
@@ -1120,6 +1262,7 @@ export default function UserDashboardPage() {
     let levelName = "Level 1";
     let rankTitle = "Mọt Phim Tập Sự";
     let rankBadge = "🌱";
+    let rankIconType = "sparkles";
     let currentLevelMinHours = 0;
     let nextLevelHours = 5;
 
@@ -1128,6 +1271,7 @@ export default function UserDashboardPage() {
       levelName = "Level 5";
       rankTitle = "Đại Sư Điện Ảnh";
       rankBadge = "👑";
+      rankIconType = "crown";
       currentLevelMinHours = 100;
       nextLevelHours = 100;
     } else if (totalHours >= 50) {
@@ -1135,6 +1279,7 @@ export default function UserDashboardPage() {
       levelName = "Level 4";
       rankTitle = "Mọt Phim Thượng Thừa";
       rankBadge = "🏆";
+      rankIconType = "trophy";
       currentLevelMinHours = 50;
       nextLevelHours = 100;
     } else if (totalHours >= 20) {
@@ -1142,6 +1287,7 @@ export default function UserDashboardPage() {
       levelName = "Level 3";
       rankTitle = "Cinephile Chính Hiệu";
       rankBadge = "⭐";
+      rankIconType = "star";
       currentLevelMinHours = 20;
       nextLevelHours = 50;
     } else if (totalHours >= 5) {
@@ -1149,6 +1295,7 @@ export default function UserDashboardPage() {
       levelName = "Level 2";
       rankTitle = "Khán Giả Chuyên Cần";
       rankBadge = "🎬";
+      rankIconType = "film";
       currentLevelMinHours = 5;
       nextLevelHours = 20;
     }
@@ -1196,6 +1343,7 @@ export default function UserDashboardPage() {
         name: "Bước Đầu Điện Ảnh",
         description: "Xem bộ phim đầu tiên trên nền tảng",
         icon: "🎬",
+        iconType: "film",
         unlocked: historyItems.length >= 1,
         progress: `${Math.min(historyItems.length, 1)}/1`,
       },
@@ -1204,6 +1352,7 @@ export default function UserDashboardPage() {
         name: "Chiến Thần Marathon",
         description: "Đã cày từ 5 tập phim trở lên",
         icon: "⚡",
+        iconType: "zap",
         unlocked: historyItems.length >= 5,
         progress: `${Math.min(historyItems.length, 5)}/5`,
       },
@@ -1212,6 +1361,7 @@ export default function UserDashboardPage() {
         name: "Cú Đêm Điện Ảnh",
         description: "Xem phim vào khung giờ đêm (23h - 04h)",
         icon: "🌙",
+        iconType: "moon",
         unlocked: nightWatchCount >= 1,
         progress: nightWatchCount >= 1 ? "1/1" : "0/1",
       },
@@ -1220,6 +1370,7 @@ export default function UserDashboardPage() {
         name: "Bậc Thầy Giờ Xem",
         description: "Tích lũy trên 20 giờ cày phim",
         icon: "⏱️",
+        iconType: "clock",
         unlocked: totalHours >= 20,
         progress: `${Math.min(totalHours, 20)}/20h`,
       },
@@ -1228,6 +1379,7 @@ export default function UserDashboardPage() {
         name: "Nhà Phê Bình Tinh Tế",
         description: "Viết bình luận / đánh giá cảm nhận về phim",
         icon: "✍️",
+        iconType: "message",
         unlocked: reviewsCount >= 1,
         progress: `${Math.min(reviewsCount, 1)}/1`,
       },
@@ -1236,6 +1388,7 @@ export default function UserDashboardPage() {
         name: "Giám Khảo Khó Tính",
         description: "Đã chấm điểm đánh giá từ 3 bộ phim trở lên",
         icon: "⭐",
+        iconType: "star",
         unlocked: reviewsCount >= 3,
         progress: `${Math.min(reviewsCount, 3)}/3`,
       },
@@ -1244,6 +1397,7 @@ export default function UserDashboardPage() {
         name: "Nhà Sưu Tầm Phim",
         description: "Lưu từ 5 bộ phim yêu thích vào Tủ phim",
         icon: "🍿",
+        iconType: "bookmark",
         unlocked: watchlistItems.length >= 5,
         progress: `${Math.min(watchlistItems.length, 5)}/5`,
       },
@@ -1252,6 +1406,7 @@ export default function UserDashboardPage() {
         name: "Khán Giả Kiên Trì",
         description: "Duy trì chuỗi xem phim liên tiếp từ 3 ngày trở lên",
         icon: "🔥",
+        iconType: "flame",
         unlocked: streakDays >= 3,
         progress: `${Math.min(streakDays, 3)}/3 ngày`,
       },
@@ -1310,6 +1465,7 @@ export default function UserDashboardPage() {
       levelName,
       rankTitle,
       rankBadge,
+      rankIconType,
       levelProgress,
       hoursToNextLevel,
       nextLevelHours,
@@ -1334,6 +1490,7 @@ export default function UserDashboardPage() {
         totalEpisodes: 164,
         rankTitle: "Đại Sư Điện Ảnh",
         rankBadge: "👑",
+        rankIconType: "crown",
       },
       {
         id: "usr-comm-2",
@@ -1344,6 +1501,7 @@ export default function UserDashboardPage() {
         totalEpisodes: 88,
         rankTitle: "Mọt Phim Thượng Thừa",
         rankBadge: "🏆",
+        rankIconType: "trophy",
       },
       {
         id: "usr-comm-3",
@@ -1354,6 +1512,7 @@ export default function UserDashboardPage() {
         totalEpisodes: 45,
         rankTitle: "Cinephile Chính Hiệu",
         rankBadge: "⭐",
+        rankIconType: "star",
       },
       {
         id: "usr-comm-4",
@@ -1364,6 +1523,7 @@ export default function UserDashboardPage() {
         totalEpisodes: 32,
         rankTitle: "Cinephile Chính Hiệu",
         rankBadge: "⭐",
+        rankIconType: "star",
       },
       {
         id: "usr-comm-5",
@@ -1374,6 +1534,7 @@ export default function UserDashboardPage() {
         totalEpisodes: 28,
         rankTitle: "Khán Giả Chuyên Cần",
         rankBadge: "🎬",
+        rankIconType: "film",
       },
     ];
 
@@ -1386,6 +1547,7 @@ export default function UserDashboardPage() {
       totalEpisodes: effectiveStats.totalEpisodes,
       rankTitle: effectiveStats.rankTitle,
       rankBadge: effectiveStats.rankBadge,
+      rankIconType: effectiveStats.rankIconType || "sparkles",
     };
 
     const combined = [
@@ -1507,47 +1669,19 @@ export default function UserDashboardPage() {
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-6 pb-6 border-b border-white/[0.08]">
           {/* Avatar */}
           <div className="relative shrink-0 group">
-            <div
-              className="h-24 w-24 sm:h-28 sm:w-28 rounded-full overflow-hidden border-[3px] bg-neutral-900 transition-[border-color,box-shadow] duration-300"
-              style={{
-                borderColor: effectiveAvatarFrameColor,
-                boxShadow: `0 0 0 4px ${effectiveAvatarFrameColor}1f, 0 18px 38px rgba(0,0,0,.42)`,
-              }}
-            >
-              {(selectedAvatar || profile.avatarUrl || (isAdmin ? "/avatars/admin-mascot-riso.png" : "")) === "/avatars/admin-mascot-riso.png" ||
-              (isAdmin && !(selectedAvatar || profile.avatarUrl)) ? (
-                <InteractiveAdminMascot
-                  size="100%"
-                  className="w-full h-full bg-[#faf9f7]"
-                  label="Mascot Cáo Riso (Admin)"
-                />
-              ) : (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src={
-                    selectedAvatar ||
-                    profile.avatarUrl ||
-                    `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                      displayName || profile.username || "User",
-                    )}&background=8b5cf6&color=ffffff&size=160`
-                  }
-                  alt={profile.username}
-                  referrerPolicy="no-referrer"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).src =
-                      `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                        displayName || profile.username || "User",
-                      )}&background=8b5cf6&color=ffffff&size=160`;
-                  }}
-                />
-              )}
-            </div>
+            <ProfileAvatarRender
+              avatarSrc={selectedAvatar || profile.avatarUrl}
+              username={profile.username}
+              displayName={displayName || profile.displayName}
+              frameValue={effectiveAvatarFrameColor}
+              sizeClass="h-24 w-24 sm:h-28 sm:w-28"
+              isAdmin={isAdmin}
+            />
             {isOwnProfile && (
               <button
                 type="button"
                 onClick={openAppearancePicker}
-                className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-white text-black shadow-lg flex items-center justify-center cursor-pointer hover:bg-neutral-200 transition-all hover:scale-105"
+                className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-white text-black shadow-lg flex items-center justify-center cursor-pointer hover:bg-neutral-200 transition-all hover:scale-105 z-10"
                 title="Đổi ảnh đại diện"
               >
                 <Camera size={14} strokeWidth={2.5} />
@@ -1559,12 +1693,20 @@ export default function UserDashboardPage() {
           <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pb-1">
             <div className="space-y-1">
               <div className="flex flex-wrap items-center gap-2.5">
-                <h1
-                  className="text-2xl font-bold tracking-tight transition-colors duration-300 sm:text-3xl"
-                  style={{ color: effectiveNameColor }}
-                >
-                  {displayName || profile.displayName || profile.username}
-                </h1>
+                {(() => {
+                  const nameProps = getNameColorProps(effectiveNameColor);
+                  return (
+                    <h1
+                      className={cn(
+                        "text-2xl font-bold tracking-tight transition-all duration-300 sm:text-3xl",
+                        nameProps.className,
+                      )}
+                      style={nameProps.style}
+                    >
+                      {displayName || profile.displayName || profile.username}
+                    </h1>
+                  );
+                })()}
                 {isAdmin ? (
                   <span className="inline-flex items-center gap-1 rounded-full bg-violet-500/10 border border-violet-500/25 px-2.5 py-0.5 text-[11px] font-semibold text-violet-300">
                     <Sparkles size={11} className="text-violet-400" /> Admin
@@ -1953,60 +2095,76 @@ export default function UserDashboardPage() {
 
             {/* TAB: THỐNG KÊ (DATA THẬT & GAMIFICATION) */}
             {activeTab === "stats" && (
-              <div className="max-w-3xl animate-fade-in space-y-6 rounded-2xl border border-white/10 bg-black p-6 sm:p-8 shadow-2xl">
-                <div className="border-b border-white/[0.07] pb-4 flex flex-wrap items-center justify-between gap-3">
+              <div className="max-w-4xl animate-fade-in space-y-7 rounded-3xl border border-white/[0.08] bg-[#0c0f17]/90 backdrop-blur-2xl p-6 sm:p-8 shadow-2xl">
+                {/* Header Section */}
+                <div className="border-b border-white/[0.07] pb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div>
-                    <h2 className="text-lg font-bold text-white">Thống kê xem phim</h2>
-                    <p className="mt-1 text-sm text-neutral-500">
-                      Tổng quan hành trình điện ảnh thực tế và cấp độ cày phim của bạn trên FlexPhim.
+                    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1">
+                      <BarChart3 size={14} className="text-amber-400" />
+                      <span>Hành Trình Khán Giả</span>
+                    </div>
+                    <h2 className="text-xl font-bold tracking-tight text-white">Thống Kê Xem Phim</h2>
+                    <p className="mt-1 text-xs sm:text-sm text-neutral-400">
+                      Tổng hợp dữ liệu xem phim thực tế, cấp độ gắn bó và thành tựu cá nhân trên FlexPhim.
                     </p>
                   </div>
-                  <div className="flex items-center gap-2 text-xs font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-3.5 py-1.5 rounded-xl shadow-sm">
-                    <span className="text-sm">{effectiveStats.rankBadge}</span>
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.05] border border-white/10 text-xs font-medium text-neutral-200 self-start sm:self-auto shadow-sm">
+                    <span className="flex h-2 w-2 rounded-full bg-amber-400 ring-2 ring-amber-400/20" />
+                    <span className="text-amber-300 font-semibold">{effectiveStats.levelName}</span>
+                    <span className="text-neutral-500">•</span>
                     <span>{effectiveStats.rankTitle}</span>
                   </div>
                 </div>
 
                 {/* ── THẺ TIẾN TRÌNH LEVEL & CHUỖI XEM PHIM ── */}
-                <div className="rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-black p-5 sm:p-6 space-y-4 shadow-xl">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="h-12 w-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-300 flex items-center justify-center text-black font-black text-2xl shadow-lg shadow-amber-500/30">
-                        {effectiveStats.rankBadge}
+                <div className="relative overflow-hidden rounded-2xl border border-white/[0.09] bg-gradient-to-br from-neutral-900/90 via-[#131722]/80 to-[#0e111a] p-5 sm:p-6 shadow-xl">
+                  {/* Subtle decorative glow */}
+                  <div className="pointer-events-none absolute -top-20 -right-20 h-56 w-56 rounded-full bg-amber-500/10 blur-3xl" />
+
+                  <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+                    {/* Level Medallion & Title */}
+                    <div className="flex items-center gap-4">
+                      <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-2xl border border-amber-400/30 bg-gradient-to-br from-amber-500/20 via-neutral-900 to-black p-0.5 shadow-lg shadow-amber-500/10 flex items-center justify-center text-amber-300 shrink-0">
+                        {renderRankIcon(effectiveStats.rankIconType, "h-7 w-7 sm:h-8 sm:w-8 text-amber-300")}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-black uppercase tracking-wider text-amber-400">
+                          <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-400">
                             Cấp độ điện ảnh
                           </span>
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300">
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white/[0.08] text-neutral-300 border border-white/[0.08]">
                             {effectiveStats.levelName}
                           </span>
                         </div>
-                        <h3 className="text-lg font-black text-white">
+                        <h3 className="text-lg sm:text-xl font-bold tracking-tight text-white mt-0.5">
                           {effectiveStats.rankTitle}
                         </h3>
                       </div>
                     </div>
 
+                    {/* Streak & XP micro-stats */}
                     <div className="flex items-center gap-3">
-                      {/* Chuỗi xem phim */}
-                      <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/[0.04] border border-white/10">
-                        <Flame size={16} className="text-orange-400 animate-pulse" />
-                        <div className="text-left">
-                          <div className="text-[10px] text-neutral-400 uppercase font-semibold">Chuỗi cày</div>
-                          <div className="text-xs font-black text-white">
-                            {effectiveStats.streakDays} ngày liên tiếp
+                      {/* Chuỗi cày */}
+                      <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                        <div className="h-8 w-8 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400 shrink-0">
+                          <Flame size={16} />
+                        </div>
+                        <div>
+                          <div className="text-[10px] text-neutral-400 uppercase font-medium">Chuỗi xem</div>
+                          <div className="text-xs sm:text-sm font-bold text-white">
+                            {effectiveStats.streakDays} ngày
                           </div>
                         </div>
                       </div>
 
                       {/* Điểm XP */}
-                      <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/[0.04] border border-white/10">
-                        <Zap size={16} className="text-amber-400" />
-                        <div className="text-left">
-                          <div className="text-[10px] text-neutral-400 uppercase font-semibold">Điểm XP</div>
-                          <div className="text-xs font-black text-amber-300">
+                      <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                        <div className="h-8 w-8 rounded-lg bg-amber-400/10 border border-amber-400/20 flex items-center justify-center text-amber-300 shrink-0">
+                          <Zap size={16} />
+                        </div>
+                        <div>
+                          <div className="text-[10px] text-neutral-400 uppercase font-medium">Điểm XP</div>
+                          <div className="text-xs sm:text-sm font-bold text-amber-300 font-mono">
                             {effectiveStats.totalXp.toLocaleString()} XP
                           </div>
                         </div>
@@ -2015,79 +2173,96 @@ export default function UserDashboardPage() {
                   </div>
 
                   {/* Thanh tiến trình tới Level kế tiếp */}
-                  <div className="space-y-1.5 pt-1">
-                    <div className="flex justify-between text-xs font-semibold">
-                      <span className="text-neutral-300">
+                  <div className="relative z-10 space-y-2 pt-5 border-t border-white/[0.06] mt-5">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-neutral-400 font-medium">
                         Tiến trình thăng cấp
                       </span>
-                      <span className="text-amber-300 font-mono">
+                      <span className="text-neutral-200 font-mono text-xs">
                         {effectiveStats.level >= 5
-                          ? "Cấp độ Tối Đa (Max Level)"
+                          ? "Đạt mốc tối đa"
                           : `${effectiveStats.totalHours} / ${effectiveStats.nextLevelHours} giờ (${effectiveStats.levelProgress}%)`}
                       </span>
                     </div>
-                    <div className="h-2.5 w-full bg-white/[0.08] rounded-full overflow-hidden p-0.5">
+                    <div className="h-2 w-full bg-white/[0.07] rounded-full overflow-hidden p-0.5">
                       <div
-                        className="h-full bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-300 rounded-full transition-all duration-700 shadow-[0_0_12px_rgba(251,191,36,0.5)]"
-                        style={{ width: `${Math.max(effectiveStats.levelProgress, 5)}%` }}
+                        className="h-full bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-300 rounded-full transition-all duration-700 shadow-[0_0_8px_rgba(245,158,11,0.3)]"
+                        style={{ width: `${Math.max(effectiveStats.levelProgress, 4)}%` }}
                       />
                     </div>
                     {effectiveStats.level < 5 && effectiveStats.hoursToNextLevel > 0 && (
                       <p className="text-[11px] text-neutral-400 text-right">
-                        Cần thêm <strong className="text-amber-300 font-bold">{effectiveStats.hoursToNextLevel} giờ</strong> xem phim để thăng cấp tiếp theo!
+                        Cần thêm <strong className="text-neutral-200 font-semibold">{effectiveStats.hoursToNextLevel} giờ</strong> xem phim để mở khóa cấp tiếp theo
                       </p>
                     )}
                   </div>
                 </div>
 
-                {/* 4 Chỉ số thực tế */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {/* 4 Chỉ số Bento thực tế */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                   {[
                     {
                       label: "Thời gian xem",
+                      sublabel: "Tổng thời lượng tích lũy",
                       value: effectiveStats.watchTimeString,
                       icon: Clock,
-                      color: "text-amber-400",
+                      iconColor: "text-amber-400",
                     },
                     {
                       label: "Tập đã xem",
+                      sublabel: "Tập phim đã theo dõi",
                       value: effectiveStats.totalEpisodes,
                       icon: Film,
-                      color: "text-blue-400",
+                      iconColor: "text-sky-400",
                     },
                     {
                       label: "Tủ phim",
+                      sublabel: "Phim đã lưu yêu thích",
                       value: effectiveStats.watchlistCount,
                       icon: Bookmark,
-                      color: "text-purple-400",
+                      iconColor: "text-violet-400",
                     },
                     {
                       label: "Điểm đánh giá TB",
+                      sublabel: "Độ hài lòng trải nghiệm",
                       value:
                         typeof effectiveStats.averageRating === "number"
                           ? `${effectiveStats.averageRating} ★`
                           : effectiveStats.averageRating,
-                      icon: Award,
-                      color: "text-emerald-400",
+                      icon: Star,
+                      iconColor: "text-emerald-400",
                     },
-                  ].map(({ label, value, icon: Icon, color }) => (
-                    <div key={label} className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-4 hover:border-white/[0.14] transition-colors">
-                      <div className="flex items-center justify-between text-neutral-500 mb-2">
-                        <span className="text-[10px] font-semibold uppercase tracking-wider">{label}</span>
-                        <Icon size={14} className={color} />
+                  ].map(({ label, sublabel, value, icon: Icon, iconColor }) => (
+                    <div
+                      key={label}
+                      className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-4 sm:p-5 hover:border-white/[0.12] hover:bg-white/[0.04] transition-all group"
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-neutral-400">
+                          {label}
+                        </span>
+                        <div className="h-7 w-7 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center shrink-0">
+                          <Icon size={14} className={iconColor} />
+                        </div>
                       </div>
-                      <div className="text-2xl font-black text-white">{value}</div>
+                      <div className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+                        {value}
+                      </div>
+                      <div className="text-[11px] text-neutral-500 mt-1">
+                        {sublabel}
+                      </div>
                     </div>
                   ))}
                 </div>
 
-                {/* BẢNG HUY HIỆU VINH DANH (GAMIFICATION BADGES) */}
-                <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-5 space-y-4">
+                {/* BẢNG HUY HIỆU VINH DANH (CINEMA ACHIEVEMENTS) */}
+                <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5 sm:p-6 space-y-4">
                   <div className="flex items-center justify-between">
-                    <h3 className="flex items-center gap-2 text-sm font-bold text-white">
-                      <Award size={16} className="text-amber-400" /> Bộ Sưu Tập Huy Hiệu
+                    <h3 className="flex items-center gap-2 text-sm sm:text-base font-bold text-white">
+                      <Award size={18} className="text-amber-400" />
+                      <span>Bộ Sưu Tập Huy Hiệu</span>
                     </h3>
-                    <span className="text-xs text-neutral-400 font-medium">
+                    <span className="text-xs text-neutral-400 font-medium px-2.5 py-1 rounded-full bg-white/[0.04] border border-white/[0.08]">
                       Đã mở khóa: {effectiveStats.badges.filter((b: any) => b.unlocked).length}/{effectiveStats.badges.length}
                     </span>
                   </div>
@@ -2097,37 +2272,37 @@ export default function UserDashboardPage() {
                       <div
                         key={badge.id}
                         className={cn(
-                          "flex items-center gap-3 p-3 rounded-xl border transition-all",
+                          "flex items-center gap-3.5 p-3.5 rounded-xl border transition-all",
                           badge.unlocked
-                            ? "border-amber-400/30 bg-gradient-to-r from-amber-400/10 to-amber-500/5 shadow-sm"
-                            : "border-white/[0.05] bg-white/[0.02] opacity-60",
+                            ? "border-amber-500/25 bg-gradient-to-r from-amber-500/[0.06] via-white/[0.02] to-transparent shadow-sm"
+                            : "border-white/[0.05] bg-white/[0.015] opacity-60 hover:opacity-80",
                         )}
                       >
                         <div
                           className={cn(
-                            "h-10 w-10 rounded-xl flex items-center justify-center text-xl shrink-0",
+                            "h-11 w-11 rounded-xl flex items-center justify-center shrink-0 transition-all",
                             badge.unlocked
-                              ? "bg-amber-400/20 border border-amber-400/40 shadow-[0_0_15px_rgba(251,191,36,0.3)]"
-                              : "bg-white/[0.05] border border-white/10 grayscale",
+                              ? "bg-amber-400/10 border border-amber-400/30 text-amber-300 shadow-sm shadow-amber-500/10"
+                              : "bg-white/[0.04] border border-white/[0.08] text-neutral-500",
                           )}
                         >
-                          {badge.icon}
+                          {renderBadgeIcon(badge.iconType, "h-5 w-5")}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-center justify-between gap-1">
-                            <strong className="text-xs font-bold text-white truncate">
+                          <div className="flex items-center justify-between gap-1.5">
+                            <strong className="text-xs sm:text-sm font-semibold text-white truncate">
                               {badge.name}
                             </strong>
-                            <span
-                              className={cn(
-                                "text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0",
-                                badge.unlocked
-                              ? "bg-amber-400/20 text-amber-300"
-                              : "bg-white/[0.06] text-neutral-400",
-                              )}
-                            >
-                              {badge.progress}
-                            </span>
+                            {badge.unlocked ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-400/15 text-amber-300 border border-amber-400/20 shrink-0">
+                                <CheckCircle2 size={10} />
+                                <span>Đạt</span>
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-mono font-medium px-1.5 py-0.5 rounded bg-white/[0.05] text-neutral-400 shrink-0">
+                                {badge.progress}
+                              </span>
+                            )}
                           </div>
                           <p className="text-[11px] text-neutral-400 truncate mt-0.5">
                             {badge.description}
@@ -2138,26 +2313,30 @@ export default function UserDashboardPage() {
                   </div>
                 </div>
 
-                {/* Thể loại xem nhiều nhất (Data thật) */}
-                <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-5 space-y-4">
-                  <h3 className="flex items-center gap-2 text-sm font-bold text-white">
-                    <Flame size={15} className="text-amber-400" /> Thể loại xem nhiều nhất
-                  </h3>
-                  <div className="space-y-3.5">
+                {/* Thể loại xem nhiều nhất */}
+                <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5 sm:p-6 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="flex items-center gap-2 text-sm sm:text-base font-bold text-white">
+                      <Film size={17} className="text-amber-400" />
+                      <span>Thể Loại Thưởng Thức Nhiều Nhất</span>
+                    </h3>
+                    <span className="text-xs text-neutral-500">Dựa trên lịch sử xem</span>
+                  </div>
+                  <div className="space-y-3.5 pt-1">
                     {effectiveStats.topGenres.map((g: any, idx: number) => {
                       const colors = [
-                        "from-amber-500 to-yellow-400",
-                        "from-blue-500 to-cyan-400",
-                        "from-purple-500 to-pink-400",
-                        "from-emerald-500 to-teal-400",
+                        "from-amber-400 to-yellow-500",
+                        "from-sky-400 to-blue-500",
+                        "from-violet-400 to-purple-500",
+                        "from-emerald-400 to-teal-500",
                       ];
                       return (
                         <div key={g.name} className="space-y-1.5">
-                          <div className="flex justify-between text-xs font-semibold">
-                            <span className="text-neutral-200">{g.name}</span>
+                          <div className="flex justify-between text-xs font-medium">
+                            <span className="text-neutral-300">{g.name}</span>
                             <span className="text-neutral-400 font-mono">{g.hoursText}</span>
                           </div>
-                          <div className="h-2 w-full bg-white/[0.06] rounded-full overflow-hidden">
+                          <div className="h-1.5 w-full bg-white/[0.06] rounded-full overflow-hidden">
                             <div
                               className={`h-full bg-gradient-to-r ${colors[idx % colors.length]} rounded-full transition-all duration-500`}
                               style={{ width: `${Math.max(g.percentage, 5)}%` }}
@@ -2170,29 +2349,29 @@ export default function UserDashboardPage() {
                 </div>
 
                 {/* CTA Sang Bảng Xếp Hạng */}
-                <div className="rounded-2xl border border-amber-500/20 bg-gradient-to-r from-amber-500/10 via-yellow-500/5 to-transparent p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="rounded-2xl border border-white/[0.09] bg-gradient-to-r from-neutral-900/90 via-white/[0.03] to-transparent p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-3.5">
-                    <div className="h-11 w-11 rounded-xl bg-amber-400/10 border border-amber-400/30 flex items-center justify-center shrink-0 text-amber-400">
-                      <Trophy size={22} />
+                    <div className="h-11 w-11 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center shrink-0 text-amber-300">
+                      <Trophy size={20} />
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-white flex items-center gap-1.5">
-                        <span>🏆 Bảng Xếp Hạng Mọt Phim FlexPhim</span>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 font-extrabold uppercase">
-                          Cộng đồng
+                      <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                        <span>Bảng Vinh Danh Mọt Phim FlexPhim</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-neutral-300 font-semibold uppercase tracking-wider">
+                          Xếp Hạng
                         </span>
                       </h4>
                       <p className="text-xs text-neutral-400 mt-0.5">
-                        Xem danh sách Top khán giả cày phim nhiều nhất & vị trí thứ hạng của bạn!
+                        Khám phá Top khán giả gắn bó nhất và theo dõi vị trí thứ hạng của bạn trong cộng đồng.
                       </p>
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => startTransition(() => setActiveTab("leaderboard"))}
-                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-amber-400 text-black hover:bg-amber-300 transition-all cursor-pointer shrink-0 shadow-lg shadow-amber-400/20 active:scale-95"
+                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold bg-white text-neutral-950 hover:bg-neutral-100 transition-all cursor-pointer shrink-0 shadow-md active:scale-95"
                   >
-                    <span>Xem Bảng Vàng</span>
+                    <span>Khám phá Bảng Vàng</span>
                     <ChevronRight size={14} />
                   </button>
                 </div>
@@ -2201,29 +2380,29 @@ export default function UserDashboardPage() {
 
             {/* TAB: BẢNG XẾP HẠNG MỌT PHIM (TOP 1, 2, 3 PODIUM & FULL LIST) */}
             {activeTab === "leaderboard" && (
-              <div className="max-w-4xl animate-fade-in space-y-8 rounded-2xl border border-white/10 bg-black p-6 sm:p-8 shadow-2xl">
+              <div className="max-w-4xl animate-fade-in space-y-8 rounded-3xl border border-white/[0.08] bg-[#0c0f17]/90 backdrop-blur-2xl p-6 sm:p-8 shadow-2xl">
                 {/* Header */}
                 <div className="border-b border-white/[0.07] pb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div>
-                    <div className="flex items-center gap-2 text-xs font-bold text-amber-400 uppercase tracking-wider mb-1">
-                      <Trophy size={15} />
-                      Bảng Vinh Danh Khán Giả
+                    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1">
+                      <Trophy size={14} className="text-amber-400" />
+                      <span>Bảng Vinh Danh Khán Giả</span>
                     </div>
-                    <h2 className="text-xl font-black text-white">
+                    <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
                       Bảng Xếp Hạng Mọt Phim FlexPhim
                     </h2>
-                    <p className="mt-1 text-xs text-neutral-400">
-                      Vinh danh các thành viên có thời gian xem phim nhiều nhất và hoạt động tích cực nhất trên toàn hệ thống.
+                    <p className="mt-1 text-xs sm:text-sm text-neutral-400">
+                      Tôn vinh những thành viên có thời lượng gắn bó và tích cực thưởng thức điện ảnh trên toàn hệ thống.
                     </p>
                   </div>
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-white/10 bg-white/[0.03] text-xs text-neutral-400 self-start sm:self-auto">
-                    <Sparkles size={14} className="text-amber-400" />
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-white/10 bg-white/[0.04] text-xs text-neutral-300 self-start sm:self-auto shadow-sm">
+                    <span className="flex h-2 w-2 rounded-full bg-emerald-400 ring-2 ring-emerald-400/20" />
                     <span>Cập nhật thời gian thực</span>
                   </div>
                 </div>
 
-                {/* ── BỘ CHỌN KHUNG GIỜ XEM (TIMEFRAME SELECTOR) ── */}
-                <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-2xl bg-white/[0.03] border border-white/[0.08]">
+                {/* ── BỘ CHỌN KHUNG GIỜ XEM (TIMEFRAME SELECTOR - SEGMENTED CONTROL) ── */}
+                <div className="inline-flex p-1 rounded-2xl bg-white/[0.04] border border-white/[0.08] w-full sm:w-auto overflow-x-auto scrollbar-none">
                   {[
                     { id: "all", label: "Tất cả (Bảng Vàng)", icon: Trophy },
                     { id: "month", label: "Tháng này", icon: TrendingUp },
@@ -2238,13 +2417,13 @@ export default function UserDashboardPage() {
                         type="button"
                         onClick={() => setLeaderboardRange(tab.id as any)}
                         className={cn(
-                          "flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer active:scale-95",
+                          "flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer whitespace-nowrap",
                           isActive
-                            ? "bg-amber-400 text-black shadow-lg shadow-amber-400/20 font-black"
-                            : "text-neutral-400 hover:text-white hover:bg-white/[0.06]",
+                            ? "bg-white/10 text-white shadow-sm border border-white/15"
+                            : "text-neutral-400 hover:text-neutral-200 hover:bg-white/[0.03]",
                         )}
                       >
-                        <Icon size={14} className={isActive ? "text-black" : "text-neutral-400"} />
+                        <Icon size={14} className={isActive ? "text-amber-400" : "text-neutral-400"} />
                         <span>{tab.label}</span>
                       </button>
                     );
@@ -2253,16 +2432,16 @@ export default function UserDashboardPage() {
 
                 {/* ── BANNER VỊ TRÍ CỦA BẠN (MY RANK STATS) ── */}
                 {user && (
-                  <div className="rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-500/15 via-yellow-500/5 to-neutral-900/40 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl">
+                  <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-gradient-to-r from-white/[0.05] via-white/[0.02] to-transparent p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg">
                     <div className="flex items-center gap-3.5 min-w-0">
-                      <div className="h-12 w-12 rounded-full overflow-hidden ring-2 ring-amber-400 shrink-0 bg-neutral-900 shadow-[0_0_15px_rgba(251,191,36,0.3)]">
+                      <div className="h-12 w-12 rounded-full overflow-hidden ring-1 ring-white/20 shrink-0 bg-neutral-900 shadow-sm">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={
                             user.avatarUrl ||
                             `https://ui-avatars.com/api/?name=${encodeURIComponent(
                               user.displayName || user.username,
-                            )}&background=f59e0b&color=000000&size=100`
+                            )}&background=18181b&color=ffffff&size=100`
                           }
                           alt={user.username}
                           className="h-full w-full object-cover"
@@ -2270,33 +2449,33 @@ export default function UserDashboardPage() {
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <strong className="text-sm font-bold text-white truncate">
+                          <strong className="text-sm font-semibold text-white truncate">
                             {user.displayName || user.username}
                           </strong>
-                          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-400 text-black">
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
                             BẠN
                           </span>
                         </div>
                         <p className="text-xs text-neutral-400 truncate mt-0.5">
                           {myLeaderboardRank
-                            ? `Đang xếp hạng #${myLeaderboardRank.rank} • ${myLeaderboardRank.totalHours} giờ xem • ${myLeaderboardRank.totalEpisodes} tập`
-                            : "Chưa có xếp hạng trong khung thời gian này • Hãy xem thêm phim để lọt Top!"}
+                            ? `Đang xếp thứ #${myLeaderboardRank.rank} • ${myLeaderboardRank.totalHours} giờ xem • ${myLeaderboardRank.totalEpisodes} tập đã xem`
+                            : "Chưa ghi nhận giờ xem trong khung thời gian này • Hãy xem thêm phim để lọt Top!"}
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3 self-end sm:self-auto shrink-0">
+                    <div className="flex items-center gap-4 self-end sm:self-auto shrink-0">
                       <div className="text-right">
-                        <div className="text-[10px] uppercase font-semibold text-neutral-400">
+                        <div className="text-[10px] uppercase tracking-wider font-medium text-neutral-400">
                           Thứ hạng
                         </div>
-                        <div className="text-base font-black text-amber-400">
+                        <div className="text-base sm:text-lg font-bold font-mono text-white">
                           {myLeaderboardRank ? `#${myLeaderboardRank.rank}` : "Chưa xếp"}
                         </div>
                       </div>
                       <Link
                         href="/films"
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/20 text-white transition-all active:scale-95"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-white/[0.08] hover:bg-white/[0.14] text-white border border-white/10 transition-all active:scale-95 shadow-sm"
                       >
                         <Film size={13} />
                         <span>Cày phim ngay</span>
@@ -2305,141 +2484,144 @@ export default function UserDashboardPage() {
                   </div>
                 )}
 
-                {/* ── PODIUM TOP 1, 2, 3 HIGHLIGHT ── */}
+                {/* ── PODIUM TOP 1, 2, 3 HIGHLIGHT (STAGE ELEVATION) ── */}
                 {loadingLeaderboard ? (
                   <div className="flex flex-col items-center justify-center py-12 gap-3 text-neutral-400">
                     <Loader2 size={24} className="animate-spin text-amber-400" />
                     <span className="text-xs">Đang cập nhật bảng xếp hạng...</span>
                   </div>
                 ) : leaderboard.length > 0 ? (
-                  <div className="pt-6 pb-2">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-end max-w-2xl mx-auto">
-                      {/* TOP 2 (BẠC - BÊN TRÁI) */}
+                  <div className="pt-4 pb-2">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-end max-w-3xl mx-auto">
+                      {/* TOP 2 (BẠC SILVER - BÊN TRÁI) */}
                       {leaderboard[1] ? (
                         <Link
                           href={`/user/${encodeURIComponent(leaderboard[1].username)}`}
-                          className="group order-2 md:order-1 flex flex-col items-center text-center p-4 rounded-2xl border border-slate-300/20 bg-gradient-to-b from-slate-400/10 to-slate-900/60 shadow-xl relative transition-all duration-300 hover:border-slate-300/40 hover:-translate-y-1"
+                          className="group order-2 md:order-1 flex flex-col items-center text-center p-5 rounded-2xl border border-slate-400/20 bg-gradient-to-b from-slate-400/[0.07] via-slate-900/60 to-black/80 shadow-xl relative transition-all duration-300 hover:border-slate-400/35 hover:-translate-y-1"
                         >
-                          <span className="text-[11px] font-black tracking-wider px-3 py-0.5 rounded-full bg-slate-300 text-black shadow-md mb-3 inline-flex items-center gap-1">
-                            🥈 TOP 2
+                          <span className="text-[11px] font-semibold tracking-wider px-3 py-0.5 rounded-full bg-slate-400/15 border border-slate-400/30 text-slate-200 mb-3 inline-flex items-center gap-1">
+                            #2 Á QUÂN
                           </span>
                           <div className="relative mb-3">
-                            <div className="h-16 w-16 rounded-full overflow-hidden ring-2 ring-slate-300 shadow-[0_0_20px_rgba(203,213,225,0.3)] bg-neutral-900 group-hover:scale-105 transition-transform">
+                            <div className="h-16 w-16 rounded-full overflow-hidden ring-2 ring-slate-400/40 shadow-[0_0_20px_rgba(148,163,184,0.15)] bg-neutral-900 group-hover:scale-105 transition-transform">
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
                                 src={
                                   leaderboard[1].avatarUrl ||
                                   `https://ui-avatars.com/api/?name=${encodeURIComponent(
                                     leaderboard[1].displayName || leaderboard[1].username,
-                                  )}&background=94a3b8&color=ffffff&size=120`
+                                  )}&background=334155&color=cbd5e1&size=120`
                                 }
                                 alt={leaderboard[1].username}
                                 className="h-full w-full object-cover"
                               />
                             </div>
                           </div>
-                          <strong className="text-sm font-bold text-white truncate max-w-[160px] group-hover:text-slate-200 transition-colors">
+                          <strong className="text-sm font-semibold text-white truncate max-w-[160px] group-hover:text-slate-200 transition-colors">
                             {leaderboard[1].displayName || leaderboard[1].username}
                           </strong>
-                          <span className="text-[11px] text-neutral-400 font-mono truncate max-w-[140px]">
+                          <span className="text-xs text-neutral-400 font-mono truncate max-w-[140px] mt-0.5">
                             @{leaderboard[1].username}
                           </span>
-                          <div className="mt-2 text-xs font-black text-slate-200">
-                            {leaderboard[1].totalHours} giờ xem
+                          <div className="mt-2 text-xs font-bold text-slate-200">
+                            {leaderboard[1].totalHours} giờ xem • {leaderboard[1].totalEpisodes || 0} tập
                           </div>
-                          <span className="mt-1 text-[10px] text-slate-400 px-2 py-0.5 rounded bg-white/5 border border-white/10">
-                            {leaderboard[1].rankBadge} {leaderboard[1].rankTitle}
+                          <span className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.08] text-[11px] text-neutral-300">
+                            {renderRankIcon(leaderboard[1].rankIconType, "h-3 w-3 text-slate-300")}
+                            <span>{leaderboard[1].rankTitle}</span>
                           </span>
                         </Link>
                       ) : (
-                        <div className="order-2 md:order-1 opacity-40 p-4 text-center rounded-2xl border border-white/5 bg-white/[0.02]">
+                        <div className="order-2 md:order-1 opacity-40 p-5 text-center rounded-2xl border border-white/5 bg-white/[0.02]">
                           <span className="text-xs text-neutral-500">Đang chờ Top 2</span>
                         </div>
                       )}
 
-                      {/* TOP 1 (VÀNG - CHÍNH GIỮA, CAO NHẤT, RỰC RỠ NHẤT) */}
+                      {/* TOP 1 (QUÁN QUÂN CHAMPAGNE GOLD - CHÍNH GIỮA, CAO NHẤT) */}
                       {leaderboard[0] ? (
                         <Link
                           href={`/user/${encodeURIComponent(leaderboard[0].username)}`}
-                          className="group order-1 md:order-2 flex flex-col items-center text-center p-5 rounded-2xl border-2 border-amber-400/60 bg-gradient-to-b from-amber-400/20 via-amber-500/10 to-black shadow-[0_0_40px_rgba(251,191,36,0.3)] relative -translate-y-2 transition-all duration-300 hover:border-amber-400 hover:shadow-[0_0_50px_rgba(251,191,36,0.5)] hover:-translate-y-3"
+                          className="group order-1 md:order-2 flex flex-col items-center text-center p-6 rounded-2xl border border-amber-400/35 bg-gradient-to-b from-amber-400/[0.12] via-[#1a140b]/80 to-black/90 shadow-[0_0_35px_rgba(245,158,11,0.12)] relative md:-translate-y-3 transition-all duration-300 hover:border-amber-400/50 hover:shadow-[0_0_40px_rgba(245,158,11,0.18)]"
                         >
-                          <Crown size={28} className="text-amber-400 animate-bounce mb-1 drop-shadow-[0_0_12px_rgba(251,191,36,0.8)]" />
-                          <span className="text-xs font-black tracking-wider px-3.5 py-1 rounded-full bg-gradient-to-r from-amber-300 via-amber-400 to-yellow-500 text-black shadow-lg mb-3 inline-flex items-center gap-1">
-                            🥇 QUÁN QUÂN TOP 1
+                          <Crown size={22} className="text-amber-400 mb-1 drop-shadow-[0_0_8px_rgba(245,158,11,0.4)]" />
+                          <span className="text-xs font-bold tracking-wider px-3.5 py-1 rounded-full bg-amber-400/20 border border-amber-400/40 text-amber-300 mb-3 inline-flex items-center gap-1">
+                            #1 QUÁN QUÂN
                           </span>
                           <div className="relative mb-3">
-                            <div className="h-20 w-20 rounded-full overflow-hidden ring-4 ring-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.6)] bg-neutral-900 group-hover:scale-105 transition-transform">
+                            <div className="h-20 w-20 rounded-full overflow-hidden ring-2 ring-amber-400/60 ring-offset-2 ring-offset-black shadow-[0_0_25px_rgba(245,158,11,0.25)] bg-neutral-900 group-hover:scale-105 transition-transform">
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
                                 src={
                                   leaderboard[0].avatarUrl ||
                                   `https://ui-avatars.com/api/?name=${encodeURIComponent(
                                     leaderboard[0].displayName || leaderboard[0].username,
-                                  )}&background=f59e0b&color=000000&size=160`
+                                  )}&background=78350f&color=fde68a&size=160`
                                 }
                                 alt={leaderboard[0].username}
                                 className="h-full w-full object-cover"
                               />
                             </div>
                           </div>
-                          <strong className="text-base font-black text-white truncate max-w-[180px] group-hover:text-amber-300 transition-colors">
+                          <strong className="text-base font-bold text-white truncate max-w-[180px] group-hover:text-amber-200 transition-colors">
                             {leaderboard[0].displayName || leaderboard[0].username}
                           </strong>
-                          <span className="text-xs text-amber-300/80 font-mono truncate max-w-[150px]">
+                          <span className="text-xs text-amber-300/80 font-mono truncate max-w-[150px] mt-0.5">
                             @{leaderboard[0].username}
                           </span>
-                          <div className="mt-2 text-sm font-black text-amber-400">
-                            {leaderboard[0].totalHours} giờ xem • {leaderboard[0].totalEpisodes} tập
+                          <div className="mt-2 text-sm font-bold text-amber-300">
+                            {leaderboard[0].totalHours} giờ xem • {leaderboard[0].totalEpisodes || 0} tập
                           </div>
-                          <span className="mt-1 text-[11px] font-bold text-amber-300 px-2.5 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/30">
-                            👑 {leaderboard[0].rankTitle}
+                          <span className="inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full bg-amber-400/10 border border-amber-400/25 text-xs font-medium text-amber-300">
+                            {renderRankIcon(leaderboard[0].rankIconType || "crown", "h-3.5 w-3.5 text-amber-300")}
+                            <span>{leaderboard[0].rankTitle}</span>
                           </span>
                         </Link>
                       ) : (
-                        <div className="order-1 md:order-2 opacity-40 p-5 text-center rounded-2xl border border-white/5 bg-white/[0.02]">
+                        <div className="order-1 md:order-2 opacity-40 p-6 text-center rounded-2xl border border-white/5 bg-white/[0.02]">
                           <span className="text-xs text-neutral-500">Đang chờ Quán Quân</span>
                         </div>
                       )}
 
-                      {/* TOP 3 (ĐỒNG - BÊN PHẢI) */}
+                      {/* TOP 3 (ĐỒNG BRONZE - BÊN PHẢI) */}
                       {leaderboard[2] ? (
                         <Link
                           href={`/user/${encodeURIComponent(leaderboard[2].username)}`}
-                          className="group order-3 flex flex-col items-center text-center p-4 rounded-2xl border border-amber-700/30 bg-gradient-to-b from-amber-700/15 to-neutral-900/60 shadow-xl relative transition-all duration-300 hover:border-amber-700/50 hover:-translate-y-1"
+                          className="group order-3 flex flex-col items-center text-center p-5 rounded-2xl border border-amber-800/25 bg-gradient-to-b from-amber-800/[0.07] via-neutral-900/60 to-black/80 shadow-xl relative transition-all duration-300 hover:border-amber-800/40 hover:-translate-y-1"
                         >
-                          <span className="text-[11px] font-black tracking-wider px-3 py-0.5 rounded-full bg-gradient-to-r from-amber-700 to-amber-800 text-amber-100 shadow-md mb-3 inline-flex items-center gap-1">
-                            🥉 TOP 3
+                          <span className="text-[11px] font-semibold tracking-wider px-3 py-0.5 rounded-full bg-amber-800/15 border border-amber-800/30 text-amber-200 mb-3 inline-flex items-center gap-1">
+                            #3 HẠNG BA
                           </span>
                           <div className="relative mb-3">
-                            <div className="h-16 w-16 rounded-full overflow-hidden ring-2 ring-amber-700 shadow-[0_0_20px_rgba(180,83,9,0.3)] bg-neutral-900 group-hover:scale-105 transition-transform">
+                            <div className="h-16 w-16 rounded-full overflow-hidden ring-2 ring-amber-700/40 shadow-[0_0_20px_rgba(180,83,9,0.15)] bg-neutral-900 group-hover:scale-105 transition-transform">
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
                                 src={
                                   leaderboard[2].avatarUrl ||
                                   `https://ui-avatars.com/api/?name=${encodeURIComponent(
                                     leaderboard[2].displayName || leaderboard[2].username,
-                                  )}&background=b45309&color=ffffff&size=120`
+                                  )}&background=451a03&color=fdba74&size=120`
                                 }
                                 alt={leaderboard[2].username}
                                 className="h-full w-full object-cover"
                               />
                             </div>
                           </div>
-                          <strong className="text-sm font-bold text-white truncate max-w-[160px] group-hover:text-amber-200 transition-colors">
+                          <strong className="text-sm font-semibold text-white truncate max-w-[160px] group-hover:text-amber-200 transition-colors">
                             {leaderboard[2].displayName || leaderboard[2].username}
                           </strong>
-                          <span className="text-[11px] text-neutral-400 font-mono truncate max-w-[140px]">
+                          <span className="text-xs text-neutral-400 font-mono truncate max-w-[140px] mt-0.5">
                             @{leaderboard[2].username}
                           </span>
-                          <div className="mt-2 text-xs font-black text-amber-500 dark:text-amber-400">
-                            {leaderboard[2].totalHours} giờ xem
+                          <div className="mt-2 text-xs font-bold text-amber-400">
+                            {leaderboard[2].totalHours} giờ xem • {leaderboard[2].totalEpisodes || 0} tập
                           </div>
-                          <span className="mt-1 text-[10px] text-slate-400 px-2 py-0.5 rounded bg-white/5 border border-white/10">
-                            {leaderboard[2].rankBadge} {leaderboard[2].rankTitle}
+                          <span className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.08] text-[11px] text-neutral-300">
+                            {renderRankIcon(leaderboard[2].rankIconType, "h-3 w-3 text-amber-500")}
+                            <span>{leaderboard[2].rankTitle}</span>
                           </span>
                         </Link>
                       ) : (
-                        <div className="order-3 opacity-40 p-4 text-center rounded-2xl border border-white/5 bg-white/[0.02]">
+                        <div className="order-3 opacity-40 p-5 text-center rounded-2xl border border-white/5 bg-white/[0.02]">
                           <span className="text-xs text-neutral-500">Đang chờ Top 3</span>
                         </div>
                       )}
@@ -2447,50 +2629,52 @@ export default function UserDashboardPage() {
                   </div>
                 ) : (
                   <div className="text-center py-12 rounded-2xl border border-white/5 bg-white/[0.02]">
-                    <Trophy size={36} className="text-neutral-600 mx-auto mb-2" />
-                    <p className="text-sm text-neutral-400 font-semibold">
+                    <Trophy size={32} className="text-neutral-600 mx-auto mb-2" />
+                    <p className="text-sm text-neutral-400 font-medium">
                       Chưa có khán giả nào ghi nhận giờ xem trong khung giờ này.
                     </p>
                     <p className="text-xs text-neutral-500 mt-1">
-                      Hãy là người đầu tiên cày phim để giành ngôi Quán Quân!
+                      Hãy là người đầu tiên cày phim để ghi danh trên Bảng Vàng!
                     </p>
                   </div>
                 )}
 
-                {/* ── BẢNG TOÀN BỘ TOP 10 ── */}
+                {/* ── BẢNG TOÀN BỘ TOP 10 (ELEGANT HALL OF FAME LIST) ── */}
                 {leaderboard.length > 0 && (
-                  <div className="space-y-3">
+                  <div className="space-y-3 pt-2">
                     <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                      <Medal size={16} className="text-amber-400" /> Danh Sách Chi Tiết Top 10
+                      <Medal size={16} className="text-amber-400" />
+                      <span>Danh Sách Chi Tiết Top 10</span>
                     </h3>
 
-                    <div className="divide-y divide-white/[0.06] rounded-2xl border border-white/10 bg-white/[0.02] overflow-hidden">
+                    <div className="divide-y divide-white/[0.06] rounded-2xl border border-white/[0.08] bg-white/[0.02] overflow-hidden">
                       {leaderboard.map((item: any) => {
                         const isCurrentUser =
                           user && (user.id === item.id || user.username === item.username);
+                        const rankNumberFormatted = String(item.rank).padStart(2, "0");
                         return (
                           <Link
                             key={item.id}
                             href={`/user/${encodeURIComponent(item.username)}`}
                             className={`p-3.5 sm:p-4 flex items-center justify-between gap-3 transition-colors block ${
                               isCurrentUser
-                                ? "bg-amber-400/[0.08] border-l-4 border-l-amber-400"
+                                ? "bg-white/[0.05] border-l-2 border-l-amber-400"
                                 : "hover:bg-white/[0.03]"
                             }`}
                           >
-                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                            <div className="flex items-center gap-3.5 min-w-0 flex-1">
                               <span
-                                className={`w-7 text-center font-black text-sm shrink-0 ${
+                                className={`w-7 text-center font-bold font-mono text-sm shrink-0 ${
                                   item.rank === 1
-                                    ? "text-amber-400 text-base"
+                                    ? "text-amber-400"
                                     : item.rank === 2
-                                    ? "text-slate-300 text-base"
+                                    ? "text-slate-300"
                                     : item.rank === 3
-                                    ? "text-amber-600 text-base"
+                                    ? "text-amber-600"
                                     : "text-neutral-500"
                                 }`}
                               >
-                                {item.medal || `#${item.rank}`}
+                                {rankNumberFormatted}
                               </span>
 
                               <div className="h-10 w-10 rounded-full overflow-hidden bg-neutral-900 shrink-0 border border-white/10">
@@ -2500,7 +2684,7 @@ export default function UserDashboardPage() {
                                     item.avatarUrl ||
                                     `https://ui-avatars.com/api/?name=${encodeURIComponent(
                                       item.displayName || item.username,
-                                    )}&background=8b5cf6&color=ffffff&size=80`
+                                    )}&background=18181b&color=ffffff&size=80`
                                   }
                                   alt={item.username}
                                   className="h-full w-full object-cover"
@@ -2509,30 +2693,31 @@ export default function UserDashboardPage() {
 
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-2">
-                                  <strong className="text-xs sm:text-sm font-bold text-white truncate hover:underline">
+                                  <strong className="text-xs sm:text-sm font-semibold text-white truncate hover:underline">
                                     {item.displayName || item.username}
                                   </strong>
                                   {isCurrentUser && (
-                                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-400 text-black">
+                                    <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
                                       BẠN
                                     </span>
                                   )}
                                 </div>
-                                <div className="flex items-center gap-2 text-[11px] text-neutral-400">
+                                <div className="flex items-center gap-2 text-[11px] text-neutral-400 mt-0.5">
                                   <span>@{item.username}</span>
                                   <span>•</span>
-                                  <span className="text-amber-400/80 font-medium">
-                                    {item.rankBadge} {item.rankTitle}
+                                  <span className="inline-flex items-center gap-1 text-neutral-300 font-medium">
+                                    {renderRankIcon(item.rankIconType, "h-3 w-3 text-neutral-400")}
+                                    <span>{item.rankTitle}</span>
                                   </span>
                                 </div>
                               </div>
                             </div>
 
                             <div className="text-right shrink-0">
-                              <strong className="text-xs sm:text-sm font-black text-white block">
+                              <strong className="text-xs sm:text-sm font-bold text-white block">
                                 {item.totalHours} giờ
                               </strong>
-                              <span className="text-[10px] text-neutral-500 font-mono">
+                              <span className="text-[10px] text-neutral-400 font-mono">
                                 {item.totalEpisodes} tập đã xem
                               </span>
                             </div>
@@ -3178,7 +3363,7 @@ export default function UserDashboardPage() {
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="max-h-[90vh] w-full max-w-2xl space-y-5 overflow-y-auto rounded-2xl border border-white/15 bg-[#16171d] p-4 shadow-2xl sm:p-6"
+              className="max-h-[90vh] w-full max-w-3xl space-y-5 overflow-y-auto rounded-2xl border border-white/15 bg-[#16171d] p-4 shadow-2xl sm:p-6"
             >
               <div className="flex items-center justify-between border-b border-white/10 pb-3">
                 <div className="flex items-center gap-2.5">
@@ -3326,50 +3511,113 @@ export default function UserDashboardPage() {
               )}
 
               {appearanceTab === "nameColor" && (
-                <div className="space-y-5">
-                  <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.06] to-transparent p-4">
-                    <div
-                      className="h-16 w-16 shrink-0 overflow-hidden rounded-full border-[3px] bg-neutral-900"
-                      style={{ borderColor: selectedAvatarFrameColor }}
-                    >
-                      {(customAvatarInput.trim() || selectedAvatar || profile.avatarUrl || (isAdmin ? "/avatars/admin-mascot-riso.png" : "")) === "/avatars/admin-mascot-riso.png" ? (
-                        <InteractiveAdminMascot size="100%" className="w-full h-full bg-[#faf9f7]" />
-                      ) : (
-                        /* eslint-disable-next-line @next/next/no-img-element */
-                        <img
-                          src={
-                            customAvatarInput.trim() ||
-                            selectedAvatar ||
-                            profile.avatarUrl ||
-                            `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName || profile.username)}&background=8b5cf6&color=ffffff&size=120`
+                <div className="space-y-6">
+                  {/* Xem trước tên */}
+                  <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.06] via-white/[0.02] to-transparent p-4 sm:p-5">
+                    <ProfileAvatarRender
+                      avatarSrc={customAvatarInput.trim() || selectedAvatar || profile.avatarUrl}
+                      username={profile.username}
+                      displayName={displayName || profile.displayName}
+                      frameValue={selectedAvatarFrameColor}
+                      sizeClass="h-16 w-16"
+                      isAdmin={isAdmin}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-400">
+                          Xem trước tên hiển thị
+                        </p>
+                        {(() => {
+                          const eff = NAME_EFFECT_OPTIONS.find((e) => e.value === selectedNameColor);
+                          if (eff) {
+                            return (
+                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-violet-500/20 text-violet-300 border border-violet-500/30">
+                                {eff.badge}
+                              </span>
+                            );
                           }
-                          alt="Xem trước avatar"
-                          className="h-full w-full object-cover"
-                        />
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-500">
-                        Xem trước tên hiển thị
-                      </p>
-                      <p
-                        className="mt-1 truncate text-xl font-black transition-colors"
-                        style={{ color: selectedNameColor }}
-                      >
-                        {displayName || profile.displayName || profile.username}
-                      </p>
-                      <p className="mt-0.5 text-xs text-neutral-500">
-                        @{profile.username}
+                          return null;
+                        })()}
+                      </div>
+                      {(() => {
+                        const nameProps = getNameColorProps(selectedNameColor);
+                        return (
+                          <p
+                            className={cn("mt-1 truncate text-xl sm:text-2xl font-black transition-all", nameProps.className)}
+                            style={nameProps.style}
+                          >
+                            {displayName || profile.displayName || profile.username}
+                          </p>
+                        );
+                      })()}
+                      <p className="mt-0.5 text-xs text-neutral-400">
+                        @{profile.username} •{" "}
+                        <span className="text-neutral-300 font-medium">
+                          {ALL_NAME_COLOR_OPTIONS.find((c) => c.value === selectedNameColor)?.label || "Màu tùy chỉnh"}
+                        </span>
                       </p>
                     </div>
                   </div>
 
+                  {/* Mục 1: Hiệu ứng tên động & nhấp nháy */}
                   <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-1.5">
+                        <Sparkles size={14} className="text-amber-400" />
+                        <span>Hiệu ứng tên động & nhấp nháy ({NAME_EFFECT_OPTIONS.length} hiệu ứng)</span>
+                      </p>
+                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30">
+                        HOT / VIP
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                      {NAME_EFFECT_OPTIONS.map((effect) => {
+                        const isSelected = selectedNameColor === effect.value;
+                        return (
+                          <button
+                            key={`effect-${effect.id}`}
+                            type="button"
+                            onClick={() => setSelectedNameColor(effect.value)}
+                            aria-label={`Chọn hiệu ứng ${effect.label}`}
+                            className={cn(
+                              "relative p-3 rounded-2xl border text-left transition-all cursor-pointer group flex flex-col justify-between overflow-hidden",
+                              isSelected
+                                ? "border-violet-500 bg-violet-500/15 ring-2 ring-violet-500/40 shadow-lg shadow-violet-500/20"
+                                : "border-white/10 bg-white/[0.03] hover:border-white/25 hover:bg-white/[0.06]",
+                            )}
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-white/10 text-neutral-300">
+                                {effect.badge}
+                              </span>
+                              {isSelected && (
+                                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-violet-500 text-white shadow-sm">
+                                  <Check size={10} strokeWidth={3} />
+                                </span>
+                              )}
+                            </div>
+                            <div className="py-1">
+                              <span className={cn("text-sm font-bold truncate block", effect.className)}>
+                                {displayName || profile.displayName || profile.username}
+                              </span>
+                            </div>
+                            <div className="text-[11px] font-medium text-neutral-400 group-hover:text-neutral-200 mt-1 truncate">
+                              {effect.label}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Mục 2: Bảng màu tên đơn sắc */}
+                  <div className="space-y-3 pt-1">
                     <p className="text-xs font-bold uppercase tracking-wider text-neutral-300">
-                      Bảng màu tên ({PROFILE_COLOR_OPTIONS.length} màu)
+                      Bảng màu đơn sắc ({NAME_SOLID_OPTIONS.length} màu)
                     </p>
                     <div className="grid grid-cols-5 gap-2.5 sm:grid-cols-8">
-                      {PROFILE_COLOR_OPTIONS.map((color) => {
+                      {NAME_SOLID_OPTIONS.map((color) => {
                         const isSelected = selectedNameColor === color.value;
                         return (
                           <button
@@ -3379,7 +3627,7 @@ export default function UserDashboardPage() {
                             aria-label={`Chọn màu tên ${color.label}`}
                             title={color.label}
                             className={cn(
-                              "relative aspect-square rounded-xl border bg-black/30 p-1.5 transition-all hover:-translate-y-0.5",
+                              "relative aspect-square rounded-xl border bg-black/30 p-1.5 transition-all hover:-translate-y-0.5 cursor-pointer",
                               isSelected
                                 ? "border-white/70 ring-2 ring-violet-400/50"
                                 : "border-white/10 hover:border-white/30",
@@ -3403,57 +3651,109 @@ export default function UserDashboardPage() {
               )}
 
               {appearanceTab === "avatarFrame" && (
-                <div className="space-y-5">
+                <div className="space-y-6">
+                  {/* Xem trước khung avatar */}
                   <div className="grid place-items-center rounded-2xl border border-white/10 bg-[radial-gradient(circle_at_center,rgba(139,92,246,.13),transparent_62%)] p-6">
-                    <div
-                      className="h-28 w-28 overflow-hidden rounded-full border-4 bg-neutral-900 transition-[border-color,box-shadow] duration-300"
-                      style={{
-                        borderColor: selectedAvatarFrameColor,
-                        boxShadow: `0 0 0 5px ${selectedAvatarFrameColor}20, 0 16px 35px rgba(0,0,0,.5)`,
-                      }}
-                    >
-                      {(customAvatarInput.trim() || selectedAvatar || profile.avatarUrl || (isAdmin ? "/avatars/admin-mascot-riso.png" : "")) === "/avatars/admin-mascot-riso.png" ? (
-                        <InteractiveAdminMascot size="100%" className="w-full h-full bg-[#faf9f7]" />
-                      ) : (
-                        /* eslint-disable-next-line @next/next/no-img-element */
-                        <img
-                          src={
-                            customAvatarInput.trim() ||
-                            selectedAvatar ||
-                            profile.avatarUrl ||
-                            `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName || profile.username)}&background=8b5cf6&color=ffffff&size=160`
-                          }
-                          alt="Xem trước khung avatar"
-                          className="h-full w-full object-cover"
-                        />
-                      )}
+                    <ProfileAvatarRender
+                      avatarSrc={customAvatarInput.trim() || selectedAvatar || profile.avatarUrl}
+                      username={profile.username}
+                      displayName={displayName || profile.displayName}
+                      frameValue={selectedAvatarFrameColor}
+                      sizeClass="h-28 w-28"
+                      isAdmin={isAdmin}
+                    />
+                    <div className="mt-4 text-center">
+                      <p className="text-sm font-bold text-white flex items-center justify-center gap-1.5">
+                        <span>{getAvatarFrameConfig(selectedAvatarFrameColor).label}</span>
+                        {getAvatarFrameConfig(selectedAvatarFrameColor).isAnimated && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30">
+                            Hiệu ứng động
+                          </span>
+                        )}
+                      </p>
+                      <p className="text-xs text-neutral-400 mt-0.5">
+                        Khung đại diện sẽ hiển thị trên ảnh đại diện của bạn khắp hệ thống.
+                      </p>
                     </div>
-                    <p className="mt-4 text-xs font-semibold text-neutral-300">
-                      {PROFILE_COLOR_OPTIONS.find(
-                        (color) => color.value === selectedAvatarFrameColor,
-                      )?.label || "Màu tùy chỉnh"}
-                    </p>
                   </div>
 
+                  {/* Mục 1: Khung avatar động */}
                   <div className="space-y-3">
-                    <p className="text-xs font-bold uppercase tracking-wider text-neutral-300">
-                      Màu khung avatar ({PROFILE_COLOR_OPTIONS.length} màu)
-                    </p>
-                    <div className="grid grid-cols-5 gap-2.5 sm:grid-cols-8">
-                      {PROFILE_COLOR_OPTIONS.map((color) => {
-                        const isSelected =
-                          selectedAvatarFrameColor === color.value;
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-1.5">
+                        <Sparkles size={14} className="text-amber-400" />
+                        <span>Khung avatar động & hào quang ({AVATAR_FRAME_ANIMATED_OPTIONS.length} khung)</span>
+                      </p>
+                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30">
+                        ĐỘNG / VIP
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                      {AVATAR_FRAME_ANIMATED_OPTIONS.map((frame) => {
+                        const isSelected = selectedAvatarFrameColor === frame.value;
                         return (
                           <button
-                            key={`frame-${color.id}`}
+                            key={`frame-anim-${frame.id}`}
                             type="button"
-                            onClick={() =>
-                              setSelectedAvatarFrameColor(color.value)
-                            }
+                            onClick={() => setSelectedAvatarFrameColor(frame.value)}
+                            aria-label={`Chọn khung ${frame.label}`}
+                            className={cn(
+                              "relative p-3 rounded-2xl border text-center transition-all cursor-pointer group flex flex-col items-center justify-between",
+                              isSelected
+                                ? "border-violet-500 bg-violet-500/15 ring-2 ring-violet-500/40 shadow-lg shadow-violet-500/20"
+                                : "border-white/10 bg-white/[0.03] hover:border-white/25 hover:bg-white/[0.06]",
+                            )}
+                          >
+                            <div className="flex w-full items-center justify-between mb-2">
+                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-white/10 text-neutral-300">
+                                {frame.badge}
+                              </span>
+                              {isSelected && (
+                                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-violet-500 text-white shadow-sm">
+                                  <Check size={10} strokeWidth={3} />
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Mini Avatar Frame Preview */}
+                            <div className="my-1 flex items-center justify-center">
+                              <ProfileAvatarRender
+                                avatarSrc={customAvatarInput.trim() || selectedAvatar || profile.avatarUrl}
+                                username={profile.username}
+                                displayName={displayName || profile.displayName}
+                                frameValue={frame.value}
+                                sizeClass="h-12 w-12"
+                                isAdmin={isAdmin}
+                              />
+                            </div>
+
+                            <span className="text-[11px] font-semibold text-neutral-300 group-hover:text-white truncate w-full mt-2">
+                              {frame.label}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Mục 2: Khung avatar đơn sắc */}
+                  <div className="space-y-3 pt-1">
+                    <p className="text-xs font-bold uppercase tracking-wider text-neutral-300">
+                      Màu khung đơn sắc ({AVATAR_FRAME_SOLID_OPTIONS.length} màu)
+                    </p>
+                    <div className="grid grid-cols-5 gap-2.5 sm:grid-cols-8">
+                      {AVATAR_FRAME_SOLID_OPTIONS.map((color) => {
+                        const isSelected = selectedAvatarFrameColor === color.value;
+                        return (
+                          <button
+                            key={`frame-solid-${color.id}`}
+                            type="button"
+                            onClick={() => setSelectedAvatarFrameColor(color.value)}
                             aria-label={`Chọn màu khung ${color.label}`}
                             title={color.label}
                             className={cn(
-                              "relative aspect-square rounded-full border-4 bg-[#111318] p-1 transition-all hover:scale-105",
+                              "relative aspect-square rounded-full border-4 bg-[#111318] p-1 transition-all hover:scale-105 cursor-pointer",
                               isSelected
                                 ? "ring-2 ring-white/60 ring-offset-2 ring-offset-[#16171d]"
                                 : "border-white/10",

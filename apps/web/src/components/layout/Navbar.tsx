@@ -61,6 +61,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { InteractiveAdminMascot } from "@/components/mascot/InteractiveAdminMascot";
 import { useReliableNavigation } from "@/hooks/useReliableNavigation";
+import { getNameColorProps, getAvatarFrameConfig } from "@/lib/profile-appearance";
 
 const MobileSidebar = dynamic(
   () => import("./MobileSidebar").then((mod) => mod.MobileSidebar),
@@ -1205,85 +1206,95 @@ export function Navbar() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {user ? (
-                <div className="hidden lg:block">
-                  <DropdownMenu modal={false}>
-                    <DropdownMenuTrigger className="flex items-center space-x-1 focus:outline-none cursor-pointer group">
-                      {user.avatarUrl === "/avatars/admin-mascot-riso.png" ||
-                      user.email?.toLowerCase() === "huywashere@gmail.com" ? (
-                        <div className="w-8 h-8 rounded-full overflow-hidden border border-white/20 group-hover:border-violet-400 transition-all shadow-md bg-[#faf9f7] shrink-0">
-                          <InteractiveAdminMascot
-                            size={32}
-                            className="w-full h-full"
-                          />
-                        </div>
-                      ) : user.avatarUrl ? (
-                        /* eslint-disable-next-line @next/next/no-img-element */
-                        <img
-                          src={user.avatarUrl}
-                          alt={user.displayName || user.username}
-                          referrerPolicy="no-referrer"
-                          className="w-8 h-8 rounded-full object-cover border border-white/20 group-hover:border-violet-400 transition-all shadow-md"
-                          onError={(e) => {
-                            (e.currentTarget as HTMLImageElement).src =
-                              `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.username)}&background=8b5cf6&color=ffffff&size=64`;
-                          }}
-                        />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-violet-500/20 border border-violet-400/40 text-violet-300 font-bold text-xs flex items-center justify-center shadow-md group-hover:border-violet-400 transition-colors">
-                          {(user.displayName || user.username || "U")
-                            .slice(0, 2)
-                            .toUpperCase()}
-                        </div>
-                      )}
-                      <ChevronDown
-                        size={13}
-                        className="text-neutral-400 group-hover:text-white transition-colors"
-                      />
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="end"
-                      alignOffset={-32}
-                      sideOffset={10}
-                      collisionPadding={{ right: 32 }}
-                      className={cn(
-                        "w-60 -translate-x-4 sm:-translate-x-6 p-1.5 bg-[#090c15]/85 backdrop-blur-3xl border border-white/15 text-neutral-200 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] z-50 divide-y divide-white/10 ring-1 ring-white/10",
-                        cardFont.className,
-                      )}
-                    >
-                      <div className="p-2 flex items-center space-x-2.5 pb-2">
-                        {user.avatarUrl === "/avatars/admin-mascot-riso.png" ||
-                        user.email?.toLowerCase() === "huywashere@gmail.com" ? (
-                          <div className="h-8 w-8 rounded-full overflow-hidden border border-white/20 shadow-md shrink-0 bg-[#faf9f7]">
-                            <InteractiveAdminMascot
-                              size={32}
-                              className="w-full h-full"
-                            />
-                          </div>
-                        ) : (
-                          <img
-                            src={
-                              user.avatarUrl ||
-                              `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.username)}&background=8b5cf6&color=ffffff&size=80`
-                            }
-                            alt={user.displayName || user.username}
-                            referrerPolicy="no-referrer"
-                            className="h-8 w-8 rounded-full object-cover border border-white/20 shadow-md shrink-0"
-                            onError={(e) => {
-                              (e.currentTarget as HTMLImageElement).src =
-                                `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.username)}&background=8b5cf6&color=ffffff&size=80`;
-                            }}
-                          />
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-xs text-white truncate">
-                            {user.displayName || user.username}
-                          </p>
-                          <p className="text-[11px] text-neutral-400 truncate">
-                            @{user.username}
-                          </p>
+              {user ? (() => {
+                const navFrameConfig = getAvatarFrameConfig(user.avatarFrameColor);
+                const navNameProps = getNameColorProps(user.nameColor);
+                const isAdmin =
+                  user.avatarUrl === "/avatars/admin-mascot-riso.png" ||
+                  user.email?.toLowerCase() === "huywashere@gmail.com";
+
+                const renderNavAvatar = (size = "w-8 h-8", imgSize = 64) => {
+                  const avatarContent = isAdmin ? (
+                    <InteractiveAdminMascot size={32} className="w-full h-full" />
+                  ) : user.avatarUrl ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={user.avatarUrl}
+                      alt={user.displayName || user.username}
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src =
+                          `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.username)}&background=8b5cf6&color=ffffff&size=${imgSize}`;
+                      }}
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-violet-500/20 text-violet-300 font-bold text-xs flex items-center justify-center">
+                      {(user.displayName || user.username || "U").slice(0, 2).toUpperCase()}
+                    </div>
+                  );
+
+                  if (navFrameConfig.isRainbowWrap) {
+                    return (
+                      <div className={cn("relative shrink-0 anim-frame-rainbow-wrap", size)}>
+                        <div className="w-full h-full rounded-full overflow-hidden bg-neutral-900">
+                          {avatarContent}
                         </div>
                       </div>
+                    );
+                  }
+
+                  return (
+                    <div
+                      className={cn(
+                        "rounded-full overflow-hidden shrink-0 transition-all shadow-md bg-neutral-900",
+                        size,
+                        navFrameConfig.className || "border border-white/20 group-hover:border-violet-400",
+                      )}
+                      style={navFrameConfig.style}
+                    >
+                      {avatarContent}
+                    </div>
+                  );
+                };
+
+                return (
+                  <div className="hidden lg:block">
+                    <DropdownMenu modal={false}>
+                      <DropdownMenuTrigger className="flex items-center space-x-1.5 focus:outline-none cursor-pointer group">
+                        {renderNavAvatar("w-8 h-8", 64)}
+                        <ChevronDown
+                          size={13}
+                          className="text-neutral-400 group-hover:text-white transition-colors"
+                        />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        alignOffset={-32}
+                        sideOffset={10}
+                        collisionPadding={{ right: 32 }}
+                        className={cn(
+                          "w-60 -translate-x-4 sm:-translate-x-6 p-1.5 bg-[#090c15]/85 backdrop-blur-3xl border border-white/15 text-neutral-200 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] z-50 divide-y divide-white/10 ring-1 ring-white/10",
+                          cardFont.className,
+                        )}
+                      >
+                        <div className="p-2 flex items-center space-x-2.5 pb-2">
+                          {renderNavAvatar("w-9 h-9", 80)}
+                          <div className="flex-1 min-w-0">
+                            <p
+                              className={cn(
+                                "font-bold text-xs truncate transition-all",
+                                navNameProps.className || "text-white",
+                              )}
+                              style={navNameProps.style}
+                            >
+                              {user.displayName || user.username}
+                            </p>
+                            <p className="text-[11px] text-neutral-400 truncate">
+                              @{user.username}
+                            </p>
+                          </div>
+                        </div>
 
                       <div className="py-1 space-y-0.5">
                         <DropdownMenuItem
@@ -1407,7 +1418,8 @@ export function Navbar() {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
-              ) : (
+              );
+            })() : (
                 /* Desktop Guest Login User Icon Button (Opens Unified Auth Modal) */
                 <button
                   type="button"

@@ -38,6 +38,8 @@ import { useAuthModalStore } from "@/store/authModalStore";
 import { useTranslation } from "@/store/langStore";
 import { GENRES_LIST, COUNTRIES_LIST, CountryFlagImage } from "./Navbar";
 import { cardFont } from "@/lib/fonts";
+import { getNameColorProps, getAvatarFrameConfig } from "@/lib/profile-appearance";
+import { InteractiveAdminMascot } from "@/components/mascot/InteractiveAdminMascot";
 
 interface MobileSidebarProps {
   isOpen: boolean;
@@ -131,56 +133,100 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
         </div>
 
         {/* User Profile Card (Visible when logged in) */}
-        {user ? (
-          <div className="border-b border-white/10 bg-white/[0.02] px-3 py-2.5">
-            <div className="flex flex-col space-y-2">
-              <div className="flex items-center space-x-3">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={
-                    user.avatarUrl ||
-                    `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.username)}&background=10b981&color=ffffff&size=80`
-                  }
-                  alt={user.displayName || user.username}
-                  referrerPolicy="no-referrer"
-                  className="h-9 w-9 shrink-0 rounded-full border border-white/20 object-cover shadow-md"
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.username)}&background=10b981&color=ffffff&size=80`;
-                  }}
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="font-extrabold text-xs text-white truncate">
-                    {user.displayName || user.username}
-                  </p>
-                  <p className="text-[11px] text-neutral-400 truncate">
-                    @{user.username}
-                  </p>
+        {user ? (() => {
+          const frameConfig = getAvatarFrameConfig(user.avatarFrameColor);
+          const nameProps = getNameColorProps(user.nameColor);
+          const isAdmin =
+            user.avatarUrl === "/avatars/admin-mascot-riso.png" ||
+            user.email?.toLowerCase() === "huywashere@gmail.com";
+
+          const renderSidebarAvatar = () => {
+            const avatarContent = isAdmin ? (
+              <InteractiveAdminMascot size={36} className="w-full h-full bg-[#faf9f7]" />
+            ) : (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={
+                  user.avatarUrl ||
+                  `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.username)}&background=8b5cf6&color=ffffff&size=80`
+                }
+                alt={user.displayName || user.username}
+                referrerPolicy="no-referrer"
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.username)}&background=8b5cf6&color=ffffff&size=80`;
+                }}
+              />
+            );
+
+            if (frameConfig.isRainbowWrap) {
+              return (
+                <div className="relative shrink-0 anim-frame-rainbow-wrap h-9 w-9">
+                  <div className="w-full h-full rounded-full overflow-hidden bg-neutral-900">
+                    {avatarContent}
+                  </div>
+                </div>
+              );
+            }
+
+            return (
+              <div
+                className={cn(
+                  "h-9 w-9 shrink-0 rounded-full overflow-hidden bg-neutral-900 shadow-md",
+                  frameConfig.className || "border border-white/20",
+                )}
+                style={frameConfig.style}
+              >
+                {avatarContent}
+              </div>
+            );
+          };
+
+          return (
+            <div className="border-b border-white/10 bg-white/[0.02] px-3 py-2.5">
+              <div className="flex flex-col space-y-2">
+                <div className="flex items-center space-x-3">
+                  {renderSidebarAvatar()}
+                  <div className="flex-1 min-w-0">
+                    <p
+                      className={cn(
+                        "font-extrabold text-xs truncate transition-all",
+                        nameProps.className || "text-white",
+                      )}
+                      style={nameProps.style}
+                    >
+                      {user.displayName || user.username}
+                    </p>
+                    <p className="text-[11px] text-neutral-400 truncate">
+                      @{user.username}
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <Link
+                    href={`/user/${encodeURIComponent(user.username)}`}
+                    className="flex h-8 items-center justify-center gap-1.5 rounded-lg border border-white/15 bg-white/10 px-3 text-center text-[11px] font-semibold text-white transition-all hover:bg-white/20 active:scale-95"
+                    onClick={onClose}
+                  >
+                    <User size={13} />
+                    <span>{t("nav.profile")}</span>
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      logout();
+                      onClose();
+                    }}
+                    className="flex h-8 items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 text-center text-[11px] font-bold text-neutral-300 transition-all hover:bg-white/10 hover:text-white active:scale-95"
+                  >
+                    <LogOut size={13} />
+                    <span>{t("nav.logout")}</span>
+                  </button>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-1.5">
-                <Link
-                  href={`/user/${encodeURIComponent(user.username)}`}
-                  className="flex h-8 items-center justify-center gap-1.5 rounded-lg border border-white/15 bg-white/10 px-3 text-center text-[11px] font-semibold text-white transition-all hover:bg-white/20 active:scale-95"
-                  onClick={onClose}
-                >
-                  <User size={13} />
-                  <span>{t("nav.profile")}</span>
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => {
-                    logout();
-                    onClose();
-                  }}
-                  className="flex h-8 items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 text-center text-[11px] font-bold text-neutral-300 transition-all hover:bg-white/10 hover:text-white active:scale-95"
-                >
-                  <LogOut size={13} />
-                  <span>{t("nav.logout")}</span>
-                </button>
-              </div>
             </div>
-          </div>
-        ) : (
+          );
+        })() : (
           <div className="border-b border-white/10 bg-white/[0.02] px-3 py-2.5">
             <button
               type="button"
