@@ -598,17 +598,33 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   letter-spacing: 0.01em;
 }
 
-/* ── Mobile Player Controls: Lower seek bar & spacing ── */
+/* ── Mobile Player Controls & Progress Scrubber ("Chỗ tua") Touch Architecture ── */
 @media (max-width: 768px) {
   .art-video-player.art-mobile,
   .art-video-player {
-    --art-bottom-gap: 2px !important;
-    --art-progress-top-gap: 4px !important;
+    --art-bottom-gap: 4px !important;
+    --art-progress-top-gap: 6px !important;
   }
   .art-video-player .art-bottom .art-progress {
-    padding-top: 4px !important;
-    padding-bottom: 2px !important;
-    margin-bottom: -2px !important;
+    padding-top: 8px !important;
+    padding-bottom: 6px !important;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+    margin-bottom: 0 !important;
+    touch-action: manipulation !important;
+  }
+  .art-video-player .art-control-progress {
+    height: 20px !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+  .art-video-player .art-control-progress-inner {
+    height: 5px !important;
+    border-radius: 9999px !important;
+  }
+  .art-video-player .art-progress:active .art-control-progress-inner,
+  .art-video-player .art-control-progress:hover .art-control-progress-inner {
+    height: 7px !important;
   }
 }
 
@@ -915,7 +931,7 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   fill: #a855f7 !important;
 }
 
-/* Universal display rule: Ensure ALL controls remain visible on all screen sizes & mobile */
+/* Universal display rule: Ensure desktop displays controls cleanly */
 .art-video-player .art-control-screenshot,
 .art-video-player .art-control-pip,
 .art-video-player .art-control-fullscreenWeb,
@@ -930,7 +946,6 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
 .art-video-player .art-control-time,
 .art-video-player .art-control-subtitle-toggle,
 .art-video-player.art-mobile .art-control-screenshot,
-.art-video-player.art-mobile .art-control-pip,
 .art-video-player.art-mobile .art-control-fullscreenWeb,
 .art-video-player.art-mobile .art-control-airplay,
 .art-video-player.art-mobile .art-control-server-health,
@@ -939,7 +954,6 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
 .art-video-player.art-mobile .art-control-playAndPause,
 .art-video-player.art-mobile .art-control-backward-10,
 .art-video-player.art-mobile .art-control-forward-10,
-.art-video-player.art-mobile .art-control-volume,
 .art-video-player.art-mobile .art-control-time,
 .art-video-player.art-mobile .art-control-subtitle-toggle {
   display: inline-flex !important;
@@ -957,9 +971,21 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   display: block;
 }
 
+.art-video-player .art-progress-indicator {
+  background: #a855f7 !important;
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.8), 0 2px 6px rgba(0, 0, 0, 0.7) !important;
+  border: 1.5px solid #ffffff !important;
+  width: 20px !important;
+  height: 20px !important;
+  margin-left: -10px !important;
+  border-radius: 50% !important;
+  cursor: pointer !important;
+  transition: transform 0.15s ease !important;
+}
+
 .art-video-player .art-progress-indicator svg {
-  width: 18px;
-  height: 18px;
+  width: 14px;
+  height: 14px;
   display: block;
 }
 
@@ -971,8 +997,16 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
     --art-control-icon-scale: 0.9 !important;
   }
 
+  /* On mobile touch devices, mute is handled by physical hardware buttons; hide volume & pip to prevent controls and seek area from being cramped or overflow-clipped */
+  .art-video-player .art-control-volume,
+  .art-video-player.art-mobile .art-control-volume,
+  .art-video-player .art-control-pip,
+  .art-video-player.art-mobile .art-control-pip {
+    display: none !important;
+  }
+
   .art-video-player .art-bottom {
-    padding: 0 4px 2px 4px !important;
+    padding: 0 max(4px, env(safe-area-inset-right, 0px)) max(2px, env(safe-area-inset-bottom, 0px)) max(4px, env(safe-area-inset-left, 0px)) !important;
   }
 
   .art-video-player .netphim-timeline-marker {
@@ -1029,9 +1063,9 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   }
 
   .art-video-player .art-control-time {
-    font-size: 10px !important;
-    padding: 0 2px !important;
-    letter-spacing: -0.3px !important;
+    font-size: 11px !important;
+    padding: 0 4px !important;
+    letter-spacing: -0.2px !important;
     white-space: nowrap !important;
     font-variant-numeric: tabular-nums !important;
     flex-shrink: 0 !important;
@@ -1460,10 +1494,11 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   }
 
   .art-video-player .art-control-progress {
-    display: block !important;
+    display: flex !important;
+    align-items: center !important;
     width: auto !important;
     min-width: 0 !important;
-    height: 16px !important;
+    height: 20px !important;
     min-height: 0 !important;
     padding: 0 !important;
     cursor: pointer;
@@ -1471,6 +1506,7 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
 
   .art-video-player .art-control-progress-inner {
     height: 5px !important;
+    border-radius: 9999px !important;
   }
 
   .art-video-player .art-controls {
@@ -1677,8 +1713,23 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   filter: none !important;
 }
 
+/* Floating timestamp tooltip that follows scrubber touch & cursor */
 .art-video-player .art-progress-tip {
-  display: none !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-manrope), ui-monospace, monospace !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
+  background: rgba(13, 16, 24, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  border-radius: 8px !important;
+  padding: 3px 8px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.85) !important;
+  pointer-events: none !important;
+  z-index: 50 !important;
+  letter-spacing: 0.02em !important;
 }
 
 /* ==========================================================================

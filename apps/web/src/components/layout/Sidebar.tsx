@@ -312,12 +312,12 @@ export function Sidebar() {
       <aside
         className={cn(
           cardFont.className,
-          'hidden lg:flex fixed left-0 top-16 bottom-0 z-40 flex-col items-center justify-center transition-all duration-300 ease-in-out pointer-events-none',
+          'hidden lg:flex fixed left-0 top-[68px] sm:top-[72px] md:top-16 bottom-0 z-[60] flex-col items-center justify-center transition-all duration-300 ease-in-out pointer-events-none',
           isVisible && !collapsed ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-full',
         )}
         style={{ width: W }}
       >
-        <div className="flex flex-col items-center justify-center py-4 px-1.5 bg-transparent pointer-events-auto gap-3.5 my-auto">
+        <div className="flex flex-col items-center justify-center py-3.5 px-1.5 bg-[#0b0e17]/85 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.6)] pointer-events-auto gap-3.5 my-auto">
           {/* Top Collapse Button (Mũi tên thu gọn) */}
           <button
             onClick={toggle}
@@ -477,7 +477,7 @@ export function Sidebar() {
           onClick={toggle}
           aria-label="Mở thanh điều hướng"
           title="Mở rộng menu"
-          className="hidden lg:flex fixed left-0 top-1/2 -translate-y-1/2 z-40 p-2.5 bg-transparent text-white/60 hover:text-violet-300 hover:bg-violet-500/15 rounded-r-xl transition-all duration-200 cursor-pointer hover:scale-110"
+          className="hidden lg:flex fixed left-0 top-1/2 -translate-y-1/2 z-[60] p-2.5 bg-[#0b0e17]/85 backdrop-blur-xl border border-white/10 text-white/60 hover:text-violet-300 hover:bg-violet-500/15 rounded-r-xl transition-all duration-200 cursor-pointer hover:scale-110 shadow-lg"
         >
           <ChevronRight size={20} strokeWidth={2.2} />
         </button>

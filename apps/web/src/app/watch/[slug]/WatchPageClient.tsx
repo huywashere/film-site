@@ -3942,10 +3942,10 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       <meta name="twitter:title" content={watchSeoTitle} />
       <meta name="twitter:description" content={watchSeoDescription} />
 
-      {/* ── MAIN — padded top for navbar (64px) + safe left padding for sidebar (96px) ── */}
+      {/* ── MAIN — padded top for navbar (68px/72px/64px) + safe left padding for sidebar (80px) ── */}
       <main
         className={cn(
-          'pt-14 sm:pt-[58px] mx-auto px-3 md:px-5 pb-10 transition-all duration-300',
+          'pt-[74px] sm:pt-[78px] md:pt-20 mx-auto px-3 md:px-5 pb-10 transition-all duration-300',
           theaterMode ? 'w-full lg:pl-20 max-w-none' : 'max-w-[1800px] lg:pl-20',
         )}
       >
