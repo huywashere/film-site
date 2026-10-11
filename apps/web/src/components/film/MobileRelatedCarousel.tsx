@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { A11y, EffectCoverflow } from 'swiper/modules';
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -11,7 +11,9 @@ import { movieApi, kkphimApi } from '@/lib/api';
 import { extractFilmItems } from '@/lib/movie-normalizer';
 import { deduplicateSectionRow } from '@/lib/recommendation-engine';
 import { TmdbArtwork } from '@/components/film/TmdbArtwork';
-import type { FilmItem } from '@/components/film/FilmCard';
+import { resolveImageUrl, type FilmItem } from '@/components/film/FilmCard';
+import { buildArtworkCandidates } from '@/lib/image-cdn';
+import { getMovieLogo } from '@/lib/movie-logo-cache';
 
 import 'swiper/css';
 import 'swiper/css/effect-coverflow';
@@ -313,13 +315,100 @@ export function MobileRelatedCarousel({
       onActiveFilmChangeRef.current?.(initialActive, true);
     }
   }, [films, originalIndex, currentCard]);
+ 
+  // Preload backdrop banner & logo cho các phim liền kề (next/prev) để khi người dùng vuốt thì ảnh hiện ngay 0ms
+  useEffect(() => {
+    if (typeof window === 'undefined' || films.length === 0) return;
+
+    const indicesToPreload = [
+      activeSlideIndex - 1,
+      activeSlideIndex + 1,
+      activeSlideIndex + 2,
+    ].filter((idx) => idx >= 0 && idx < films.length);
+
+    indicesToPreload.forEach((idx) => {
+      const target = films[idx];
+      if (!target) return;
+
+      // 1. Preload backdrop banner
+      const backdropCandidates = buildArtworkCandidates(
+        [
+          (target as any).artwork?.backdrop?.w1280,
+          resolveImageUrl(target.thumb_url, target.poster_url),
+          resolveImageUrl(target.poster_url, target.thumb_url),
+        ],
+        'backdrop',
+        { includeWsrvForTmdb: true, includeAlternatePhimimgPath: true },
+      );
+
+      if (backdropCandidates[0]) {
+        const img = new Image();
+        img.src = backdropCandidates[0];
+      }
+
+      // 2. Preload logo nếu có trong cache hoặc artwork
+      const logoPath =
+        (target as any).artwork?.logo?.w500 ||
+        (target as any).titleLogo ||
+        (target as any).logo_path ||
+        getMovieLogo(target.slug);
+
+      if (logoPath) {
+        const logoCandidates = buildArtworkCandidates([logoPath], 'titleLogo', {
+          includeWsrvForTmdb: true,
+          strictProxy: true,
+        });
+        if (logoCandidates[0]) {
+          const logoImg = new Image();
+          logoImg.src = logoCandidates[0];
+        }
+      }
+    });
+  }, [films, activeSlideIndex]);
+
+  const syncActiveFilmTimerRef = useRef<number | null>(null);
+
+  const emitActiveFilmChange = useCallback(
+    (filmItem: FilmItem, isOriginal: boolean, immediate = false) => {
+      if (syncActiveFilmTimerRef.current) {
+        window.clearTimeout(syncActiveFilmTimerRef.current);
+        syncActiveFilmTimerRef.current = null;
+      }
+
+      if (immediate) {
+        onActiveFilmChangeRef.current?.(filmItem, isOriginal);
+        return;
+      }
+
+      syncActiveFilmTimerRef.current = window.setTimeout(() => {
+        onActiveFilmChangeRef.current?.(filmItem, isOriginal);
+        syncActiveFilmTimerRef.current = null;
+      }, 120);
+    },
+    [],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (syncActiveFilmTimerRef.current) {
+        window.clearTimeout(syncActiveFilmTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleSlideChange = (swiper: SwiperCore) => {
     const newIdx = swiper.activeIndex;
     setActiveSlideIndex(newIdx);
     const active = films[newIdx] || currentCard;
     const isOriginal = active.slug === slug;
-    onActiveFilmChangeRef.current?.(active, isOriginal);
+    emitActiveFilmChange(active, isOriginal, false);
+  };
+
+  const handleSlideTransitionEnd = (swiper: SwiperCore) => {
+    const newIdx = swiper.activeIndex;
+    const active = films[newIdx] || currentCard;
+    const isOriginal = active.slug === slug;
+    emitActiveFilmChange(active, isOriginal, true);
   };
 
   if (!enabled) {
@@ -353,6 +442,7 @@ export function MobileRelatedCarousel({
         allowTouchMove={true}
         lazyPreloadPrevNext={2}
         onSlideChange={handleSlideChange}
+        onSlideChangeTransitionEnd={handleSlideTransitionEnd}
         coverflowEffect={{
           rotate: 22, // Tilted 3D perspective angle (đổ nghiêng)
           stretch: -14, // Tight spacing so side tilted cards are visible
@@ -376,6 +466,7 @@ export function MobileRelatedCarousel({
                 film={film}
                 kind="poster"
                 alt={title}
+                sizes="(max-width: 639px) 58vw, 228px"
                 priority={Math.abs(index - activeSlideIndex) <= 1}
                 allowTitleLookup={false}
                 className="absolute inset-0 h-full w-full object-cover"
@@ -420,6 +511,7 @@ export function MobileRelatedCarousel({
                   <div
                     onClick={() => {
                       if (!isActive && swiperRef.current) {
+                        emitActiveFilmChange(film, film.slug === slug, true);
                         swiperRef.current.slideTo(index);
                       }
                     }}
@@ -449,6 +541,8 @@ export function MobileRelatedCarousel({
               type="button"
               onClick={() => {
                 if (swiperRef.current) {
+                  const targetFilm = films[originalIndex] || currentCard;
+                  emitActiveFilmChange(targetFilm, true, true);
                   swiperRef.current.slideTo(originalIndex);
                 }
               }}

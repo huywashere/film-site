@@ -86,10 +86,23 @@ export async function GET(
     : [regionalHost, officialHost];
   const cacheKey = "v3:" + hosts[0] + "/" + path + (qs ? "?" + qs : "");
 
+function buildCacheHeaders(cacheStatus: "HIT" | "MISS", ttlSeconds: number): HeadersInit {
+  const browserTtl = Math.min(ttlSeconds, 3600);
+  const swrTtl = Math.min(Math.max(ttlSeconds * 2, 3600), 86400);
+  return {
+    "X-Cache": cacheStatus,
+    "X-Source": "TMDB",
+    "Cache-Control": `public, max-age=${browserTtl}, s-maxage=${ttlSeconds}, stale-while-revalidate=${swrTtl}`,
+    "CDN-Cache-Control": `public, max-age=${ttlSeconds}, stale-while-revalidate=${swrTtl}`,
+  };
+}
+
+  const ttl = getTtl(path);
   const cached = cache.get(cacheKey);
   if (cached && cached.expiry > Date.now()) {
+    const remainingTtl = Math.max(1, Math.round((cached.expiry - Date.now()) / 1000));
     return NextResponse.json(cached.data, {
-      headers: { "X-Cache": "HIT", "X-Source": "TMDB" },
+      headers: buildCacheHeaders("HIT", remainingTtl),
     });
   }
 
@@ -143,7 +156,7 @@ export async function GET(
         }
 
         return NextResponse.json(data, {
-          headers: { "X-Cache": "MISS", "X-Source": "TMDB" },
+          headers: buildCacheHeaders("MISS", ttl),
         });
       }
       lastStatus = response.status;

@@ -1627,8 +1627,36 @@ export default function FilmDetailPage({
     };
   }, [user, slug, isNotFound]);
 
-  const prefetchWatchData = () => {
+  const preconnectMediaOrigins = useCallback(() => {
+    if (typeof document === 'undefined') return;
+    const origins = [
+      'https://phimimg.com',
+      'https://img.phimapi.com',
+      'https://vidsrc.sbs',
+      'https://vicdn.cc',
+    ];
+    origins.forEach((origin) => {
+      if (document.querySelector(`link[rel="preconnect"][href="${origin}"]`)) return;
+      try {
+        const link = document.createElement('link');
+        link.rel = 'preconnect';
+        link.href = origin;
+        link.crossOrigin = 'anonymous';
+        document.head.appendChild(link);
+
+        const dnsLink = document.createElement('link');
+        dnsLink.rel = 'dns-prefetch';
+        dnsLink.href = origin;
+        document.head.appendChild(dnsLink);
+      } catch {
+        // Safe fallback
+      }
+    });
+  }, []);
+
+  const prefetchWatchData = useCallback(() => {
     if (isNotFound || !film) return;
+    preconnectMediaOrigins();
     queryClient.prefetchQuery({
       queryKey: ['film-ophim', slug],
       queryFn: () =>
@@ -1640,7 +1668,7 @@ export default function FilmDetailPage({
           .catch(() => null),
       staleTime: 5 * 60 * 1000,
     });
-  };
+  }, [film, isNotFound, preconnectMediaOrigins, queryClient, slug]);
 
   const firstEp = episodes?.[0]?.server_data?.[0];
   const watchLink = firstEp
@@ -2067,6 +2095,16 @@ export default function FilmDetailPage({
                     <Link
                       href={`/film/${displayFilm.slug}`}
                       className="flex items-center space-x-2 rounded-full bg-white px-7 py-2.5 text-xs font-extrabold text-[#111317] transition-colors hover:bg-neutral-200 active:scale-[0.98] sm:py-3 shadow-lg"
+                      onMouseEnter={() => {
+                        try {
+                          router.prefetch(`/film/${displayFilm.slug}`);
+                        } catch {}
+                      }}
+                      onTouchStart={() => {
+                        try {
+                          router.prefetch(`/film/${displayFilm.slug}`);
+                        } catch {}
+                      }}
                     >
                       <Play size={14} fill="currentColor" />
                       <span>Xem phim này</span>
@@ -2074,6 +2112,18 @@ export default function FilmDetailPage({
                     <Link
                       href={`/watch/${displayFilm.slug}`}
                       className="bg-[#181b22] hover:bg-[#222731] text-white px-6 py-2.5 rounded-full font-extrabold tracking-wider uppercase text-xs border border-white/10 hover:border-white/20 transition-all cursor-pointer active:scale-95 shadow-md flex items-center gap-1.5 sm:py-3"
+                      onMouseEnter={() => {
+                        preconnectMediaOrigins();
+                        try {
+                          router.prefetch(`/watch/${displayFilm.slug}`);
+                        } catch {}
+                      }}
+                      onTouchStart={() => {
+                        preconnectMediaOrigins();
+                        try {
+                          router.prefetch(`/watch/${displayFilm.slug}`);
+                        } catch {}
+                      }}
                     >
                       <span>Phát ngay</span>
                     </Link>
@@ -2087,6 +2137,7 @@ export default function FilmDetailPage({
                     href={watchLink}
                     className="flex items-center space-x-2 rounded-full bg-white px-7 py-2.5 text-xs font-extrabold text-[#111317] transition-colors hover:bg-neutral-200 active:scale-[0.98] sm:py-3 shadow-lg"
                     onMouseEnter={prefetchWatchData}
+                    onTouchStart={prefetchWatchData}
                   >
                     <Play size={14} fill="currentColor" />
                     <span>{t('watch.watchFilm', 'Xem phim')}</span>
