@@ -44,7 +44,7 @@ import { useThemeStore } from "@/store/themeStore";
 import { movieApi, publishedMovieApi, systemNotificationApi } from "@/lib/api";
 import { resolveImageUrl } from "@/components/film/FilmCard";
 import { cn } from "@/lib/utils";
-import { cardFont } from "@/lib/fonts";
+import { cardFont, logoFont } from "@/lib/fonts";
 import {
   NOTIFICATION_READ_STORAGE_KEY,
   isNotificationRead,
@@ -340,7 +340,7 @@ function AnimatedNavbarLogo() {
       aria-label="FlexPhim - Trang chủ"
       className="group flex select-none items-center space-x-2.5"
     >
-      <div className="relative flex cursor-pointer items-center justify-center active:scale-95">
+      <div className="relative flex cursor-pointer items-center justify-center active:scale-95 transition-transform duration-200">
         <NextImage
           src="/flexphim-logo.svg"
           alt="FlexPhim Logo"
@@ -348,7 +348,7 @@ function AnimatedNavbarLogo() {
           height={38}
           priority
           unoptimized
-          className="navbar-logo-reveal relative z-10 h-9 w-9 object-contain sm:h-9 sm:w-9"
+          className="navbar-logo-reveal relative z-10 h-9 w-9 object-contain drop-shadow-[0_0_12px_rgba(168,85,247,0.4)] transition-transform duration-300 group-hover:scale-105 sm:h-9 sm:w-9"
           onError={(e) => {
             (e.currentTarget as HTMLImageElement).src = "/flexphim-logo.png";
           }}
@@ -356,8 +356,16 @@ function AnimatedNavbarLogo() {
       </div>
 
       <div className="navbar-logo-reveal navbar-logo-reveal--wordmark relative overflow-hidden">
-        <span className="block font-sans text-[22px] font-black tracking-tight text-white transition-opacity duration-200 group-hover:opacity-80 sm:text-2xl">
-          Flex<span className="text-violet-400">Phim</span>
+        <span
+          className={cn(
+            logoFont.className,
+            "block text-[23px] font-black tracking-[-0.035em] text-white select-none transition-all duration-300 group-hover:brightness-110 sm:text-[25px]",
+          )}
+        >
+          Flex
+          <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-indigo-300 bg-clip-text text-transparent drop-shadow-[0_0_14px_rgba(168,85,247,0.45)]">
+            Phim
+          </span>
         </span>
       </div>
     </Link>

@@ -37,7 +37,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useAuthModalStore } from "@/store/authModalStore";
 import { useTranslation } from "@/store/langStore";
 import { GENRES_LIST, COUNTRIES_LIST, CountryFlagImage } from "./Navbar";
-import { cardFont } from "@/lib/fonts";
+import { cardFont, logoFont } from "@/lib/fonts";
 import { getNameColorProps, getAvatarFrameConfig } from "@/lib/profile-appearance";
 import { InteractiveAdminMascot } from "@/components/mascot/InteractiveAdminMascot";
 
@@ -126,8 +126,16 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                 (e.currentTarget as HTMLImageElement).src = "/flexphim-logo.png";
               }}
             />
-            <span className="text-white text-lg font-black tracking-tight font-sans">
-              Flex<span className="text-violet-400">Phim</span>
+            <span
+              className={cn(
+                logoFont.className,
+                "text-lg font-black tracking-[-0.035em] text-white select-none",
+              )}
+            >
+              Flex
+              <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-indigo-300 bg-clip-text text-transparent drop-shadow-[0_0_12px_rgba(168,85,247,0.4)]">
+                Phim
+              </span>
             </span>
           </Link>
         </div>

@@ -1,4 +1,4 @@
-import { Be_Vietnam_Pro } from "next/font/google";
+import { Be_Vietnam_Pro, Outfit } from "next/font/google";
 
 export const cardFont = Be_Vietnam_Pro({
   subsets: ["latin", "vietnamese"],
@@ -7,6 +7,14 @@ export const cardFont = Be_Vietnam_Pro({
   weight: ["400", "700", "900"],
   display: "swap",
   variable: "--font-be-vietnam",
+  preload: true,
+});
+
+export const logoFont = Outfit({
+  subsets: ["latin"],
+  weight: ["700", "800", "900"],
+  display: "swap",
+  variable: "--font-outfit",
   preload: true,
 });
 

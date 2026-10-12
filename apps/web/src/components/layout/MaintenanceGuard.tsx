@@ -18,7 +18,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { siteConfigApi, type PublicSiteConfiguration } from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
 import { useAuthModalStore } from "@/store/authModalStore";
-import { cardFont } from "@/lib/fonts";
+import { cardFont, logoFont } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
 
 function TelegramIcon({ className, size = 18 }: { className?: string; size?: number }) {
@@ -190,8 +190,16 @@ export function MaintenanceGuard() {
               className="rounded-xl drop-shadow-[0_0_20px_rgba(168,85,247,0.6)]"
               priority
             />
-            <span className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-              Flex<span className="text-violet-400">Phim</span>
+            <span
+              className={cn(
+                logoFont.className,
+                "text-2xl sm:text-3xl font-black tracking-[-0.035em] text-white select-none",
+              )}
+            >
+              Flex
+              <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-indigo-300 bg-clip-text text-transparent drop-shadow-[0_0_16px_rgba(168,85,247,0.5)]">
+                Phim
+              </span>
             </span>
           </div>
 

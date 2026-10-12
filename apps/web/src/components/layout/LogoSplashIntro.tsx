@@ -2,6 +2,8 @@
 
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
+import { logoFont } from '@/lib/fonts';
+import { cn } from '@/lib/utils';
 
 const MIN_VISIBLE_MS = 650;
 const MAX_VISIBLE_MS = 1500;
@@ -109,8 +111,16 @@ export function LogoSplashIntro() {
             unoptimized
             className="h-[62px] w-[62px] object-contain drop-shadow-[0_14px_34px_rgba(91,33,182,0.65)] sm:h-[78px] sm:w-[78px]"
           />
-          <span className="text-[38px] font-black tracking-[-0.055em] text-white drop-shadow-[0_10px_32px_rgba(0,0,0,0.95)] sm:text-[54px]">
-            Flex<span className="text-violet-400">Phim</span>
+          <span
+            className={cn(
+              logoFont.className,
+              "text-[38px] font-black tracking-[-0.04em] text-white drop-shadow-[0_10px_32px_rgba(0,0,0,0.95)] select-none sm:text-[54px]",
+            )}
+          >
+            Flex
+            <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-indigo-300 bg-clip-text text-transparent drop-shadow-[0_0_24px_rgba(168,85,247,0.6)]">
+              Phim
+            </span>
           </span>
         </div>
         <div className="mt-7 h-px w-36 overflow-hidden bg-white/20 sm:w-44 shadow-[0_0_12px_rgba(139,92,246,0.5)]">

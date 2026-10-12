@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { cardFont } from "@/lib/fonts";
+import { cardFont, logoFont } from "@/lib/fonts";
+import { cn } from "@/lib/utils";
 import {
   applyLocalDecorativeAssetFallback,
   decorativeAssetUrl,
@@ -176,8 +177,16 @@ export function Footer() {
                   (e.currentTarget as HTMLImageElement).src = "/flexphim-logo.png";
                 }}
               />
-              <span className="text-xl sm:text-2xl font-black tracking-tight text-white">
-                Flex<span className="text-violet-400">Phim</span>
+              <span
+                className={cn(
+                  logoFont.className,
+                  "text-xl sm:text-2xl font-black tracking-[-0.035em] text-white select-none transition-all duration-300 group-hover:brightness-110",
+                )}
+              >
+                Flex
+                <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-indigo-300 bg-clip-text text-transparent drop-shadow-[0_0_14px_rgba(168,85,247,0.45)]">
+                  Phim
+                </span>
               </span>
             </Link>
             <p className="mt-3 text-xs sm:text-[13px] leading-relaxed text-neutral-400">
