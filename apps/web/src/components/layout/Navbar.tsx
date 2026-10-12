@@ -359,7 +359,7 @@ function AnimatedNavbarLogo() {
         <span
           className={cn(
             logoFont.className,
-            "block text-[27px] font-normal tracking-[0.06em] text-white select-none transition-all duration-300 group-hover:brightness-110 sm:text-[30px] leading-none",
+            "block text-[25px] font-bold uppercase tracking-[-0.01em] text-white select-none transition-all duration-300 group-hover:brightness-110 sm:text-[28px] leading-none",
           )}
         >
           Flex

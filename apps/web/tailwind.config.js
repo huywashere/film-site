@@ -66,7 +66,7 @@ module.exports = {
         inter: ["var(--font-manrope)", ...fontFamily.sans],
         "be-vietnam": ["var(--font-be-vietnam)", ...fontFamily.sans],
         "bebas-neue": ["var(--font-bebas-neue)", ...fontFamily.sans],
-        logo: ["var(--font-bebas-neue)", ...fontFamily.sans],
+        logo: ["var(--font-logo)", ...fontFamily.sans],
       },
       keyframes: {
         "accordion-down": {

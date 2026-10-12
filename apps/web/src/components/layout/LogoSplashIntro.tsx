@@ -114,7 +114,7 @@ export function LogoSplashIntro() {
           <span
             className={cn(
               logoFont.className,
-              "text-[46px] font-normal tracking-[0.06em] text-white drop-shadow-[0_10px_32px_rgba(0,0,0,0.95)] select-none sm:text-[62px] leading-none",
+              "text-[42px] font-bold uppercase tracking-[-0.01em] text-white drop-shadow-[0_10px_32px_rgba(0,0,0,0.95)] select-none sm:text-[56px] leading-none",
             )}
           >
             Flex

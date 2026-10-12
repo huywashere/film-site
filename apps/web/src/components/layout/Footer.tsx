@@ -180,7 +180,7 @@ export function Footer() {
               <span
                 className={cn(
                   logoFont.className,
-                  "text-[26px] sm:text-[30px] font-normal tracking-[0.06em] text-white select-none transition-all duration-300 group-hover:brightness-110 leading-none",
+                  "text-[24px] sm:text-[28px] font-bold uppercase tracking-[-0.01em] text-white select-none transition-all duration-300 group-hover:brightness-110 leading-none",
                 )}
               >
                 Flex

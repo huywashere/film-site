@@ -193,7 +193,7 @@ export function MaintenanceGuard() {
             <span
               className={cn(
                 logoFont.className,
-                "text-[32px] sm:text-[40px] font-normal tracking-[0.06em] text-white select-none leading-none",
+                "text-[30px] sm:text-[36px] font-bold uppercase tracking-[-0.01em] text-white select-none leading-none",
               )}
             >
               Flex
