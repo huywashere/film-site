@@ -36,18 +36,18 @@ export function StatusPage({ code, onRetry }: StatusPageProps) {
   }, [onRetry]);
 
   // ═══════════════════════════════════════════════════════════════════════
-  // 500 SERVER ERROR: Ahrefs Deep Space Replica Style (Royal Blue)
+  // 500 SERVER ERROR: Ahrefs Space Replica with Home Page Dark Theme
   // ═══════════════════════════════════════════════════════════════════════
   if (isServerError) {
     return (
       <main
         className={cn(
           cardFont.className,
-          "status-page fixed inset-0 z-[1000] flex min-h-[100dvh] w-full flex-col justify-between overflow-x-hidden overflow-y-auto bg-[#044adb] text-white select-none selection:bg-white selection:text-[#044adb]",
+          "status-page fixed inset-0 z-[1000] flex min-h-[100dvh] w-full flex-col justify-between overflow-x-hidden overflow-y-auto bg-[#141414] text-white select-none selection:bg-[#e50914] selection:text-white",
         )}
       >
         {/* Top Header Navbar */}
-        <header className="relative z-20 w-full shrink-0 px-6 sm:px-10 lg:px-14 py-6 flex items-center justify-between">
+        <header className="relative z-20 w-full shrink-0 border-b border-white/[0.08] px-6 sm:px-10 lg:px-14 py-5 flex items-center justify-between">
           {/* Logo Brand */}
           <Link
             href="/"
@@ -58,11 +58,11 @@ export function StatusPage({ code, onRetry }: StatusPageProps) {
               <NextImage
                 src="/flexphim-logo.svg"
                 alt="FlexPhim Logo"
-                width={32}
-                height={32}
+                width={34}
+                height={34}
                 priority
                 unoptimized
-                className="h-8 w-8 brightness-0 invert object-contain transition-transform duration-300 group-hover:scale-105"
+                className="h-8 w-8 object-contain drop-shadow-[0_0_12px_rgba(229,9,20,0.35)] transition-transform duration-300 group-hover:scale-105"
                 onError={(e) => {
                   (e.currentTarget as HTMLImageElement).src = "/flexphim-logo.png";
                 }}
@@ -75,7 +75,7 @@ export function StatusPage({ code, onRetry }: StatusPageProps) {
               )}
             >
               Flex
-              <span className="text-orange-400">Phim</span>
+              <span className="text-[#e50914]">Phim</span>
             </span>
           </Link>
 
@@ -83,10 +83,10 @@ export function StatusPage({ code, onRetry }: StatusPageProps) {
           <div className="flex items-center space-x-6">
             <Link
               href="/"
-              className="flex items-center space-x-2 text-sm font-semibold text-white/90 hover:text-white transition-opacity"
+              className="flex items-center space-x-2 text-sm font-semibold text-neutral-400 hover:text-white transition-colors"
             >
               <svg
-                className="w-4 h-4 text-white/80"
+                className="w-4 h-4 text-neutral-400"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
@@ -101,7 +101,7 @@ export function StatusPage({ code, onRetry }: StatusPageProps) {
           </div>
         </header>
 
-        {/* Main Hero Content (Ahrefs Split Layout) */}
+        {/* Main Hero Content (Ahrefs Deep Space Split Layout on Dark Theme) */}
         <div className="relative z-10 mx-auto flex flex-1 w-full max-w-7xl items-center px-6 sm:px-10 lg:px-14 py-8 lg:py-12">
           <div className="grid w-full grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-14">
 
@@ -115,7 +115,7 @@ export function StatusPage({ code, onRetry }: StatusPageProps) {
                   height={590}
                   priority
                   unoptimized
-                  className="h-auto w-full object-contain"
+                  className="h-auto w-full object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)]"
                 />
               </div>
             </div>
@@ -125,13 +125,13 @@ export function StatusPage({ code, onRetry }: StatusPageProps) {
               
               {/* Floating Yellow Dot / Star above middle zero */}
               <div
-                className="w-3 h-3 rounded-full bg-[#fed857] shadow-sm mb-3 sm:mb-4 hidden sm:block animate-pulse"
+                className="w-3 h-3 rounded-full bg-[#fed857] shadow-[0_0_10px_rgba(254,216,87,0.5)] mb-3 sm:mb-4 hidden sm:block animate-pulse"
                 aria-hidden="true"
               />
 
               {/* Ahrefs Signature Hollow Outlined 500 with Barred Zeros */}
               <div
-                className="flex items-center space-x-1 sm:space-x-2 text-7xl sm:text-8xl md:text-[130px] lg:text-[140px] font-extrabold leading-none mb-6 select-none tracking-tight"
+                className="flex items-center space-x-1 sm:space-x-2 text-7xl sm:text-8xl md:text-[130px] lg:text-[140px] font-black leading-none mb-6 select-none tracking-tight"
                 style={{
                   WebkitTextStroke: "3.5px #ffffff",
                   color: "transparent",
@@ -155,21 +155,21 @@ export function StatusPage({ code, onRetry }: StatusPageProps) {
               </div>
 
               {/* Headline */}
-              <h1 className="text-3xl sm:text-4xl md:text-[44px] font-bold text-white tracking-tight leading-snug mb-4">
+              <h1 className="text-3xl sm:text-4xl md:text-[44px] font-black text-white tracking-tight leading-snug mb-4">
                 Oops, máy chủ gặp sự cố kết nối
               </h1>
 
               {/* Subheading / Detailed Vietnamese Copy */}
-              <p className="text-base sm:text-lg text-white/90 leading-relaxed font-normal max-w-xl mb-8">
+              <p className="text-base sm:text-lg text-neutral-400 leading-relaxed font-normal max-w-xl mb-8">
                 Máy chủ đang gặp sự cố quá tải hoặc gián đoạn kết nối dữ liệu tạm thời. Bạn có thể kiểm tra lại đường truyền mạng, thử kết nối lại ngay hoặc quay về trang chủ để tiếp tục trải nghiệm phim.
               </p>
 
-              {/* Primary Action Button (Ahrefs Arrow Link Style) */}
+              {/* Primary Action Button (Ahrefs Arrow Link Style with Red Accent) */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
                 <button
                   type="button"
                   onClick={handleRetry}
-                  className="group inline-flex items-center text-xl sm:text-2xl font-bold text-white hover:text-white/90 transition-all cursor-pointer"
+                  className="group inline-flex items-center text-xl sm:text-2xl font-bold text-white hover:text-[#e50914] transition-colors cursor-pointer"
                 >
                   <span>Thử kết nối lại ngay</span>
                   <span className="ml-2.5 transition-transform duration-200 group-hover:translate-x-1.5">
@@ -179,28 +179,28 @@ export function StatusPage({ code, onRetry }: StatusPageProps) {
               </div>
 
               {/* Secondary Navigation Links */}
-              <div className="mt-8 pt-6 border-t border-white/20 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-white/80">
+              <div className="mt-8 pt-6 border-t border-white/[0.08] flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-neutral-400">
                 <Link
                   href="/"
                   className="hover:text-white hover:underline underline-offset-4 transition-colors"
                 >
                   Về Trang chủ
                 </Link>
-                <span className="text-white/40">•</span>
+                <span className="text-neutral-600">•</span>
                 <Link
                   href="/films"
                   className="hover:text-white hover:underline underline-offset-4 transition-colors"
                 >
                   Kho phim lẻ &amp; bộ
                 </Link>
-                <span className="text-white/40">•</span>
+                <span className="text-neutral-600">•</span>
                 <Link
                   href="/genres"
                   className="hover:text-white hover:underline underline-offset-4 transition-colors"
                 >
                   Vũ trụ điện ảnh
                 </Link>
-                <span className="text-white/40">•</span>
+                <span className="text-neutral-600">•</span>
                 <Link
                   href="/bao-loi"
                   className="hover:text-white hover:underline underline-offset-4 transition-colors"
@@ -214,9 +214,9 @@ export function StatusPage({ code, onRetry }: StatusPageProps) {
           </div>
         </div>
 
-        {/* Decorative Planetary Ring Slice Peeking at Bottom Right */}
+        {/* Decorative Subtle Ring Slice Peeking at Bottom Right */}
         <div
-          className="fixed -bottom-16 -right-16 w-52 h-52 rounded-full border-[10px] border-white/10 pointer-events-none z-0"
+          className="fixed -bottom-16 -right-16 w-52 h-52 rounded-full border-[10px] border-white/[0.03] pointer-events-none z-0"
           aria-hidden="true"
         />
 
@@ -225,7 +225,7 @@ export function StatusPage({ code, onRetry }: StatusPageProps) {
           <Link
             href="/bao-loi"
             aria-label="Hỗ trợ & Báo lỗi"
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0038a8] border border-blue-400/30 text-white font-bold text-base shadow-lg shadow-blue-900/50 hover:bg-[#002f8f] hover:scale-105 transition-all"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-900 border border-white/10 text-neutral-300 font-bold text-base shadow-xl hover:text-white hover:border-white/20 transition-all hover:scale-105"
           >
             ?
           </Link>
@@ -235,17 +235,17 @@ export function StatusPage({ code, onRetry }: StatusPageProps) {
   }
 
   // ═══════════════════════════════════════════════════════════════════════
-  // 404 NOT FOUND: Justinmind Minimalist Split Style (Clean White)
+  // 404 NOT FOUND: Justinmind Minimalist Split Style with Home Dark Theme
   // ═══════════════════════════════════════════════════════════════════════
   return (
     <main
       className={cn(
         cardFont.className,
-        "status-page fixed inset-0 z-[1000] flex min-h-[100dvh] w-full flex-col overflow-y-auto bg-white text-neutral-900 select-none",
+        "status-page fixed inset-0 z-[1000] flex min-h-[100dvh] w-full flex-col overflow-y-auto bg-[#141414] text-white select-none selection:bg-[#e50914] selection:text-white",
       )}
     >
-      {/* Top Brand Navbar (Justinmind style) */}
-      <header className="relative z-20 w-full shrink-0 border-b border-neutral-100 bg-white/95 backdrop-blur-sm">
+      {/* Top Brand Navbar */}
+      <header className="relative z-20 w-full shrink-0 border-b border-white/[0.08] bg-[#141414]/95 backdrop-blur-sm">
         <div className="mx-auto flex h-18 w-full max-w-7xl items-center justify-between px-6 sm:px-10">
           {/* Logo Brand */}
           <Link
@@ -261,7 +261,7 @@ export function StatusPage({ code, onRetry }: StatusPageProps) {
                 height={34}
                 priority
                 unoptimized
-                className="h-8 w-8 object-contain transition-transform duration-300 group-hover:scale-105"
+                className="h-8 w-8 object-contain drop-shadow-[0_0_12px_rgba(229,9,20,0.35)] transition-transform duration-300 group-hover:scale-105"
                 onError={(e) => {
                   (e.currentTarget as HTMLImageElement).src = "/flexphim-logo.png";
                 }}
@@ -270,26 +270,26 @@ export function StatusPage({ code, onRetry }: StatusPageProps) {
             <span
               className={cn(
                 logoFont.className,
-                "text-[24px] font-bold uppercase tracking-[-0.01em] text-neutral-950 sm:text-[26px] leading-none",
+                "text-[24px] font-bold uppercase tracking-[-0.01em] text-white sm:text-[26px] leading-none",
               )}
             >
               Flex
-              <span className="text-violet-600">Phim</span>
+              <span className="text-[#e50914]">Phim</span>
             </span>
           </Link>
 
           {/* Nav links on desktop */}
-          <nav className="hidden md:flex items-center space-x-7 text-sm font-medium text-neutral-700">
-            <Link href="/films?type=series" className="transition-colors hover:text-neutral-950">
+          <nav className="hidden md:flex items-center space-x-7 text-sm font-medium text-neutral-400">
+            <Link href="/films?type=series" className="transition-colors hover:text-white">
               Phim bộ
             </Link>
-            <Link href="/films?type=single" className="transition-colors hover:text-neutral-950">
+            <Link href="/films?type=single" className="transition-colors hover:text-white">
               Phim lẻ
             </Link>
-            <Link href="/genres" className="transition-colors hover:text-neutral-950">
+            <Link href="/genres" className="transition-colors hover:text-white">
               Vũ trụ phim
             </Link>
-            <Link href="/films" className="transition-colors hover:text-neutral-950">
+            <Link href="/films" className="transition-colors hover:text-white">
               Khám phá
             </Link>
           </nav>
@@ -298,7 +298,7 @@ export function StatusPage({ code, onRetry }: StatusPageProps) {
           <div className="flex items-center space-x-3">
             <Link
               href="/"
-              className="inline-flex h-9 sm:h-10 items-center justify-center rounded-md bg-neutral-950 px-4 sm:px-5 text-xs sm:text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-neutral-800 active:scale-[0.98]"
+              className="inline-flex h-9 sm:h-10 items-center justify-center rounded-md bg-[#e50914] px-4 sm:px-5 text-xs sm:text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-[#b80710] active:scale-[0.98]"
             >
               Về Trang Chủ
             </Link>
@@ -306,24 +306,24 @@ export function StatusPage({ code, onRetry }: StatusPageProps) {
         </div>
       </header>
 
-      {/* Main Hero Content (Justinmind 2-col Split Layout) */}
+      {/* Main Hero Content (Justinmind 2-col Split Layout on Dark Theme) */}
       <div className="relative z-10 mx-auto flex flex-1 w-full max-w-7xl items-center px-6 sm:px-10 py-10 lg:py-16">
         <div className="grid w-full grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-8">
 
           {/* Left Column: Text & Helpful Links */}
           <div className="order-2 lg:order-1 lg:col-span-5 flex flex-col text-left">
             {/* Error Code Tag */}
-            <span className="mb-3 text-xs sm:text-sm font-semibold uppercase tracking-wider text-neutral-400">
+            <span className="mb-3 text-xs sm:text-sm font-semibold uppercase tracking-wider text-neutral-500">
               ERROR CODE: 404
             </span>
 
             {/* OOOPS!! Heading */}
-            <h1 className="mb-4 text-5xl sm:text-6xl md:text-[68px] font-black tracking-tight text-neutral-950 leading-none">
+            <h1 className="mb-4 text-5xl sm:text-6xl md:text-[68px] font-black tracking-tight text-white leading-none">
               OOOPS!!
             </h1>
 
             {/* Subheading */}
-            <p className="mb-10 text-xl sm:text-2xl md:text-[26px] font-normal text-neutral-800 leading-snug max-w-md">
+            <p className="mb-10 text-xl sm:text-2xl md:text-[26px] font-normal text-neutral-300 leading-snug max-w-md">
               Đây không phải là trang bạn đang tìm kiếm
             </p>
 
@@ -333,28 +333,28 @@ export function StatusPage({ code, onRetry }: StatusPageProps) {
             </p>
 
             {/* Underlined Links */}
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm sm:text-base font-medium text-neutral-900">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm sm:text-base font-medium text-neutral-300">
               <Link
                 href="/"
-                className="underline underline-offset-4 decoration-neutral-900 transition-colors hover:text-blue-600 hover:decoration-blue-600"
+                className="underline underline-offset-4 decoration-neutral-600 transition-colors hover:text-white hover:decoration-white"
               >
                 Trang chủ
               </Link>
               <Link
                 href="/films"
-                className="underline underline-offset-4 decoration-neutral-900 transition-colors hover:text-blue-600 hover:decoration-blue-600"
+                className="underline underline-offset-4 decoration-neutral-600 transition-colors hover:text-white hover:decoration-white"
               >
                 Kho phim
               </Link>
               <Link
                 href="/genres"
-                className="underline underline-offset-4 decoration-neutral-900 transition-colors hover:text-blue-600 hover:decoration-blue-600"
+                className="underline underline-offset-4 decoration-neutral-600 transition-colors hover:text-white hover:decoration-white"
               >
                 Vũ trụ điện ảnh
               </Link>
               <Link
                 href="/search"
-                className="underline underline-offset-4 decoration-neutral-900 transition-colors hover:text-blue-600 hover:decoration-blue-600"
+                className="underline underline-offset-4 decoration-neutral-600 transition-colors hover:text-white hover:decoration-white"
               >
                 Tìm kiếm
               </Link>
@@ -363,7 +363,7 @@ export function StatusPage({ code, onRetry }: StatusPageProps) {
 
           {/* Right Column: Colorful Geometric Astronaut Illustration */}
           <div className="order-1 lg:order-2 lg:col-span-7 flex items-center justify-center">
-            <div className="relative w-full max-w-[560px] select-none">
+            <div className="relative w-full max-w-[560px] select-none rounded-3xl border border-white/[0.08] bg-white/[0.03] p-4 sm:p-6 shadow-2xl backdrop-blur-sm">
               <NextImage
                 src="/images/status/404-astronaut.png"
                 alt="Không tìm thấy trang 404"
@@ -371,7 +371,7 @@ export function StatusPage({ code, onRetry }: StatusPageProps) {
                 height={480}
                 priority
                 unoptimized
-                className="h-auto w-full object-contain drop-shadow-sm transition-transform duration-500 hover:scale-[1.01]"
+                className="h-auto w-full object-contain rounded-2xl drop-shadow-sm transition-transform duration-500 hover:scale-[1.01]"
               />
             </div>
           </div>
