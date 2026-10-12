@@ -129,7 +129,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
             <span
               className={cn(
                 logoFont.className,
-                "text-lg font-black tracking-[-0.035em] text-white select-none",
+                "text-[24px] font-normal tracking-[0.06em] text-white select-none leading-none",
               )}
             >
               Flex

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-export const revalidate = 60;
 
 const DEFAULT_PUBLIC_CONFIGURATION = {
   maintenanceMode: false,

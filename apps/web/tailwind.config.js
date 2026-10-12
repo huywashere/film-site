@@ -65,8 +65,8 @@ module.exports = {
         manrope: ["var(--font-manrope)", ...fontFamily.sans],
         inter: ["var(--font-manrope)", ...fontFamily.sans],
         "be-vietnam": ["var(--font-be-vietnam)", ...fontFamily.sans],
-        outfit: ["var(--font-outfit)", ...fontFamily.sans],
-        logo: ["var(--font-outfit)", ...fontFamily.sans],
+        "bebas-neue": ["var(--font-bebas-neue)", ...fontFamily.sans],
+        logo: ["var(--font-bebas-neue)", ...fontFamily.sans],
       },
       keyframes: {
         "accordion-down": {
