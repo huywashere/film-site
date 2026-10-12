@@ -14,7 +14,10 @@ export function LogoSplashIntro() {
   const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
-    if (document.documentElement.dataset.entrySplash === 'skip') {
+    if (
+      document.documentElement.dataset.entrySplash === 'skip' ||
+      document.body.dataset.statusPage === 'true'
+    ) {
       setVisible(false);
       return;
     }

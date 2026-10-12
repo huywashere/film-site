@@ -209,7 +209,9 @@ body[data-status-page='true'] {
 }
 
 body:has(.status-page) [data-site-chrome],
-body[data-status-page='true'] [data-site-chrome] {
+body[data-status-page='true'] [data-site-chrome],
+body:has(.status-page) #netphim-entry-splash,
+body[data-status-page='true'] #netphim-entry-splash {
   display: none !important;
 }
 

@@ -1,10 +1,26 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState, useCallback, useId } from "react";
 import Link from "next/link";
-import { RotateCcw } from "lucide-react";
+import NextImage from "next/image";
+import {
+  RotateCcw,
+  Home,
+  Film,
+  SlidersHorizontal,
+  Layers,
+  Search,
+  Shuffle,
+  ShieldAlert,
+  Terminal,
+  Copy,
+  Check,
+  ArrowRight,
+  Activity,
+  Wifi,
+} from "lucide-react";
 import { recordTelemetry } from "@/lib/telemetry";
-import { cardFont } from "@/lib/fonts";
+import { cardFont, logoFont } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
 
 type StatusPageProps = {
@@ -14,385 +30,385 @@ type StatusPageProps = {
 
 export function StatusPage({ code, onRetry }: StatusPageProps) {
   const isServerError = code === "500";
+  const [isRetrying, setIsRetrying] = useState(false);
+  const [copiedTrace, setCopiedTrace] = useState(false);
+  const rawId = useId();
+  const [traceId, setTraceId] = useState(() => `fxp-edge-${rawId.replace(/[^a-zA-Z0-9]/g, "").slice(0, 8) || "live"}`);
 
   useEffect(() => {
     document.body.dataset.statusPage = "true";
     recordTelemetry(`route.${code}`, { status: code }, "warning");
-    return () => { delete document.body.dataset.statusPage; };
-  }, [code, isServerError]);
+    setTraceId(`fxp-edge-${Math.floor(Date.now() / 1000).toString(16)}-${code}`);
+    return () => {
+      delete document.body.dataset.statusPage;
+    };
+  }, [code]);
+
+  const handleRetry = useCallback(() => {
+    if (isRetrying) return;
+    setIsRetrying(true);
+    if (onRetry) {
+      try {
+        onRetry();
+      } catch {
+        window.location.reload();
+      }
+    } else {
+      window.location.reload();
+    }
+    const timer = setTimeout(() => {
+      setIsRetrying(false);
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, [isRetrying, onRetry]);
+
+  const handleCopyTrace = useCallback(() => {
+    navigator.clipboard?.writeText(traceId).then(() => {
+      setCopiedTrace(true);
+      setTimeout(() => setCopiedTrace(false), 2000);
+    }).catch(() => {
+      // Fallback
+      setCopiedTrace(true);
+      setTimeout(() => setCopiedTrace(false), 2000);
+    });
+  }, [traceId]);
 
   const title = isServerError
-    ? "Rất tiếc! Hệ thống đang gặp sự cố tạm thời."
-    : "Oops! Trang web bạn tìm kiếm không tồn tại.";
-  const description1 = isServerError
-    ? "Máy chủ đang quá tải hoặc đang bảo trì."
-    : "Có thể bạn đã nhập sai địa chỉ";
-  const description2 = isServerError
-    ? "Vui lòng thử lại sau ít phút."
-    : "hoặc trang web đã di chuyển.";
+    ? "Hệ thống gặp sự cố kết nối tạm thời"
+    : "Không tìm thấy nội dung yêu cầu";
+
+  const description = isServerError
+    ? "Máy chủ đang gặp tình trạng quá tải hoặc quá trình đồng bộ luồng phát bị gián đoạn. Đội ngũ kỹ thuật đã ghi nhận và đang tự động xử lý."
+    : "Đường dẫn bạn yêu cầu không khả dụng. Bộ phim có thể đã thay đổi tên, cập nhật máy chủ phát hoặc liên kết bị gián đoạn.";
+
+  const quickLinks = [
+    {
+      title: "Kho phim tổng hợp",
+      description: "Duyệt tìm danh mục phim mới nhất",
+      href: "/films",
+      icon: Film,
+    },
+    {
+      title: "Vũ trụ điện ảnh",
+      description: "Khám phá 6 vũ trụ & Top 10 thịnh hành",
+      href: "/genres",
+      icon: Layers,
+    },
+    {
+      title: "Tìm kiếm phim",
+      description: "Tra cứu theo diễn viên, tên phim",
+      href: "/search",
+      icon: Search,
+    },
+    {
+      title: "Gợi ý ngẫu nhiên",
+      description: "Chọn ngẫu nhiên một tác phẩm đặc sắc",
+      href: "/random",
+      icon: Shuffle,
+    },
+  ];
 
   return (
     <main
       className={cn(
         cardFont.className,
-        "status-page fixed inset-0 z-[1000] flex min-h-[100dvh] w-full flex-col items-center justify-center overflow-hidden bg-[#141414] px-4 py-8 text-white select-none",
+        "status-page fixed inset-0 z-[1000] flex min-h-[100dvh] w-full flex-col overflow-y-auto bg-[#08090d] text-white selection:bg-[#23ade5]/30 selection:text-white [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.1)_transparent]",
       )}
     >
-      <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes eddFloat {
-          0%,100% { transform: translateY(0) rotate(0deg); }
-          25% { transform: translateY(-5px) rotate(-1deg); }
-          75% { transform: translateY(3px) rotate(1deg); }
-        }
-        @keyframes moonFloat {
-          0%,100% { transform: translateY(0); }
-          50% { transform: translateY(5px); }
-        }
-        @keyframes satFloat {
-          0%,100% { transform: translateY(0); }
-          50% { transform: translateY(-4px); }
-        }
-        @keyframes cometFloat {
-          0%,100% { opacity:0.8; transform:scale(1); }
-          50% { opacity:1; transform:scale(1.06); }
-        }
-        @keyframes antennaPulse {
-          0%,100% { opacity:0.85; }
-          50% { opacity:1; filter:drop-shadow(0 0 3px #9bc3db); }
-        }
-        .edd-g   { animation: eddFloat 4.8s ease-in-out infinite; }
-        .moon-g  { animation: moonFloat 5.5s ease-in-out infinite; }
-        .sat-g   { animation: satFloat 6.2s ease-in-out infinite; }
-        .comet-g { animation: cometFloat 3.6s ease-in-out infinite; }
-        .ant-g   { animation: antennaPulse 2.8s ease-in-out infinite; }
-      `}} />
-
-      <section className="relative z-10 flex w-full max-w-5xl flex-col items-center text-center">
-
-        {/* ══ MAIN SVG ILLUSTRATION ══════════════════════════════════════ */}
-        <div className="relative w-full max-w-[920px] h-[200px] sm:h-[260px] md:h-[310px] flex items-center justify-center mb-3">
-          <svg
-            viewBox="0 0 960 290"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-full w-full"
+      {/* ══ TOP BRAND HEADER ════════════════════════════════════════════ */}
+      <header className="relative z-20 w-full shrink-0 border-b border-white/[0.06] bg-[#08090d]/80 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6">
+          <Link
+            href="/"
+            aria-label="FlexPhim - Trang chủ"
+            className="group flex items-center space-x-2.5 transition-opacity hover:opacity-90"
           >
-            <defs>
-              {/* ── Digit face gradient (very subtly lighter than #141414 BG) ── */}
-              <linearGradient id="dg" x1="0" y1="0" x2="0" y2="290" gradientUnits="userSpaceOnUse">
-                <stop offset="0%"   stopColor="#212529" />
-                <stop offset="100%" stopColor="#191c20" />
-              </linearGradient>
-
-              {/* ── Portal / inner space inside the "0" ── */}
-              <radialGradient id="portal" cx="50%" cy="45%" r="55%">
-                <stop offset="0%"   stopColor="#111418" />
-                <stop offset="75%"  stopColor="#0c0e12" />
-                <stop offset="100%" stopColor="#070809" />
-              </radialGradient>
-
-              {/* ── Mascot body gradient (authentic Stake Edd muted steel-blue) ── */}
-              <linearGradient id="eddBody" x1="0" y1="55" x2="0" y2="205" gradientUnits="userSpaceOnUse">
-                <stop offset="0%"   stopColor="#6e8ea4" />
-                <stop offset="55%"  stopColor="#5a7a8f" />
-                <stop offset="100%" stopColor="#486575" />
-              </linearGradient>
-              <linearGradient id="eddWing" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%"   stopColor="#62818f" />
-                <stop offset="100%" stopColor="#445e6c" />
-              </linearGradient>
-
-              {/* ── Space objects ── */}
-              <linearGradient id="spaceObj" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%"   stopColor="#415870" />
-                <stop offset="100%" stopColor="#2a3d4d" />
-              </linearGradient>
-
-              {/* ── Clip the mascot inside the 0 portal ── */}
-              <clipPath id="portalClip">
-                <ellipse cx="480" cy="138" rx="80" ry="103" />
-              </clipPath>
-            </defs>
-
-            {/* ════════════════════════════════════════════════════════════
-                DIGIT 1 — "4" (for 404)  or  "5" (for 500)
-            ════════════════════════════════════════════════════════════ */}
-            {code[0] === "4" ? (
-              <g>
-                {/* shadow offset */}
-                <text x="153" y="248" fontSize="265" fontWeight="900"
-                  fontFamily="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif"
-                  fill="#0b0d10" textAnchor="middle">4</text>
-                {/* front */}
-                <text x="144" y="239" fontSize="265" fontWeight="900"
-                  fontFamily="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif"
-                  fill="url(#dg)" textAnchor="middle" stroke="#25292e" strokeWidth="0.7">4</text>
-              </g>
-            ) : (
-              <g>
-                <text x="153" y="248" fontSize="265" fontWeight="900"
-                  fontFamily="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif"
-                  fill="#0b0d10" textAnchor="middle">5</text>
-                <text x="144" y="239" fontSize="265" fontWeight="900"
-                  fontFamily="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif"
-                  fill="url(#dg)" textAnchor="middle" stroke="#25292e" strokeWidth="0.7">5</text>
-              </g>
-            )}
-
-            {/* ════════════════════════════════════════════════════════════
-                DIGIT 2 — Central "0"  + Cosmic portal + Mascot Edd
-            ════════════════════════════════════════════════════════════ */}
-            <g>
-              {/* 0 shadow */}
-              <text x="489" y="248" fontSize="265" fontWeight="900"
-                fontFamily="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif"
-                fill="#0b0d10" textAnchor="middle">0</text>
-              {/* 0 front face */}
-              <text x="480" y="239" fontSize="265" fontWeight="900"
-                fontFamily="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif"
-                fill="url(#dg)" textAnchor="middle" stroke="#25292e" strokeWidth="0.7">0</text>
-
-              {/* ── cosmic portal inside the 0 ── */}
-              <ellipse cx="480" cy="138" rx="80" ry="103" fill="url(#portal)" />
-
-              {/* ── Everything inside the portal is clipped ── */}
-              <g clipPath="url(#portalClip)">
-
-                {/* Ambient star specks */}
-                <circle cx="425" cy="200" r="1.6" fill="#3e5769" />
-                <circle cx="533" cy="78" r="1.3" fill="#334656" />
-                <circle cx="448" cy="84" r="0.9" fill="#2e4050" />
-
-                {/* ╔════════════════════════════════════════════════════╗
-                    MASCOT EDD  — exact Stake.com ghost/cloud blob shape
-                    Key features from reference screenshot:
-                    • Amorphous ghost body — NOT rectangular
-                    • 2 large wing-lobes on the left (upper & lower)
-                    • Right side has jetpack protrusion
-                    • Single enormous cyclops eye — upper half of body
-                    • Small frown below eye
-                    • Lightning bolt antenna (top-right)
-                    • Muted steel-blue #5b7a8e color scheme
-                    ╚════════════════════════════════════════════════════╝ */}
-
-                <g className="edd-g" style={{ transformOrigin: "478px 130px" }}>
-
-                  {/* ── Jetpack / oxygen tank (back-right, drawn first so body overlaps) ── */}
-                  <rect x="514" y="108" width="14" height="34" rx="7"
-                    fill="#253848" stroke="#111e28" strokeWidth="1.5"
-                    transform="rotate(12 521 125)" />
-                  {/* tank stripes */}
-                  <line x1="515" y1="117" x2="525" y2="120" stroke="#1c2e3c" strokeWidth="1.3" />
-                  <line x1="513" y1="125" x2="523" y2="128" stroke="#1c2e3c" strokeWidth="1.3" />
-
-                  {/* ── LEFT UPPER WING LOBE — drawn first (behind body) ── */}
-                  <ellipse cx="422" cy="110" rx="22" ry="18"
-                    fill="url(#eddBody)" stroke="#162432" strokeWidth="2" />
-
-                  {/* ── LEFT LOWER WING LOBE ── */}
-                  <ellipse cx="415" cy="152" rx="28" ry="24"
-                    fill="url(#eddBody)" stroke="#162432" strokeWidth="2" />
-
-                  {/* ── MAIN BODY — organic ghost/cloud blob ── */}
-                  <path
-                    d="
-                      M 478,58
-                      C 494,58 513,66 522,82
-                      C 531,96 527,112 525,122
-                      C 531,124 542,128 545,138
-                      C 548,149 542,161 533,165
-                      C 525,168 515,163 513,168
-                      C 511,177 507,186 498,191
-                      C 488,197 478,199 466,199
-                      C 454,199 442,196 434,190
-                      C 426,184 424,174 423,168
-                      C 420,164 412,166 406,162
-                      C 400,158 396,147 400,137
-                      C 403,128 414,122 421,121
-                      C 419,111 419,96 428,82
-                      C 438,67 462,58 478,58 Z
-                    "
-                    fill="url(#eddBody)"
-                    stroke="#162432"
-                    strokeWidth="2.5"
-                  />
-
-                  {/* ── TOP HEAD BUMPS (small crown spikes, Stake style) ── */}
-                  <ellipse cx="458" cy="62" rx="9" ry="7"
-                    fill="url(#eddBody)" stroke="#162432" strokeWidth="1.8"
-                    transform="rotate(-15 458 62)" />
-                  <ellipse cx="478" cy="56" rx="8" ry="7"
-                    fill="url(#eddBody)" stroke="#162432" strokeWidth="1.8" />
-                  <ellipse cx="496" cy="60" rx="8" ry="7"
-                    fill="url(#eddBody)" stroke="#162432" strokeWidth="1.8"
-                    transform="rotate(12 496 60)" />
-
-                  {/* ── ANTENNA LIGHTNING BOLT (top-right of head) ── */}
-                  <g className="ant-g">
-                    {/* antenna stalk */}
-                    <line x1="508" y1="72" x2="516" y2="55" stroke="#9bc3db" strokeWidth="2.2" strokeLinecap="round" />
-                    {/* lightning bolt shape */}
-                    <path d="M 510,65 L 518,58 L 513,55 L 521,47"
-                      stroke="#9bc3db" strokeWidth="2.4"
-                      strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                    <circle cx="521" cy="47" r="2.6" fill="#9bc3db" />
-                  </g>
-
-                  {/* ── CYCLOPS EYE — very large, Stake's signature ── */}
-                  {/* Outer socket / eye-ring (dark sclera housing) */}
-                  <circle cx="476" cy="95" r="19" fill="#12202c" stroke="#1e3346" strokeWidth="2.2" />
-                  {/* White iris */}
-                  <circle cx="476" cy="95" r="13.5" fill="#e2eff8" />
-                  {/* Pupil — looking slightly down and to the left (lost in space) */}
-                  <circle cx="474" cy="97" r="8.5" fill="#0d1c27" />
-                  {/* Main highlight glint */}
-                  <circle cx="478" cy="91" r="3.2" fill="#ffffff" />
-                  {/* Secondary micro-glint */}
-                  <circle cx="473" cy="99" r="1.5" fill="#ffffff" />
-
-                  {/* ── FROWN MOUTH (slightly open, nervous in space) ── */}
-                  <path d="M 464,120 Q 476,111 488,120"
-                    stroke="#0f1d28"
-                    strokeWidth="2.6"
-                    strokeLinecap="round"
-                    fill="none" />
-
-                  {/* ── Subtle ground shadow under Edd ── */}
-                  <ellipse cx="473" cy="194" rx="32" ry="9" fill="#000" opacity="0.4" />
-
-                </g>
-              </g>{/* end portalClip */}
-            </g>{/* end d2-zero */}
-
-            {/* ════════════════════════════════════════════════════════════
-                DIGIT 3 — "4" (for 404)  or  "0" (for 500)
-            ════════════════════════════════════════════════════════════ */}
-            {code[2] === "4" ? (
-              <g>
-                <text x="838" y="248" fontSize="265" fontWeight="900"
-                  fontFamily="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif"
-                  fill="#0b0d10" textAnchor="middle">4</text>
-                <text x="829" y="239" fontSize="265" fontWeight="900"
-                  fontFamily="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif"
-                  fill="url(#dg)" textAnchor="middle" stroke="#25292e" strokeWidth="0.7">4</text>
-              </g>
-            ) : (
-              <g>
-                <text x="838" y="248" fontSize="265" fontWeight="900"
-                  fontFamily="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif"
-                  fill="#0b0d10" textAnchor="middle">0</text>
-                <text x="829" y="239" fontSize="265" fontWeight="900"
-                  fontFamily="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif"
-                  fill="url(#dg)" textAnchor="middle" stroke="#25292e" strokeWidth="0.7">0</text>
-              </g>
-            )}
-
-            {/* ════════════════════════════════════════════════════════════
-                SPACE OBJECTS (exact Stake.com placements)
-            ════════════════════════════════════════════════════════════ */}
-
-            {/* ── Comet/Meteor — upper area between digit-1 and digit-2 ── */}
-            {/* In stake screenshot: rocky comet shape, upper left of 0, has tail streaks */}
-            <g className="comet-g">
-              {/* Main comet rock body */}
-              <path
-                d="M 346,44 C 337,46 328,52 323,60 C 318,68 318,77 322,84
-                   C 326,90 334,94 342,93 C 350,92 357,87 360,80
-                   C 364,72 362,63 357,57 C 352,51 346,44 346,44 Z"
-                fill="url(#spaceObj)" stroke="#14232f" strokeWidth="1.6" />
-              {/* Comet tail streaks */}
-              <line x1="355" y1="48" x2="375" y2="33" stroke="#33495a" strokeWidth="1.8" strokeLinecap="round" />
-              <line x1="362" y1="54" x2="383" y2="40" stroke="#2a3d4d" strokeWidth="1.3" strokeLinecap="round" />
-              <line x1="358" y1="44" x2="379" y2="28" stroke="#243545" strokeWidth="1" strokeLinecap="round" />
-              {/* Crater on comet */}
-              <circle cx="336" cy="72" r="5" fill="#182633" />
-              <circle cx="346" cy="58" r="3.5" fill="#182633" />
-            </g>
-
-            {/* ── Pear Moon — between digit-1 and digit-2, lower area ── */}
-            {/* In stake screenshot: pear/drop shape with multiple craters, left of the 0 */}
-            <g className="moon-g">
-              <path
-                d="M 308,118
-                   C 295,128 284,148 282,174
-                   C 280,197 283,216 300,218
-                   C 318,218 334,206 338,190
-                   C 342,172 337,152 326,137
-                   C 322,130 318,124 308,118 Z"
-                fill="url(#spaceObj)" stroke="#14232f" strokeWidth="1.8" />
-              {/* Prominent lunar craters */}
-              <ellipse cx="320" cy="195" rx="6" ry="5" fill="#182633" />
-              <circle cx="300" cy="158" r="5.5" fill="#182633" />
-              <circle cx="320" cy="138" r="4" fill="#182633" />
-              <circle cx="298" cy="194" r="3" fill="#182633" />
-              <circle cx="330" cy="168" r="3" fill="#182633" />
-              <circle cx="310" cy="175" r="2" fill="#1e3040" />
-            </g>
-
-            {/* ── Saturn — lower-right of the centre 0 ── */}
-            {/* In stake screenshot: clear planet + prominent ring system */}
-            <g className="sat-g">
-              {/* Back ring arc */}
-              <ellipse cx="660" cy="196" rx="40" ry="10"
-                fill="#1b2d3c" transform="rotate(-18 660 196)" />
-              {/* Planet sphere */}
-              <circle cx="660" cy="196" r="21"
-                fill="url(#spaceObj)" stroke="#14232f" strokeWidth="1.8" />
-              {/* Ring band on top of planet (front arc) */}
-              <path
-                d="M 622,210 C 635,225 685,210 698,186"
-                stroke="#7ca2bc" strokeWidth="3.2" strokeLinecap="round" fill="none" />
-              {/* Subtle ring highlight */}
-              <path
-                d="M 626,207 C 638,220 682,208 694,188"
-                stroke="#557f99" strokeWidth="1.2" strokeLinecap="round" fill="none" opacity="0.5" />
-            </g>
-
-            {/* Ambient background stars */}
-            <circle cx="612" cy="72" r="2.8" fill="#4c6878" />
-            <circle cx="680" cy="92" r="1.7" fill="#3c5669" />
-            <circle cx="355" cy="175" r="1.4" fill="#3a5162" />
-
-          </svg>
-        </div>
-
-        {/* ══ STATUS TEXT ═════════════════════════════════════════════════ */}
-        <div className="flex flex-col items-center max-w-lg px-2">
-          <h1 className="text-lg sm:text-[21px] font-bold tracking-tight text-white mb-2">
-            {title}
-          </h1>
-          <p className="mb-7 text-[13px] sm:text-[14px] leading-relaxed text-[#7895ad] font-normal max-w-md">
-            {description1}
-            <br />
-            {description2}
-          </p>
-
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            {isServerError && onRetry && (
-              <button
-                type="button"
-                onClick={onRetry}
-                className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-md bg-[#2f4558] px-6 text-[13.5px] font-bold text-white transition-all duration-150 hover:bg-[#3a5268] hover:scale-[1.02] active:scale-[0.98]"
-              >
-                <RotateCcw size={15} />
-                <span>Thử lại ngay</span>
-              </button>
-            )}
-            <Link
-              href="/"
+            <div className="relative flex items-center justify-center">
+              <NextImage
+                src="/flexphim-logo.svg"
+                alt="FlexPhim Logo"
+                width={32}
+                height={32}
+                priority
+                unoptimized
+                className="h-8 w-8 object-contain drop-shadow-[0_0_12px_rgba(168,85,247,0.35)] transition-transform duration-300 group-hover:scale-105"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = "/flexphim-logo.png";
+                }}
+              />
+            </div>
+            <span
               className={cn(
-                "inline-flex h-10 cursor-pointer items-center justify-center rounded-md text-[13.5px] font-bold text-white transition-all duration-150 hover:scale-[1.02] active:scale-[0.98]",
-                isServerError && onRetry
-                  ? "bg-[#1e2d3a] hover:bg-[#253644] text-[#7895ad] hover:text-white px-5"
-                  : "bg-[#2f4558] hover:bg-[#3a5268] px-7",
+                logoFont.className,
+                "text-[22px] font-bold uppercase tracking-[-0.01em] text-white sm:text-[24px] leading-none",
               )}
             >
-              <span>Đi tới trang chủ</span>
+              Flex
+              <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-indigo-300 bg-clip-text text-transparent">
+                Phim
+              </span>
+            </span>
+          </Link>
+
+          {/* System status pill */}
+          <div className="flex items-center gap-2">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1 text-[11px] font-mono text-neutral-300 backdrop-blur-md">
+              <span
+                className={cn(
+                  "h-1.5 w-1.5 rounded-full",
+                  isServerError
+                    ? "bg-rose-500 animate-ping"
+                    : "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]",
+                )}
+              />
+              <span className="hidden sm:inline">
+                {isServerError ? "TRẠNG THÁI MẠNG: GIÁN ĐOẠN" : "TRẠNG THÁI: TRỰC TUYẾN"}
+              </span>
+              <span className="sm:hidden">{code}</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* ══ AMBIENT BACKGROUND EFFECTS ══════════════════════════════════ */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        {/* Subtle radial spotlight */}
+        <div
+          className={cn(
+            "absolute left-1/2 top-1/4 h-[380px] w-[650px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[140px]",
+            isServerError
+              ? "bg-rose-500/[0.07]"
+              : "bg-[#23ade5]/[0.08]",
+          )}
+        />
+        {/* Architectural hairline grid */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff04_1px,transparent_1px),linear-gradient(to_bottom,#ffffff04_1px,transparent_1px)] bg-[size:48px_48px] [mask-image:radial-gradient(ellipse_75%_65%_at_50%_40%,#000_65%,transparent_100%)]" />
+      </div>
+
+      {/* ══ MAIN HERO CONTENT ═══════════════════════════════════════════ */}
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-4 py-10 sm:py-16 text-center">
+        <div className="mx-auto flex w-full max-w-4xl flex-col items-center">
+
+          {/* Engineering Protocol Badge */}
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-1 text-xs font-mono text-neutral-300 shadow-sm backdrop-blur-md">
+            <span
+              className={cn(
+                "h-2 w-2 rounded-full",
+                isServerError ? "bg-rose-500 animate-pulse" : "bg-[#23ade5] animate-pulse",
+              )}
+            />
+            <span className="tracking-wide">
+              {isServerError ? "HTTP 500 // INTERNAL_SERVER_ERROR" : "HTTP 404 // NOT_FOUND"}
+            </span>
+          </div>
+
+          {/* Sculptural Display Numerals with Cinematic Aperture Accent */}
+          <div className="relative my-1 flex items-center justify-center select-none">
+            {/* Background aperture ring vectors */}
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-25">
+              <svg
+                className="h-[280px] w-[280px] sm:h-[360px] sm:w-[360px] animate-[spin_60s_linear_infinite]"
+                viewBox="0 0 200 200"
+                fill="none"
+              >
+                <circle
+                  cx="100"
+                  cy="100"
+                  r="85"
+                  stroke={isServerError ? "#ef4444" : "#23ade5"}
+                  strokeWidth="0.75"
+                  strokeDasharray="4 6"
+                />
+                <circle
+                  cx="100"
+                  cy="100"
+                  r="65"
+                  stroke="#ffffff"
+                  strokeWidth="0.5"
+                  strokeDasharray="2 8"
+                />
+                <circle
+                  cx="100"
+                  cy="100"
+                  r="98"
+                  stroke="#ffffff"
+                  strokeWidth="0.5"
+                  opacity="0.3"
+                />
+              </svg>
+            </div>
+
+            {/* Giant Monospace Display Digits */}
+            <h1
+              className="relative text-[7.5rem] font-black tracking-tighter leading-none text-transparent sm:text-[11rem] md:text-[13rem] bg-gradient-to-b from-white via-white/80 to-white/10 bg-clip-text drop-shadow-[0_20px_50px_rgba(0,0,0,0.9)]"
+            >
+              {code}
+            </h1>
+          </div>
+
+          {/* Heading & Subtext */}
+          <h2 className="mb-3 text-xl font-extrabold tracking-tight text-white sm:text-2xl md:text-3xl">
+            {title}
+          </h2>
+          <p className="mb-8 max-w-lg text-xs leading-relaxed text-neutral-400 sm:text-sm">
+            {description}
+          </p>
+
+          {/* Primary Action Buttons */}
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            {isServerError ? (
+              <>
+                <button
+                  type="button"
+                  onClick={handleRetry}
+                  disabled={isRetrying}
+                  className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#23ade5] px-6 text-sm font-bold text-black shadow-lg shadow-[#23ade5]/20 transition-all duration-200 hover:bg-[#1fb8f8] active:scale-[0.98] disabled:opacity-60"
+                >
+                  <RotateCcw size={16} className={cn(isRetrying && "animate-spin")} />
+                  <span>{isRetrying ? "Đang kết nối lại..." : "Thử kết nối lại"}</span>
+                </button>
+                <Link
+                  href="/"
+                  className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-6 text-sm font-semibold text-neutral-200 transition-all duration-200 hover:border-white/20 hover:bg-white/[0.08] hover:text-white active:scale-[0.98]"
+                >
+                  <Home size={16} />
+                  <span>Về Trang chủ</span>
+                </Link>
+                <Link
+                  href="/bao-loi"
+                  className="inline-flex h-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.02] px-4 text-xs font-semibold text-neutral-400 transition-all duration-200 hover:bg-white/[0.06] hover:text-white active:scale-[0.98]"
+                >
+                  <ShieldAlert size={14} />
+                  <span>Báo lỗi</span>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/"
+                  className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-white px-6 text-sm font-bold text-black shadow-lg shadow-white/5 transition-all duration-200 hover:bg-neutral-200 active:scale-[0.98]"
+                >
+                  <Home size={16} />
+                  <span>Về Trang chủ</span>
+                </Link>
+                <Link
+                  href="/films"
+                  className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-6 text-sm font-semibold text-neutral-200 transition-all duration-200 hover:border-white/20 hover:bg-white/[0.08] hover:text-white active:scale-[0.98]"
+                >
+                  <SlidersHorizontal size={16} />
+                  <span>Duyệt tìm kho phim</span>
+                </Link>
+              </>
+            )}
+          </div>
+
+          {/* ══ CONTENT MATRIX FOR 404 ═══════════════════════════════════ */}
+          {!isServerError && (
+            <div className="mt-12 w-full max-w-3xl">
+              <div className="mb-3 flex items-center justify-between px-1 text-left">
+                <span className="text-[11px] font-mono uppercase tracking-wider text-neutral-500">
+                  Điểm đến gợi ý
+                </span>
+                <span className="text-[11px] text-neutral-600">
+                  FlexPhim Catalog
+                </span>
+              </div>
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
+                {quickLinks.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className="group flex flex-col justify-between rounded-xl border border-white/[0.07] bg-white/[0.02] p-3.5 text-left transition-all duration-200 hover:border-white/20 hover:bg-white/[0.05] active:scale-[0.98]"
+                    >
+                      <div>
+                        <div className="mb-2.5 flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-[#23ade5] transition-colors group-hover:border-[#23ade5]/30 group-hover:bg-[#23ade5]/10">
+                          <Icon size={16} />
+                        </div>
+                        <h3 className="text-xs font-bold text-white transition-colors group-hover:text-[#23ade5]">
+                          {item.title}
+                        </h3>
+                        <p className="mt-1 text-[11px] leading-snug text-neutral-400">
+                          {item.description}
+                        </p>
+                      </div>
+                      <div className="mt-3 flex items-center text-[10.5px] font-medium text-neutral-500 transition-colors group-hover:text-white">
+                        <span>Truy cập</span>
+                        <ArrowRight size={12} className="ml-1 transition-transform group-hover:translate-x-0.5" />
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ══ DIAGNOSTIC TRACE CONSOLE FOR 500 ════════════════════════ */}
+          {isServerError && (
+            <div className="mt-10 w-full max-w-xl text-left">
+              <div className="overflow-hidden rounded-xl border border-white/[0.08] bg-black/40 backdrop-blur-md">
+                <div className="flex items-center justify-between border-b border-white/[0.06] bg-white/[0.02] px-3.5 py-2">
+                  <div className="flex items-center gap-2 text-xs font-mono text-neutral-400">
+                    <Terminal size={14} className="text-rose-400" />
+                    <span>DIAGNOSTIC_TRACE</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[11px] font-mono text-neutral-500">
+                    <Activity size={12} className="text-emerald-400" />
+                    <span>PoP Edge Active</span>
+                  </div>
+                </div>
+
+                <div className="p-3.5 font-mono text-xs text-neutral-300">
+                  <div className="flex items-center justify-between gap-2 py-1">
+                    <span className="text-neutral-500">TRACE_ID:</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[#23ade5] select-all">{traceId}</span>
+                      <button
+                        type="button"
+                        onClick={handleCopyTrace}
+                        aria-label="Sao chép mã chẩn đoán"
+                        className="rounded p-1 text-neutral-400 transition-colors hover:bg-white/10 hover:text-white"
+                      >
+                        {copiedTrace ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between gap-2 py-1">
+                    <span className="text-neutral-500">SERVER_NODE:</span>
+                    <span className="text-neutral-400">api.flexphim.vn (Cluster Edge)</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-2 py-1">
+                    <span className="text-neutral-500">PROTOCOL:</span>
+                    <span className="text-neutral-400">HTTP/2 TLS 1.3 - HLS Relay</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+        </div>
+      </div>
+
+      {/* ══ MINIMALIST FOOTER ════════════════════════════════════════════ */}
+      <footer className="relative z-10 w-full shrink-0 border-t border-white/[0.06] bg-[#08090d]/60 py-4 text-xs text-neutral-500">
+        <div className="mx-auto flex w-full max-w-7xl flex-col items-center justify-between gap-2 px-4 sm:flex-row sm:px-6">
+          <p>&copy; 2026 FlexPhim. Nền tảng xem phim trực tuyến.</p>
+          <div className="flex items-center gap-4 text-[11px]">
+            <Link href="/terms" className="transition-colors hover:text-neutral-300">
+              Điều khoản
+            </Link>
+            <span className="text-neutral-700">&bull;</span>
+            <Link href="/privacy" className="transition-colors hover:text-neutral-300">
+              Bảo mật
+            </Link>
+            <span className="text-neutral-700">&bull;</span>
+            <Link href="/bao-loi" className="transition-colors hover:text-neutral-300">
+              Báo lỗi kỹ thuật
             </Link>
           </div>
         </div>
-
-      </section>
+      </footer>
     </main>
   );
 }
