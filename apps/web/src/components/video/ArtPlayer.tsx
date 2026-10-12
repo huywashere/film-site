@@ -862,7 +862,7 @@ export default function ArtPlayer({
       },
       poster,
       title,
-      volume: 0.8,
+      volume: 1,
       autoplay,
       autoSize: false,
       autoMini: false,
@@ -1141,7 +1141,7 @@ export default function ArtPlayer({
           onSwitch: function (item: any) {
             const nextState = !item.switch;
             item.tooltip = nextState ? 'Bật' : 'Tắt';
-            setNightMode(nextState);
+            setNightMode(nextState, playerRef.current?.video);
             if (playerRef.current) {
               playerRef.current.notice.show = nextState
                 ? 'Đã bật Chế độ Ban đêm: Giọng thoại rõ nét, giảm âm nổ'

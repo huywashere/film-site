@@ -955,6 +955,7 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
 .art-video-player.art-mobile .art-control-backward-10,
 .art-video-player.art-mobile .art-control-forward-10,
 .art-video-player.art-mobile .art-control-time,
+.art-video-player.art-mobile .art-control-volume,
 .art-video-player.art-mobile .art-control-subtitle-toggle {
   display: inline-flex !important;
 }
@@ -997,9 +998,7 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
     --art-control-icon-scale: 0.9 !important;
   }
 
-  /* On mobile touch devices, mute is handled by physical hardware buttons; hide volume & pip to prevent controls and seek area from being cramped or overflow-clipped */
-  .art-video-player .art-control-volume,
-  .art-video-player.art-mobile .art-control-volume,
+  /* On mobile touch devices, hide PiP to keep control bar compact */
   .art-video-player .art-control-pip,
   .art-video-player.art-mobile .art-control-pip {
     display: none !important;

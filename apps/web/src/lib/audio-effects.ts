@@ -31,8 +31,12 @@ export function isNightModeEnabled(): boolean {
   }
 }
 
-export function attachNightModeAudio(video: HTMLVideoElement): void {
+export function attachNightModeAudio(video: HTMLVideoElement, force = false): void {
   if (typeof window === 'undefined') return;
+
+  // Never hijack native media audio if Night Mode is disabled.
+  // Native video element output maintains 100% full hardware loudness and clarity on mobile.
+  if (!isNightModeEnabled() && !force) return;
 
   try {
     const existing = videoAudioMap.get(video);
@@ -125,12 +129,16 @@ function applyNightModeState(state: AudioEffectState, enabled: boolean): void {
   }
 }
 
-export function setNightMode(enabled: boolean): void {
+export function setNightMode(enabled: boolean, video?: HTMLVideoElement | null): void {
   if (typeof window === 'undefined') return;
 
   try {
     localStorage.setItem(STORAGE_KEY, String(enabled));
   } catch {}
+
+  if (enabled && video) {
+    attachNightModeAudio(video, true);
+  }
 
   if (activeAudioState) {
     applyNightModeState(activeAudioState, enabled);
