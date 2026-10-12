@@ -18,7 +18,7 @@ import { OperationalNotice } from "@/components/layout/OperationalNotice";
 import { MaintenanceGuard } from "@/components/layout/MaintenanceGuard";
 import { LogoSplashIntro } from "@/components/layout/LogoSplashIntro";
 import { TopRouteProgress } from "@/components/layout/TopRouteProgress";
-import { cardFont, bebasFont, logoFont } from "@/lib/fonts";
+import { cardFont, logoFont } from "@/lib/fonts";
 
 const PREPAINT_SCRIPT = `
 (() => {
@@ -175,7 +175,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${cardFont.variable} ${bebasFont.variable} ${logoFont.variable} ${cardFont.className} antialiased`}
+        className={`${cardFont.variable} ${logoFont.variable} ${cardFont.className} antialiased`}
         suppressHydrationWarning
       >
         <TopRouteProgress />

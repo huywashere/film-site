@@ -1,4 +1,4 @@
-import { Be_Vietnam_Pro, Bebas_Neue, Oswald } from "next/font/google";
+import { Be_Vietnam_Pro, Oswald } from "next/font/google";
 
 export const cardFont = Be_Vietnam_Pro({
   subsets: ["latin", "vietnamese"],
@@ -7,14 +7,6 @@ export const cardFont = Be_Vietnam_Pro({
   weight: ["400", "700", "900"],
   display: "swap",
   variable: "--font-be-vietnam",
-  preload: true,
-});
-
-export const bebasFont = Bebas_Neue({
-  subsets: ["latin"],
-  weight: "400",
-  display: "swap",
-  variable: "--font-bebas-neue",
   preload: true,
 });
 
@@ -27,4 +19,5 @@ export const logoFont = Oswald({
 });
 
 export const heroSerifFont = cardFont;
+
 
