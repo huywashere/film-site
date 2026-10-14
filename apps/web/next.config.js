@@ -23,6 +23,9 @@ const nextConfig = {
   // localhost. Allow the test origin so client components hydrate normally.
   allowedDevOrigins: ["127.0.0.1"],
 
+  // Allow more time for slow VPS CPU during static page generation
+  staticPageGenerationTimeout: 180,
+
   typescript: {
     ignoreBuildErrors: false,
   },
