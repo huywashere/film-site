@@ -238,7 +238,7 @@ services:
       - backup_data:/app/backups
       - media_data:/app/media
     healthcheck:
-      test: ['CMD-SHELL', 'wget -qO- http://localhost:4000/api/v1/health || exit 1']
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:4000/api/v1/health || exit 1']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -305,7 +305,7 @@ services:
     networks:
       - netphim_net
     healthcheck:
-      test: ['CMD-SHELL', 'wget -qO- http://localhost:3000 || exit 1']
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:3000 || exit 1']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -388,7 +388,7 @@ services:
     networks:
       - netphim_net
     healthcheck:
-      test: ['CMD-SHELL', 'wget -qO- http://localhost:8081/readyz || exit 1']
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:8081/readyz || exit 1']
       interval: 15s
       timeout: 5s
       retries: 3
@@ -459,7 +459,7 @@ services:
     networks:
       - netphim_net
     healthcheck:
-      test: ['CMD-SHELL', 'curl -fsS http://localhost/openresty-health >/dev/null || exit 1']
+      test: ['CMD-SHELL', 'curl -fsS http://127.0.0.1/openresty-health >/dev/null || exit 1']
       interval: 15s
       timeout: 5s
       retries: 3

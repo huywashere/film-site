@@ -1,0 +1,157 @@
+name: Build & Deploy to VPS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      skip_build:
+        description: 'Bỏ qua bước build image (chỉ deploy)'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  build-and-push:
+    name: Build & Push Images to GHCR
+    runs-on: ubuntu-latest
+    if: ${{ !inputs.skip_build }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Lowercase repository name for Docker image tags
+        run: |
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          echo "REPO_LOWER=$REPO_LOWER" >> $GITHUB_ENV
+          echo "SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
+
+      - name: Log in to GitHub Container Registry (GHCR)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── Build & Push API Image ──────────────────────────────────
+      - name: Build & Push API
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: infra/docker/Dockerfile
+          target: api
+          push: true
+          tags: |
+            ghcr.io/${{ env.REPO_LOWER }}/api:${{ github.sha }}
+            ghcr.io/${{ env.REPO_LOWER }}/api:${{ env.SHORT_SHA }}
+            ghcr.io/${{ env.REPO_LOWER }}/api:latest
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
+
+      # ── Build & Push Web Image ──────────────────────────────────
+      - name: Build & Push Web
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: infra/docker/Dockerfile
+          target: web
+          push: true
+          tags: |
+            ghcr.io/${{ env.REPO_LOWER }}/web:${{ github.sha }}
+            ghcr.io/${{ env.REPO_LOWER }}/web:${{ env.SHORT_SHA }}
+            ghcr.io/${{ env.REPO_LOWER }}/web:latest
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL || 'https://flexphim.top/api/v1' }}
+            NEXT_PUBLIC_APP_NAME=${{ vars.NEXT_PUBLIC_APP_NAME || 'FlexPhim' }}
+            NEXT_PUBLIC_TURNSTILE_SITE_KEY=${{ secrets.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '0x4AAAAAAFW8CtvaCQBVROTp' }}
+            KKPHIM_API_BASE=${{ vars.KKPHIM_API_BASE || 'https://phimapi.com' }}
+            OPHIM_API_BASE=${{ vars.OPHIM_API_BASE || 'https://ophim1.com' }}
+            NGUONC_API_BASE=${{ vars.NGUONC_API_BASE || 'https://phim.nguonc.com/api' }}
+            VSMOV_API_BASE=${{ vars.VSMOV_API_BASE || 'https://vsmov.com/api' }}
+            VICDN_API_BASE=${{ vars.VICDN_API_BASE || 'https://vicdn.cc/api' }}
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
+
+      # ── Build & Push Media Gateway Image ────────────────────────
+      - name: Build & Push Media Gateway
+        uses: docker/build-push-action@v6
+        with:
+          context: ./services/media-gateway
+          push: true
+          tags: |
+            ghcr.io/${{ env.REPO_LOWER }}/media-gateway:${{ github.sha }}
+            ghcr.io/${{ env.REPO_LOWER }}/media-gateway:${{ env.SHORT_SHA }}
+            ghcr.io/${{ env.REPO_LOWER }}/media-gateway:latest
+          cache-from: type=gha,scope=media-gateway
+          cache-to: type=gha,mode=max,scope=media-gateway
+
+      # ── Build & Push Media Worker Image (Rust) ──────────────────
+      - name: Build & Push Media Worker
+        uses: docker/build-push-action@v6
+        with:
+          context: ./services/media-worker-rs
+          push: true
+          tags: |
+            ghcr.io/${{ env.REPO_LOWER }}/media-worker-rs:${{ github.sha }}
+            ghcr.io/${{ env.REPO_LOWER }}/media-worker-rs:${{ env.SHORT_SHA }}
+            ghcr.io/${{ env.REPO_LOWER }}/media-worker-rs:latest
+          cache-from: type=gha,scope=media-worker-rs
+          cache-to: type=gha,mode=max,scope=media-worker-rs
+
+      # ── Build & Push OpenResty Image ────────────────────────────
+      - name: Build & Push OpenResty
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: infra/openresty/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ env.REPO_LOWER }}/openresty:${{ github.sha }}
+            ghcr.io/${{ env.REPO_LOWER }}/openresty:${{ env.SHORT_SHA }}
+            ghcr.io/${{ env.REPO_LOWER }}/openresty:latest
+          cache-from: type=gha,scope=openresty
+          cache-to: type=gha,mode=max,scope=openresty
+
+  deploy:
+    name: Deploy to VPS
+    needs: [build-and-push]
+    runs-on: ubuntu-latest
+    if: always() && (needs.build-and-push.result == 'success' || inputs.skip_build == true)
+    steps:
+      - name: Lowercase repository name
+        run: |
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          echo "REPO_LOWER=$REPO_LOWER" >> $GITHUB_ENV
+
+      - name: Execute remote deploy script via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER || 'root' }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          script: |
+            export REGISTRY_IMAGE="ghcr.io/${{ env.REPO_LOWER }}"
+            export IMAGE_TAG="${{ github.sha }}"
+            export CI_REGISTRY="ghcr.io"
+            export CI_REGISTRY_USER="${{ github.actor }}"
+            export CI_REGISTRY_PASSWORD="${{ secrets.GHCR_PAT || secrets.GITHUB_TOKEN }}"
+            export VPS_APP_DIR="${{ secrets.VPS_APP_DIR || '/root/netphim' }}"
+            
+            # Đảm bảo script có quyền execute
+            chmod +x $VPS_APP_DIR/scripts/github-deploy.sh 2>/dev/null || true
+            
+            # Chạy deploy
+            bash $VPS_APP_DIR/scripts/github-deploy.sh
