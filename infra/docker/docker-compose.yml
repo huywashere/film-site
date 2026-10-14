@@ -194,6 +194,9 @@ services:
       TMDB_ACCESS_TOKEN: ${TMDB_ACCESS_TOKEN}
       # Cloudflare Turnstile
       TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY}
+      # Firebase Auth
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:-flexphim-1}
+      NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${NEXT_PUBLIC_FIREBASE_PROJECT_ID:-flexphim-1}
       # Internal admin performance metrics
       ADMIN_METRICS_TOKEN: ${ADMIN_METRICS_TOKEN:?ADMIN_METRICS_TOKEN is required}
       ADMIN_REQUIRE_2FA: ${ADMIN_REQUIRE_2FA:-true}
