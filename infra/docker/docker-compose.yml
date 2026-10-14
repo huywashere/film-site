@@ -446,6 +446,8 @@ services:
     restart: unless-stopped
     expose:
       - '80'
+    ports:
+      - '127.0.0.1:80:80'
     volumes:
       - ./ssl:/etc/openresty/ssl
       - nginx_cache:/var/cache/nginx
