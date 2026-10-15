@@ -8,6 +8,7 @@ import {
   ADMIN_SESSION_COOKIE,
   adminApiBaseUrl,
   adminGithubCallbackUrl,
+  adminPublicOrigin,
   safeAdminNext,
 } from "@/lib/admin-session";
 
@@ -32,7 +33,8 @@ function clearOAuthCookies(response: NextResponse) {
 }
 
 function loginRedirect(request: NextRequest, error: string) {
-  const target = new URL("/login", request.url);
+  const origin = adminPublicOrigin(request);
+  const target = new URL("/login", origin);
   target.searchParams.set("github_error", error);
   return NextResponse.redirect(target);
 }
@@ -62,7 +64,7 @@ export async function GET(request: NextRequest) {
       body: JSON.stringify({
         code,
         codeVerifier: verifier,
-        redirectUri: adminGithubCallbackUrl(request.nextUrl.origin),
+        redirectUri: adminGithubCallbackUrl(adminPublicOrigin(request)),
       }),
       signal: AbortSignal.timeout(15_000),
     });
@@ -83,7 +85,8 @@ export async function GET(request: NextRequest) {
   }
 
   if (payload.requires2FA && payload.challenge) {
-    const target = new URL("/login", request.url);
+    const origin = adminPublicOrigin(request);
+    const target = new URL("/login", origin);
     target.searchParams.set("github_2fa", "1");
     target.searchParams.set("next", next);
     const response = NextResponse.redirect(target);
@@ -103,13 +106,11 @@ export async function GET(request: NextRequest) {
     clearOAuthCookies(response);
     return response;
   }
-  const response = NextResponse.redirect(new URL(next, request.url));
+  const origin = adminPublicOrigin(request);
+  const response = NextResponse.redirect(new URL(next, origin));
   response.cookies.set(ADMIN_SESSION_COOKIE, payload.token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    // The session is created at the end of a top-level redirect from GitHub.
-    // SameSite=Strict may withhold it for the remaining redirect chain and send
-    // the user straight back to /login even though the API created a session.
     sameSite: "lax",
     path: "/",
     maxAge: 12 * 60 * 60,

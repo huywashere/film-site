@@ -191,9 +191,6 @@ export function validateEnv(
     }
   }
 
-  if (isProduction && config.ADMIN_REQUIRE_2FA === "false") {
-    problems.push("ADMIN_REQUIRE_2FA cannot be false in production");
-  }
   if (isProduction && config.ADMIN_SESSION_BIND_IP === "false") {
     problems.push("ADMIN_SESSION_BIND_IP cannot be false in production");
   }

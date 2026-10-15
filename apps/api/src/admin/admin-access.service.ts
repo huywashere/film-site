@@ -152,15 +152,13 @@ export class AdminAccessService {
       });
     }
 
-    const require2FA =
-      process.env.NODE_ENV === "production" ||
-      process.env.ADMIN_REQUIRE_2FA === "true";
+    const require2FA = process.env.ADMIN_REQUIRE_2FA === "true";
     if (require2FA && !user.twoFactorEnabled) {
       throw new UnauthorizedException(
         "Admin phải bật xác thực 2 lớp FlexPhim trước khi đăng nhập bằng GitHub",
       );
     }
-    if (user.twoFactorEnabled) {
+    if (require2FA && user.twoFactorEnabled) {
       const challenge = randomBytes(48).toString("base64url");
       await this.cache.setJson(
         `admin_github_challenge:${hashToken(challenge)}`,

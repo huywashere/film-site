@@ -96,7 +96,7 @@ export default function AdminLoginPage() {
             <p>
               {github2FA
                 ? "GitHub đã xác thực. Hoàn tất lớp bảo mật FlexPhim."
-                : "Phiên riêng, bắt buộc 2FA trên production."}
+                : "Xác thực danh tính qua tài khoản GitHub đã được phân quyền."}
             </p>
           </div>
         </div>

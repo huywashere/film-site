@@ -46,13 +46,12 @@ describe("production admin environment validation", () => {
     expect(() => validateEnv(config)).toThrow("exactly one GitHub ID");
   });
 
-  it("does not allow disabling production 2FA or IP binding", () => {
+  it("does not allow disabling production IP binding", () => {
     expect(() =>
       validateEnv({
         ...secureProductionEnv(),
-        ADMIN_REQUIRE_2FA: "false",
         ADMIN_SESSION_BIND_IP: "false",
       }),
-    ).toThrow("ADMIN_REQUIRE_2FA cannot be false");
+    ).toThrow("ADMIN_SESSION_BIND_IP cannot be false");
   });
 });

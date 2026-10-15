@@ -3,11 +3,13 @@ import {
   ADMIN_GITHUB_CHALLENGE_COOKIE,
   ADMIN_SESSION_COOKIE,
   adminApiBaseUrl,
+  adminPublicOrigin,
 } from "@/lib/admin-session";
 
 export async function POST(request: NextRequest) {
   const origin = request.headers.get("origin");
-  if (origin && origin !== request.nextUrl.origin) {
+  const expectedOrigin = adminPublicOrigin(request);
+  if (origin && origin !== expectedOrigin && origin !== request.nextUrl.origin) {
     return NextResponse.json({ message: "Nguồn yêu cầu không hợp lệ" }, { status: 403 });
   }
   const challenge = request.cookies.get(ADMIN_GITHUB_CHALLENGE_COOKIE)?.value || "";

@@ -33,3 +33,17 @@ export function adminGithubCallbackUrl(origin: string) {
 export function safeAdminNext(value: string | null | undefined) {
   return value?.startsWith("/") && !value.startsWith("//") ? value : "/";
 }
+
+export function adminPublicOrigin(request?: { headers: { get(name: string): string | null } }) {
+  if (process.env.ADMIN_PUBLIC_URL) {
+    return process.env.ADMIN_PUBLIC_URL.replace(/\/$/, "");
+  }
+  if (request) {
+    const host = request.headers.get("x-forwarded-host") || request.headers.get("host");
+    const proto = request.headers.get("x-forwarded-proto") || "https";
+    if (host && !host.startsWith("0.0.0.0") && !host.startsWith("127.0.0.1")) {
+      return `${proto}://${host}`;
+    }
+  }
+  return "https://admin.flexphim.top";
+}

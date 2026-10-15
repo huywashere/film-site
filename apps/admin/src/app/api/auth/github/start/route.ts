@@ -5,19 +5,21 @@ import {
   ADMIN_GITHUB_STATE_COOKIE,
   ADMIN_GITHUB_VERIFIER_COOKIE,
   adminGithubCallbackUrl,
+  adminPublicOrigin,
   safeAdminNext,
 } from "@/lib/admin-session";
 
 export async function GET(request: NextRequest) {
+  const origin = adminPublicOrigin(request);
   const clientId = process.env.GITHUB_ADMIN_CLIENT_ID?.trim();
   if (!clientId) {
-    return NextResponse.redirect(new URL("/login?github_error=not_configured", request.url));
+    return NextResponse.redirect(new URL("/login?github_error=not_configured", origin));
   }
 
   const state = randomBytes(32).toString("base64url");
   const verifier = randomBytes(64).toString("base64url");
   const challenge = createHash("sha256").update(verifier).digest("base64url");
-  const callbackUrl = adminGithubCallbackUrl(request.nextUrl.origin);
+  const callbackUrl = adminGithubCallbackUrl(origin);
   const authorize = new URL("https://github.com/login/oauth/authorize");
   authorize.searchParams.set("client_id", clientId);
   authorize.searchParams.set("redirect_uri", callbackUrl);
