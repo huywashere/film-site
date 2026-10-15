@@ -47,3 +47,28 @@ export function adminPublicOrigin(request?: { headers: { get(name: string): stri
   }
   return "https://admin.flexphim.top";
 }
+
+export function isAllowedAdminOrigin(
+  origin: string | null | undefined,
+  request: { headers: { get(name: string): string | null }; nextUrl?: { origin?: string; host?: string } },
+): boolean {
+  if (!origin) return true;
+  if (request.nextUrl?.origin && origin === request.nextUrl.origin) return true;
+  const publicOrigin = adminPublicOrigin(request);
+  if (origin === publicOrigin) return true;
+
+  try {
+    const originUrl = new URL(origin);
+    const originHost = originUrl.host.toLowerCase();
+    const reqHost = (
+      request.headers.get("x-forwarded-host") ||
+      request.headers.get("host") ||
+      request.nextUrl?.host
+    )?.toLowerCase();
+    if (reqHost && originHost === reqHost) return true;
+    if (originHost === "admin.flexphim.top" || originHost.endsWith(".flexphim.top")) return true;
+    if (originUrl.hostname === "localhost" || originUrl.hostname === "127.0.0.1") return true;
+  } catch {}
+
+  return false;
+}

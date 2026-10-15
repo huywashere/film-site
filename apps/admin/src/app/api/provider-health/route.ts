@@ -129,16 +129,16 @@ function webBaseUrl(): string {
   const configured =
     process.env.NETPHIM_WEB_URL ||
     process.env.NEXT_PUBLIC_NETPHIM_WEB_URL ||
-    'http://127.0.0.1:3000';
+    (process.env.NODE_ENV === 'production' ? 'https://flexphim.top' : 'http://127.0.0.1:3000');
   try {
     const url = new URL(configured);
     if (url.protocol === 'http:' || url.protocol === 'https:') {
       return url.origin;
     }
   } catch {
-    // Fall back to local web application
+    // Fall back to public web or internal
   }
-  return 'http://127.0.0.1:3000';
+  return process.env.NODE_ENV === 'production' ? 'https://flexphim.top' : 'http://127.0.0.1:3000';
 }
 
 function calculateOmdbFallbackQuota(): ProviderQuota {
@@ -305,7 +305,7 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  const baseUrl = webBaseUrl();
+  let baseUrl = webBaseUrl();
   let proxy: ProxyStatus = {
     status: 'operational',
     message: 'Website proxy phản hồi',
@@ -317,10 +317,28 @@ export async function GET(request: NextRequest) {
     });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
   } catch {
-    proxy = {
-      status: 'down',
-      message: 'Website proxy chưa chạy. Hãy khởi động web ở cổng 3000 để kiểm tra nguồn phim.',
-    };
+    // If configured baseUrl failed in production and it wasn't already https://flexphim.top, fallback
+    let recovered = false;
+    if (baseUrl !== 'https://flexphim.top') {
+      try {
+        const fallbackRes = await fetch('https://flexphim.top/api/health', {
+          cache: 'no-store',
+          signal: AbortSignal.timeout(3_000),
+        });
+        if (fallbackRes.ok) {
+          baseUrl = 'https://flexphim.top';
+          recovered = true;
+        }
+      } catch {
+        // Fallback also failed
+      }
+    }
+    if (!recovered) {
+      proxy = {
+        status: 'down',
+        message: 'Website proxy chưa chạy. Hãy kiểm tra cổng 3000 hoặc https://flexphim.top.',
+      };
+    }
   }
   const providers = await Promise.all(
     PROVIDERS.map((provider) => probeProvider(provider, baseUrl)),

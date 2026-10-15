@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   ADMIN_SESSION_COOKIE,
   adminApiBaseUrl,
+  isAllowedAdminOrigin,
 } from "../../../../lib/admin-session";
 
 export const dynamic = "force-dynamic";
@@ -63,7 +64,7 @@ async function forward(
   }
 
   const origin = request.headers.get("origin");
-  if (origin && origin !== request.nextUrl.origin) {
+  if (origin && !isAllowedAdminOrigin(origin, request)) {
     return NextResponse.json({ message: "Nguồn yêu cầu không hợp lệ" }, { status: 403 });
   }
 

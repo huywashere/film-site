@@ -336,6 +336,7 @@ services:
       GITHUB_ADMIN_CLIENT_ID: ${GITHUB_ADMIN_CLIENT_ID}
       ADMIN_GITHUB_CALLBACK_URL: ${ADMIN_GITHUB_CALLBACK_URL:-https://admin.flexphim.top/api/auth/github/callback}
       ADMIN_PUBLIC_URL: ${ADMIN_PUBLIC_URL:-https://admin.flexphim.top}
+      NETPHIM_WEB_URL: ${NETPHIM_WEB_URL:-https://flexphim.top}
     depends_on:
       api:
         condition: service_healthy

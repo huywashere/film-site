@@ -50,10 +50,13 @@ export function ProviderHealthPanel() {
       const response = await fetch(`/api/provider-health${force ? '?force=1' : ''}`, {
         cache: 'no-store',
       });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      if (!response.ok) {
+        const body = (await response.json().catch(() => null)) as { error?: string; message?: string } | null;
+        throw new Error(body?.error || body?.message || `HTTP ${response.status}`);
+      }
       setData((await response.json()) as ProviderHealthPayload);
-    } catch {
-      setError('Không thể tải trạng thái nguồn phim từ máy chủ quản trị.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể tải trạng thái nguồn phim từ máy chủ quản trị.');
     } finally {
       setLoading(false);
     }

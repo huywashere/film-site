@@ -4,12 +4,12 @@ import {
   ADMIN_SESSION_COOKIE,
   adminApiBaseUrl,
   adminPublicOrigin,
+  isAllowedAdminOrigin,
 } from "@/lib/admin-session";
 
 export async function POST(request: NextRequest) {
   const origin = request.headers.get("origin");
-  const expectedOrigin = adminPublicOrigin(request);
-  if (origin && origin !== expectedOrigin && origin !== request.nextUrl.origin) {
+  if (origin && !isAllowedAdminOrigin(origin, request)) {
     return NextResponse.json({ message: "Nguồn yêu cầu không hợp lệ" }, { status: 403 });
   }
   const challenge = request.cookies.get(ADMIN_GITHUB_CHALLENGE_COOKIE)?.value || "";
