@@ -84,6 +84,9 @@ docker pull "$REGISTRY_IMAGE_LOWER/api:$IMAGE_TAG"
 info "Pulling Web: $REGISTRY_IMAGE_LOWER/web:$IMAGE_TAG"
 docker pull "$REGISTRY_IMAGE_LOWER/web:$IMAGE_TAG"
 
+info "Pulling Admin: $REGISTRY_IMAGE_LOWER/admin:$IMAGE_TAG"
+docker pull "$REGISTRY_IMAGE_LOWER/admin:$IMAGE_TAG" || warn "Admin image chưa sẵn sàng trên GHCR"
+
 info "Pulling Media Gateway: $REGISTRY_IMAGE_LOWER/media-gateway:$IMAGE_TAG"
 docker pull "$REGISTRY_IMAGE_LOWER/media-gateway:$IMAGE_TAG"
 
@@ -170,10 +173,11 @@ compose up -d --no-deps --pull never web
 wait_healthy web || rollback_services "$IMAGE_TAG"
 
 # Khởi động các service còn lại
-info "Khởi động media-gateway, worker, openresty, cloudflared..."
-compose up -d --no-deps --pull never media-gateway media-worker-rs openresty cloudflared
+info "Khởi động media-gateway, worker, openresty, admin, cloudflared..."
+compose up -d --no-deps --pull never media-gateway media-worker-rs openresty admin cloudflared
 wait_healthy media-gateway || rollback_services "$IMAGE_TAG"
 wait_healthy openresty || rollback_services "$IMAGE_TAG"
+wait_healthy admin || warn "Admin container chưa đạt trạng thái healthy"
 
 # ── Bước 7: Lưu tag đã deploy ─────────────────────────────────
 echo "$IMAGE_TAG" > "$PREV_TAG_FILE"

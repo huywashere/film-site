@@ -2,6 +2,7 @@
 const isProd = process.env.NODE_ENV === "production";
 
 const nextConfig = {
+  output: isProd ? "standalone" : undefined,
   poweredByHeader: false,
   reactStrictMode: true,
   transpilePackages: ["@netphim/shared-types"],

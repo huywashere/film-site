@@ -135,3 +135,37 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 CMD ["node", "apps/web/server.js"]
+
+# ── Stage 6: Admin Builder ────────────────────────────
+FROM deps AS admin-builder
+WORKDIR /app
+
+COPY apps/admin ./apps/admin
+COPY apps/web/public ./apps/web/public
+COPY packages/shared-types ./packages/shared-types
+
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_TELEMETRY_DISABLED=1
+
+RUN cd apps/admin && /app/node_modules/.bin/next build
+
+# ── Stage 7: Admin Production Runtime ─────────────────
+FROM node:${NODE_VERSION}-alpine AS admin
+
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+WORKDIR /app
+
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
+
+# Copy built Next.js standalone admin app
+COPY --from=admin-builder --chown=nextjs:nodejs /app/apps/admin/.next/standalone ./
+COPY --from=admin-builder --chown=nextjs:nodejs /app/apps/admin/.next/static ./apps/admin/.next/static
+
+USER nextjs
+EXPOSE 3002
+ENV PORT=3002
+ENV HOSTNAME="0.0.0.0"
+CMD ["node", "apps/admin/server.js"]

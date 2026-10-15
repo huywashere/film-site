@@ -89,6 +89,23 @@ jobs:
           cache-from: type=gha,scope=web
           cache-to: type=gha,mode=max,scope=web
 
+      # ── Build & Push Admin Image ────────────────────────────────
+      - name: Build & Push Admin
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: infra/docker/Dockerfile
+          target: admin
+          push: true
+          tags: |
+            ghcr.io/${{ env.REPO_LOWER }}/admin:${{ github.sha }}
+            ghcr.io/${{ env.REPO_LOWER }}/admin:${{ env.SHORT_SHA }}
+            ghcr.io/${{ env.REPO_LOWER }}/admin:latest
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL || 'https://flexphim.top/api/v1' }}
+          cache-from: type=gha,scope=admin
+          cache-to: type=gha,mode=max,scope=admin
+
       # ── Build & Push Media Gateway Image ────────────────────────
       - name: Build & Push Media Gateway
         uses: docker/build-push-action@v6

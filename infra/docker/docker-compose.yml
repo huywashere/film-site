@@ -314,6 +314,39 @@ services:
       retries: 3
       start_period: 90s
 
+  # ── Admin CMS Control Room ─────────────────────────────────
+  admin:
+    image: ${REGISTRY_IMAGE:-netphim}/admin:${IMAGE_TAG:-local}
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile
+      target: admin
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://flexphim.top/api/v1}
+    container_name: netphim_admin
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3002:3002"
+    environment:
+      NODE_ENV: production
+      PORT: 3002
+      HOSTNAME: 0.0.0.0
+      NETPHIM_API_URL: http://api:4000/api/v1
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://flexphim.top/api/v1}
+      GITHUB_ADMIN_CLIENT_ID: ${GITHUB_ADMIN_CLIENT_ID}
+      ADMIN_GITHUB_CALLBACK_URL: ${ADMIN_GITHUB_CALLBACK_URL:-https://admin.flexphim.top/api/auth/github/callback}
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - netphim_net
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:3002/login || exit 1']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
   # ── Gin Media Gateway (HLS manifests, segments and keys) ─────
   # Internal-only service. Nginx sends a stable 10% canary here and falls back
   # to the existing Next.js proxy on gateway/upstream failures.
