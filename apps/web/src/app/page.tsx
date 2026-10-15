@@ -76,15 +76,13 @@ async function getInitialPublicConfiguration(): Promise<PublicSiteConfiguration 
   const apiBase = (
     process.env.API_INTERNAL_URL ||
     process.env.NEXT_PUBLIC_API_URL ||
-    "http://127.0.0.1:3001/api/v1"
+    "http://127.0.0.1:4000/api/v1"
   ).replace(/\/$/, "");
 
   try {
     const response = await fetch(`${apiBase}/config/public`, {
       next: { revalidate: 60, tags: ["public-site-configuration"] },
-      // The public configuration is optional for the first paint. Do not let a
-      // sleeping/unreachable API hold the whole homepage HTML response open.
-      signal: AbortSignal.timeout(900),
+      signal: AbortSignal.timeout(2500),
     });
     if (!response.ok) return null;
     return (await response.json()) as PublicSiteConfiguration;

@@ -1269,16 +1269,22 @@ export default function HeroBanner({
   // empty initial list made production wait for /config/public before the LCP
   // image and title even existed in the DOM.
   const [featured, setFeatured] = useState<HeroFilm[]>(() => {
+    const pinnedSlugs = (initialConfig?.heroMovieSlugs || [])
+      .map((slug) => slug.trim())
+      .filter(Boolean);
+    if (pinnedSlugs.length > 0) {
+      const pinned = pinnedSlugs
+        .map((slug) =>
+          CURATED_HERO_FRANCHISE_POOL.find((film) => film.slug === slug),
+        )
+        .filter((film): film is (typeof CURATED_HERO_FRANCHISE_POOL)[number] =>
+          Boolean(film),
+        );
+      if (pinned.length > 0) return pinned.slice(0, 6) as HeroFilm[];
+    }
     if (cachedHeroPlaylist?.length) return cachedHeroPlaylist;
     if (films && films.length > 0) return (films as HeroFilm[]).slice(0, 6);
-    const pinned = (initialConfig?.heroMovieSlugs || [])
-      .map((slug) =>
-        CURATED_HERO_FRANCHISE_POOL.find((film) => film.slug === slug),
-      )
-      .filter((film): film is (typeof CURATED_HERO_FRANCHISE_POOL)[number] =>
-        Boolean(film),
-      );
-    return (pinned.length ? pinned.slice(0, 6) : CURATED_HERO_FRANCHISE_POOL.slice(0, 6)) as HeroFilm[];
+    return CURATED_HERO_FRANCHISE_POOL.slice(0, 6) as HeroFilm[];
   });
   const [trailerModalFilm, setTrailerModalFilm] = useState<FilmItem | null>(
     null,
@@ -1369,56 +1375,54 @@ export default function HeroBanner({
       let playlist: HeroFilm[] = [];
       let restoredIndex = 0;
 
-      if (!randomizeCuratedPool && films && films.length > 0) {
+      const requestedSlugs = (initialConfig?.heroMovieSlugs || [])
+        .map((slug) => slug.trim())
+        .filter(Boolean);
+
+      if (requestedSlugs.length) {
+        try {
+          playlist = (
+            await Promise.all(
+              requestedSlugs.slice(0, 6).map(async (slug) => {
+                const curated = CURATED_HERO_FRANCHISE_POOL.find(
+                  (film) => film.slug === slug,
+                );
+                if (curated) return curated as HeroFilm;
+                try {
+                  const detail = (await movieApi.getDetail(slug)).data as any;
+                  const movie =
+                    detail?.movie ||
+                    detail?.data?.movie ||
+                    detail?.data?.item ||
+                    detail?.item;
+                  return movie?.name
+                    ? ({
+                        ...movie,
+                        slug: movie.slug || slug,
+                        heroBackdrop:
+                          movie.heroBackdrop || movie.thumb_url || movie.poster_url,
+                      } as HeroFilm)
+                    : null;
+                } catch {
+                  return null;
+                }
+              }),
+            )
+          ).filter((film): film is HeroFilm => Boolean(film)).slice(0, 6);
+        } catch {
+          playlist = [];
+        }
+      } else if (!randomizeCuratedPool && films && films.length > 0) {
         playlist = (films as HeroFilm[]).slice(0, 6);
+      } else if (cachedHeroPlaylist?.length) {
+        playlist = cachedHeroPlaylist.slice(0, 6);
+        restoredIndex = Math.min(cachedHeroIndex, playlist.length - 1);
       } else {
-        const requestedSlugs = (initialConfig?.heroMovieSlugs || [])
-          .map((slug) => slug.trim())
-          .filter(Boolean);
+        playlist = selectCuratedHeroPlaylist(readStoredHeroPlaylist());
+      }
 
-        if (requestedSlugs.length) {
-          try {
-            playlist = (
-              await Promise.all(
-                requestedSlugs.slice(0, 6).map(async (slug) => {
-                  const curated = CURATED_HERO_FRANCHISE_POOL.find(
-                    (film) => film.slug === slug,
-                  );
-                  if (curated) return curated as HeroFilm;
-                  try {
-                    const detail = (await movieApi.getDetail(slug)).data as any;
-                    const movie =
-                      detail?.movie ||
-                      detail?.data?.movie ||
-                      detail?.data?.item ||
-                      detail?.item;
-                    return movie?.name
-                      ? ({
-                          ...movie,
-                          slug: movie.slug || slug,
-                          heroBackdrop:
-                            movie.heroBackdrop || movie.thumb_url || movie.poster_url,
-                        } as HeroFilm)
-                      : null;
-                  } catch {
-                    return null;
-                  }
-                }),
-              )
-            ).filter((film): film is HeroFilm => Boolean(film)).slice(0, 6);
-          } catch {
-            playlist = [];
-          }
-        } else if (cachedHeroPlaylist?.length) {
-          playlist = cachedHeroPlaylist.slice(0, 6);
-          restoredIndex = Math.min(cachedHeroIndex, playlist.length - 1);
-        } else {
-          playlist = selectCuratedHeroPlaylist(readStoredHeroPlaylist());
-        }
-
-        if (!playlist.length) {
-          playlist = selectCuratedHeroPlaylist(null);
-        }
+      if (!playlist.length) {
+        playlist = selectCuratedHeroPlaylist(null);
       }
 
       if (!active) return;
@@ -1479,16 +1483,14 @@ export default function HeroBanner({
       ]);
       if (!active) return;
       const outgoing = initialPaintFilm.current;
-      // A preload timeout must never replace the already-painted hero with an
-      // image that has not decoded. The regular slide activator can retry it
-      // later while the stable first frame remains visible.
-      if (target && outgoing?.slug !== target.slug && !readyBackdrop) return;
       if (target && readyBackdrop) {
         const preference = preferredHeroBackdrops.get(target.slug) || {};
         preferredHeroBackdrops.set(target.slug, {
           ...preference,
           [usesPortraitArtwork ? "portrait" : "landscape"]: readyBackdrop,
         });
+        markVisualReady(target.slug, "backdrop");
+      } else if (target) {
         markVisualReady(target.slug, "backdrop");
       }
 

@@ -18,6 +18,7 @@ import { OperationalNotice } from "@/components/layout/OperationalNotice";
 import { MaintenanceGuard } from "@/components/layout/MaintenanceGuard";
 import { LogoSplashIntro } from "@/components/layout/LogoSplashIntro";
 import { TopRouteProgress } from "@/components/layout/TopRouteProgress";
+import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import { cardFont, logoFont } from "@/lib/fonts";
 
 const PREPAINT_SCRIPT = `
@@ -179,6 +180,7 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <TopRouteProgress />
+        <GoogleAnalytics />
         <LogoSplashIntro />
         <ThemeWatcher />
         <ThemeColorSync />

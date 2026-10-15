@@ -77,6 +77,16 @@ export default function HeroBannerPage() {
         body: JSON.stringify(configurationUpdatePayload(payloadConfig)),
       });
       setConfig(updated);
+
+      try {
+        await adminFetch("cache/revalidate", {
+          method: "POST",
+          body: JSON.stringify({ paths: ["/"] }),
+        });
+      } catch {
+        // Revalidation is non-blocking
+      }
+
       setNotice("Đã cập nhật danh sách Hero Banner thành công! Trang chủ Web đã đồng bộ.");
       setTimeout(() => setNotice(""), 4500);
     } catch (cause) {

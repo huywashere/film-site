@@ -1740,8 +1740,8 @@ export default function HomePageClient({
       {/* Hero Banner slider */}
       <HeroBanner
         films={initialHeroFilms}
-        initialConfig={initialPublicConfig || undefined}
-        randomizeCuratedPool
+        initialConfig={publicConfig || initialPublicConfig || undefined}
+        randomizeCuratedPool={!publicConfig?.heroMovieSlugs?.length && !initialPublicConfig?.heroMovieSlugs?.length}
       />
 
       {/* Main Content Area */}
