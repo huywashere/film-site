@@ -57,17 +57,35 @@ export function isAllowedAdminOrigin(
   const publicOrigin = adminPublicOrigin(request);
   if (origin === publicOrigin) return true;
 
+  // Sec-Fetch-Site browser protection check (same-origin / same-site requests are trusted)
+  const secFetchSite = request.headers.get("sec-fetch-site");
+  if (secFetchSite === "same-origin" || secFetchSite === "same-site" || secFetchSite === "none") {
+    return true;
+  }
+
   try {
     const originUrl = new URL(origin);
     const originHost = originUrl.host.toLowerCase();
+    const originHostname = originUrl.hostname.toLowerCase();
+
     const reqHost = (
       request.headers.get("x-forwarded-host") ||
       request.headers.get("host") ||
       request.nextUrl?.host
     )?.toLowerCase();
-    if (reqHost && originHost === reqHost) return true;
+    if (reqHost && (originHost === reqHost || originHostname === reqHost.split(":")[0])) return true;
+
     if (originHost === "admin.flexphim.top" || originHost.endsWith(".flexphim.top")) return true;
-    if (originUrl.hostname === "localhost" || originUrl.hostname === "127.0.0.1") return true;
+    if (
+      originHostname === "151.242.170.31" ||
+      originHostname === "localhost" ||
+      originHostname === "127.0.0.1" ||
+      originHostname.startsWith("192.168.") ||
+      originHostname.startsWith("10.") ||
+      originHostname.startsWith("172.")
+    ) {
+      return true;
+    }
   } catch {}
 
   return false;
