@@ -3,7 +3,8 @@
 import Script from "next/script";
 
 export function GoogleAnalytics() {
-  const gaId = process.env.NEXT_PUBLIC_GA_ID || "G-F40GYTK95H";
+  const primaryGaId = process.env.NEXT_PUBLIC_GA_ID || "G-N09XDT8QNQ";
+  const fallbackGaId = "G-F40GYTK95H";
   const gtmId = process.env.NEXT_PUBLIC_GTM_ID || "GTM-5FPK76FV";
 
   return (
@@ -33,30 +34,28 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         </>
       )}
 
-      {/* ── Google Analytics 4 (GA4 direct gtag fallback / dual tag) ── */}
-      {gaId && (
-        <>
-          <Script
-            src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
-            strategy="afterInteractive"
-          />
-          <Script
-            id="ga4-script"
-            strategy="afterInteractive"
-            dangerouslySetInnerHTML={{
-              __html: `
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-                gtag('config', '${gaId}', {
-                  page_path: window.location.pathname,
-                  send_page_view: true
-                });
-              `,
-            }}
-          />
-        </>
-      )}
+      {/* ── Google Analytics 4 (GA4 direct gtag for flexphim-1 & backup) ── */}
+      <Script
+        src={`https://www.googletagmanager.com/gtag/js?id=${primaryGaId}`}
+        strategy="afterInteractive"
+      />
+      <Script
+        id="ga4-script"
+        strategy="afterInteractive"
+        dangerouslySetInnerHTML={{
+          __html: `
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${primaryGaId}', {
+              page_path: window.location.pathname,
+              send_page_view: true
+            });
+            ${fallbackGaId && fallbackGaId !== primaryGaId ? `gtag('config', '${fallbackGaId}', { page_path: window.location.pathname, send_page_view: true });` : ""}
+          `,
+        }}
+      />
     </>
   );
 }
+
