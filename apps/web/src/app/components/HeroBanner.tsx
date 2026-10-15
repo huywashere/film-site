@@ -55,6 +55,8 @@ import {
 } from "@/lib/movie-logo-cache";
 import {
   CURATED_HERO_FRANCHISE_POOL,
+  CURATED_HERO_SLUG_ALIASES,
+  ensureSixHeroFilms,
 } from "@/lib/curated-hero-pool";
 import {
   buildArtworkCandidates,
@@ -167,12 +169,14 @@ interface HeroFilm extends FilmItem {
   tmdbOnly?: boolean;
 }
 
-const HERO_SESSION_KEY = "netphim.tmdb-hero.v10";
-const HERO_INDEX_SESSION_KEY = "netphim.tmdb-hero-index.v4";
+const HERO_SESSION_KEY = "netphim.tmdb-hero.v11";
+const HERO_INDEX_SESSION_KEY = "netphim.tmdb-hero-index.v5";
 const LEGACY_HERO_SESSION_KEYS = [
+  "netphim.tmdb-hero.v10",
   "netphim.tmdb-hero.v9",
   "netphim.tmdb-hero.v8",
   "netphim.tmdb-hero.v7",
+  "netphim.tmdb-hero-index.v4",
   "netphim.tmdb-hero-index.v3",
   "netphim.tmdb-hero-index.v2",
 ] as const;
@@ -1274,16 +1278,19 @@ export default function HeroBanner({
       .filter(Boolean);
     if (pinnedSlugs.length > 0) {
       const pinned = pinnedSlugs
-        .map((slug) =>
-          CURATED_HERO_FRANCHISE_POOL.find((film) => film.slug === slug),
-        )
+        .map((slug) => {
+          const mapped = CURATED_HERO_SLUG_ALIASES[slug] || slug;
+          return CURATED_HERO_FRANCHISE_POOL.find(
+            (film) => film.slug === mapped || film.slug === slug,
+          );
+        })
         .filter((film): film is (typeof CURATED_HERO_FRANCHISE_POOL)[number] =>
           Boolean(film),
         );
-      if (pinned.length > 0) return pinned.slice(0, 6) as HeroFilm[];
+      if (pinned.length > 0) return ensureSixHeroFilms(pinned) as HeroFilm[];
     }
-    if (cachedHeroPlaylist?.length) return cachedHeroPlaylist;
-    if (films && films.length > 0) return (films as HeroFilm[]).slice(0, 6);
+    if (cachedHeroPlaylist?.length && cachedHeroPlaylist.length >= 6) return cachedHeroPlaylist.slice(0, 6);
+    if (films && films.length > 0) return ensureSixHeroFilms(films as HeroFilm[]) as HeroFilm[];
     return CURATED_HERO_FRANCHISE_POOL.slice(0, 6) as HeroFilm[];
   });
   const [trailerModalFilm, setTrailerModalFilm] = useState<FilmItem | null>(
@@ -1381,46 +1388,47 @@ export default function HeroBanner({
 
       if (requestedSlugs.length) {
         try {
-          playlist = (
-            await Promise.all(
-              requestedSlugs.slice(0, 6).map(async (slug) => {
-                const curated = CURATED_HERO_FRANCHISE_POOL.find(
-                  (film) => film.slug === slug,
-                );
-                if (curated) return curated as HeroFilm;
-                try {
-                  const detail = (await movieApi.getDetail(slug)).data as any;
-                  const movie =
-                    detail?.movie ||
-                    detail?.data?.movie ||
-                    detail?.data?.item ||
-                    detail?.item;
-                  return movie?.name
-                    ? ({
-                        ...movie,
-                        slug: movie.slug || slug,
-                        heroBackdrop:
-                          movie.heroBackdrop || movie.thumb_url || movie.poster_url,
-                      } as HeroFilm)
-                    : null;
-                } catch {
-                  return null;
-                }
-              }),
-            )
-          ).filter((film): film is HeroFilm => Boolean(film)).slice(0, 6);
+          const resolved = await Promise.all(
+            requestedSlugs.slice(0, 6).map(async (slug) => {
+              const mapped = CURATED_HERO_SLUG_ALIASES[slug] || slug;
+              const curated = CURATED_HERO_FRANCHISE_POOL.find(
+                (film) => film.slug === mapped || film.slug === slug,
+              );
+              if (curated) return curated as HeroFilm;
+              try {
+                const detail = (await movieApi.getDetail(mapped)).data as any;
+                const movie =
+                  detail?.movie ||
+                  detail?.data?.movie ||
+                  detail?.data?.item ||
+                  detail?.item;
+                return movie?.name
+                  ? ({
+                      ...movie,
+                      slug: movie.slug || slug,
+                      heroBackdrop:
+                        movie.heroBackdrop || movie.thumb_url || movie.poster_url,
+                    } as HeroFilm)
+                  : null;
+              } catch {
+                return null;
+              }
+            }),
+          );
+          playlist = resolved.filter((film): film is HeroFilm => Boolean(film));
         } catch {
           playlist = [];
         }
       } else if (!randomizeCuratedPool && films && films.length > 0) {
         playlist = (films as HeroFilm[]).slice(0, 6);
-      } else if (cachedHeroPlaylist?.length) {
+      } else if (cachedHeroPlaylist?.length && cachedHeroPlaylist.length >= 6) {
         playlist = cachedHeroPlaylist.slice(0, 6);
         restoredIndex = Math.min(cachedHeroIndex, playlist.length - 1);
       } else {
         playlist = selectCuratedHeroPlaylist(readStoredHeroPlaylist());
       }
 
+      playlist = ensureSixHeroFilms(playlist) as HeroFilm[];
       if (!playlist.length) {
         playlist = selectCuratedHeroPlaylist(null);
       }

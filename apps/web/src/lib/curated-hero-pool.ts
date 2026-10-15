@@ -2424,3 +2424,45 @@ export function getRandomCuratedHeroSet(count = 6): CuratedHeroMovie[] {
   }
   return shuffled.slice(0, Math.min(count, shuffled.length));
 }
+
+export const CURATED_HERO_SLUG_ALIASES: Record<string, string> = {
+  "joker-2019": "joker",
+  "the-batman": "nguoi-doi-2022",
+  "batman-2022": "nguoi-doi-2022",
+  "avengers-hoi-ket": "biet-doi-sieu-anh-hung-4-hoi-ket",
+  "avengers-endgame": "biet-doi-sieu-anh-hung-4-hoi-ket",
+  "avengers-cuoc-chien-vo-cuc": "biet-doi-sieu-anh-hung-3-cuoc-chien-vo-cuc",
+  "avengers-infinity-war": "biet-doi-sieu-anh-hung-3-cuoc-chien-vo-cuc",
+  "the-dark-knight": "ky-si-bong-dem",
+  "top-gun-maverick": "phi-cong-sieu-dang-maverick",
+  "inception": "ke-danh-cap-giac-mo",
+  "interstellar": "ho-den-tu-than",
+  "avatar-2": "avatar-2-dong-chay-cua-nuoc",
+  "spider-man-no-way-home": "nguoi-nhen-khong-con-nha",
+  "dune-2": "dune-hanh-tinh-cat-2",
+  "the-wolf-of-wall-street": "soi-gia-pho-wall",
+  "the-revenant": "nguoi-ve-tu-coi-chet",
+  "once-upon-a-time-in-hollywood": "chuyen-ngay-xua-o-hollywood",
+  "the-irishman": "nguoi-dan-ong-xu-ireland",
+  "the-departed": "ke-di-san",
+};
+
+/**
+ * Ensures a hero playlist ALWAYS contains exactly `targetCount` (default: 6) films.
+ * If input films are fewer than targetCount, it pads the missing slots with non-duplicate
+ * films from CURATED_HERO_FRANCHISE_POOL.
+ */
+export function ensureSixHeroFilms<T extends { slug?: string }>(
+  films: T[],
+  targetCount = 6,
+): (T | CuratedHeroMovie)[] {
+  if (films.length >= targetCount) {
+    return films.slice(0, targetCount);
+  }
+  const existingSlugs = new Set(films.map((f) => f.slug).filter(Boolean));
+  const backfill = CURATED_HERO_FRANCHISE_POOL.filter(
+    (film) => !existingSlugs.has(film.slug),
+  );
+  return [...films, ...backfill].slice(0, targetCount);
+}
+

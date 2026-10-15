@@ -6,7 +6,11 @@ import {
   buildHeroImageCandidates,
   buildHeroResponsiveSrcSet,
 } from './hero-image.ts';
-import { CURATED_HERO_FRANCHISE_POOL } from './curated-hero-pool.ts';
+import {
+  CURATED_HERO_FRANCHISE_POOL,
+  CURATED_HERO_SLUG_ALIASES,
+  ensureSixHeroFilms,
+} from './curated-hero-pool.ts';
 
 test('prefers the cached same-origin TMDB relay while retaining direct and wsrv fallbacks', () => {
   const raw = 'https://image.tmdb.org/t/p/original/backdrop.jpg';
@@ -354,7 +358,7 @@ test('homepage rotates six non-repeating films from the complete curated hero po
   assert.match(hero, /selectCuratedHeroPlaylist\(readStoredHeroPlaylist\(\)\)/);
   assert.match(hero, /!previousSlugs\.has\(film\.slug\)/);
   assert.match(hero, /preloadHeroBackdropCandidates\(backdropCandidates, 3_600\)/);
-  assert.match(hero, /outgoing\?\.slug !== target\.slug && !readyBackdrop\) return/);
+  assert.match(hero, /outgoing && outgoing\.slug !== target\?\.slug/);
   assert.match(homepage, /queryKey: \["public-site-configuration"\][\s\S]*enabled: true/);
 });
 
@@ -412,3 +416,43 @@ test('video player keyboard seek step strictly locks to 10 seconds without doubl
   assert.match(watchPage, /triggerSeekRipple/);
   assert.match(watchPage, /e\.defaultPrevented\s*\|\|\s*\(e as any\)\._artHandled/);
 });
+
+test('ensureSixHeroFilms always guarantees exactly six films on reload/reset', () => {
+  // Empty input -> exactly 6
+  const emptyPadded = ensureSixHeroFilms([]);
+  assert.equal(emptyPadded.length, 6);
+  assert.equal(new Set(emptyPadded.map((f) => f.slug)).size, 6);
+
+  // 4 items input -> padded to exactly 6 with unique items
+  const fourFilms = [
+    { slug: 'phi-cong-sieu-dang-maverick' },
+    { slug: 'ke-danh-cap-giac-mo' },
+    { slug: 'nguoi-nhen-khong-con-nha' },
+    { slug: 'oppenheimer' },
+  ];
+  const fourPadded = ensureSixHeroFilms(fourFilms);
+  assert.equal(fourPadded.length, 6);
+  assert.equal(fourPadded[0].slug, 'phi-cong-sieu-dang-maverick');
+  assert.equal(fourPadded[1].slug, 'ke-danh-cap-giac-mo');
+  assert.equal(fourPadded[2].slug, 'nguoi-nhen-khong-con-nha');
+  assert.equal(fourPadded[3].slug, 'oppenheimer');
+  assert.equal(new Set(fourPadded.map((f) => f.slug)).size, 6);
+
+  // Common aliases correctly resolve to curated pool entries
+  assert.equal(CURATED_HERO_SLUG_ALIASES['joker-2019'], 'joker');
+  assert.equal(CURATED_HERO_SLUG_ALIASES['the-batman'], 'nguoi-doi-2022');
+  assert.equal(CURATED_HERO_SLUG_ALIASES['avengers-hoi-ket'], 'biet-doi-sieu-anh-hung-4-hoi-ket');
+
+  const jokerEntry = CURATED_HERO_FRANCHISE_POOL.find(
+    (f) => f.slug === CURATED_HERO_SLUG_ALIASES['joker-2019'],
+  );
+  assert.ok(jokerEntry);
+  assert.equal(jokerEntry?.name, 'Joker');
+
+  const batmanEntry = CURATED_HERO_FRANCHISE_POOL.find(
+    (f) => f.slug === CURATED_HERO_SLUG_ALIASES['the-batman'],
+  );
+  assert.ok(batmanEntry);
+  assert.equal(batmanEntry?.name, 'Người Dơi');
+});
+

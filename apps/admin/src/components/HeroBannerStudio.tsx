@@ -38,13 +38,13 @@ const CURATED_SAMPLE_HEROES = [
   { slug: "avatar-2-dong-chay-cua-nuoc", title: "Avatar 2: Dòng Chảy Nước", year: 2022, badge: "Bom Tấn" },
   { slug: "ho-den-tu-than", title: "Hố Đen Tử Thần (Interstellar)", year: 2014, badge: "Kiệt Tác" },
   { slug: "ky-si-bong-dem", title: "Kỵ Sĩ Bóng Đêm (The Dark Knight)", year: 2008, badge: "Huyền Thoại" },
-  { slug: "avengers-hoi-ket", title: "Avengers: Hồi Kết (Endgame)", year: 2019, badge: "Marvel" },
+  { slug: "biet-doi-sieu-anh-hung-4-hoi-ket", title: "Avengers: Hồi Kết (Endgame)", year: 2019, badge: "Marvel" },
   { slug: "nguoi-nhen-khong-con-nha", title: "Spider-Man: Không Còn Nhà", year: 2021, badge: "Marvel" },
   { slug: "phi-cong-sieu-dang-maverick", title: "Top Gun: Maverick", year: 2022, badge: "Hành Động" },
   { slug: "ke-danh-cap-giac-mo", title: "Inception", year: 2010, badge: "Khoa Học" },
-  { slug: "the-batman", title: "The Batman", year: 2022, badge: "DC Cinema" },
+  { slug: "nguoi-doi-2022", title: "The Batman", year: 2022, badge: "DC Cinema" },
   { slug: "titanic", title: "Titanic", year: 1997, badge: "Kinh Điển" },
-  { slug: "joker-2019", title: "Joker", year: 2019, badge: "Tâm Lý" },
+  { slug: "joker", title: "Joker", year: 2019, badge: "Tâm Lý" },
 ];
 
 export function HeroBannerStudio({
@@ -438,19 +438,30 @@ export function HeroBannerStudio({
                   </span>
                 </div>
 
-                {heroMovieSlugs.length > 0 && (
+                <div className="flex items-center gap-3">
                   <button
                     type="button"
-                    onClick={() => {
-                      if (window.confirm("Bạn có chắc chắn muốn xóa tất cả phim khỏi Hero Banner?")) {
-                        onChange([]);
-                      }
-                    }}
-                    className="text-[11px] text-rose-500 hover:text-rose-600 font-semibold transition-colors flex items-center gap-1 cursor-pointer"
+                    onClick={handleApplySampleHeroes}
+                    className="text-[11px] text-[var(--admin-brand)] hover:text-[var(--admin-brand-strong)] font-semibold transition-colors flex items-center gap-1 cursor-pointer"
+                    title="Khôi phục danh sách chuẩn 6 phim bom tấn 4K"
                   >
-                    <IconTrash size={12} /> Xóa toàn bộ
+                    <IconRefresh size={12} /> Khôi phục 6 phim mẫu
                   </button>
-                )}
+
+                  {heroMovieSlugs.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (window.confirm("Bạn có chắc chắn muốn xóa tất cả phim khỏi Hero Banner?")) {
+                          onChange([]);
+                        }
+                      }}
+                      className="text-[11px] text-rose-500 hover:text-rose-600 font-semibold transition-colors flex items-center gap-1 cursor-pointer"
+                    >
+                      <IconTrash size={12} /> Xóa toàn bộ
+                    </button>
+                  )}
+                </div>
               </div>
 
               {heroMovieSlugs.length === 0 ? (

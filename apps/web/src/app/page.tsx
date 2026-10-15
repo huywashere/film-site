@@ -1,6 +1,11 @@
 import HomePageClient from "./HomePageClient";
 import { movieApi, type PublicSiteConfiguration } from "@/lib/api";
-import { CURATED_HERO_FRANCHISE_POOL, type CuratedHeroMovie } from "@/lib/curated-hero-pool";
+import {
+  CURATED_HERO_FRANCHISE_POOL,
+  CURATED_HERO_SLUG_ALIASES,
+  ensureSixHeroFilms,
+  type CuratedHeroMovie,
+} from "@/lib/curated-hero-pool";
 import { localImageProxyUrl } from "@/lib/image-cdn";
 
 export const revalidate = 60;
@@ -19,15 +24,18 @@ async function resolveInitialHeroFilms(heroSlugs?: string[]): Promise<CuratedHer
     heroSlugs.slice(0, 6).map(async (slug) => {
       const cleanSlug = slug.trim();
       if (!cleanSlug) return null;
+      const mappedSlug = CURATED_HERO_SLUG_ALIASES[cleanSlug] || cleanSlug;
 
       // 1. Check curated pool first (immediate return with curated high-res artwork)
-      const curated = CURATED_HERO_FRANCHISE_POOL.find((film) => film.slug === cleanSlug);
+      const curated = CURATED_HERO_FRANCHISE_POOL.find(
+        (film) => film.slug === mappedSlug || film.slug === cleanSlug,
+      );
       if (curated) return curated;
 
       // 2. Fetch from movie detail API for any custom film
       try {
         const detailRes = await Promise.race([
-          movieApi.getDetail(cleanSlug),
+          movieApi.getDetail(mappedSlug),
           new Promise<null>((resolve) => setTimeout(() => resolve(null), 1200)),
         ]);
         if (!detailRes) return null;
@@ -69,7 +77,7 @@ async function resolveInitialHeroFilms(heroSlugs?: string[]): Promise<CuratedHer
   );
 
   const valid = resolved.filter((film): film is CuratedHeroMovie => Boolean(film));
-  return valid.length > 0 ? valid : getDefaultHeroFilms();
+  return ensureSixHeroFilms(valid) as CuratedHeroMovie[];
 }
 
 async function getInitialPublicConfiguration(): Promise<PublicSiteConfiguration | null> {
