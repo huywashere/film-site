@@ -21,6 +21,7 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc turbo.json ./
 COPY apps/api/package.json ./apps/api/
 COPY apps/web/package.json ./apps/web/
+COPY apps/admin/package.json ./apps/admin/
 COPY packages/shared-types/package.json ./packages/shared-types/
 
 # Install all deps (including devDependencies for build)
