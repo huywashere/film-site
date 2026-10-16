@@ -152,7 +152,7 @@ function GenreCategoryRow({
   if (!isLoading && !films.length) return null;
 
   const content = (
-    <div className="mb-8 group/row relative" aria-busy={isLoading}>
+    <div className="mb-8 group/row relative cv-section-auto" aria-busy={isLoading}>
       <div className="flex items-center justify-between mb-3 px-1">
         <h2 className="text-base sm:text-lg md:text-xl font-bold text-white tracking-tight">
           {title}

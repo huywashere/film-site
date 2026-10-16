@@ -17,6 +17,7 @@ import dynamic from 'next/dynamic';
 import { FilmCard, FilmItem } from '@/components/film/FilmCard';
 import { Pagination } from '@/components/film/Pagination';
 import { LandscapeSpotlightRow } from '@/components/film/LandscapeSpotlightRow';
+import { DeferredSection } from '@/components/layout/DeferredSection';
 import { UniverseTimelineSection } from '@/components/universe/UniverseTimelineSection';
 import {
   getUniverseFilms,
@@ -803,49 +804,56 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
             />
 
             {/* Rail 2 */}
-            <LandscapeSpotlightRow
-              title={
-                isMarvel
-                  ? 'Người Nhện & Vũ Trụ Spider-Verse'
-                  : isDC
-                    ? 'Liên Minh Công Lý & Siêu Anh Hùng DC'
-                    : isDoraemon
-                      ? 'Stand by Me & Kỷ Niệm Tuổi Thơ (3D)'
-                      : 'Cuộc Chiến Tổ Chức Áo Đen & FBI'
-              }
-              films={rail2}
-            />
+            <DeferredSection minHeight={260} rootMargin="180px 0px">
+              <LandscapeSpotlightRow
+                title={
+                  isMarvel
+                    ? 'Người Nhện & Vũ Trụ Spider-Verse'
+                    : isDC
+                      ? 'Liên Minh Công Lý & Siêu Anh Hùng DC'
+                      : isDoraemon
+                        ? 'Stand by Me & Kỷ Niệm Tuổi Thơ (3D)'
+                        : 'Cuộc Chiến Tổ Chức Áo Đen & FBI'
+                }
+                films={rail2}
+              />
+            </DeferredSection>
 
             {/* Rail 3 */}
-            <LandscapeSpotlightRow
-              title={
-                isMarvel
-                  ? 'Dị Nhân X-Men & Đột Biến'
-                  : isDC
-                    ? 'Thế Giới Phản Diện & Joker'
-                    : isDoraemon
-                      ? 'Phiêu Lưu Vũ Trụ & Thế Giới Diệu Kỳ'
-                      : 'Màn Đối Đầu Siêu Đạo Tặc Kaito Kid'
-              }
-              films={rail3}
-            />
+            <DeferredSection minHeight={260} rootMargin="180px 0px">
+              <LandscapeSpotlightRow
+                title={
+                  isMarvel
+                    ? 'Dị Nhân X-Men & Đột Biến'
+                    : isDC
+                      ? 'Thế Giới Phản Diện & Joker'
+                      : isDoraemon
+                        ? 'Phiêu Lưu Vũ Trụ & Thế Giới Diệu Kỳ'
+                        : 'Màn Đối Đầu Siêu Đạo Tặc Kaito Kid'
+                }
+                films={rail3}
+              />
+            </DeferredSection>
 
             {/* Rail 4 */}
-            <LandscapeSpotlightRow
-              title={
-                isMarvel
-                  ? 'Marvel Series Độc Quyền (Disney+)'
-                  : isDC
-                    ? 'DC Series & Hoạt Hình Huyền Thoại'
-                    : isDoraemon
-                      ? 'Movie Chiếu Rạp Kinh Điển (2D Tuyển Chọn)'
-                      : 'Conan TV Series & Ngoại Truyện Đặc Biệt'
-              }
-              films={rail4}
-            />
+            <DeferredSection minHeight={260} rootMargin="180px 0px">
+              <LandscapeSpotlightRow
+                title={
+                  isMarvel
+                    ? 'Marvel Series Độc Quyền (Disney+)'
+                    : isDC
+                      ? 'DC Series & Hoạt Hình Huyền Thoại'
+                      : isDoraemon
+                        ? 'Movie Chiếu Rạp Kinh Điển (2D Tuyển Chọn)'
+                        : 'Conan TV Series & Ngoại Truyện Đặc Biệt'
+                }
+                films={rail4}
+              />
+            </DeferredSection>
 
             {/* ── 3. FULL UNIVERSE CATALOG (LƯỚI PHIM TOÀN BỘ 7 CỘT) ─────────────── */}
-            <section id="full-catalog" className="pt-8 sm:pt-12 pb-16 border-t border-white/[0.08]">
+            <DeferredSection minHeight={400} rootMargin="180px 0px">
+              <section id="full-catalog" className="pt-8 sm:pt-12 pb-16 border-t border-white/[0.08]">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6">
                 <div className="flex items-center gap-3">
                   <div
@@ -907,7 +915,7 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
               </div>
 
               {/* Standard 7-Column Movie Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2.5 sm:gap-3.5 lg:gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2.5 sm:gap-3.5 lg:gap-4 cv-grid-auto">
                 {pagedFilms.map((film, index) => (
                   <FilmCard key={film._id || film.slug} film={film} priority={index < 7} />
                 ))}
@@ -928,6 +936,7 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                 </div>
               )}
             </section>
+          </DeferredSection>
           </div>
         )}
 

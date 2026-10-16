@@ -564,7 +564,7 @@ function AnimeCategoryRow({
   if (!isLoading && (!films || films.length === 0)) return null;
 
   const content = (
-    <div className="relative group/row mb-6">
+    <div className="relative group/row mb-6 cv-section-auto">
       {/* Clean Category Title without Icon */}
       <div className="flex items-center space-x-2.5 mb-3 px-1">
         <h2 className="text-base sm:text-lg md:text-xl font-extrabold text-white tracking-tight">

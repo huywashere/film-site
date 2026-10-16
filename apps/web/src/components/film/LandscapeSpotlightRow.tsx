@@ -105,7 +105,7 @@ export function LandscapeSpotlightRow({
   return (
     <section
       data-cinematic-section="true"
-      className={`${cardFont.className} relative mb-8 sm:mb-12 w-full select-none`}
+      className={`${cardFont.className} relative mb-8 sm:mb-12 w-full select-none cv-section-auto`}
     >
       {/* ── Section Header ── */}
       <div className="mb-4 flex items-center justify-between gap-2 px-1">
