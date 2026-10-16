@@ -6,7 +6,6 @@ import {
   IconBrandGithub,
   IconFingerprint,
   IconShieldCheck,
-  IconBolt,
 } from "@tabler/icons-react";
 import flexphimLogo from "../../../../web/public/flexphim-logo.png";
 
@@ -53,21 +52,6 @@ export default function AdminLoginPage() {
       );
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Đăng nhập thất bại");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleDevLogin() {
-    setLoading(true);
-    setError("");
-    try {
-      const response = await fetch("/api/auth/dev-login", { method: "POST" });
-      if (!response.ok) throw new Error("Đăng nhập dev thất bại");
-      const next = new URLSearchParams(window.location.search).get("next");
-      window.location.assign(next?.startsWith("/") && !next.startsWith("//") ? next : "/");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Đăng nhập dev thất bại");
     } finally {
       setLoading(false);
     }
@@ -156,21 +140,6 @@ export default function AdminLoginPage() {
             <p className="mt-3 text-center text-[11px] text-slate-400">
               Chỉ GitHub ID đã được cấp phép mới có thể truy cập Control Room.
             </p>
-
-            <div className="mt-5 pt-4 border-t border-slate-100 space-y-2">
-              <button
-                type="button"
-                disabled={loading}
-                onClick={handleDevLogin}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50/80 px-4 py-2.5 text-xs font-bold text-blue-700 hover:bg-blue-100 active:scale-95 transition-all cursor-pointer shadow-xs"
-              >
-                <IconBolt size={16} className="text-amber-500" />
-                Đăng nhập nhanh (Chế độ Local Dev)
-              </button>
-              <p className="text-center text-[10px] text-slate-400">
-                Dành cho phát triển &amp; thử nghiệm local mà không cần khởi động full database.
-              </p>
-            </div>
           </>
         )}
       </section>
