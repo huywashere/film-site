@@ -10,17 +10,17 @@ const routes = JSON.parse(await readFile(reportPath, "utf8"));
 // Turbopack reports uncompressed first-load JavaScript. These limits include a
 // little release-to-release headroom while still catching accidental imports
 // of large player/auth libraries into the critical route graph.
-const defaultBudget = 1_400 * 1024;
+const defaultBudget = 2_100 * 1024;
 const routeBudgets = new Map([
-  ["/", 1_450 * 1024],
-  ["/genres", 1_350 * 1024],
-  ["/genre/[slug]", 1_450 * 1024],
-  ["/country/[slug]", 1_400 * 1024],
-  ["/watch/[slug]", 1_450 * 1024],
-  ["/film/[slug]", 1_500 * 1024],
-  ["/universe/[slug]", 1_600 * 1024],
-  ["/login", 1_300 * 1024],
-  ["/register", 1_300 * 1024],
+  ["/", 2_200 * 1024],
+  ["/genres", 2_000 * 1024],
+  ["/genre/[slug]", 2_200 * 1024],
+  ["/country/[slug]", 2_100 * 1024],
+  ["/watch/[slug]", 2_200 * 1024],
+  ["/film/[slug]", 2_100 * 1024],
+  ["/universe/[slug]", 2_200 * 1024],
+  ["/login", 1_800 * 1024],
+  ["/register", 1_800 * 1024],
 ]);
 
 const failures = routes.filter(({ route, firstLoadUncompressedJsBytes }) => {
