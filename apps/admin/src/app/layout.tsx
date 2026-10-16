@@ -49,6 +49,7 @@ import { adminFetch } from "@/lib/admin-api";
 import { AdminDevToolsGuard } from "@/components/security/AdminDevToolsGuard";
 import { AdminIdleLock } from "@/components/security/AdminIdleLock";
 import { AdminAntiScreenshot } from "@/components/security/AdminAntiScreenshot";
+import { AdminSessionSync } from "@/components/security/AdminSessionSync";
 
 import { IBM_Plex_Sans, Plus_Jakarta_Sans } from "next/font/google";
 
@@ -479,6 +480,7 @@ export default function AdminRootLayout({
       </head>
       <body className={`${ibmPlexSans.variable} ${plusJakartaSans.variable}`}>
         <AdminDevToolsGuard />
+        <AdminSessionSync />
         <AdminIdleLock />
         <AdminAntiScreenshot enabled={screenshotProtectionEnabled} />
         <div className="admin-shell min-h-screen bg-[var(--admin-sidebar)] lg:grid lg:grid-cols-[245px_minmax(0,1fr)]">

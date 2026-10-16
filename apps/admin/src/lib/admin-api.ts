@@ -15,6 +15,12 @@ export async function adminFetch<T>(
   });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
+    if (response.status === 401 && typeof window !== "undefined" && window.location.pathname !== "/login") {
+      try {
+        localStorage.removeItem("netphim_admin_session_start");
+      } catch {}
+      window.location.assign("/login?session_expired=1");
+    }
     throw new Error(payload?.message || `Yêu cầu thất bại (HTTP ${response.status})`);
   }
   return payload as T;

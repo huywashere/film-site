@@ -3,6 +3,7 @@ import pathModule from "path";
 import { NextRequest, NextResponse } from "next/server";
 import {
   ADMIN_SESSION_COOKIE,
+  ADMIN_SESSION_MAX_AGE_SECONDS,
   adminApiBaseUrl,
   isAllowedAdminOrigin,
 } from "../../../../lib/admin-session";
@@ -168,7 +169,7 @@ async function forward(
             secure: false,
             sameSite: "lax",
             path: "/",
-            maxAge: 30 * 24 * 60 * 60,
+            maxAge: ADMIN_SESSION_MAX_AGE_SECONDS,
           });
           return retResponse;
         }
@@ -195,7 +196,7 @@ async function forward(
         secure: false,
         sameSite: "lax",
         path: "/",
-        maxAge: 30 * 24 * 60 * 60,
+        maxAge: ADMIN_SESSION_MAX_AGE_SECONDS,
       });
     }
 

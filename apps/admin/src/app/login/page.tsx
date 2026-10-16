@@ -19,7 +19,10 @@ export default function AdminLoginPage() {
     const params = new URLSearchParams(window.location.search);
     setGithub2FA(params.get("github_2fa") === "1");
     const githubError = params.get("github_error");
-    if (githubError) {
+    const sessionExpired = params.get("session_expired") === "1";
+    if (sessionExpired) {
+      setError("Phiên làm việc quản trị đã hết hạn sau 24h (Session Timeout). Vui lòng đăng nhập lại để tiếp tục.");
+    } else if (githubError) {
       const messages: Record<string, string> = {
         not_configured: "GitHub OAuth chưa được cấu hình.",
         invalid_state: "Phiên đăng nhập GitHub không hợp lệ hoặc đã hết hạn.",

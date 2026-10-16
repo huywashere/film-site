@@ -280,7 +280,7 @@ export class AdminAccessService {
 
   private async createSession(user: User, context: AdminRequestContext) {
     const token = randomBytes(48).toString("base64url");
-    const expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
     const normalizedContext = normalizeAdminContext(context);
     await this.prisma.adminSession.create({
       data: {

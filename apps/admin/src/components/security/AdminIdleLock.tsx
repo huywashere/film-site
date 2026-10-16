@@ -36,6 +36,9 @@ export function AdminIdleLock() {
   };
 
   useEffect(() => {
+    const isIdleLockEnabled = localStorage.getItem("netphim-admin-idle-lock") === "on";
+    if (!isIdleLockEnabled) return;
+
     const checkInterval = setInterval(() => {
       if (!isLocked && Date.now() - lastActiveRef.current > IDLE_TIMEOUT_MS) {
         setIsLocked(true);

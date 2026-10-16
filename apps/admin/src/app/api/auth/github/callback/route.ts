@@ -6,6 +6,7 @@ import {
   ADMIN_GITHUB_STATE_COOKIE,
   ADMIN_GITHUB_VERIFIER_COOKIE,
   ADMIN_SESSION_COOKIE,
+  ADMIN_SESSION_MAX_AGE_SECONDS,
   adminApiBaseUrl,
   adminGithubCallbackUrl,
   adminPublicOrigin,
@@ -113,7 +114,7 @@ export async function GET(request: NextRequest) {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: 12 * 60 * 60,
+    maxAge: ADMIN_SESSION_MAX_AGE_SECONDS,
   });
   clearOAuthCookies(response);
   return response;

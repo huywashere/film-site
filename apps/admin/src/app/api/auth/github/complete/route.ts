@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   ADMIN_GITHUB_CHALLENGE_COOKIE,
   ADMIN_SESSION_COOKIE,
+  ADMIN_SESSION_MAX_AGE_SECONDS,
   adminApiBaseUrl,
   adminPublicOrigin,
   isAllowedAdminOrigin,
@@ -50,7 +51,7 @@ export async function POST(request: NextRequest) {
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
       path: "/",
-      maxAge: 12 * 60 * 60,
+      maxAge: ADMIN_SESSION_MAX_AGE_SECONDS,
     });
   }
   return response;

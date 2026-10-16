@@ -1,4 +1,5 @@
 export const ADMIN_SESSION_COOKIE = "netphim_admin_session";
+export const ADMIN_SESSION_MAX_AGE_SECONDS = 24 * 60 * 60; // 24 hours (86,400s)
 export const ADMIN_GITHUB_STATE_COOKIE = "netphim_admin_github_state";
 export const ADMIN_GITHUB_VERIFIER_COOKIE = "netphim_admin_github_verifier";
 export const ADMIN_GITHUB_NEXT_COOKIE = "netphim_admin_github_next";

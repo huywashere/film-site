@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { ADMIN_SESSION_COOKIE, adminApiBaseUrl } from "@/lib/admin-session";
+import { ADMIN_SESSION_COOKIE, ADMIN_SESSION_MAX_AGE_SECONDS, adminApiBaseUrl } from "@/lib/admin-session";
 
 export async function POST() {
   if (process.env.NODE_ENV === "production") {
@@ -32,7 +32,7 @@ export async function POST() {
     secure: false,
     sameSite: "lax",
     path: "/",
-    maxAge: 30 * 24 * 60 * 60,
+    maxAge: ADMIN_SESSION_MAX_AGE_SECONDS,
   });
 
   return response;

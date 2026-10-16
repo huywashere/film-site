@@ -350,17 +350,27 @@ html[data-admin-theme="dark"] .admin-theme-choice { color: #aab4c1; }
 html[data-admin-theme="dark"] .admin-icon-button { color: #9aa8ba; background: transparent; }
 html[data-admin-theme="dark"] .admin-icon-button:hover { color: #7ba7ff; background: #2a303b; }
 html[data-admin-theme="dark"] .admin-search,
-html[data-admin-theme="dark"] .admin-control,
-html[data-admin-theme="dark"] input,
-html[data-admin-theme="dark"] select,
-html[data-admin-theme="dark"] textarea {
-  color: #c4cdd9 !important;
-  border-color: var(--admin-line) !important;
-  background-color: #252831 !important;
+html[data-admin-theme="dark"] .admin-control {
+  color: #c4cdd9;
+  border-color: var(--admin-line);
+  background-color: var(--admin-surface-muted, #1a253a);
+}
+html[data-admin-theme="dark"] input:not([class*="bg-"]),
+html[data-admin-theme="dark"] select:not([class*="bg-"]),
+html[data-admin-theme="dark"] textarea:not([class*="bg-"]) {
+  color: #c4cdd9;
+  border-color: var(--admin-line);
+  background-color: #1a2233;
 }
 html[data-admin-theme="dark"] input::placeholder,
-html[data-admin-theme="dark"] textarea::placeholder { color: #697789 !important; }
-html[data-admin-theme="dark"] option { color: #d7dee8; background: #252831; }
+html[data-admin-theme="dark"] textarea::placeholder { color: #64748b; }
+html[data-admin-theme="dark"] option { color: #d7dee8; background: #1a2233; }
+
+/* Paces Theme Custom Scrollbars for Code/Form Controls */
+.admin-custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+.admin-custom-scroll::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.25); border-radius: 6px; }
+.admin-custom-scroll::-webkit-scrollbar-thumb { border-radius: 6px; background: rgba(148, 163, 184, 0.25); }
+.admin-custom-scroll::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.45); }
 
 html[data-admin-theme="dark"] .text-slate-900,
 html[data-admin-theme="dark"] .text-slate-800,
