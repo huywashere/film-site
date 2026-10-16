@@ -1217,12 +1217,13 @@ export function Navbar() {
               {user ? (() => {
                 const navFrameConfig = getAvatarFrameConfig(user.avatarFrameColor);
                 const navNameProps = getNameColorProps(user.nameColor);
-                const isAdmin =
-                  user.avatarUrl === "/avatars/admin-mascot-riso.png" ||
-                  user.email?.toLowerCase() === "huywashere@gmail.com";
+                const isMascotAvatar = user.avatarUrl === "/avatars/admin-mascot-riso.png";
+                const isTargetAdmin =
+                  user.email?.toLowerCase() === "huywashere@gmail.com" ||
+                  user.username?.toLowerCase() === "huywashere";
 
                 const renderNavAvatar = (size = "w-8 h-8", imgSize = 64) => {
-                  const avatarContent = isAdmin ? (
+                  const avatarContent = isMascotAvatar ? (
                     <InteractiveAdminMascot size={32} className="w-full h-full" />
                   ) : user.avatarUrl ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
@@ -1236,6 +1237,8 @@ export function Navbar() {
                           `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.username)}&background=8b5cf6&color=ffffff&size=${imgSize}`;
                       }}
                     />
+                  ) : isTargetAdmin ? (
+                    <InteractiveAdminMascot size={32} className="w-full h-full" />
                   ) : (
                     <div className="w-full h-full bg-violet-500/20 text-violet-300 font-bold text-xs flex items-center justify-center">
                       {(user.displayName || user.username || "U").slice(0, 2).toUpperCase()}

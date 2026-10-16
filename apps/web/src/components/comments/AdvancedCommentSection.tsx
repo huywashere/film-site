@@ -19,6 +19,11 @@ import { useAuthModalStore } from "@/store/authModalStore";
 import { useToast } from "@/providers/ToastProvider";
 import { cn } from "@/lib/utils";
 import { checkCommentRateLimit } from "@/lib/rate-limiter";
+import { InteractiveAdminMascot } from "@/components/mascot/InteractiveAdminMascot";
+import {
+  getAvatarFrameConfig,
+  getNameColorProps,
+} from "@/lib/profile-appearance";
 
 export interface CommentUser {
   id?: string;
@@ -26,6 +31,8 @@ export interface CommentUser {
   avatar: string;
   role?: "ADMIN" | "USER" | "MODERATOR" | string;
   email?: string;
+  nameColor?: string;
+  avatarFrameColor?: string;
 }
 
 export interface CommentItem {
@@ -115,6 +122,115 @@ function isUserAdmin(
   );
 }
 
+function isCommentByCurrentUser(
+  commentUser?: CommentUser | null,
+  currentUser?: {
+    id?: string;
+    email?: string;
+    username?: string;
+    name?: string;
+    displayName?: string;
+    role?: string;
+  } | null,
+): boolean {
+  if (!commentUser || !currentUser) return false;
+
+  // 1. Persistent ID match
+  if (commentUser.id && currentUser.id && commentUser.id === currentUser.id) {
+    return true;
+  }
+
+  // 2. Email match
+  if (
+    commentUser.email &&
+    currentUser.email &&
+    commentUser.email.toLowerCase() === currentUser.email.toLowerCase()
+  ) {
+    return true;
+  }
+
+  // 3. Username or displayName match
+  const currentUsername = (currentUser.username || "").trim().toLowerCase();
+  const currentDisplayName = (currentUser.displayName || "").trim().toLowerCase();
+  const commentName = (commentUser.name || "").trim().toLowerCase();
+
+  if (
+    commentName &&
+    (commentName === currentUsername ||
+      commentName === currentDisplayName ||
+      (currentUsername === "admin" && commentName === "admin"))
+  ) {
+    return true;
+  }
+
+  // 4. Admin authority match
+  if (isUserAdmin(currentUser) && (commentUser.role === "ADMIN" || isUserAdmin(commentUser))) {
+    return true;
+  }
+
+  return false;
+}
+
+function CommentAvatar({
+  avatar,
+  name,
+  isAdmin,
+  frameColor,
+  size = 32,
+}: {
+  avatar: string;
+  name: string;
+  isAdmin?: boolean;
+  frameColor?: string;
+  size?: number;
+}) {
+  const isMascot = avatar === "/avatars/admin-mascot-riso.png";
+  const frameConfig = getAvatarFrameConfig(frameColor);
+
+  const innerAvatar = isMascot ? (
+    <InteractiveAdminMascot size={size} className="w-full h-full object-cover" />
+  ) : (
+    /* eslint-disable-next-line @next/next/no-img-element */
+    <img
+      src={avatar}
+      alt={name}
+      referrerPolicy="no-referrer"
+      className="w-full h-full object-cover"
+      onError={(e) => {
+        (e.currentTarget as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=1e293b&color=ffffff&size=64`;
+      }}
+    />
+  );
+
+  const dimensionClass = size === 24 ? "w-6 h-6" : "w-8 h-8";
+
+  if (frameConfig.isRainbowWrap) {
+    return (
+      <div className={cn("relative shrink-0 anim-frame-rainbow-wrap", dimensionClass)}>
+        <div className="w-full h-full rounded-full overflow-hidden bg-neutral-900">
+          {innerAvatar}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={cn(
+        "rounded-full overflow-hidden flex-shrink-0 transition-all",
+        dimensionClass,
+        frameConfig.className ||
+          (isAdmin
+            ? "ring-1.5 ring-amber-400/60 shadow-[0_0_10px_rgba(251,191,36,0.15)]"
+            : "border border-white/10"),
+      )}
+      style={frameConfig.style}
+    >
+      {innerAvatar}
+    </div>
+  );
+}
+
 export function AdvancedCommentSection({
   movieSlug,
   episodeName,
@@ -142,20 +258,31 @@ export function AdvancedCommentSection({
   const storageKey = `netphim_comments_tree_${movieSlug || "default"}`;
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(storageKey);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        const clean = Array.isArray(parsed)
-          ? parsed.filter((c: any) => !c.id?.startsWith("seed-"))
-          : [];
-        setComments(clean);
-      } else {
+    const syncComments = () => {
+      try {
+        const raw = localStorage.getItem(storageKey);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          const clean = Array.isArray(parsed)
+            ? parsed.filter((c: any) => !c.id?.startsWith("seed-"))
+            : [];
+          setComments(clean);
+        } else {
+          setComments([]);
+        }
+      } catch {
         setComments([]);
       }
-    } catch {
-      setComments([]);
-    }
+    };
+
+    syncComments();
+
+    window.addEventListener("netphim_user_updated", syncComments);
+    window.addEventListener("storage", syncComments);
+    return () => {
+      window.removeEventListener("netphim_user_updated", syncComments);
+      window.removeEventListener("storage", syncComments);
+    };
   }, [storageKey]);
 
   const saveComments = (newComments: CommentItem[]) => {
@@ -287,6 +414,8 @@ export function AdvancedCommentSection({
           `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser?.displayName || currentUser?.username || "U")}&background=1e293b&color=fff`,
         role: isAdmin ? "ADMIN" : currentUser?.role || "USER",
         email: currentUser?.email,
+        nameColor: currentUser?.nameColor,
+        avatarFrameColor: currentUser?.avatarFrameColor,
       },
       content: content.trim(),
       rating,
@@ -333,6 +462,8 @@ export function AdvancedCommentSection({
           `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser?.displayName || currentUser?.username || "U")}&background=1e293b&color=fff`,
         role: isAdmin ? "ADMIN" : currentUser?.role || "USER",
         email: currentUser?.email,
+        nameColor: currentUser?.nameColor,
+        avatarFrameColor: currentUser?.avatarFrameColor,
       },
       content: replyContent.trim(),
       replyToUser: replyTargetUser,
@@ -460,18 +591,15 @@ export function AdvancedCommentSection({
           {/* User Row + Rating Stars */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <img
-                src={
+              <CommentAvatar
+                avatar={
                   currentUser?.avatarUrl ||
                   `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser?.displayName || currentUser?.username || "U")}&background=1e293b&color=fff`
                 }
-                alt="avatar"
-                className={cn(
-                  "w-8 h-8 rounded-full object-cover",
-                  isCurrentAdmin
-                    ? "ring-1.5 ring-amber-400/60 shadow-[0_0_10px_rgba(251,191,36,0.15)]"
-                    : "border border-white/10",
-                )}
+                name={currentUser?.displayName || currentUser?.username || "Bạn"}
+                isAdmin={isCurrentAdmin}
+                frameColor={currentUser?.avatarFrameColor}
+                size={32}
               />
               <div className="flex items-center gap-2">
                 {isCurrentAdmin && (
@@ -479,7 +607,13 @@ export function AdvancedCommentSection({
                     ADMIN
                   </span>
                 )}
-                <span className="text-xs font-semibold text-white">
+                <span
+                  className={cn(
+                    "text-xs font-semibold tracking-tight",
+                    getNameColorProps(currentUser?.nameColor).className || "text-white",
+                  )}
+                  style={getNameColorProps(currentUser?.nameColor).style}
+                >
                   {currentUser?.displayName || currentUser?.username}
                 </span>
               </div>
@@ -562,6 +696,24 @@ export function AdvancedCommentSection({
             const replies = comment.replies || [];
             const isExpanded = expandedReplies[comment.id] !== false;
 
+            const isAuthorCurrentUser = isCommentByCurrentUser(comment.user, currentUser);
+            const authorAvatar =
+              isAuthorCurrentUser && currentUser?.avatarUrl
+                ? currentUser.avatarUrl
+                : comment.user.avatar;
+            const authorName =
+              isAuthorCurrentUser && (currentUser?.displayName || currentUser?.username)
+                ? (currentUser.displayName || currentUser.username)
+                : comment.user.name;
+            const authorIsAdmin = isAuthorCurrentUser ? isCurrentAdmin : isAdmin;
+            const authorFrameColor = isAuthorCurrentUser
+              ? (currentUser?.avatarFrameColor || comment.user.avatarFrameColor)
+              : comment.user.avatarFrameColor;
+            const authorNameColor = isAuthorCurrentUser
+              ? (currentUser?.nameColor || comment.user.nameColor)
+              : comment.user.nameColor;
+            const authorNameProps = getNameColorProps(authorNameColor);
+
             return (
               <div
                 key={comment.id}
@@ -583,29 +735,28 @@ export function AdvancedCommentSection({
                 {/* Author Row */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-2.5">
-                    <img
-                      src={comment.user.avatar}
-                      alt={comment.user.name}
-                      referrerPolicy="no-referrer"
-                      className={cn(
-                        "w-8 h-8 rounded-full object-cover flex-shrink-0",
-                        isAdmin
-                          ? "ring-1.5 ring-amber-400/60 shadow-[0_0_10px_rgba(251,191,36,0.15)]"
-                          : "border border-white/10",
-                      )}
-                      onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.user.name)}&background=1e293b&color=ffffff&size=64`;
-                      }}
+                    <CommentAvatar
+                      avatar={authorAvatar}
+                      name={authorName}
+                      isAdmin={authorIsAdmin}
+                      frameColor={authorFrameColor}
+                      size={32}
                     />
 
                     <div className="flex items-center gap-2 flex-wrap">
-                      {isAdmin && (
+                      {authorIsAdmin && (
                         <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-amber-400/10 text-amber-400 border border-amber-400/30">
                           ADMIN
                         </span>
                       )}
-                      <span className="text-xs font-semibold text-white tracking-tight">
-                        {comment.user.name}
+                      <span
+                        className={cn(
+                          "text-xs font-semibold tracking-tight",
+                          authorNameProps.className || "text-white",
+                        )}
+                        style={authorNameProps.style}
+                      >
+                        {authorName}
                       </span>
                       <span className="text-[11px] text-neutral-500 font-medium">
                         {formatTimeAgo(comment.createdAt)}
@@ -686,7 +837,7 @@ export function AdvancedCommentSection({
                     )}
 
                     {/* Delete button (Author or Admin) */}
-                    {(isCurrentAdmin || currentUser?.id === comment.user.id) && (
+                    {(isCurrentAdmin || isAuthorCurrentUser || (currentUser?.id && currentUser.id === comment.user.id)) && (
                       <button
                         onClick={() => handleDeleteComment(comment.id)}
                         className="hover:text-rose-400 transition-colors cursor-pointer ml-auto"
@@ -777,6 +928,23 @@ export function AdvancedCommentSection({
                       <div className="relative space-y-3 pt-1 before:absolute before:left-3.5 before:top-2 before:bottom-3 before:w-[1px] before:bg-white/10">
                         {replies.map((reply) => {
                           const isReplyAdmin = isUserAdmin(reply.user);
+                          const isReplyAuthorCurrentUser = isCommentByCurrentUser(reply.user, currentUser);
+                          const replyAuthorAvatar =
+                            isReplyAuthorCurrentUser && currentUser?.avatarUrl
+                              ? currentUser.avatarUrl
+                              : reply.user.avatar;
+                          const replyAuthorName =
+                            isReplyAuthorCurrentUser && (currentUser?.displayName || currentUser?.username)
+                              ? (currentUser.displayName || currentUser.username)
+                              : reply.user.name;
+                          const replyAuthorIsAdmin = isReplyAuthorCurrentUser ? isCurrentAdmin : isReplyAdmin;
+                          const replyAuthorFrameColor = isReplyAuthorCurrentUser
+                            ? (currentUser?.avatarFrameColor || reply.user.avatarFrameColor)
+                            : reply.user.avatarFrameColor;
+                          const replyAuthorNameColor = isReplyAuthorCurrentUser
+                            ? (currentUser?.nameColor || reply.user.nameColor)
+                            : reply.user.nameColor;
+                          const replyNameProps = getNameColorProps(replyAuthorNameColor);
 
                           return (
                             <div
@@ -792,29 +960,28 @@ export function AdvancedCommentSection({
                               {/* Reply User Row */}
                               <div className="flex items-start justify-between gap-2">
                                 <div className="flex items-center gap-2">
-                                  <img
-                                    src={reply.user.avatar}
-                                    alt={reply.user.name}
-                                    referrerPolicy="no-referrer"
-                                    className={cn(
-                                      "w-6 h-6 rounded-full object-cover flex-shrink-0",
-                                      isReplyAdmin
-                                        ? "ring-1.5 ring-amber-400/60"
-                                        : "border border-white/10",
-                                    )}
-                                    onError={(e) => {
-                                      (e.currentTarget as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(reply.user.name)}&background=1e293b&color=ffffff&size=64`;
-                                    }}
+                                  <CommentAvatar
+                                    avatar={replyAuthorAvatar}
+                                    name={replyAuthorName}
+                                    isAdmin={replyAuthorIsAdmin}
+                                    frameColor={replyAuthorFrameColor}
+                                    size={24}
                                   />
 
                                   <div className="flex items-center gap-1.5 flex-wrap">
-                                    {isReplyAdmin && (
+                                    {replyAuthorIsAdmin && (
                                       <span className="text-[9px] font-bold tracking-wider uppercase px-1.5 py-0.5 rounded-full bg-amber-400/10 text-amber-400 border border-amber-400/30">
                                         ADMIN
                                       </span>
                                     )}
-                                    <span className="text-xs font-semibold text-white tracking-tight">
-                                      {reply.user.name}
+                                    <span
+                                      className={cn(
+                                        "text-xs font-semibold tracking-tight",
+                                        replyNameProps.className || "text-white",
+                                      )}
+                                      style={replyNameProps.style}
+                                    >
+                                      {replyAuthorName}
                                     </span>
                                     <span className="text-[10px] text-neutral-500 font-medium">
                                       {formatTimeAgo(reply.createdAt)}
@@ -823,7 +990,7 @@ export function AdvancedCommentSection({
                                 </div>
 
                                 {/* Delete reply button */}
-                                {(isCurrentAdmin || currentUser?.id === reply.user.id) && (
+                                {(isCurrentAdmin || isReplyAuthorCurrentUser || (currentUser?.id && currentUser.id === reply.user.id)) && (
                                   <button
                                     onClick={() => handleDeleteComment(reply.id)}
                                     className="text-neutral-500 hover:text-rose-400 transition-colors opacity-0 group-hover/reply:opacity-100 cursor-pointer"

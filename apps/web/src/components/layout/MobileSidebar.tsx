@@ -144,20 +144,31 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
         {user ? (() => {
           const frameConfig = getAvatarFrameConfig(user.avatarFrameColor);
           const nameProps = getNameColorProps(user.nameColor);
-          const isAdmin =
-            user.avatarUrl === "/avatars/admin-mascot-riso.png" ||
-            user.email?.toLowerCase() === "huywashere@gmail.com";
+          const isMascotAvatar = user.avatarUrl === "/avatars/admin-mascot-riso.png";
+          const isTargetAdmin =
+            user.email?.toLowerCase() === "huywashere@gmail.com" ||
+            user.username?.toLowerCase() === "huywashere";
 
           const renderSidebarAvatar = () => {
-            const avatarContent = isAdmin ? (
+            const avatarContent = isMascotAvatar ? (
+              <InteractiveAdminMascot size={36} className="w-full h-full bg-[#faf9f7]" />
+            ) : user.avatarUrl ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={user.avatarUrl}
+                alt={user.displayName || user.username}
+                referrerPolicy="no-referrer"
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.username)}&background=8b5cf6&color=ffffff&size=80`;
+                }}
+              />
+            ) : isTargetAdmin ? (
               <InteractiveAdminMascot size={36} className="w-full h-full bg-[#faf9f7]" />
             ) : (
               /* eslint-disable-next-line @next/next/no-img-element */
               <img
-                src={
-                  user.avatarUrl ||
-                  `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.username)}&background=8b5cf6&color=ffffff&size=80`
-                }
+                src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.username)}&background=8b5cf6&color=ffffff&size=80`}
                 alt={user.displayName || user.username}
                 referrerPolicy="no-referrer"
                 className="w-full h-full object-cover"

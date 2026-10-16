@@ -278,13 +278,24 @@ export default function CommentsPage() {
   useEffect(() => {
     void fetchRealComments();
 
-    try {
-      const savedLikes = localStorage.getItem("netphim_community_comment_likes");
-      if (savedLikes) setUserLikes(JSON.parse(savedLikes));
+    const loadSaved = () => {
+      try {
+        const savedLikes = localStorage.getItem("netphim_community_comment_likes");
+        if (savedLikes) setUserLikes(JSON.parse(savedLikes));
 
-      const savedCustom = localStorage.getItem("netphim_community_custom_comments");
-      if (savedCustom) setCustomComments(JSON.parse(savedCustom));
-    } catch {}
+        const savedCustom = localStorage.getItem("netphim_community_custom_comments");
+        if (savedCustom) setCustomComments(JSON.parse(savedCustom));
+      } catch {}
+    };
+
+    loadSaved();
+
+    window.addEventListener("netphim_user_updated", loadSaved);
+    window.addEventListener("storage", loadSaved);
+    return () => {
+      window.removeEventListener("netphim_user_updated", loadSaved);
+      window.removeEventListener("storage", loadSaved);
+    };
   }, [fetchRealComments]);
 
   // Aggregate: DB Real Reviews > Custom User Posts > High Quality Seed Reviews
@@ -705,6 +716,16 @@ export default function CommentsPage() {
                 const isSpoilerHidden =
                   comment.hasSpoiler && !spoilerRevealed[comment.id];
 
+                const isCurrentUser = Boolean(
+                  user && (
+                    (user.displayName && comment.userName.toLowerCase() === user.displayName.toLowerCase()) ||
+                    (user.username && comment.userName.toLowerCase() === user.username.toLowerCase()) ||
+                    (comment.userName.toLowerCase() === "admin" && (user.username?.toLowerCase() === "admin" || user.email?.toLowerCase() === "huywashere@gmail.com"))
+                  )
+                );
+                const effectiveAvatar = isCurrentUser && user?.avatarUrl ? user.avatarUrl : comment.userAvatar;
+                const effectiveName = isCurrentUser && (user?.displayName || user?.username) ? (user.displayName || user.username) : comment.userName;
+
                 return (
                   <div
                     key={comment.id}
@@ -716,14 +737,14 @@ export default function CommentsPage() {
                         <div className="flex items-center gap-2.5">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
-                            src={comment.userAvatar}
-                            alt={comment.userName}
+                            src={effectiveAvatar}
+                            alt={effectiveName}
                             className="w-9 h-9 rounded-full bg-neutral-800 object-cover border border-white/10 shrink-0"
                           />
                           <div>
                             <div className="flex items-center gap-1.5">
                               <span className="text-xs sm:text-sm font-bold text-white group-hover:text-cyan-400 transition-colors">
-                                {comment.userName}
+                                {effectiveName}
                               </span>
                               {comment.userRole && (
                                 <span

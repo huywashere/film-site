@@ -1118,6 +1118,98 @@ export default function UserDashboardPage() {
     }));
     queryClient.invalidateQueries({ queryKey: ["user-profile", username] });
 
+    // 4. Instantly sync comments in localStorage for real-time consistency outside
+    if (typeof window !== "undefined") {
+      try {
+        const prevUsername = user?.username?.toLowerCase() || "";
+        const prevDisplay = user?.displayName?.toLowerCase() || "";
+        const currentUserId = nextUser.id;
+        const currentUserEmail = nextUser.email?.toLowerCase() || "";
+        const nextName = nextUser.displayName || nextUser.username || "Thành viên";
+        const nextAvatar = nextUser.avatarUrl || "";
+
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith("netphim_comments_tree_")) {
+            const raw = localStorage.getItem(key);
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              if (Array.isArray(parsed)) {
+                let modified = false;
+                const updateTree = (list: any[]): any[] => {
+                  return list.map((item: any) => {
+                    const itemUser = item.user || {};
+                    const itemId = itemUser.id;
+                    const itemEmail = (itemUser.email || "").toLowerCase();
+                    const itemName = (itemUser.name || "").toLowerCase();
+                    const isAuthor =
+                      (currentUserId && itemId && itemId === currentUserId) ||
+                      (currentUserEmail && itemEmail && itemEmail === currentUserEmail) ||
+                      (prevUsername && itemName === prevUsername) ||
+                      (prevDisplay && itemName === prevDisplay) ||
+                      itemName === "admin";
+
+                    let updatedItem = { ...item };
+                    if (isAuthor) {
+                      modified = true;
+                      updatedItem.user = {
+                        ...itemUser,
+                        name: nextName,
+                        avatar: nextAvatar || itemUser.avatar,
+                        nameColor: nextUser.nameColor || itemUser.nameColor,
+                        avatarFrameColor: nextUser.avatarFrameColor || itemUser.avatarFrameColor,
+                      };
+                    }
+                    if (Array.isArray(updatedItem.replies) && updatedItem.replies.length > 0) {
+                      updatedItem.replies = updateTree(updatedItem.replies);
+                    }
+                    return updatedItem;
+                  });
+                };
+                const updatedList = updateTree(parsed);
+                if (modified) {
+                  localStorage.setItem(key, JSON.stringify(updatedList));
+                }
+              }
+            }
+          } else if (key === "netphim_community_custom_comments") {
+            const raw = localStorage.getItem(key);
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              if (Array.isArray(parsed)) {
+                let modified = false;
+                const updated = parsed.map((item: any) => {
+                  const itemName = (item.userName || "").toLowerCase();
+                  const isAuthor =
+                    (prevUsername && itemName === prevUsername) ||
+                    (prevDisplay && itemName === prevDisplay) ||
+                    itemName === "admin";
+                  if (isAuthor) {
+                    modified = true;
+                    return {
+                      ...item,
+                      userName: nextName,
+                      userAvatar: nextAvatar || item.userAvatar,
+                    };
+                  }
+                  return item;
+                });
+                if (modified) {
+                  localStorage.setItem(key, JSON.stringify(updated));
+                }
+              }
+            }
+          }
+        }
+
+        // Broadcast cross-component & cross-tab events
+        window.dispatchEvent(new CustomEvent("netphim_user_updated", { detail: nextUser }));
+        window.dispatchEvent(new Event("storage"));
+      } catch {
+        // Non-blocking sync
+      }
+    }
+
     toast("Đã cập nhật diện mạo hồ sơ thành công!", "success");
     setShowAvatarPicker(false);
 
