@@ -85,7 +85,7 @@ export function Sidebar() {
     setOptimisticPath(null);
   }, [pathname]);
   const [collapsed, setCollapsed] = useState(false);
-  const [scrolledPastHomeHero, setScrolledPastHomeHero] = useState(false);
+  const [scrolledPastHero, setScrolledPastHero] = useState(false);
   const warmedRoutesRef = useRef(new Set<string>());
 
   const isHomePage = pathname === '/';
@@ -105,27 +105,25 @@ export function Sidebar() {
     pathname.startsWith('/watchlist/') ||
     pathname === '/library' ||
     pathname.startsWith('/library/');
-  const isBrowsePage = isHomePage || isGenrePage || isCountryPage || isFilmsPage || isUniversePage;
 
-  // Topic and catalogue pages expose quick navigation immediately. Home keeps
-  // the cinematic hero clean and reveals the rail only when its body begins.
+  // All theme/universe/country/catalogue pages hide the rail on top of the
+  // hero banner, and reveal it smoothly when scrolling into body content.
+  // Watch and film detail pages keep the sidebar always pinned.
   const isPinnedPage =
     isFilmDetailPage ||
     isWatchPage ||
-    isGenrePage ||
-    isCountryPage ||
-    isFilmsPage ||
-    isUniversePage ||
     isUserActivityPage;
-  const shouldShowSidebar = isPinnedPage || isBrowsePage;
+  const isAlwaysPinnedPage = isPinnedPage;
+  const isHeroBannerPage = isHomePage || isCountryPage || isGenrePage || isFilmsPage || isUniversePage;
+  const shouldShowSidebar = isPinnedPage || isHeroBannerPage;
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   useEffect(() => {
-    if (!isHomePage) {
-      setScrolledPastHomeHero(false);
+    if (!isHeroBannerPage) {
+      setScrolledPastHero(false);
       return;
     }
 
@@ -134,11 +132,11 @@ export function Sidebar() {
 
     const checkVisibility = () => {
       const hero = document.querySelector<HTMLElement>('[data-hero-banner="true"]');
-      const threshold = hero ? Math.max(0, hero.offsetHeight - 72) : Math.min(window.innerHeight * 0.8, 720);
+      const threshold = hero ? Math.max(0, hero.offsetHeight - 80) : 380;
       const pastHero = window.scrollY >= threshold;
       if (pastHero !== lastState) {
         lastState = pastHero;
-        setScrolledPastHomeHero(pastHero);
+        setScrolledPastHero(pastHero);
       }
       ticking = false;
     };
@@ -157,7 +155,7 @@ export function Sidebar() {
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onScroll);
     };
-  }, [isHomePage, pathname]);
+  }, [isHeroBannerPage, pathname]);
 
   useEffect(() => {
     try {
@@ -304,7 +302,7 @@ export function Sidebar() {
   // server and first client tree identical and prevents hydration error #418.
   if (!mounted || !shouldShowSidebar) return null;
 
-  const isVisible = !isHomePage || scrolledPastHomeHero;
+  const isVisible = isAlwaysPinnedPage || (isHeroBannerPage && scrolledPastHero);
 
   return (
     <>

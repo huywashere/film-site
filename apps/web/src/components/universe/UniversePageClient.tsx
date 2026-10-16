@@ -458,6 +458,7 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
       {/* ── 1. FULL-BLEED HERO BANNER ──────────────────────────────────────── */}
       <section
         ref={heroRef}
+        data-hero-banner="true"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
         className="relative h-[100dvh] min-h-[640px] max-h-[1020px] w-full overflow-hidden select-none sm:min-h-[min(700px,100dvh)] lg:min-h-[min(740px,100dvh)]"

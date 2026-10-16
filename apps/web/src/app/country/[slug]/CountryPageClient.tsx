@@ -170,7 +170,7 @@ function CountryCategoryRow({
   if (!isLoading && !films.length) return null;
 
   const content = (
-    <div className="mb-8 group/row relative" aria-busy={isLoading}>
+    <div className="mb-8 group/row relative cv-section-auto" aria-busy={isLoading}>
       <div className="flex items-center justify-between mb-3 px-1">
         <h2 className="text-base sm:text-lg md:text-xl font-extrabold text-white">
           {title}
@@ -410,7 +410,7 @@ function ResilientAsianHeroBackdrop({
             setMobileIdx((prev) => prev + 1);
           }
         }}
-        className="w-full h-full object-cover object-top sm:object-center md:object-right brightness-[0.92] transition-opacity duration-700 animate-in fade-in"
+        className="w-full h-full object-cover object-center sm:object-[center_20%] md:object-[center_22%] brightness-[0.98] contrast-[1.02] transition-opacity duration-700 animate-in fade-in"
       />
     </picture>
   );
@@ -536,9 +536,10 @@ function AsianCuratedHeroBanner({
 
   return (
     <section
+      data-hero-banner="true"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
-      className="relative h-[68svh] min-h-[500px] max-h-[620px] w-full select-none overflow-hidden bg-[#141414] sm:h-[96vh] sm:min-h-[760px] sm:max-h-[1080px] lg:h-[100vh] lg:min-h-[840px]"
+      className="relative w-full select-none overflow-hidden bg-[#07080c] h-[62svh] min-h-[460px] sm:h-[76vh] sm:min-h-[580px] lg:h-[82vh] lg:min-h-[660px] lg:max-h-[860px]"
     >
       {/* ── High Resolution Dynamic Backdrop with Right-to-Left Gliding Motion ── */}
       <div className="absolute inset-0 w-full h-full overflow-hidden">
@@ -547,9 +548,9 @@ function AsianCuratedHeroBanner({
             key={currentItem.slug || currentItem._id || currentIndex}
             custom={direction}
             initial={{
-              x: direction > 0 ? "5%" : "-5%",
+              x: direction > 0 ? "2.5%" : "-2.5%",
               opacity: 0,
-              scale: 1.04,
+              scale: 1.015,
             }}
             animate={{
               x: "0%",
@@ -557,12 +558,12 @@ function AsianCuratedHeroBanner({
               scale: 1,
             }}
             exit={{
-              x: direction > 0 ? "-5%" : "5%",
+              x: direction > 0 ? "-2.5%" : "2.5%",
               opacity: 0,
-              scale: 0.98,
+              scale: 0.99,
             }}
             transition={{
-              duration: 0.9,
+              duration: 0.85,
               ease: [0.16, 1, 0.3, 1],
             }}
             className="absolute inset-0 w-full h-full"
@@ -574,14 +575,14 @@ function AsianCuratedHeroBanner({
         </AnimatePresence>
       </div>
 
-      {/* ── Cinematic Multi-layer Gradient Overlays for Vignette & Bottom Blending ── */}
+      {/* ── Cinematic High-Clarity Gradient Overlays (Tapers cleanly so full artwork is visible) ── */}
       <div
         className="absolute inset-0 z-10 pointer-events-none"
         style={{
           background: `
-            linear-gradient(to right, rgba(16,16,16,0.95) 0%, rgba(16,16,16,0.7) 40%, rgba(16,16,16,0.15) 70%, transparent 100%),
-            linear-gradient(to top, #141414 0%, rgba(20,20,20,0.85) 30%, transparent 60%),
-            linear-gradient(to bottom, rgba(16,16,16,0.65) 0%, transparent 25%)
+            linear-gradient(to right, rgba(7,8,12,0.88) 0%, rgba(7,8,12,0.50) 28%, rgba(7,8,12,0.10) 52%, transparent 72%),
+            linear-gradient(to top, #07080c 0%, rgba(7,8,12,0.70) 10%, transparent 25%),
+            linear-gradient(to bottom, rgba(7,8,12,0.40) 0%, transparent 16%)
           `,
         }}
       />
@@ -699,7 +700,7 @@ function AsianCuratedHeroBanner({
 
       {/* ── Pagination Dots (Centered on mobile, Bottom-Right on Desktop) ── */}
       {curatedList.length > 1 && (
-        <div className="absolute bottom-3 left-1/2 z-30 flex -translate-x-1/2 items-center gap-1.5 sm:bottom-8 sm:gap-2 lg:right-14 lg:left-auto lg:bottom-44 lg:translate-x-0">
+        <div className="absolute bottom-3 left-1/2 z-30 flex -translate-x-1/2 items-center gap-1.5 sm:bottom-6 sm:gap-2 lg:right-14 lg:left-auto lg:bottom-8 lg:translate-x-0">
           {curatedList.map((item, idx) => (
             <button
               key={item._id || item.slug || idx}
@@ -1067,7 +1068,7 @@ function filmMatchesKeywords(f: FilmItem, keywords: string[]): boolean {
         cardFont.className,
         "min-h-screen w-full bg-background text-foreground",
         isCustomHeroPage
-          ? "-mt-20 sm:-mt-24 bg-[#141414]"
+          ? "-mt-20 sm:-mt-24 bg-[#07080c]"
           : "pb-20 pl-4 pr-4 pt-20 sm:pt-24 md:pr-10 lg:pl-24",
       )}
     >
@@ -1088,7 +1089,7 @@ function filmMatchesKeywords(f: FilmItem, keywords: string[]): boolean {
           )}
 
           {/* Curated Multi-Genre Rows (Tất cả Card dạng dọc chuẩn Poster 2:3, Đầy đủ 100%) */}
-          <div className="relative z-20 pl-4 sm:pl-12 md:pl-20 lg:pl-24 pr-2 sm:pr-4 md:pr-6 pb-16 space-y-6 mt-3 sm:-mt-24 md:-mt-36 lg:-mt-48">
+          <div className="relative z-20 pl-4 sm:pl-12 md:pl-20 lg:pl-24 pr-2 sm:pr-4 md:pr-6 pb-16 space-y-6 mt-3 sm:-mt-10 md:-mt-14 lg:-mt-16">
             {/* Row 1: Phim Mới & Đang Thịnh Hành */}
             <CountryCategoryRow
               title={

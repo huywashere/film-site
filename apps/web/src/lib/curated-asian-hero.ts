@@ -31,18 +31,23 @@ export function buildAsianHeroImageCandidates(url?: string | null): string[] {
   if (!clean) return [];
 
   if (clean.includes("image.tmdb.org")) {
-    // TMDB already has a global image CDN, so avoid an unnecessary proxy hop.
-    list.push(clean);
     const isLogo = clean.includes(".png") || clean.includes("logo");
+    // For backdrops, prioritize original 4K/1080p full-detail resolution first!
+    if (!isLogo && (clean.includes("/w1280/") || clean.includes("/w780/"))) {
+      const original = clean.replace(/\/t\/p\/w\d+\//, "/t/p/original/");
+      if (original !== clean) list.push(original);
+    }
+    // Direct TMDB CDN
+    if (!list.includes(clean)) list.push(clean);
     const widthParam = isLogo
       ? "&w=640"
       : clean.includes("w500")
         ? "&w=500"
         : clean.includes("w780")
-          ? "&w=780"
-          : "&w=1280";
+          ? "&w=1080"
+          : "&w=1920";
     list.push(
-      `https://wsrv.nl/?url=${encodeURIComponent(clean)}${widthParam}&output=webp&q=82&we=1`,
+      `https://wsrv.nl/?url=${encodeURIComponent(clean)}${widthParam}&output=webp&q=88&we=1`,
     );
     // Local Next.js server image proxy is the final fallback.
     list.push(`/api/image-proxy?url=${encodeURIComponent(clean)}&strict=1`);

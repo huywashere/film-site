@@ -171,7 +171,7 @@ test('topic pages keep quick navigation visible and use title-only topic cards',
   assert.doesNotMatch(genres, /hub\.(?:tagline|highlight|countBadge)/);
   assert.match(sidebar, /const isUniversePage = pathname\.startsWith\(["']\/universe\/["']\)/);
   assert.match(sidebar, /data-hero-banner=\"true\"/);
-  assert.match(sidebar, /const isVisible = !isHomePage \|\| scrolledPastHomeHero/);
+  assert.match(sidebar, /const isVisible = isAlwaysPinnedPage \|\| \(isHeroBannerPage && scrolledPastHero\);/);
   assert.match(sidebar, /if \(!mounted \|\| !shouldShowSidebar\) return null/);
   assert.match(
     sidebar,
