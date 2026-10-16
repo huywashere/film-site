@@ -5,8 +5,12 @@ const nextConfig = {
   output: isProd ? "standalone" : undefined,
   poweredByHeader: false,
   reactStrictMode: true,
+  compress: true,
   transpilePackages: ["@netphim/shared-types"],
   productionBrowserSourceMaps: false,
+  experimental: {
+    optimizePackageImports: ["@tabler/icons-react", "lucide-react"],
+  },
   async headers() {
     return [
       {

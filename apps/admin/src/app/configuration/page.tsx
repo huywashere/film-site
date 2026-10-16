@@ -95,11 +95,11 @@ export default function ConfigurationPage() {
     return JSON.stringify(config) !== savedSnapshot;
   }, [config, savedSnapshot]);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (forceRefresh = false) => {
     try {
       const [current, history] = await Promise.all([
-        adminFetch<Configuration>("configuration"),
-        adminFetch<ConfigurationRevision[]>("configuration/revisions?limit=20"),
+        adminFetch<Configuration>("configuration", { bypassCache: forceRefresh }),
+        adminFetch<ConfigurationRevision[]>("configuration/revisions?limit=20", { bypassCache: forceRefresh }),
       ]);
       setConfig(current);
       setSavedSnapshot(JSON.stringify(current));
@@ -237,7 +237,7 @@ export default function ConfigurationPage() {
         <div className="flex items-center gap-2.5">
           <button
             type="button"
-            onClick={() => void load()}
+            onClick={() => void load(true)}
             className="flex h-9 items-center gap-2 rounded-xl border border-slate-800 bg-[#121722] px-3.5 text-xs font-semibold text-slate-300 hover:border-slate-700 hover:bg-[#181f2e] hover:text-white transition-all shadow-sm"
             title="Tải lại từ máy chủ"
           >

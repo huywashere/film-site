@@ -331,7 +331,12 @@ export default function AdminRootLayout({
       document.removeEventListener("fullscreenchange", onFullscreen);
       window.clearInterval(notificationTimer);
     };
-  }, [loadAdminProfile, loadNotifications, pathname]);
+  }, [loadAdminProfile, loadNotifications]);
+
+  useEffect(() => {
+    setMobileNavigationOpen(false);
+    setOpenMenu(null);
+  }, [pathname]);
 
   const markNotificationRead = async (item: AdminNotification) => {
     if (!item.readAt) {
