@@ -363,12 +363,12 @@ export default function ArtPlayer({
           // as fast as possible, then ABR steps up automatically.
           startLevel: 0,
           testBandwidth: true,
-          backBufferLength: 15,
-          // Reduced from 30 → 15 so the player only needs ~15 s of buffer before
-          // starting playback instead of waiting for 30 s worth of segments.
-          maxBufferLength: 15,
-          maxMaxBufferLength: 45,
-          maxBufferSize: 30 * 1000 * 1000,
+          // 60s back-buffer keeps the last 1 minute of video in memory for instant (0ms) backward seeking
+          backBufferLength: 60,
+          // 25s forward buffer ensures rock-solid playback cushion against network spikes without stall
+          maxBufferLength: 25,
+          maxMaxBufferLength: 60,
+          maxBufferSize: 60 * 1000 * 1000,
           maxBufferHole: 0.5,
           highBufferWatchdogPeriod: 2,
           nudgeMaxRetry: 3,
@@ -389,8 +389,9 @@ export default function ArtPlayer({
           manifestLoadingMaxRetry: 1,
           levelLoadingTimeOut: 6_000,
           levelLoadingMaxRetry: 1,
-          fragLoadingTimeOut: 10_000,
-          fragLoadingMaxRetry: 1,
+          fragLoadingTimeOut: 12_000,
+          fragLoadingMaxRetry: 2,
+          appendErrorMaxRetry: 3,
           pLoader: class ManifestFilterLoader extends (Hls.DefaultConfig.loader as any) {
             load(context: any, config: any, callbacks: any) {
               const originalOnSuccess = callbacks.onSuccess;
@@ -880,7 +881,7 @@ export default function ArtPlayer({
       aspectRatio: true,
       fullscreen: true,
       fullscreenWeb: false,
-      theme: '#a855f7',
+      theme: '#23ade5',
       icons: {
         loading: ARTPLAYER_LOADING_SVG,
         state: ARTPLAYER_STATE_TV_SVG,

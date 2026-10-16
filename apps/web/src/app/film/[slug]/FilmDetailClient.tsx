@@ -2634,7 +2634,7 @@ export default function FilmDetailPage({
 
           {/* ── Hình ảnh liên quan tới phim (Stills & Backdrops) ── */}
           {galleryImages.length > 0 && (
-            <section className="space-y-4 pt-6 border-t border-white/5">
+            <section className="space-y-4 pt-6 border-t border-white/5 cv-section-auto">
               <div className="flex items-center justify-between">
                 <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
                   <Images className="text-cyan-400" size={20} />
@@ -2658,7 +2658,7 @@ export default function FilmDetailPage({
                 )}
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3.5 cv-grid-auto">
                 {galleryImages
                   .slice(0, showAllGallery ? undefined : 8)
                   .map((img, idx) => (

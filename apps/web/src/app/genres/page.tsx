@@ -262,7 +262,7 @@ export default function GenresPage() {
           </h1>
 
           {/* Image-first cinematic grid: 2 columns on mobile, 2 on tablet, 4 on desktop */}
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4 cv-section-auto">
             {HUBS.map((hub, idx) => {
               return (
                 <Link

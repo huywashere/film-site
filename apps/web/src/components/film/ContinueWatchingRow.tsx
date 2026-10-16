@@ -390,7 +390,7 @@ export function ContinueWatchingRow({ fallbackFilms = [] }: ContinueWatchingRowP
               1024: { slidesPerView: 4.4, spaceBetween: 16 },
               1280: { slidesPerView: 5.0, spaceBetween: 18 },
             }}
-            className="w-full !pb-3 !pt-1 !pl-0.5"
+            className="w-full !pb-3 !pt-1 !pl-0.5 gpu-accelerated"
           >
             {historyEntries.map((item: any, idx: number) => {
               const { title, watchedStr, totalStr, percent, epLabel, qualityBadge } =

@@ -1294,7 +1294,7 @@ export default function GenrePageClient({
                 ))}
               </div>
             ) : filteredCatalogFilms.length > 0 ? (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 lg:grid-cols-7">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 lg:grid-cols-7 cv-grid-auto">
                 {filteredCatalogFilms.map((f, idx) => (
                   <FilmCard
                     key={`${f.slug || f._id || idx}-${idx}`}
@@ -1345,7 +1345,7 @@ export default function GenrePageClient({
               ))}
             </div>
           ) : rawFilms.length > 0 ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-y-6 sm:gap-y-8">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-y-6 sm:gap-y-8 cv-grid-auto">
               {rawFilms.map((f, idx) => (
                 <FilmCard
                   key={`${f.slug || f._id || (f as any).id}-${idx}`}

@@ -1334,7 +1334,7 @@ function filmMatchesAnimeKeywords(f: FilmItem, keywords: string[]): boolean {
                 ))}
               </div>
             ) : rawFilms.length > 0 ? (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 lg:grid-cols-7">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 lg:grid-cols-7 cv-grid-auto">
                 {dedupeFilmsList(rawFilms).map((f, idx) => (
                   <FilmCard
                     key={`${f.slug || f._id || idx}-${idx}`}
@@ -1454,7 +1454,7 @@ function filmMatchesAnimeKeywords(f: FilmItem, keywords: string[]): boolean {
                 ))}
               </div>
             ) : films.length > 0 ? (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 lg:grid-cols-7">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 lg:grid-cols-7 cv-grid-auto">
                 {dedupeFilmsList(films).map((f, idx) => (
                   <FilmCard
                     key={`${f.slug || f._id || idx}-${idx}`}
@@ -1531,7 +1531,7 @@ function filmMatchesAnimeKeywords(f: FilmItem, keywords: string[]): boolean {
               </button>
             </div>
           ) : films.length > 0 ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-y-6 sm:gap-y-8">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-y-6 sm:gap-y-8 cv-grid-auto">
               {films.map((film, idx) => (
                 <FilmCard
                   key={`${film.slug || film._id || (film as any).id}-${idx}`}

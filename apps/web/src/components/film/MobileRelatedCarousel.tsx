@@ -552,7 +552,7 @@ export function MobileRelatedCarousel({
           scale: 0.86, // Balanced focal scale for center card vs tilted side cards
           slideShadows: false, // Omit DOM shadow elements to preserve 60/120fps GPU performance
         }}
-        className="mobile-related-swiper !overflow-visible px-1 [perspective:1200px]"
+        className="mobile-related-swiper !overflow-visible px-1 [perspective:1200px] gpu-accelerated"
         aria-label="Vuốt để xem poster phim gợi ý cùng chủ đề"
       >
         {films.map((film, index) => {
