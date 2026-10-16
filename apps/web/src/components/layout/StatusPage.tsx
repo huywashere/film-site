@@ -184,7 +184,7 @@ export function StatusPage({ code, onRetry }: StatusPageProps) {
 
             {/* Headline */}
             <h1 className="text-3xl sm:text-4xl md:text-[42px] font-black text-white tracking-tight leading-tight mb-4">
-              {isServerError ? "Oops, máy chủ gặp sự cố kết nối" : "Oops, không tìm thấy trang này"}
+              {isServerError ? "Oops, máy chủ gặp sự cố kết nối" : "Oops! Trang web bạn tìm kiếm không tồn tại."}
             </h1>
 
             {/* Description */}
@@ -210,7 +210,7 @@ export function StatusPage({ code, onRetry }: StatusPageProps) {
                     href="/"
                     className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-white/10 text-white font-semibold text-sm sm:text-base border border-white/15 backdrop-blur-md hover:bg-white/20 transition-all active:scale-95"
                   >
-                    <span>Về Trang chủ</span>
+                    <span>Đi tới trang chủ</span>
                     <span>→</span>
                   </Link>
                 </>
@@ -220,7 +220,7 @@ export function StatusPage({ code, onRetry }: StatusPageProps) {
                     href="/"
                     className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-full bg-white text-neutral-950 font-extrabold text-sm sm:text-base hover:bg-neutral-200 transition-all shadow-[0_0_25px_rgba(255,255,255,0.2)] active:scale-95"
                   >
-                    <span>Về Trang chủ</span>
+                    <span>Đi tới trang chủ</span>
                     <span>→</span>
                   </Link>
                   <Link
