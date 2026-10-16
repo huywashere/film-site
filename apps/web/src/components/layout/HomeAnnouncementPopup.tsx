@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowUpRight, X } from "lucide-react";
 import { PublicSiteConfiguration, siteConfigApi } from "@/lib/api";
+import { InteractiveAdminMascot } from "@/components/mascot/InteractiveAdminMascot";
 import {
   applyLocalDecorativeAssetFallback,
   decorativeAssetUrl,
@@ -142,22 +143,13 @@ export function HomeAnnouncementPopup() {
 
         <div className="relative px-5 pb-5 pt-5 sm:px-7 sm:pb-7 sm:pt-7">
           <div className="flex items-start gap-4 pr-10 sm:gap-5 sm:pr-12">
-            <div className="relative h-[82px] w-[96px] shrink-0 rotate-[-2deg] overflow-hidden rounded-[20px] border border-violet-300/25 bg-[#09090d] p-1 shadow-[0_14px_35px_rgba(0,0,0,.38)] sm:h-[104px] sm:w-[126px]">
-              <Image
-                src={catGif}
-                alt="Mèo đưa tin FlexPhim"
-                fill
-                unoptimized
-                sizes="126px"
-                className="rounded-[16px] object-cover"
-                onError={(event) => {
-                  applyLocalDecorativeAssetFallback(
-                    event.currentTarget,
-                    catGifLocal,
-                  );
-                }}
+            <div className="relative h-[82px] w-[82px] shrink-0 rotate-[-2deg] overflow-hidden rounded-[20px] border border-violet-300/25 bg-[#09090d] p-1 shadow-[0_14px_35px_rgba(0,0,0,.38)] sm:h-[104px] sm:w-[104px] flex items-center justify-center">
+              <InteractiveAdminMascot
+                size="100%"
+                className="w-full h-full !rounded-[16px]"
+                label="Mascot Quản Trị Viên FlexPhim"
               />
-              <span className="absolute bottom-2 left-2 rounded-full border border-white/10 bg-black/70 px-2 py-1 text-[8px] font-black uppercase tracking-[.14em] text-amber-200 backdrop-blur-sm">
+              <span className="pointer-events-none absolute bottom-2 left-2 rounded-full border border-white/10 bg-black/70 px-2 py-1 text-[8px] font-black uppercase tracking-[.14em] text-amber-200 backdrop-blur-sm z-10">
                 Tin mới
               </span>
             </div>

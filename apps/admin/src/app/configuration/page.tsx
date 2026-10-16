@@ -26,6 +26,7 @@ import {
 import { adminFetch } from "@/lib/admin-api";
 import { configurationUpdatePayload } from "@/lib/configuration-payload";
 import { HeroBannerStudio } from "@/components/HeroBannerStudio";
+import { InteractiveAdminMascot } from "@/components/mascot/InteractiveAdminMascot";
 
 type Configuration = {
   maintenanceMode: boolean;
@@ -1233,10 +1234,6 @@ function AnnouncementPreview({ config }: { config: Configuration }) {
     .split(/\n{2,}/)
     .map((item) => item.trim())
     .filter(Boolean);
-  const webAssetBase = (
-    process.env.NEXT_PUBLIC_NETPHIM_WEB_URL || "https://film-site-web.vercel.app"
-  ).replace(/\/$/, "");
-  const catNumber = ((config.homePopupVersion || 1) % 4) + 1;
 
   return (
     <div className="flex h-full flex-col justify-between rounded-2xl border border-slate-800 bg-[#070a10] p-4 shadow-inner">
@@ -1261,12 +1258,11 @@ function AnnouncementPreview({ config }: { config: Configuration }) {
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-400/50 to-transparent" />
 
         <div className="flex items-start gap-4">
-          <div className="relative h-16 w-16 shrink-0 rotate-[-2deg] overflow-hidden rounded-xl border border-violet-500/30 bg-black p-0.5 shadow-md">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={`${webAssetBase}/images/cat${catNumber}.gif`}
-              alt="Mèo đưa tin"
-              className="h-full w-full rounded-lg object-cover"
+          <div className="relative h-16 w-16 shrink-0 rotate-[-2deg] overflow-hidden rounded-xl border border-violet-500/30 bg-[#09090d] p-0.5 shadow-md flex items-center justify-center">
+            <InteractiveAdminMascot
+              size={56}
+              className="w-full h-full rounded-lg"
+              label="Mascot Mèo Thông Báo Admin"
             />
           </div>
 

@@ -164,6 +164,7 @@ RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
 # Copy built Next.js standalone admin app
+COPY --from=admin-builder /app/apps/admin/public ./apps/admin/public
 COPY --from=admin-builder --chown=nextjs:nodejs /app/apps/admin/.next/standalone ./
 COPY --from=admin-builder --chown=nextjs:nodejs /app/apps/admin/.next/static ./apps/admin/.next/static
 
