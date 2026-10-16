@@ -35,18 +35,6 @@ function IconTelegram() {
   );
 }
 
-function IconTikTok() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      className="w-4 h-4 sm:w-5 sm:h-5"
-    >
-      <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.77 1.52V6.77a4.85 4.85 0 01-1-.08z" />
-    </svg>
-  );
-}
-
 function IconEmail() {
   return (
     <svg
@@ -67,11 +55,10 @@ function IconEmail() {
 const SOCIAL_LINKS = [
   { href: "https://facebook.com", icon: IconFacebook, label: "Facebook" },
   {
-    href: "https://t.me/+ijCR1KCdx2E0ZTA9",
+    href: "https://t.me/nguyenphuhuy",
     icon: IconTelegram,
     label: "Telegram",
   },
-  { href: "https://tiktok.com", icon: IconTikTok, label: "TikTok" },
   { href: "mailto:flexphim@proton.me", icon: IconEmail, label: "Email" },
 ];
 
