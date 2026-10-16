@@ -8,6 +8,7 @@ import {
   type MovieSource,
 } from '@/lib/movie-normalizer';
 import { rankSearchResults, expandQuery, normalize } from '@/lib/search-engine';
+import { parseSearchIntent } from '@/lib/search-query-parser';
 import {
   filterSearchResults,
   searchFilterParams,
@@ -733,6 +734,13 @@ async function searchAllSources(
     };
   }
 
+  const cacheKey = `search_all:${trimmed.toLowerCase()}:${page}:${limit}:${JSON.stringify(filters)}`;
+  const now = Date.now();
+  const cached = globalSearchCache.get(cacheKey);
+  if (cached && now - cached.timestamp < SEARCH_CACHE_MAX_AGE_MS) {
+    return cached.data;
+  }
+
   // P2 hot path: one browser request lets Go query/cache providers in
   // parallel. The existing TypeScript merger remains the compatibility
   // fallback for Vercel/local environments without the gateway.
@@ -788,8 +796,12 @@ async function searchAllSources(
   }
 
   // Expand query thành nhiều biến thể để tăng recall
+  const parsed = parseSearchIntent(trimmed);
   const variants = expandQuery(trimmed);
-  const primaryKeyword = variants[0];
+  const primaryKeyword =
+    parsed.baseQuery && parsed.baseQuery.length >= 2
+      ? parsed.baseQuery
+      : variants[0];
   const unaccentedKeyword = normalize(primaryKeyword);
   const encodedKeyword = encodeURIComponent(primaryKeyword);
   const encodedUnaccented = encodeURIComponent(unaccentedKeyword);
@@ -895,7 +907,7 @@ async function searchAllSources(
     ),
   );
 
-  return {
+  const result = {
     status: 'success',
     data: {
       items,
@@ -912,6 +924,13 @@ async function searchAllSources(
     _totalMerged: merged.length,
     _query: { original: trimmed, variants },
   };
+
+  globalSearchCache.set(cacheKey, {
+    data: result,
+    timestamp: Date.now(),
+  });
+
+  return result;
 }
 
 async function getDetailFromAnySource(slug: string, preferredSource?: MovieSource): Promise<any> {

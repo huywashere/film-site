@@ -4,8 +4,10 @@
  * Pipeline:
  *   raw query
  *     → normalize (bỏ dấu, lowercase, trim) [via shared text-utils]
+ *     → parse intent (năm, phần, âm thanh, loại phim, typo tolerance) [via search-query-parser]
  *     → tokenize
- *     → score mỗi film (exact > prefix > token > fuzzy)
+ *     → score mỗi film (exact > prefix > token > typo-fuzzy)
+ *     → boost theo ý định cấu trúc (năm đúng, phần đúng, âm thanh đúng)
  *     → boost theo độ phổ biến (nhiều nguồn = phổ biến hơn)
  *     → sort & trả về
  */
@@ -13,6 +15,11 @@
 import { normalizeText } from "@/lib/movie-normalizer";
 import { normalizeForSearch, tokenizeQuery } from "@/lib/text-utils";
 import { expandSearchAliases } from "@/lib/search-query-aliases";
+import {
+  parseSearchIntent,
+  damerauLevenshtein,
+  isFuzzyTokenMatch,
+} from "@/lib/search-query-parser";
 import type { NormalizedFilmItem } from "@/lib/movie-normalizer";
 
 // ── Text helpers ──────────────────────────────────────────────────
@@ -28,10 +35,10 @@ export function normalize(text: string): string {
 
 function expandSeasonVariants(value: string): string[] {
   const normalized = normalize(value);
-  const match = normalized.match(/\b(?:phan|season|mua|s)\s*(\d+)\b/);
+  const match = normalized.match(/\b(?:phan|season|mua|s|ss|p)\s*(\d+)\b/);
   if (!match) return [normalized];
   const base = normalized
-    .replace(/\b(?:phan|season|mua|s)\s*\d+\b/, " ")
+    .replace(/\b(?:phan|season|mua|s|ss|p)\s*\d+\b/, " ")
     .replace(/\s+/g, " ")
     .trim();
   return [
@@ -39,6 +46,7 @@ function expandSeasonVariants(value: string): string[] {
     `${base} phan ${match[1]}`.trim(),
     `${base} season ${match[1]}`.trim(),
     `${base} s${match[1]}`.trim(),
+    `${base} ss${match[1]}`.trim(),
   ];
 }
 
@@ -50,35 +58,14 @@ function tokenize(text: string): string[] {
 // ── Fuzzy: Levenshtein distance (capped) ─────────────────────────
 
 function levenshtein(a: string, b: string): number {
-  if (a === b) return 0;
-  if (a.length === 0) return b.length;
-  if (b.length === 0) return a.length;
-
-  // Only compute for short strings to keep it fast
-  if (a.length > 20 || b.length > 20) return Math.abs(a.length - b.length) + 1;
-
-  const dp: number[][] = Array.from({ length: a.length + 1 }, (_, i) =>
-    Array.from({ length: b.length + 1 }, (_, j) =>
-      i === 0 ? j : j === 0 ? i : 0,
-    ),
-  );
-
-  for (let i = 1; i <= a.length; i++) {
-    for (let j = 1; j <= b.length; j++) {
-      dp[i][j] =
-        a[i - 1] === b[j - 1]
-          ? dp[i - 1][j - 1]
-          : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
-    }
-  }
-  return dp[a.length][b.length];
+  return damerauLevenshtein(a, b);
 }
 
 /** Fuzzy similarity 0–1 (1 = identical) */
 function fuzzyScore(a: string, b: string): number {
   const dist = levenshtein(a, b);
   const maxLen = Math.max(a.length, b.length);
-  return maxLen === 0 ? 1 : 1 - dist / maxLen;
+  return maxLen === 0 ? 1 : Math.max(0, 1 - dist / maxLen);
 }
 
 function searchableValues(value: unknown): string[] {
@@ -108,7 +95,7 @@ const WEIGHTS = {
   prefix: 600, // starts with query
   tokenAllMatch: 450, // tất cả token đều match
   tokenPartial: 200, // một số token match
-  fuzzy: 100, // gần giống
+  fuzzy: 180, // gần giống (chấp nhận typo)
   multiSource: 120, // xuất hiện ở nhiều nguồn = uy tín/phổ biến hơn
   yearBoost: 30, // phim mới hơn được ưu tiên nhẹ
   qualityHD: 200, // HD / FHD
@@ -204,7 +191,7 @@ function scoreFilm(
     if (matchType === "none") matchType = "prefix";
   }
 
-  // ── 4. Token matching ──
+  // ── 4. Token matching (Typo-Tolerant) ──
   if (queryTokens.length > 0) {
     const nameTokens = tokenize(film.name || "");
     const originTokens = tokenize(film.origin_name || "");
@@ -218,7 +205,7 @@ function scoreFilm(
           tt === qt ||
           (qt.length >= 4 && tt.startsWith(qt)) ||
           (tt.length >= 4 && qt.startsWith(tt)) ||
-          fuzzyScore(qt, tt) > 0.84,
+          isFuzzyTokenMatch(qt, tt),
       );
       if (matched) matchedCount++;
     }
@@ -233,20 +220,32 @@ function scoreFilm(
     }
   }
 
-  // ── 5. Fuzzy fallback ──
+  // ── 5. Fuzzy fallback với Typo Tolerance toàn diện ──
   if (matchType === "none" || score < WEIGHTS.tokenPartial) {
-    const fuzzName = fuzzyScore(
-      normQuery,
-      normName.slice(0, normQuery.length + 4),
-    );
-    const fuzzOrigin = fuzzyScore(
-      normQuery,
-      normOrigin.slice(0, normQuery.length + 4),
-    );
-    const bestFuzz = Math.max(fuzzName, fuzzOrigin);
-    if (bestFuzz > 0.6) {
-      score += WEIGHTS.fuzzy * bestFuzz;
+    const distName = damerauLevenshtein(normQuery, normName);
+    const distOrigin = damerauLevenshtein(normQuery, normOrigin);
+    const minFullDist = Math.min(distName, distOrigin);
+
+    if (normQuery.length >= 5 && minFullDist <= 1) {
+      score += WEIGHTS.exact * 0.85;
       if (matchType === "none") matchType = "fuzzy";
+    } else if (normQuery.length >= 7 && minFullDist <= 2) {
+      score += WEIGHTS.exact * 0.7;
+      if (matchType === "none") matchType = "fuzzy";
+    } else {
+      const fuzzName = fuzzyScore(
+        normQuery,
+        normName.slice(0, normQuery.length + 4),
+      );
+      const fuzzOrigin = fuzzyScore(
+        normQuery,
+        normOrigin.slice(0, normQuery.length + 4),
+      );
+      const bestFuzz = Math.max(fuzzName, fuzzOrigin);
+      if (bestFuzz > 0.65) {
+        score += WEIGHTS.fuzzy * bestFuzz;
+        if (matchType === "none") matchType = "fuzzy";
+      }
     }
   }
 
@@ -288,7 +287,7 @@ function scoreFilm(
 
 /**
  * Nhận danh sách film đã merge từ nhiều nguồn,
- * score và sort theo độ liên quan với query.
+ * score và sort theo độ liên quan với query, kết hợp nhận diện ý định thông minh.
  */
 export function rankSearchResults(
   films: NormalizedFilmItem[],
@@ -307,22 +306,89 @@ export function rankSearchResults(
       _matchType: "none" as const,
     }));
 
+  const parsedIntent = parseSearchIntent(sanitizedQuery);
+
   const queryVariants = Array.from(
     new Set(
-      expandSearchAliases(sanitizedQuery)
+      [
+        ...expandSearchAliases(sanitizedQuery),
+        ...parsedIntent.expandedTerms,
+        sanitizedQuery,
+        normalize(sanitizedQuery),
+        parsedIntent.baseQuery,
+      ]
         .flatMap(expandSeasonVariants)
         .filter(Boolean),
     ),
-  ).slice(0, 24);
+  ).slice(0, 32);
+
   if (queryVariants.length === 0) queryVariants.push(normalize(sanitizedQuery));
 
   const scored = films.map((film) => {
     const candidates = queryVariants.map((variant) =>
       scoreFilm(film, variant, tokenize(variant)),
     );
-    return candidates.reduce((best, candidate) =>
-      candidate._searchScore > best._searchScore ? candidate : best,
+    const best = candidates.reduce((highest, candidate) =>
+      candidate._searchScore > highest._searchScore ? candidate : highest,
     );
+
+    let intentBonus = 0;
+
+    // ── Intent Boost 1: Khớp chính xác năm khi người dùng gõ năm trong query ──
+    if (parsedIntent.extractedYear && film.year) {
+      if (Number(film.year) === parsedIntent.extractedYear) {
+        intentBonus += 600; // Khớp chuẩn năm phát hành (vd: Dune 2024)
+      } else {
+        intentBonus -= 150; // Khác năm đã tìm kiếm
+      }
+    }
+
+    // ── Intent Boost 2: Khớp chính xác Season / Phần ──
+    if (parsedIntent.extractedSeason !== undefined) {
+      const text = `${film.name || ""} ${film.origin_name || ""} ${film.slug || ""}`.toLowerCase();
+      const s = parsedIntent.extractedSeason;
+      const hasTargetSeason =
+        text.includes(`phan ${s}`) ||
+        text.includes(`phần ${s}`) ||
+        text.includes(`season ${s}`) ||
+        text.includes(`ss${s}`) ||
+        text.includes(`s${s}`) ||
+        text.includes(`p${s}`);
+
+      if (hasTargetSeason) {
+        intentBonus += 750;
+      } else {
+        // Nếu phim có chứa season khác (vd: người dùng tìm season 2 nhưng phim là season 1)
+        const hasOtherSeason = /\b(?:phan|season|ss|s)\s*(\d+)\b/i.test(text);
+        if (hasOtherSeason) {
+          intentBonus -= 400;
+        }
+      }
+    }
+
+    // ── Intent Boost 3: Khớp âm thanh (Thuyết minh / Lồng tiếng / Vietsub) ──
+    if (parsedIntent.extractedAudio && film.lang) {
+      const l = String(film.lang || "").toLowerCase();
+      if (
+        (parsedIntent.extractedAudio === "thuyet-minh" && (l.includes("thuyết minh") || l.includes("thuyet minh"))) ||
+        (parsedIntent.extractedAudio === "long-tieng" && (l.includes("lồng tiếng") || l.includes("long tieng"))) ||
+        (parsedIntent.extractedAudio === "vietsub" && (l.includes("vietsub") || l.includes("sub")))
+      ) {
+        intentBonus += 350;
+      }
+    }
+
+    // ── Intent Boost 4: Khớp loại phim ──
+    if (parsedIntent.extractedType && film.type) {
+      if (film.type === parsedIntent.extractedType) {
+        intentBonus += 250;
+      }
+    }
+
+    return {
+      ...best,
+      _searchScore: best._searchScore + intentBonus,
+    };
   });
 
   // Provider search endpoints sometimes append broadly related catalogue
@@ -342,8 +408,9 @@ export function rankSearchResults(
 /**
  * Sinh thêm các biến thể query để tăng recall:
  * - Bỏ dấu tiếng Việt
- * - Bỏ các từ phổ biến (phim, the, a, an...)
- * - Tách số ra (season 2 → season, 2)
+ * - Bóc tách ý định (năm, phần, âm thanh)
+ * - Mở rộng từ điển Franchise & Multilingual
+ * - Bỏ các stopwords (phim, the, a, an...)
  */
 export function expandQuery(query: string): string[] {
   const variants = new Set<string>();
@@ -351,7 +418,16 @@ export function expandQuery(query: string): string[] {
 
   variants.add(trimmed);
   variants.add(normalize(trimmed));
+
+  const parsed = parseSearchIntent(trimmed);
+  if (parsed.baseQuery && parsed.baseQuery !== trimmed) {
+    variants.add(parsed.baseQuery);
+    variants.add(normalize(parsed.baseQuery));
+  }
+
   for (const alias of expandSearchAliases(trimmed)) variants.add(alias);
+  for (const term of parsed.expandedTerms) variants.add(term);
+
   for (const alias of Array.from(variants)) {
     for (const seasonVariant of expandSeasonVariants(alias)) {
       variants.add(seasonVariant);

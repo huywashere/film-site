@@ -28,6 +28,7 @@ import { TmdbArtwork } from "@/components/film/TmdbArtwork";
 import { VoiceSearchButton } from "@/components/search/VoiceSearchButton";
 import { cardFont } from "@/lib/fonts";
 import { searchLocalFilms } from "@/lib/smart-search";
+import { parseSearchIntent } from "@/lib/search-query-parser";
 import { isIMEQuery, normalizeForSearch } from "@/lib/text-utils";
 import { useReliableNavigation } from "@/hooks/useReliableNavigation";
 
@@ -121,6 +122,66 @@ function HighlightMatch({ text, query }: { text: string; query: string }) {
   );
 }
 
+function SmartIntentChips({
+  intent,
+  visible,
+}: {
+  intent: ReturnType<typeof parseSearchIntent>;
+  visible: boolean;
+}) {
+  if (!visible || !intent.hasStructuredIntent) return null;
+  const hasItems = Boolean(
+    intent.extractedYear ||
+      intent.extractedSeason !== undefined ||
+      intent.extractedAudio ||
+      intent.extractedType ||
+      (intent.baseQuery && intent.baseQuery !== intent.cleanQuery),
+  );
+  if (!hasItems) return null;
+
+  return (
+    <div className="flex flex-wrap items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-amber-500/10 via-white/[0.03] to-transparent border-b border-white/[0.06]">
+      <span className="text-[10px] font-semibold text-neutral-400 flex items-center gap-1 shrink-0">
+        <Sparkles size={11} className="text-amber-400 animate-pulse" />
+        Ý định:
+      </span>
+      {intent.extractedYear && (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-400/15 text-amber-300 border border-amber-400/30">
+          Năm {intent.extractedYear}
+        </span>
+      )}
+      {intent.extractedSeason !== undefined && (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-sky-400/15 text-sky-300 border border-sky-400/30">
+          Phần {intent.extractedSeason}
+        </span>
+      )}
+      {intent.extractedAudio && (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-400/15 text-emerald-300 border border-emerald-400/30">
+          {intent.extractedAudio === "thuyet-minh"
+            ? "Thuyết Minh"
+            : intent.extractedAudio === "long-tieng"
+              ? "Lồng Tiếng"
+              : "Vietsub"}
+        </span>
+      )}
+      {intent.extractedType && (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-400/15 text-purple-300 border border-purple-400/30">
+          {intent.extractedType === "series"
+            ? "Phim Bộ"
+            : intent.extractedType === "single"
+              ? "Phim Lẻ"
+              : "Hoạt Hình"}
+        </span>
+      )}
+      {intent.baseQuery && intent.baseQuery !== intent.cleanQuery && (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-white/[0.06] text-neutral-300 border border-white/[0.1]">
+          Từ khóa: {intent.baseQuery}
+        </span>
+      )}
+    </div>
+  );
+}
+
 // ── Main SpotlightSearchModal with Dual View Mode (Compact Popover & Full Modal) ──
 export function SpotlightSearchModal({
   isOpen,
@@ -163,10 +224,14 @@ export function SpotlightSearchModal({
     }
   }, [isOpen, mounted]);
 
-  // IME-aware debounce: 90ms cho Latin, 160ms cho tiếng Việt/CJK
-  // Tránh tình trạng query nửa chừng khi dùng input method editor
+  // Session cache để phục hồi kết quả 0ms khi backspace hoặc gõ lại từ khóa
+  const searchCacheRef = useRef<Map<string, FilmItem[]>>(new Map());
+  const parsedIntent = useMemo(() => parseSearchIntent(query), [query]);
+
+  // IME-aware debounce: 50ms cho Latin, 110ms cho tiếng Việt/CJK
+  // Tối ưu tốc độ phản hồi cực nhanh, không gây lag gõ Telex
   useEffect(() => {
-    const debounceDelay = isIMEQuery(query) ? 160 : 90;
+    const debounceDelay = isIMEQuery(query) ? 110 : 50;
     const t = setTimeout(() => setDebouncedQuery(query), debounceDelay);
     return () => clearTimeout(t);
   }, [query]);
@@ -226,9 +291,18 @@ export function SpotlightSearchModal({
     [searchData],
   );
 
-  // Seamless merge of remote and instant local results with intelligent deduplication
+  // Lưu cache phiên tìm kiếm
+  useEffect(() => {
+    const key = debouncedQuery.trim().toLowerCase();
+    if (key && remoteResults.length > 0) {
+      searchCacheRef.current.set(key, remoteResults);
+    }
+  }, [debouncedQuery, remoteResults]);
+
+  // Seamless merge of remote, session cache and instant local results with intelligent deduplication
   const rawResults: FilmItem[] = useMemo(() => {
-    if (!query.trim()) return [];
+    const trimmed = query.trim().toLowerCase();
+    if (!trimmed) return [];
     const seenIdentities = new Set<string>();
     const seenSlugs = new Set<string>();
     const merged: FilmItem[] = [];
@@ -248,22 +322,34 @@ export function SpotlightSearchModal({
       merged.push(item);
     };
 
-    // Prioritize remote results
+    // 1. Ưu tiên kết quả từ Remote API của debounced query hiện tại
     for (const item of remoteResults) {
       appendUnique(item);
     }
 
-    // Merge instant local results for missing items
+    // 2. Tra cứu cache phiên tức thì nếu có (0ms phản hồi)
+    const cached =
+      searchCacheRef.current.get(trimmed) ||
+      (parsedIntent.baseQuery
+        ? searchCacheRef.current.get(parsedIntent.baseQuery.toLowerCase())
+        : undefined);
+    if (cached) {
+      for (const item of cached) {
+        appendUnique(item);
+      }
+    }
+
+    // 3. Hợp nhất kho kết quả tức thì (0ms)
     for (const item of instantLocalResults) {
       appendUnique(item);
     }
 
     return merged;
-  }, [remoteResults, instantLocalResults, query]);
+  }, [remoteResults, instantLocalResults, query, parsedIntent.baseQuery]);
 
   // Apply filters in expanded mode
   const sortedAndFilteredResults = useMemo(() => {
-    if (debouncedQuery.trim().length < 2 || activeTypeFilter === "actor") {
+    if (!query.trim() || activeTypeFilter === "actor") {
       return [];
     }
 
@@ -306,7 +392,7 @@ export function SpotlightSearchModal({
     });
   }, [
     rawResults,
-    debouncedQuery,
+    query,
     activeTypeFilter,
     activeLangFilter,
     selectedGenreSlug,
@@ -341,8 +427,10 @@ export function SpotlightSearchModal({
     });
   }, [suggestions]);
 
-  const isSearching = debouncedQuery.trim().length >= 2;
-  const isQueryTooShort = query.trim().length === 1;
+  const activeQuery = query.trim();
+  const isSearching = activeQuery.length > 0;
+  const isQueryTooShort =
+    activeQuery.length === 1 && uniqueSearchResults.length === 0 && !isFetching;
 
   // Type counts for badges
   const seriesCount = useMemo(
@@ -516,6 +604,9 @@ export function SpotlightSearchModal({
               </button>
             </div>
           </div>
+
+          {/* Smart Intent Chips */}
+          <SmartIntentChips intent={parsedIntent} visible={isSearching} />
 
           {/* Compact Results Scroll Area */}
           <div
@@ -815,6 +906,9 @@ export function SpotlightSearchModal({
             </button>
           </div>
         </div>
+
+        {/* Smart Intent Chips */}
+        <SmartIntentChips intent={parsedIntent} visible={isSearching} />
 
         {/* Filter Bar */}
         <div className="flex shrink-0 flex-col justify-between gap-1.5 overflow-x-auto border-b border-white/[0.08] bg-[#141414] px-3 py-2 text-xs scrollbar-hide sm:flex-row sm:items-center sm:gap-2.5 sm:px-5 sm:py-3">

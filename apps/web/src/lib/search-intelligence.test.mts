@@ -183,3 +183,60 @@ test("finds season aliases without mixing different seasons", () => {
   assert.equal(rankSearchResults(films, "silo season 2")[0]?.slug, "silo-phan-2");
   assert.equal(rankSearchResults(films, "silo s1")[0]?.slug, "silo-phan-1");
 });
+
+test("ranks correct release year when query contains year intent", () => {
+  const films = dedupeFilmsBySource([
+    {
+      source: "kkphim",
+      items: [
+        { name: "Hành Tinh Cát", origin_name: "Dune", slug: "dune-2021", year: 2021, type: "single" },
+        { name: "Hành Tinh Cát: Phần Hai", origin_name: "Dune: Part Two", slug: "dune-part-two", year: 2024, type: "single" },
+      ],
+    },
+  ]);
+
+  const ranked2024 = rankSearchResults(films, "dune 2024");
+  assert.equal(ranked2024[0]?.slug, "dune-part-two");
+
+  const ranked2021 = rankSearchResults(films, "dune 2021");
+  assert.equal(ranked2021[0]?.slug, "dune-2021");
+});
+
+test("matches movies with typos (Typo Tolerance)", () => {
+  const films = dedupeFilmsBySource([
+    {
+      source: "kkphim",
+      items: [
+        { name: "Oppenheimer", origin_name: "Oppenheimer", slug: "oppenheimer", year: 2023, type: "single" },
+        { name: "Hố Đen Tử Thần", origin_name: "Interstellar", slug: "interstellar", year: 2014, type: "single" },
+      ],
+    },
+  ]);
+
+  // "oppenhimer" missing 'e'
+  const rankedOppenheimer = rankSearchResults(films, "oppenhimer");
+  assert.equal(rankedOppenheimer[0]?.slug, "oppenheimer");
+
+  // "interstelar" single 'l'
+  const rankedInterstellar = rankSearchResults(films, "interstelar");
+  assert.equal(rankedInterstellar[0]?.slug, "interstellar");
+});
+
+test("resolves popular movie and franchise acronyms", () => {
+  const films = dedupeFilmsBySource([
+    {
+      source: "kkphim",
+      items: [
+        { name: "Trò Chơi Vương Quyền", origin_name: "Game of Thrones", slug: "game-of-thrones", year: 2011, type: "series" },
+        { name: "Đại Chiến Titan", origin_name: "Attack on Titan", slug: "attack-on-titan", year: 2013, type: "hoat-hinh" },
+      ],
+    },
+  ]);
+
+  const rankedGot = rankSearchResults(films, "got");
+  assert.equal(rankedGot[0]?.slug, "game-of-thrones");
+
+  const rankedAot = rankSearchResults(films, "aot");
+  assert.equal(rankedAot[0]?.slug, "attack-on-titan");
+});
+

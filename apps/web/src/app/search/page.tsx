@@ -18,8 +18,10 @@ import {
   Filter,
   ChevronDown,
   Check,
+  Sparkles,
 } from "lucide-react";
 import { movieApi } from "@/lib/api";
+import { parseSearchIntent } from "@/lib/search-query-parser";
 import {
   FilmCard,
   FilmItem,
@@ -218,6 +220,7 @@ function SearchContent() {
   const country = searchParams.get("country") || "";
   const status = searchParams.get("status") || "";
   const sort = searchParams.get("sort") || "modified.time desc";
+  const parsedIntent = useMemo(() => parseSearchIntent(query), [query]);
   const activeFilters = useMemo(
     () => ({
       type: type || undefined,
@@ -547,7 +550,7 @@ function SearchContent() {
             />
           ) : (
             <>
-              <div className="border-b border-white/10 pb-3 flex items-center justify-between">
+              <div className="border-b border-white/10 pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
                 <p className="text-xs text-neutral-400 font-bold uppercase tracking-wider">
                   {query
                     ? lang === "en"
@@ -557,6 +560,48 @@ function SearchContent() {
                       ? `Filtered results (${films.length} films)`
                       : `Kết quả lọc phim (${films.length} phim)`}
                 </p>
+
+                {query && parsedIntent.hasStructuredIntent && (
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-[10px] font-semibold text-neutral-400 flex items-center gap-1">
+                      <Sparkles size={11} className="text-amber-400 animate-pulse" />
+                      Nhận diện:
+                    </span>
+                    {parsedIntent.extractedYear && (
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-400/15 text-amber-300 border border-amber-400/30">
+                        Năm {parsedIntent.extractedYear}
+                      </span>
+                    )}
+                    {parsedIntent.extractedSeason !== undefined && (
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-sky-400/15 text-sky-300 border border-sky-400/30">
+                        Phần {parsedIntent.extractedSeason}
+                      </span>
+                    )}
+                    {parsedIntent.extractedAudio && (
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-400/15 text-emerald-300 border border-emerald-400/30">
+                        {parsedIntent.extractedAudio === "thuyet-minh"
+                          ? "Thuyết Minh"
+                          : parsedIntent.extractedAudio === "long-tieng"
+                            ? "Lồng Tiếng"
+                            : "Vietsub"}
+                      </span>
+                    )}
+                    {parsedIntent.extractedType && (
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-400/15 text-purple-300 border border-purple-400/30">
+                        {parsedIntent.extractedType === "series"
+                          ? "Phim Bộ"
+                          : parsedIntent.extractedType === "single"
+                            ? "Phim Lẻ"
+                            : "Hoạt Hình"}
+                      </span>
+                    )}
+                    {parsedIntent.baseQuery && parsedIntent.baseQuery !== parsedIntent.cleanQuery && (
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-white/[0.06] text-neutral-300 border border-white/[0.1]">
+                        Tên: {parsedIntent.baseQuery}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
               <div
                 className={cn(
