@@ -14,6 +14,18 @@ import { TmdbArtwork } from '@/components/film/TmdbArtwork';
 import { resolveImageUrl, type FilmItem } from '@/components/film/FilmCard';
 import { buildArtworkCandidates } from '@/lib/image-cdn';
 import { getMovieLogo } from '@/lib/movie-logo-cache';
+import { CURATED_HERO_FRANCHISE_POOL } from '@/lib/curated-hero-pool';
+import {
+  CURATED_ACTION_HERO_POOL,
+  CURATED_SCIFI_HERO_POOL,
+  CURATED_WAR_HERO_POOL,
+  CURATED_VFX_HERO_POOL,
+} from '@/lib/curated-genre-pools';
+import {
+  CURATED_CHINESE_HERO_POOL,
+  CURATED_KOREAN_HERO_POOL,
+  CURATED_ANIME_HERO_POOL,
+} from '@/lib/curated-asian-hero';
 
 import 'swiper/css';
 import 'swiper/css/effect-coverflow';
@@ -73,9 +85,71 @@ function getRating(film: FilmItem) {
       film.imdb_rating ||
       film.tmdb?.vote_average ||
       film.vote_average ||
+      (film as any).rating ||
+      (film as any).tmdb_rating ||
       0,
   );
   return Number.isFinite(value) && value > 0 ? value.toFixed(1) : null;
+}
+
+/**
+ * Synchronous, zero-latency recommendation generator using local curated blockbuster pools.
+ * Provides instant left & right side cards on Frame 0 before any network request completes.
+ */
+function getInstantMatchingRecommendations(
+  film: FilmItem,
+  slug: string,
+  sessionSeed: string,
+): FilmItem[] {
+  const categories = (film.category || [])
+    .map((c) => (c.slug || c.name || '').toLowerCase())
+    .filter(Boolean);
+  const countries = (film.country || [])
+    .map((c) => (c.slug || c.name || '').toLowerCase())
+    .filter(Boolean);
+
+  const isAnimation =
+    film.type === 'hoathinh' ||
+    film.type === 'anime' ||
+    categories.some((c) => /hoat-hinh|anime|donghua|animation/i.test(c));
+
+  const isChinese =
+    countries.some((c) => /trung-quoc|china/i.test(c)) ||
+    (film.country || []).some((c) => /trung quốc|china/i.test(c.name || ''));
+
+  const isKorean =
+    countries.some((c) => /han-quoc|korea/i.test(c)) ||
+    (film.country || []).some((c) => /hàn quốc|korea/i.test(c.name || ''));
+
+  const isSciFi = categories.some((c) => /vien-tuong|sci-fi|khoa-hoc/i.test(c));
+  const isWar = categories.some((c) => /chien-tranh|lich-su|war/i.test(c));
+  const isAction = categories.some((c) => /hanh-dong|action|vo-thuat|kiem-hiep/i.test(c));
+
+  let matchedPool: FilmItem[] = [];
+
+  if (isAnimation) {
+    matchedPool = [...CURATED_ANIME_HERO_POOL];
+  } else if (isChinese) {
+    matchedPool = [...CURATED_CHINESE_HERO_POOL];
+  } else if (isKorean) {
+    matchedPool = [...CURATED_KOREAN_HERO_POOL];
+  } else if (isSciFi) {
+    matchedPool = [...CURATED_SCIFI_HERO_POOL, ...CURATED_VFX_HERO_POOL];
+  } else if (isWar) {
+    matchedPool = [...CURATED_WAR_HERO_POOL];
+  } else if (isAction) {
+    matchedPool = [...CURATED_ACTION_HERO_POOL];
+  }
+
+  // Combine with curated franchise pool for rich variety
+  const combined = [
+    ...matchedPool,
+    ...CURATED_HERO_FRANCHISE_POOL,
+  ].filter((item) => item.slug && item.slug !== slug);
+
+  const deduplicated = deduplicateSectionRow(combined);
+  const seed = hashSeed(`${sessionSeed}:${slug}:instant`);
+  return shuffleWithSeed(deduplicated.slice(0, 16), seed).slice(0, 10);
 }
 
 async function getCatalogFilms(request: () => Promise<any>): Promise<FilmItem[]> {
@@ -121,7 +195,6 @@ async function loadRelatedFilms(film: FilmItem, slug: string, sessionSeed: strin
 
   // 1. Core theme & category requests
   if (isAnimation) {
-    // Animation / Donghua / Anime: Always query dedicated anime/donghua endpoints
     requests.push(() => movieApi.getAnime(1));
     if (isChinese) {
       requests.push(() => movieApi.getByCountry('trung-quoc', 1));
@@ -161,28 +234,10 @@ async function loadRelatedFilms(film: FilmItem, slug: string, sessionSeed: strin
     (item) => item.slug && item.slug !== slug,
   );
 
-  // If candidate pool is still low, fetch thematic backup pool
+  // If candidate pool is still low, instantly backfill from curated pools without slow waterfall fetches
   if (candidatePool.length < 6) {
-    const backupRequest = isAnimation
-      ? () => movieApi.getAnime(1)
-      : isChinese
-        ? () => movieApi.getByCountry('trung-quoc', 1)
-        : isKorean
-          ? () => movieApi.getByCountry('han-quoc', 1)
-          : isSeries
-            ? () => movieApi.getSeries(1)
-            : () => movieApi.getSingle(1);
-
-    const backupFilms = await getCatalogFilms(backupRequest);
-    candidatePool = deduplicateSectionRow([...candidatePool, ...backupFilms]).filter(
-      (item) => item.slug && item.slug !== slug,
-    );
-  }
-
-  // If still empty, fall back to general latest catalog
-  if (candidatePool.length === 0) {
-    const latestFilms = await getCatalogFilms(() => movieApi.getLatest(1));
-    candidatePool = deduplicateSectionRow(latestFilms).filter(
+    const instantFallback = getInstantMatchingRecommendations(film, slug, sessionSeed);
+    candidatePool = deduplicateSectionRow([...candidatePool, ...instantFallback]).filter(
       (item) => item.slug && item.slug !== slug,
     );
   }
@@ -229,9 +284,9 @@ export function MobileRelatedCarousel({
   onActiveFilmChange,
 }: MobileRelatedCarouselProps) {
   const [reduceMotion, setReduceMotion] = useState(false);
-  const [activeSlideIndex, setActiveSlideIndex] = useState(1);
   const [sessionSeed] = useState(getRecommendationSessionSeed);
   const swiperRef = useRef<SwiperCore | null>(null);
+  const userInteractedRef = useRef(false);
 
   useEffect(() => {
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -241,12 +296,19 @@ export function MobileRelatedCarousel({
     return () => media.removeEventListener('change', syncMotionPreference);
   }, []);
 
+  // Compute instant matching recommendations synchronously (0ms) so left and right cards
+  // are already populated on Frame 0 when the component mounts.
+  const instantRelated = useMemo(
+    () => getInstantMatchingRecommendations(currentFilm, slug, sessionSeed),
+    [currentFilm, slug, sessionSeed],
+  );
+
   const genreKey = (currentFilm.category || [])
     .map((category) => category.slug)
     .filter(Boolean)
     .join(',');
 
-  const { data: relatedFilms = [] } = useQuery({
+  const { data: relatedFilms = instantRelated } = useQuery({
     queryKey: [
       'film-detail-mobile-related-v5',
       slug,
@@ -255,6 +317,7 @@ export function MobileRelatedCarousel({
       sessionSeed,
     ],
     queryFn: () => loadRelatedFilms(currentFilm, slug, sessionSeed),
+    initialData: instantRelated,
     enabled: enabled && Boolean(slug),
     staleTime: 10 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
@@ -272,18 +335,28 @@ export function MobileRelatedCarousel({
     [currentFilm, currentPosterUrl, slug],
   );
 
+  const effectiveRelated = useMemo(() => {
+    // If user has already interacted/swiped, preserve current slides to prevent layout shifting
+    if (userInteractedRef.current && instantRelated.length > 0) {
+      return instantRelated;
+    }
+    return relatedFilms.length > 0 ? relatedFilms : instantRelated;
+  }, [relatedFilms, instantRelated]);
+
   const films = useMemo(() => {
-    if (relatedFilms.length === 0) return [currentCard];
+    if (effectiveRelated.length === 0) return [currentCard];
 
     // Put the current film between two relevant recommendations so both side cards
     // are immediately visible and tilted when the carousel first mounts.
-    return [relatedFilms[0], currentCard, ...relatedFilms.slice(1)];
-  }, [currentCard, relatedFilms]);
+    return [effectiveRelated[0], currentCard, ...effectiveRelated.slice(1)];
+  }, [currentCard, effectiveRelated]);
 
   const originalIndex = useMemo(() => {
     const idx = films.findIndex((f) => f.slug === slug);
     return idx >= 0 ? idx : films.length > 1 ? 1 : 0;
   }, [films, slug]);
+
+  const [activeSlideIndex, setActiveSlideIndex] = useState(originalIndex);
 
   const onActiveFilmChangeRef = useRef(onActiveFilmChange);
   useEffect(() => {
@@ -295,13 +368,14 @@ export function MobileRelatedCarousel({
   // Reset when slug changes
   useEffect(() => {
     hasInitializedRef.current = false;
+    userInteractedRef.current = false;
     setActiveSlideIndex(originalIndex);
     if (swiperRef.current && !swiperRef.current.destroyed) {
       swiperRef.current.slideTo(originalIndex, 0);
     }
     const initialActive = films[originalIndex] || currentCard;
     onActiveFilmChangeRef.current?.(initialActive, true);
-  }, [slug, originalIndex, currentCard]);
+  }, [slug, originalIndex, currentCard, films]);
 
   // When films load with multiple items, ensure initial slide is aligned
   useEffect(() => {
@@ -315,13 +389,14 @@ export function MobileRelatedCarousel({
       onActiveFilmChangeRef.current?.(initialActive, true);
     }
   }, [films, originalIndex, currentCard]);
- 
-  // Preload backdrop banner & logo cho các phim liền kề (next/prev) để khi người dùng vuốt thì ảnh hiện ngay 0ms
+
+  // Preload poster, backdrop banner & logo for adjacent films (next/prev) for instant 0ms rendering
   useEffect(() => {
     if (typeof window === 'undefined' || films.length === 0) return;
 
     const indicesToPreload = [
       activeSlideIndex - 1,
+      activeSlideIndex,
       activeSlideIndex + 1,
       activeSlideIndex + 2,
     ].filter((idx) => idx >= 0 && idx < films.length);
@@ -330,7 +405,28 @@ export function MobileRelatedCarousel({
       const target = films[idx];
       if (!target) return;
 
-      // 1. Preload backdrop banner
+      // 1. Preload POSTER image (Critical for side carousel cards)
+      const rawPoster =
+        (target as any).artwork?.poster?.w500 ||
+        ((target as any).tmdb?.poster_path
+          ? `https://image.tmdb.org/t/p/w500${(target as any).tmdb.poster_path}`
+          : null) ||
+        resolveImageUrl(target.poster_url, target.thumb_url);
+
+      if (rawPoster) {
+        const posterCandidates = buildArtworkCandidates(
+          [rawPoster, resolveImageUrl(target.thumb_url, target.poster_url)],
+          'poster',
+          { includeWsrvForTmdb: true, includeAlternatePhimimgPath: true },
+        );
+        if (posterCandidates[0]) {
+          const posterImg = new Image();
+          posterImg.decoding = 'async';
+          posterImg.src = posterCandidates[0];
+        }
+      }
+
+      // 2. Preload backdrop banner
       const backdropCandidates = buildArtworkCandidates(
         [
           (target as any).artwork?.backdrop?.w1280,
@@ -343,10 +439,11 @@ export function MobileRelatedCarousel({
 
       if (backdropCandidates[0]) {
         const img = new Image();
+        img.decoding = 'async';
         img.src = backdropCandidates[0];
       }
 
-      // 2. Preload logo nếu có trong cache hoặc artwork
+      // 3. Preload logo nếu có trong cache hoặc artwork
       const logoPath =
         (target as any).artwork?.logo?.w500 ||
         (target as any).titleLogo ||
@@ -360,6 +457,7 @@ export function MobileRelatedCarousel({
         });
         if (logoCandidates[0]) {
           const logoImg = new Image();
+          logoImg.decoding = 'async';
           logoImg.src = logoCandidates[0];
         }
       }
@@ -397,6 +495,7 @@ export function MobileRelatedCarousel({
   }, []);
 
   const handleSlideChange = (swiper: SwiperCore) => {
+    userInteractedRef.current = true;
     const newIdx = swiper.activeIndex;
     setActiveSlideIndex(newIdx);
     const active = films[newIdx] || currentCard;
@@ -431,25 +530,27 @@ export function MobileRelatedCarousel({
         centeredSlides
         slidesPerView="auto"
         initialSlide={originalIndex}
-        speed={reduceMotion ? 0 : 420}
-        threshold={8}
-        resistanceRatio={0.75}
+        speed={reduceMotion ? 0 : 360}
+        threshold={5}
+        touchRatio={1.1}
+        touchAngle={45}
+        resistanceRatio={0.85}
         preventInteractionOnTransition={false}
         grabCursor
         watchSlidesProgress
         loop={false}
         autoplay={false}
         allowTouchMove={true}
-        lazyPreloadPrevNext={2}
+        lazyPreloadPrevNext={3}
         onSlideChange={handleSlideChange}
         onSlideChangeTransitionEnd={handleSlideTransitionEnd}
         coverflowEffect={{
-          rotate: 22, // Tilted 3D perspective angle (đổ nghiêng)
-          stretch: -14, // Tight spacing so side tilted cards are visible
-          depth: 130, // 3D depth perception
+          rotate: 18, // Refined 3D tilt perspective: clear artwork readability and elegant depth
+          stretch: -14, // Tight spacing keeps both side cards visible within portrait viewport
+          depth: 110, // 3D depth perception without clipping
           modifier: 1,
-          scale: 0.84, // Center card prominent
-          slideShadows: false,
+          scale: 0.86, // Balanced focal scale for center card vs tilted side cards
+          slideShadows: false, // Omit DOM shadow elements to preserve 60/120fps GPU performance
         }}
         className="mobile-related-swiper !overflow-visible px-1 [perspective:1200px]"
         aria-label="Vuốt để xem poster phim gợi ý cùng chủ đề"
@@ -459,6 +560,7 @@ export function MobileRelatedCarousel({
           const rating = getRating(film);
           const isCurrentFilm = film.slug === slug;
           const isActive = index === activeSlideIndex;
+          const isAdjacent = Math.abs(index - activeSlideIndex) <= 1;
 
           const poster = (
             <>
@@ -467,7 +569,8 @@ export function MobileRelatedCarousel({
                 kind="poster"
                 alt={title}
                 sizes="(max-width: 639px) 58vw, 228px"
-                priority={Math.abs(index - activeSlideIndex) <= 1}
+                priority={isAdjacent}
+                loadImmediately={isAdjacent}
                 allowTitleLookup={false}
                 className="absolute inset-0 h-full w-full object-cover"
               />
@@ -492,7 +595,7 @@ export function MobileRelatedCarousel({
           return (
             <SwiperSlide
               key={`${isCurrentFilm ? 'current' : 'related'}-${film.slug}-${index}`}
-              className="mobile-related-slide !w-[58vw] !max-w-[228px] !min-w-[196px] transform-gpu transition-all duration-300 ease-out motion-reduce:transition-none [&:not(.swiper-slide-active)]:opacity-75"
+              className="mobile-related-slide !w-[58vw] !max-w-[228px] !min-w-[196px] transform-gpu will-change-transform contain-paint transition-opacity duration-300 ease-out motion-reduce:transition-none [&:not(.swiper-slide-active)]:opacity-75"
             >
               <article>
                 {isCurrentFilm ? (
@@ -503,7 +606,7 @@ export function MobileRelatedCarousel({
                     aria-current="true"
                     className={`relative block aspect-[2/3] w-full overflow-hidden rounded-[22px] border ${
                       isActive ? 'border-white/40 ring-1 ring-white/20' : 'border-white/15'
-                    } bg-[#111318] shadow-[0_24px_70px_rgba(0,0,0,0.85)] outline-none transition-transform duration-300 active:scale-[0.985]`}
+                    } bg-[#111318] shadow-[0_24px_70px_rgba(0,0,0,0.85)] outline-none transition-colors duration-200 active:scale-[0.985]`}
                   >
                     {poster}
                   </button>
@@ -511,13 +614,14 @@ export function MobileRelatedCarousel({
                   <div
                     onClick={() => {
                       if (!isActive && swiperRef.current) {
+                        userInteractedRef.current = true;
                         emitActiveFilmChange(film, film.slug === slug, true);
                         swiperRef.current.slideTo(index);
                       }
                     }}
                     className={`relative block aspect-[2/3] overflow-hidden rounded-[22px] border ${
                       isActive ? 'border-white/40 ring-1 ring-white/20' : 'border-white/15'
-                    } bg-[#111318] shadow-[0_20px_50px_rgba(0,0,0,0.75)] outline-none transition-all duration-300 active:scale-[0.985] cursor-pointer`}
+                    } bg-[#111318] shadow-[0_20px_50px_rgba(0,0,0,0.75)] outline-none transition-colors duration-200 active:scale-[0.985] cursor-pointer`}
                   >
                     {poster}
                   </div>
