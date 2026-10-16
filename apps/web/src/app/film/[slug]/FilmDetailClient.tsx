@@ -75,9 +75,13 @@ import { watchProgressStorage } from '@/lib/watch-progress';
 import { useOmdb, type OmdbData } from '@/hooks/useOmdb';
 import type { ServerTmdbResult } from '@/lib/server/movie-tmdb-server';
 
-import { MobileRelatedCarousel } from '@/components/film/MobileRelatedCarousel';
 import { EpisodeNotificationBanner } from '@/components/film/EpisodeNotificationBanner';
 import { MovieRatingBadges } from '@/components/film/MovieRatingBadges';
+
+const MobileRelatedCarousel = dynamic(
+  () => import('@/components/film/MobileRelatedCarousel').then((module) => module.MobileRelatedCarousel),
+  { ssr: false },
+);
 
 const TrailerModal = dynamic(
   () => import('@/components/film/TrailerModal').then((module) => module.TrailerModal),
