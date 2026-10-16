@@ -336,7 +336,7 @@ function AnimatedNavbarLogo({ onPrefetch }: { onPrefetch?: () => void }) {
   return (
     <Link
       href="/"
-      prefetch={false}
+      prefetch
       onMouseEnter={onPrefetch}
       onPointerDown={onPrefetch}
       onTouchStart={onPrefetch}
@@ -500,24 +500,25 @@ export function Navbar() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const prefetchIdle = () => {
+      try {
+        navigation.prefetch("/");
+        navigation.prefetch("/films");
+        navigation.prefetch("/genres");
+      } catch {}
       NAV_LINKS.forEach((link) => {
         try {
           navigation.prefetch(link.href);
         } catch {}
       });
-      try {
-        navigation.prefetch("/films");
-        navigation.prefetch("/genres");
-      } catch {}
     };
 
     if ("requestIdleCallback" in window) {
       const handle = (window as any).requestIdleCallback(prefetchIdle, {
-        timeout: 6000,
+        timeout: 2000,
       });
       return () => (window as any).cancelIdleCallback(handle);
     } else {
-      const timer = setTimeout(prefetchIdle, 5000);
+      const timer = setTimeout(prefetchIdle, 1200);
       return () => clearTimeout(timer);
     }
   }, [navigation]);
@@ -976,7 +977,7 @@ export function Navbar() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  prefetch={false}
+                  prefetch
                   onMouseEnter={() => prefetchNav(link.href)}
                   onTouchStart={() => prefetchNav(link.href)}
                   onPointerDown={() => prefetchNav(link.href)}
@@ -1311,14 +1312,9 @@ export function Navbar() {
                         </div>
 
                       <div className="py-1 space-y-0.5">
-                        <DropdownMenuItem
-                          onClick={() =>
-                            navigation.push(
-                              user.username
-                                ? `/user/${encodeURIComponent(user.username)}`
-                                : "/user",
-                            )
-                          }
+                        <Link
+                          href={user.username ? `/user/${encodeURIComponent(user.username)}` : "/user"}
+                          prefetch={false}
                           className="hover:bg-white/12 hover:backdrop-blur-md hover:text-white transition-all rounded-lg cursor-pointer flex items-center py-1.5 px-2.5 text-xs font-medium"
                         >
                           <User
@@ -1326,9 +1322,10 @@ export function Navbar() {
                             className="mr-2 text-neutral-300 shrink-0"
                           />
                           <span>{t("nav.profile")}</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => navigation.push("/watchlist")}
+                        </Link>
+                        <Link
+                          href="/watchlist"
+                          prefetch={false}
                           className="hover:bg-white/12 hover:backdrop-blur-md hover:text-white transition-all rounded-lg cursor-pointer flex items-center py-1.5 px-2.5 text-xs font-medium"
                         >
                           <Bookmark
@@ -1336,9 +1333,10 @@ export function Navbar() {
                             className="mr-2 text-neutral-300 shrink-0"
                           />
                           <span>{t("nav.watchlist")}</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => navigation.push("/history")}
+                        </Link>
+                        <Link
+                          href="/history"
+                          prefetch={false}
                           className="hover:bg-white/12 hover:backdrop-blur-md hover:text-white transition-all rounded-lg cursor-pointer flex items-center py-1.5 px-2.5 text-xs font-medium"
                         >
                           <History
@@ -1346,9 +1344,10 @@ export function Navbar() {
                             className="mr-2 text-neutral-300 shrink-0"
                           />
                           <span>{t("nav.history")}</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => navigation.push("/settings")}
+                        </Link>
+                        <Link
+                          href="/settings"
+                          prefetch={false}
                           className="hover:bg-white/12 hover:backdrop-blur-md hover:text-white transition-all rounded-lg cursor-pointer flex items-center py-1.5 px-2.5 text-xs font-medium"
                         >
                           <Settings
@@ -1356,7 +1355,7 @@ export function Navbar() {
                             className="mr-2 text-neutral-300 shrink-0"
                           />
                           <span>Cài đặt</span>
-                        </DropdownMenuItem>
+                        </Link>
                       </div>
 
                       {/* Section 2: Preferences & Settings */}
