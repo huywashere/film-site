@@ -20,7 +20,8 @@ async function fetchGatewayBootstrap(
       },
     );
     if (!response.ok) return null;
-    const payload = (await response.json()) as MoviePagePayload;
+    const rawPayload = (await response.json()) as MoviePagePayload;
+    const payload = addSignedHlsFallbacksInPayload(rawPayload) as MoviePagePayload;
     return movieFromPayload(payload) ? payload : null;
   } catch {
     return null;

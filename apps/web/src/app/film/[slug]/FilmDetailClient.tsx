@@ -1301,7 +1301,7 @@ export default function FilmDetailPage({
     queryKey: ['film', slug],
     queryFn: () => movieApi.getDetail(slug).then((r) => r.data),
     initialData: initialData || undefined,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 15,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     retry: 1,

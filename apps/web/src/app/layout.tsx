@@ -146,14 +146,18 @@ export default function RootLayout({
         <link rel="icon" href="/flexphim-logo.svg" type="image/svg+xml" />
         <link rel="alternate icon" href="/flexphim-logo.png" type="image/png" />
         <link rel="apple-touch-icon" href="/flexphim-logo.png" />
+        <link rel="preconnect" href="https://wsrv.nl" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://wsrv.nl" />
-        <link rel="dns-prefetch" href="https://img.phimapi.com" />
-        <link rel="preconnect" href="https://phimimg.com" />
+        <link rel="preconnect" href="https://image.tmdb.org" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://image.tmdb.org" />
+        <link rel="preconnect" href="https://phimimg.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://phimimg.com" />
+        <link rel="dns-prefetch" href="https://img.phimapi.com" />
         <link rel="dns-prefetch" href="https://img.ophim.live" />
         <link rel="dns-prefetch" href="https://images.nguonc.com" />
-        <link rel="preconnect" href="https://image.tmdb.org" />
-        <link rel="dns-prefetch" href="https://image.tmdb.org" />
+        <link rel="dns-prefetch" href="https://vsmov.com" />
+        <link rel="dns-prefetch" href="https://vip.opstream16.com" />
+        <link rel="dns-prefetch" href="https://s1.phim128.tv" />
         <link
           rel="preload"
           as="image"

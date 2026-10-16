@@ -1795,7 +1795,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     queryFn: () => movieApi.getDetail(sourceSlug, preferredSource).then((r) => r.data),
     initialData: !preferredSource && sourceSlug === slug ? initialData || undefined : undefined,
     enabled: !!sourceSlug,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 15,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     retry: 1,
