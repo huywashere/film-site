@@ -2106,6 +2106,7 @@ export default function HeroBanner({
 
       {/* Vignette Dark Gradient Overlay (Edge-to-Edge Seamless Obsidian Fade) */}
       <div
+        data-hero-vignette="true"
         className="absolute inset-0 z-10 pointer-events-none"
         style={{
           background: `

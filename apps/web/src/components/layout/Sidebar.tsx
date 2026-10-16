@@ -315,6 +315,7 @@ export function Sidebar() {
     <>
       {/* ── VERTICALLY CENTERED SLIM SIDEBAR ── */}
       <aside
+        data-desktop-sidebar="true"
         className={cn(
           cardFont.className,
           'hidden lg:flex fixed left-0 top-[68px] sm:top-[72px] md:top-16 bottom-0 z-[60] flex-col items-center justify-center transition-all duration-300 ease-in-out pointer-events-none',

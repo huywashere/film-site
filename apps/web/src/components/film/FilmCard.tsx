@@ -302,6 +302,7 @@ function FilmCardComponent({
 
   return (
     <div
+      data-film-card="true"
       style={width ? { width } : undefined}
       className={cn(
         `${cardFont.className} group/card relative flex flex-col select-none [contain:layout]`,
@@ -477,12 +478,14 @@ function FilmCardComponent({
             onMouseEnter={handlePrefetch}
             onTouchStart={handlePrefetch}
             onPointerDown={handlePrefetch}
+            data-film-title="true"
             className="block truncate whitespace-nowrap text-[11px] font-extrabold leading-[1.3] tracking-[-0.015em] text-[#f2f2f3] transition-colors hover:text-white sm:text-[13px]"
           >
             {title}
           </Link>
 
-          <div className="mt-[2px] flex items-center justify-between text-[9.5px] font-medium leading-tight text-[#777981] sm:text-[11px]">
+          <div data-film-meta="true"
+            className="mt-[2px] flex items-center justify-between text-[9.5px] font-medium leading-tight text-[#777981] sm:text-[11px]">
             <span className="truncate transition-colors group-hover/card:text-neutral-400">
               {film.origin_name || `Năm ${film.year || 2026}`}
             </span>

@@ -1,37 +1,35 @@
 /*
  * FlexPhim light theme compatibility layer.
- *
- * The header and artwork surfaces are intentionally excluded from the light
- * palette. They stay cinematic and use the same glass treatment as dark mode.
+ * Synchronizes all home page sections, carousels, cards, navigation, and footer.
  */
 
 :where(html.light, html[data-theme="light"]) {
   color-scheme: light;
-  --background: #f3f5f8 !important;
-  --background-rgb: 243, 245, 248 !important;
-  --foreground: #172033 !important;
+  --background: #f4f6f9 !important;
+  --background-rgb: 244, 246, 249 !important;
+  --foreground: #0f172a !important;
   --card: #ffffff !important;
-  --card-foreground: #172033 !important;
+  --card-foreground: #0f172a !important;
   --popover: #ffffff !important;
-  --popover-foreground: #172033 !important;
-  --primary: #d62f45;
+  --popover-foreground: #0f172a !important;
+  --primary: #7c3aed;
   --primary-foreground: #ffffff;
-  --secondary: #e9edf2;
-  --secondary-foreground: #253047;
-  --muted: #edf0f4;
-  --muted-foreground: #68758a;
-  --accent: #fce9ed;
-  --accent-foreground: #b72037;
-  --border: rgba(23, 32, 51, 0.12);
-  --input: rgba(23, 32, 51, 0.18);
-  --ring: rgba(214, 47, 69, 0.35);
-  --light-canvas: #f3f5f8;
+  --secondary: #e2e8f0;
+  --secondary-foreground: #1e293b;
+  --muted: #edf2f7;
+  --muted-foreground: #64748b;
+  --accent: #f5f3ff;
+  --accent-foreground: #6d28d9;
+  --border: rgba(15, 23, 42, 0.08);
+  --input: rgba(15, 23, 42, 0.14);
+  --ring: rgba(124, 58, 237, 0.35);
+  --light-canvas: #f4f6f9;
   --light-surface: #ffffff;
   --light-surface-raised: #f8fafc;
-  --light-text: #172033;
-  --light-text-muted: #68758a;
-  --light-border: rgba(23, 32, 51, 0.12);
-  --light-shadow: 0 16px 40px rgba(30, 43, 64, 0.1);
+  --light-text: #0f172a;
+  --light-text-muted: #64748b;
+  --light-border: rgba(15, 23, 42, 0.08);
+  --light-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
 }
 
 :where(html.light, html[data-theme="light"]) body,
@@ -40,11 +38,22 @@
   color: var(--light-text);
 }
 
-/* Let the navbar merge into the hero at the top in both themes. */
+/* ── 1. HERO BANNER SEAMLESS LIGHT BLEND ── */
+:where(html.light, html[data-theme="light"]) [data-hero-banner] {
+  background-color: #0c0d14 !important;
+}
+
+:where(html.light, html[data-theme="light"]) [data-hero-banner] [data-hero-vignette] {
+  background:
+    radial-gradient(circle at center, transparent 30%, rgba(15, 23, 42, 0.25) 70%, rgba(15, 23, 42, 0.55) 100%),
+    linear-gradient(to top, #f4f6f9 0%, rgba(244, 246, 249, 0.96) 12%, rgba(244, 246, 249, 0.6) 26%, rgba(12, 13, 20, 0.2) 48%, transparent 72%),
+    linear-gradient(to bottom, rgba(10, 12, 16, 0.75) 0%, rgba(10, 12, 16, 0.2) 16%, transparent 32%) !important;
+}
+
+/* ── 2. SCROLLED NAVBAR IN LIGHT THEME ── */
 :where(html.light, html[data-theme="light"]) header[data-site-header] {
   color: #f8fafc !important;
   background-color: transparent !important;
-  background-image: none !important;
   border-color: transparent !important;
   box-shadow: none !important;
   backdrop-filter: none !important;
@@ -53,97 +62,325 @@
 
 :where(html.light, html[data-theme="light"])
   header[data-site-header][data-scrolled="true"] {
-  background-color: rgba(8, 9, 12, 0.8) !important;
-  background-image: none !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.045),
-    0 10px 34px rgba(0, 0, 0, 0.18) !important;
-  backdrop-filter: blur(24px) saturate(150%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(150%) !important;
+  background-color: rgba(255, 255, 255, 0.88) !important;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08) !important;
+  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.06) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
 }
 
 :where(html.light, html[data-theme="light"])
-  header[data-site-header]
+  header[data-site-header][data-scrolled="true"]
   :is(
-    .text-white,
-    .text-neutral-200,
-    .text-neutral-300,
-    .text-neutral-400,
-    .text-neutral-500
+    button.text-neutral-300,
+    a.text-neutral-300,
+    button.text-neutral-400,
+    a.text-neutral-400,
+    span.text-neutral-300,
+    span.text-neutral-200
   ) {
-  color: #e5e7eb !important;
+  color: #1e293b !important;
 }
 
 :where(html.light, html[data-theme="light"])
-  header[data-site-header]
-  :is([class*="bg-black/40"], [class*="bg-black/60"]) {
-  background-color: rgba(0, 0, 0, 0.3) !important;
-  border-color: rgba(255, 255, 255, 0.12) !important;
-}
-
-/* The main hero and the two editorial feature panels stay cinematic. */
-:where(html.light, html[data-theme="light"]) [data-hero-banner],
-:where(html.light, html[data-theme="light"]) [data-cinematic-section] {
-  color: #ffffff;
-}
-
-:where(html.light, html[data-theme="light"]) [data-hero-banner] {
-  background-color: #08090c !important;
-}
-
-/* Catalog typography and controls on the matte light canvas. */
-:where(html.light, html[data-theme="light"])
-  [data-home-content]
-  :is([data-film-section-title], [data-top10-title], [data-history-title]) {
-  color: var(--light-text) !important;
+  header[data-site-header][data-scrolled="true"]
+  :is(button, a):hover:not([class*="bg-violet"]):not([class*="bg-primary"]) {
+  color: #7c3aed !important;
 }
 
 :where(html.light, html[data-theme="light"])
-  [data-home-content]
-  :is([data-film-section-action], [data-history-action]) {
-  color: #526078 !important;
-  background: rgba(255, 255, 255, 0.72) !important;
-  border-color: var(--light-border) !important;
-}
-
-:where(html.light, html[data-theme="light"]) [data-film-card] h4 {
-  color: var(--light-text);
-}
-
-:where(html.light, html[data-theme="light"]) [data-film-card] h4:hover,
-:where(html.light, html[data-theme="light"]) [data-film-card]:hover h4 {
-  color: #b72037;
-}
-
-:where(html.light, html[data-theme="light"]) [data-film-card] [data-film-meta] {
-  color: var(--light-text-muted);
+  header[data-site-header][data-scrolled="true"]
+  #navbar-search-btn {
+  background-color: rgba(15, 23, 42, 0.05) !important;
+  border-color: rgba(15, 23, 42, 0.12) !important;
+  color: #475569 !important;
 }
 
 :where(html.light, html[data-theme="light"])
-  [data-top10-row]
-  [data-rank-title] {
-  color: #26344c !important;
-  text-shadow: 0 2px 8px rgba(255, 255, 255, 0.95) !important;
+  header[data-site-header][data-scrolled="true"]
+  #navbar-search-btn:hover {
+  background-color: rgba(15, 23, 42, 0.08) !important;
+  border-color: rgba(124, 58, 237, 0.35) !important;
 }
 
-:where(html.light, html[data-theme="light"]) [data-top10-row] [data-row-nav] {
-  color: rgba(38, 52, 76, 0.5) !important;
+:where(html.light, html[data-theme="light"])
+  header[data-site-header][data-scrolled="true"]
+  #navbar-search-btn span,
+:where(html.light, html[data-theme="light"])
+  header[data-site-header][data-scrolled="true"]
+  #navbar-search-btn kbd {
+  color: #64748b !important;
 }
 
+/* ── 3. HOME CONTENT SECTION TITLES ── */
+:where(html.light, html[data-theme="light"]) [data-home-content] h2,
+:where(html.light, html[data-theme="light"]) [data-home-content] [data-film-section-title],
+:where(html.light, html[data-theme="light"]) [data-home-content] [data-top10-title],
+:where(html.light, html[data-theme="light"]) [data-home-content] [data-history-title],
+:where(html.light, html[data-theme="light"]) [data-cinematic-section] h2 {
+  color: #0f172a !important;
+}
+
+/* ── 4. "XEM TẤT CẢ >" ACTION LINKS ── */
+:where(html.light, html[data-theme="light"]) [data-home-content] [data-film-section-action],
+:where(html.light, html[data-theme="light"]) [data-home-content] [data-history-action],
+:where(html.light, html[data-theme="light"]) [data-home-content] .group\/link,
+:where(html.light, html[data-theme="light"]) [data-cinematic-section] .group\/link {
+  color: #64748b !important;
+  background: transparent !important;
+  border: none !important;
+}
+
+:where(html.light, html[data-theme="light"]) [data-home-content] [data-film-section-action]:hover,
+:where(html.light, html[data-theme="light"]) [data-home-content] [data-history-action]:hover,
+:where(html.light, html[data-theme="light"]) [data-home-content] .group\/link:hover,
+:where(html.light, html[data-theme="light"]) [data-cinematic-section] .group\/link:hover {
+  color: #7c3aed !important;
+}
+
+:where(html.light, html[data-theme="light"]) [data-home-content] [data-film-section-action] svg,
+:where(html.light, html[data-theme="light"]) [data-home-content] [data-history-action] svg,
+:where(html.light, html[data-theme="light"]) [data-home-content] .group\/link svg,
+:where(html.light, html[data-theme="light"]) [data-cinematic-section] .group\/link svg {
+  color: #94a3b8 !important;
+}
+
+:where(html.light, html[data-theme="light"]) [data-home-content] [data-film-section-action]:hover svg,
+:where(html.light, html[data-theme="light"]) [data-home-content] [data-history-action]:hover svg,
+:where(html.light, html[data-theme="light"]) [data-home-content] .group\/link:hover svg,
+:where(html.light, html[data-theme="light"]) [data-cinematic-section] .group\/link:hover svg {
+  color: #7c3aed !important;
+}
+
+/* ── 5. DASH PAGINATION INDICATORS ── */
+:where(html.light, html[data-theme="light"]) [data-film-section] span[class*="bg-white/85"] {
+  background-color: #0f172a !important;
+}
+:where(html.light, html[data-theme="light"]) [data-film-section] span[class*="bg-white/20"] {
+  background-color: rgba(15, 23, 42, 0.2) !important;
+}
+
+:where(html.light, html[data-theme="light"]) [data-dash-pagination] button[class*="bg-white"]:not([class*="bg-white/"]) {
+  background-color: #0f172a !important;
+}
+:where(html.light, html[data-theme="light"]) [data-dash-pagination] button[class*="bg-white/"] {
+  background-color: rgba(15, 23, 42, 0.22) !important;
+}
+:where(html.light, html[data-theme="light"]) [data-dash-pagination] button[class*="bg-white/"]:hover {
+  background-color: #0f172a !important;
+}
+
+/* ── 6. CAROUSEL NEXT/PREV NAVIGATION BUTTONS ── */
+:where(html.light, html[data-theme="light"]) [data-film-section] button[aria-label*="Xem phim"],
+:where(html.light, html[data-theme="light"]) [data-continue-watching] button[aria-label*="slide"] {
+  color: #64748b !important;
+}
+
+:where(html.light, html[data-theme="light"]) [data-film-section] button[aria-label*="Xem phim"]:hover,
+:where(html.light, html[data-theme="light"]) [data-continue-watching] button[aria-label*="slide"]:hover {
+  color: #0f172a !important;
+}
+
+:where(html.light, html[data-theme="light"]) [data-top10-row] button[aria-label*="slide"],
+:where(html.light, html[data-theme="light"]) [data-cinematic-section] button[aria-label="Previous"],
+:where(html.light, html[data-theme="light"]) [data-cinematic-section] button[aria-label="Next"] {
+  background-color: #ffffff !important;
+  border-color: rgba(15, 23, 42, 0.12) !important;
+  color: #334155 !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05) !important;
+}
+
+:where(html.light, html[data-theme="light"]) [data-top10-row] button[aria-label*="slide"]:hover,
+:where(html.light, html[data-theme="light"]) [data-cinematic-section] button[aria-label="Previous"]:hover,
+:where(html.light, html[data-theme="light"]) [data-cinematic-section] button[aria-label="Next"]:hover {
+  background-color: #f8fafc !important;
+  border-color: rgba(15, 23, 42, 0.25) !important;
+  color: #0f172a !important;
+}
+
+/* ── 7. FILM CARDS (ACROSS ALL ROWS) ── */
+:where(html.light, html[data-theme="light"]) [data-film-card] [data-film-title],
+:where(html.light, html[data-theme="light"]) [data-film-card] a.truncate,
+:where(html.light, html[data-theme="light"]) [data-film-card] h4,
+:where(html.light, html[data-theme="light"]) [data-film-card] h3:not([class*="drop-shadow"]) {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+
+:where(html.light, html[data-theme="light"]) [data-film-card] [data-film-title]:hover,
+:where(html.light, html[data-theme="light"]) [data-film-card] a.truncate:hover,
+:where(html.light, html[data-theme="light"]) [data-film-card]:hover [data-film-title] {
+  color: #7c3aed !important;
+}
+
+:where(html.light, html[data-theme="light"]) [data-film-card] [data-film-meta],
+:where(html.light, html[data-theme="light"]) [data-film-card] span.truncate {
+  color: #64748b !important;
+}
+
+:where(html.light, html[data-theme="light"]) [data-film-card] > div > div.rounded-\[8px\] {
+  border-color: rgba(15, 23, 42, 0.08) !important;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05) !important;
+}
+
+/* ── 8. TOP 10 RANKED ROW ── */
+:where(html.light, html[data-theme="light"]) [data-top10-row] [data-top10-title] {
+  color: #0f172a !important;
+}
+
+:where(html.light, html[data-theme="light"]) [data-top10-row] [data-rank-title] {
+  color: #0f172a !important;
+}
+
+:where(html.light, html[data-theme="light"]) [data-top10-row] a:hover [data-rank-title],
+:where(html.light, html[data-theme="light"]) [data-top10-row] [data-rank-title]:hover {
+  color: #7c3aed !important;
+}
+
+:where(html.light, html[data-theme="light"]) [data-top10-row] p.text-neutral-400 {
+  color: #64748b !important;
+}
+
+/* ── 9. CONTINUE WATCHING ROW ── */
+:where(html.light, html[data-theme="light"]) [data-continue-watching] [data-history-title],
+:where(html.light, html[data-theme="light"]) [data-continue-watching] [data-continue-title] {
+  color: #0f172a !important;
+}
+
+:where(html.light, html[data-theme="light"]) [data-continue-watching] [data-continue-title]:hover,
+:where(html.light, html[data-theme="light"]) [data-continue-watching] a:hover [data-continue-title] {
+  color: #e50914 !important;
+}
+
+:where(html.light, html[data-theme="light"]) [data-continue-watching] .text-neutral-400 {
+  color: #64748b !important;
+}
+
+:where(html.light, html[data-theme="light"]) [data-continue-watching] .bg-neutral-800 {
+  background-color: #e2e8f0 !important;
+}
+
+/* ── 10. LANDSCAPE SPOTLIGHT ROW (PHIM MỚI CẬP NHẬT) ── */
+:where(html.light, html[data-theme="light"]) [data-cinematic-section] a[class*="text-white"]:not([class*="bg-"]):not([class*="rounded-xl"]) {
+  color: #0f172a !important;
+}
+
+:where(html.light, html[data-theme="light"]) [data-cinematic-section] a[class*="text-white"]:not([class*="bg-"]):not([class*="rounded-xl"]):hover {
+  color: #7c3aed !important;
+}
+
+:where(html.light, html[data-theme="light"]) [data-cinematic-section] p.text-neutral-400 {
+  color: #64748b !important;
+}
+
+/* ── 11. CURATED SPOTLIGHT SECTION (KHOA HỌC VIỄN TƯỞNG) ── */
+:where(html.light, html[data-theme="light"]) [data-cinematic-section] aside.bg-background {
+  background-color: #ffffff !important;
+  border-color: rgba(15, 23, 42, 0.08) !important;
+}
+
+:where(html.light, html[data-theme="light"]) [data-cinematic-section] aside p.text-white {
+  color: #0f172a !important;
+}
+
+:where(html.light, html[data-theme="light"]) [data-cinematic-section] aside p.text-neutral-500 {
+  color: #64748b !important;
+}
+
+:where(html.light, html[data-theme="light"]) [data-cinematic-section] aside h4.text-neutral-200 {
+  color: #1e293b !important;
+}
+
+:where(html.light, html[data-theme="light"]) [data-cinematic-section] aside h4.text-neutral-200:hover,
+:where(html.light, html[data-theme="light"]) [data-cinematic-section] aside button:hover h4.text-neutral-200 {
+  color: #ea580c !important;
+}
+
+:where(html.light, html[data-theme="light"]) [data-cinematic-section] aside p.text-neutral-600 {
+  color: #64748b !important;
+}
+
+:where(html.light, html[data-theme="light"]) [data-cinematic-section] aside button {
+  border-color: rgba(15, 23, 42, 0.08) !important;
+}
+
+:where(html.light, html[data-theme="light"]) [data-cinematic-section] aside button:hover {
+  background-color: rgba(248, 250, 252, 0.8) !important;
+}
+
+/* ── 12. WEEKLY CURATED SHOWCASE ── */
+:where(html.light, html[data-theme="light"]) [data-cinematic-section] .group\/billboard {
+  border-color: rgba(15, 23, 42, 0.12) !important;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.1) !important;
+}
+
+/* ── 13. VERTICAL DESKTOP SIDEBAR ── */
+:where(html.light, html[data-theme="light"]) aside[data-desktop-sidebar] button[aria-label="Thu gọn thanh điều hướng"] {
+  color: #64748b !important;
+}
+
+:where(html.light, html[data-theme="light"]) aside[data-desktop-sidebar] button[aria-label="Thu gọn thanh điều hướng"]:hover {
+  color: #7c3aed !important;
+  background-color: rgba(124, 58, 237, 0.1) !important;
+}
+
+:where(html.light, html[data-theme="light"]) aside[data-desktop-sidebar] a:not([class*="bg-violet-600"]):not([class*="from-cyan-500"]) svg {
+  color: #475569 !important;
+}
+
+:where(html.light, html[data-theme="light"]) aside[data-desktop-sidebar] a:not([class*="bg-violet-600"]):not([class*="from-cyan-500"]):hover svg {
+  color: #7c3aed !important;
+}
+
+:where(html.light, html[data-theme="light"]) aside[data-desktop-sidebar] a:not([class*="bg-violet-600"]):not([class*="from-cyan-500"]):hover span.bg-transparent {
+  background-color: rgba(124, 58, 237, 0.12) !important;
+}
+
+:where(html.light, html[data-theme="light"]) button[aria-label="Mở thanh điều hướng"] {
+  background-color: #ffffff !important;
+  border-color: rgba(15, 23, 42, 0.14) !important;
+  color: #1e293b !important;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.12) !important;
+}
+
+:where(html.light, html[data-theme="light"]) button[aria-label="Mở thanh điều hướng"]:hover {
+  color: #7c3aed !important;
+}
+
+/* ── 14. MOBILE BOTTOM FLOATING NAVIGATION ── */
+:where(html.light, html[data-theme="light"]) nav[data-mobile-bottom-nav] > div > div {
+  background-color: rgba(255, 255, 255, 0.88) !important;
+  border-color: rgba(15, 23, 42, 0.12) !important;
+  box-shadow: 0 12px 36px rgba(15, 23, 42, 0.14), inset 0 1px 1px rgba(255, 255, 255, 0.8) !important;
+}
+
+:where(html.light, html[data-theme="light"]) nav[data-mobile-bottom-nav] a:not([aria-current="page"]) svg {
+  color: #64748b !important;
+}
+
+:where(html.light, html[data-theme="light"]) nav[data-mobile-bottom-nav] a[aria-current="page"] {
+  color: #ffffff !important;
+}
+
+:where(html.light, html[data-theme="light"]) nav[data-mobile-bottom-nav] div[class*="bg-white"] {
+  background-color: #0f172a !important;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.25) !important;
+}
+
+/* ── 15. INPUTS & CONTROLS ── */
 :where(html.light, html[data-theme="light"])
   [data-home-content]
   :is(input, textarea, select):not([type="checkbox"]):not([type="radio"]):not(
     [type="range"]
   ) {
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   color: var(--light-text);
-  border-color: rgba(23, 32, 51, 0.18);
+  border-color: rgba(15, 23, 42, 0.15);
 }
 
-/* Footer: one elevated light surface, with enough contrast for the ticker. */
+/* ── 16. FOOTER SYNCHRONIZATION ── */
 :where(html.light, html[data-theme="light"]) footer[data-site-footer] {
-  background: var(--light-canvas) !important;
+  background: var(--light-surface) !important;
   color: var(--light-text) !important;
   border-top: 1px solid var(--light-border) !important;
 }
@@ -171,15 +408,15 @@
   [data-footer-movie] {
   background: #ffffff !important;
   border-color: var(--light-border) !important;
-  box-shadow: 0 8px 20px rgba(30, 43, 64, 0.08) !important;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05) !important;
 }
 
 :where(html.light, html[data-theme="light"])
   footer[data-site-footer]
   [data-footer-bottom] {
-  background: #eef1f5 !important;
+  background: #f1f5f9 !important;
   border-color: var(--light-border) !important;
-  color: #7a869a !important;
+  color: #64748b !important;
 }
 
 :where(html.light, html[data-theme="light"])
@@ -197,14 +434,14 @@
 :where(html.light, html[data-theme="light"])
   footer[data-site-footer]
   :is([data-footer-link]):hover {
-  color: #b72037 !important;
+  color: #7c3aed !important;
 }
 
 :where(html.light, html[data-theme="light"])
   footer[data-site-footer]
   [data-footer-input] {
   background: #ffffff !important;
-  border-color: rgba(23, 32, 51, 0.16) !important;
+  border-color: rgba(15, 23, 42, 0.15) !important;
 }
 
 :where(html.light, html[data-theme="light"])
@@ -218,7 +455,7 @@
   footer[data-site-footer]
   [data-footer-input]
   button {
-  background: #1d2637 !important;
+  background: #0f172a !important;
   color: #ffffff !important;
 }
 

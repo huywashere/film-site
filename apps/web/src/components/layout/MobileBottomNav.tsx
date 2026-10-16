@@ -134,6 +134,7 @@ export function MobileBottomNav() {
 
   return (
     <nav
+      data-mobile-bottom-nav="true"
       aria-label="Điều hướng nhanh di động"
       className={cn(
         cardFont.className,

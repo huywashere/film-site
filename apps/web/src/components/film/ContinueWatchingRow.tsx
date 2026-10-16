@@ -449,6 +449,7 @@ export function ContinueWatchingRow({ fallbackFilms = [] }: ContinueWatchingRowP
                       <div className="mt-2 px-0.5 space-y-1">
                         {/* Film Title */}
                         <h3
+                          data-continue-title="true"
                           className={`${cardFont.className} text-xs sm:text-sm font-bold text-white leading-snug line-clamp-1 group-hover/card:text-red-400 transition-colors tracking-tight`}
                         >
                           {title}

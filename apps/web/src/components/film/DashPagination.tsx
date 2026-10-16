@@ -83,7 +83,8 @@ export function DashPagination({
   };
 
   return (
-    <div className="hidden sm:flex items-center gap-1.5 opacity-90 transition-opacity">
+    <div data-dash-pagination="true"
+      className="hidden sm:flex items-center gap-1.5 opacity-90 transition-opacity">
       {Array.from({ length: totalDashes }).map((_, idx) => {
         const isActive = activeIndex === idx;
         return (

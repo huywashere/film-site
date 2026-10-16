@@ -292,6 +292,7 @@ function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
         {/* Movie Title Below Card */}
         <div className="mt-2 max-w-[78px] px-0.5 text-center sm:max-w-[160px] md:max-w-[185px]">
           <p
+            data-rank-title="true"
             className={`${cardFont.className} text-[11px] sm:text-xs font-bold text-neutral-200 line-clamp-1 group-hover/item:text-white transition-colors leading-snug tracking-normal`}
           >
             {filmTitle}
@@ -389,9 +390,10 @@ export function Top10RankedRow({
   if (top10.length === 0) return null;
 
   return (
-    <section className={cn("mb-10 relative group/section", className)}>
+    <section data-top10-row="true" className={cn("mb-10 relative group/section", className)}>
       <div className="flex items-center justify-between mb-4">
         <h2
+          data-top10-title="true"
           className={`${cardFont.className} text-lg md:text-xl font-extrabold text-white flex items-center gap-2`}
         >
           {showCrown && (
