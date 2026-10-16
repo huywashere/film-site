@@ -109,10 +109,10 @@ export function ContactClient() {
               </div>
             </div>
             <a
-              href="mailto:support@netphim.tv"
+              href="mailto:flexphim@proton.me"
               className="inline-flex items-center gap-1.5 text-xs font-semibold text-violet-400 hover:text-violet-300 underline pt-1"
             >
-              support@netphim.tv
+              flexphim@proton.me
               <ExternalLink size={12} />
             </a>
           </div>
@@ -315,10 +315,10 @@ export function ContactClient() {
           <div className="p-3.5 rounded-xl border border-neutral-800 bg-[#161a26]">
             <span className="text-xs text-neutral-400 block mb-1">Hợp tác kinh doanh & Ads:</span>
             <a
-              href="mailto:business@netphim.tv"
+              href="mailto:flexphim@proton.me"
               className="text-sm font-bold text-violet-400 hover:underline"
             >
-              business@netphim.tv
+              flexphim@proton.me
             </a>
           </div>
           <div className="p-3.5 rounded-xl border border-neutral-800 bg-[#161a26]">
@@ -326,10 +326,10 @@ export function ContactClient() {
               Ban pháp chế & Bản quyền DMCA:
             </span>
             <a
-              href="mailto:dmca@netphim.tv"
+              href="mailto:flexphim@proton.me"
               className="text-sm font-bold text-violet-400 hover:underline"
             >
-              dmca@netphim.tv
+              flexphim@proton.me
             </a>
           </div>
         </div>

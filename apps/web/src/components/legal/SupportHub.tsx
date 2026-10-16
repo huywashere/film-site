@@ -544,8 +544,8 @@ export function SupportHub({ initialTab = 'report' }: SupportHubProps) {
                 <p className="text-neutral-400">
                   Bạn có toàn quyền chỉnh sửa thông tin, yêu cầu trích xuất dữ liệu lịch sử hoặc xóa
                   vĩnh viễn tài khoản qua trang Cài Đặt hoặc liên hệ qua email{' '}
-                  <a href="mailto:privacy@netphim.tv" className="text-white underline font-medium">
-                    privacy@netphim.tv
+                  <a href="mailto:flexphim@proton.me" className="text-white underline font-medium">
+                    flexphim@proton.me
                   </a>
                   .
                 </p>
@@ -591,10 +591,10 @@ export function SupportHub({ initialTab = 'report' }: SupportHubProps) {
                     <span className="text-xs text-neutral-400 block">
                       Hòm thư tiếp nhận khiếu nại bản quyền:
                     </span>
-                    <strong className="text-white text-sm">dmca@netphim.tv</strong>
+                    <strong className="text-white text-sm">flexphim@proton.me</strong>
                   </div>
                   <a
-                    href="mailto:dmca@netphim.tv"
+                    href="mailto:flexphim@proton.me"
                     className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white text-black font-bold text-xs transition-colors hover:bg-neutral-200"
                   >
                     Gửi email DMCA
@@ -640,10 +640,10 @@ export function SupportHub({ initialTab = 'report' }: SupportHubProps) {
                     </div>
                   </div>
                   <a
-                    href="mailto:support@netphim.tv"
+                    href="mailto:flexphim@proton.me"
                     className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-300 hover:text-white underline pt-1"
                   >
-                    support@netphim.tv
+                    flexphim@proton.me
                     <ExternalLink size={12} />
                   </a>
                 </div>

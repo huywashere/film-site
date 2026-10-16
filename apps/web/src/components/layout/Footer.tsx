@@ -72,7 +72,7 @@ const SOCIAL_LINKS = [
     label: "Telegram",
   },
   { href: "https://tiktok.com", icon: IconTikTok, label: "TikTok" },
-  { href: "mailto:contact@netphim.app", icon: IconEmail, label: "Email" },
+  { href: "mailto:flexphim@proton.me", icon: IconEmail, label: "Email" },
 ];
 
 const CAT_MASCOTS = [
@@ -238,18 +238,22 @@ export function Footer() {
         <div className="flex flex-col items-center gap-3.5 pt-6 pb-20 sm:pb-6 text-center">
           {/* Social icons */}
           <div className="flex items-center gap-5 sm:gap-6">
-            {SOCIAL_LINKS.map(({ href, icon: Icon, label }) => (
-              <a
-                key={label}
-                href={href}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={label}
-                className="text-neutral-400 transition-all duration-200 hover:text-violet-400 hover:scale-110"
-              >
-                <Icon />
-              </a>
-            ))}
+            {SOCIAL_LINKS.map(({ href, icon: Icon, label }) => {
+              const isMail = href.startsWith("mailto:");
+              return (
+                <a
+                  key={label}
+                  href={href}
+                  target={isMail ? undefined : "_blank"}
+                  rel={isMail ? undefined : "noopener noreferrer"}
+                  aria-label={label}
+                  title={isMail ? "flexphim@proton.me" : label}
+                  className="text-neutral-400 transition-all duration-200 hover:text-violet-400 hover:scale-110"
+                >
+                  <Icon />
+                </a>
+              );
+            })}
           </div>
 
           {/* Disclaimer text */}
