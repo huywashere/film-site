@@ -91,7 +91,7 @@ const FanCardButton = styled.button<{
   border-radius: 15px;
   border: 1px solid
     ${({ $featured }) =>
-      $featured ? "rgba(242, 193, 78, 0.82)" : "rgba(255, 255, 255, 0.2)"};
+      $featured ? "rgba(255, 255, 255, 0.35)" : "rgba(255, 255, 255, 0.18)"};
   background: #0d1017;
   color: inherit;
   cursor: pointer;
@@ -128,7 +128,7 @@ const FanCardButton = styled.button<{
   }
 
   &:focus-visible {
-    outline: 2px solid #f2c14e;
+    outline: 2px solid rgba(255, 255, 255, 0.7);
     outline-offset: 4px;
   }
 
