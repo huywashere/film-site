@@ -12,6 +12,8 @@ export interface OmdbData {
   imdbRating: string | null;
   imdbVotes: string | null;
   rottenTomatoes: string | null;
+  rottenTomatoesAudience: string | null;
+  tmdbRating: string | null;
   metacritic: string | null;
   awards: string | null;
   boxOffice: string | null;

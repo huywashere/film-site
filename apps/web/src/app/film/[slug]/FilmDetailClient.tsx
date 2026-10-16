@@ -77,6 +77,7 @@ import type { ServerTmdbResult } from '@/lib/server/movie-tmdb-server';
 
 import { MobileRelatedCarousel } from '@/components/film/MobileRelatedCarousel';
 import { EpisodeNotificationBanner } from '@/components/film/EpisodeNotificationBanner';
+import { MovieRatingBadges } from '@/components/film/MovieRatingBadges';
 
 const TrailerModal = dynamic(
   () => import('@/components/film/TrailerModal').then((module) => module.TrailerModal),
@@ -1359,6 +1360,7 @@ export default function FilmDetailPage({
   const isViewingOriginalFilm =
     !isMobileViewport || !activeMobileFilm || activeMobileFilm.slug === film?.slug;
 
+
   const {
     bestBackdrop: activeMobileBestBackdrop,
     bestLogo: activeMobileBestLogo,
@@ -1419,6 +1421,8 @@ export default function FilmDetailPage({
       imdbRating: resolvedImdbVoteAvg > 0 ? formatRating(resolvedImdbVoteAvg) : null,
       imdbVotes: resolvedImdbVoteCount > 0 ? formatVoteCount(resolvedImdbVoteCount) : null,
       rottenTomatoes: null,
+      rottenTomatoesAudience: null,
+      tmdbRating: film?.vote_average ? `${Math.round(Number(film.vote_average) * 10)}%` : null,
       metacritic: null,
       awards: null,
       boxOffice: null,
@@ -1763,6 +1767,18 @@ export default function FilmDetailPage({
   const tmdbVoteLabel = formatVoteCount(tmdbVoteCount);
   const imdbVoteLabel = formatVoteCount(imdbVoteCount);
 
+  const displayFilm = (isMobileViewport && activeMobileFilm) ? activeMobileFilm : film;
+  const displayTmdbScore = isViewingOriginalFilm
+    ? tmdbRatingLabel
+    : (displayFilm.tmdb?.vote_average
+        ? Number(displayFilm.tmdb.vote_average).toFixed(1)
+        : (displayFilm.vote_average ? Number(displayFilm.vote_average).toFixed(1) : null));
+  const displayImdbScore = isViewingOriginalFilm
+    ? imdbRatingLabel
+    : (displayFilm.imdb?.vote_average
+        ? Number(displayFilm.imdb.vote_average).toFixed(1)
+        : (displayFilm.imdb_rating ? Number(displayFilm.imdb_rating).toFixed(1) : null));
+
 
   const statusLabel =
     film?.status === 'completed' ||
@@ -1973,18 +1989,6 @@ export default function FilmDetailPage({
               )}
 
               {(() => {
-                const displayFilm = (isMobileViewport && activeMobileFilm) ? activeMobileFilm : film;
-                const displayTmdbScore = isViewingOriginalFilm
-                  ? tmdbRatingLabel
-                  : (displayFilm.tmdb?.vote_average
-                      ? Number(displayFilm.tmdb.vote_average).toFixed(1)
-                      : (displayFilm.vote_average ? Number(displayFilm.vote_average).toFixed(1) : null));
-                const displayImdbScore = isViewingOriginalFilm
-                  ? imdbRatingLabel
-                  : (displayFilm.imdb?.vote_average
-                      ? Number(displayFilm.imdb.vote_average).toFixed(1)
-                      : (displayFilm.imdb_rating ? Number(displayFilm.imdb_rating).toFixed(1) : null));
-
                 return (
                   <div className="flex flex-col space-y-2 sm:space-y-3 min-w-0 flex-1 items-center sm:items-start">
                     <FilmTitleLogo
@@ -2260,7 +2264,19 @@ export default function FilmDetailPage({
           );
         })()}
 
-            {/* ── OMDB Ratings (below action buttons) ── */}
+            {/* ── Official Ratings Bar (TMDB, IMDb, Rotten Tomatoes, Popcornmeter) ── */}
+            <div className="pt-3 w-full">
+              <MovieRatingBadges
+                tmdbScore={effectiveOmdb?.tmdbRating || displayTmdbScore}
+                imdbScore={effectiveOmdb?.imdbRating || displayImdbScore}
+                tomatoScore={effectiveOmdb?.rottenTomatoes}
+                popcornScore={effectiveOmdb?.rottenTomatoesAudience}
+                imdbId={effectiveOmdb?.imdbId}
+                tmdbId={displayFilm?.tmdb?.id || (displayFilm as any)?.tmdbId}
+              />
+            </div>
+
+            {/* ── Extra OMDB Details (Metacritic, Awards, Box Office) ── */}
             <AnimatePresence>
               {effectiveOmdb && (
                 <motion.div
@@ -2268,117 +2284,8 @@ export default function FilmDetailPage({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.28, ease: 'easeOut' }}
-                  className="flex flex-wrap items-center justify-center sm:justify-start gap-x-3 gap-y-2 pt-3 w-full"
+                  className="flex flex-wrap items-center justify-center sm:justify-start gap-x-3 gap-y-2 pt-1 w-full"
                 >
-                  {/* IMDb chip */}
-                  {effectiveOmdb.imdbRating && (
-                    <a
-                      href={
-                        effectiveOmdb.imdbId
-                          ? `https://www.imdb.com/title/${effectiveOmdb.imdbId}`
-                          : undefined
-                      }
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group flex items-center gap-1.5 rounded-lg border border-[#f5c518]/25 bg-[#f5c518]/8 px-2.5 py-1.5 hover:border-[#f5c518]/50 hover:bg-[#f5c518]/15 transition-all cursor-pointer active:scale-95 shadow-sm"
-                    >
-                      <svg viewBox="0 0 64 32" width="32" height="16" aria-label="IMDb">
-                        <rect width="64" height="32" rx="4" fill="#F5C518" />
-                        <text
-                          x="5"
-                          y="23"
-                          fontFamily="Arial Black, sans-serif"
-                          fontWeight="900"
-                          fontSize="20"
-                          fill="#000"
-                        >
-                          IMDb
-                        </text>
-                      </svg>
-                      <span className="text-xs font-black text-white">
-                        {effectiveOmdb.imdbRating}
-                        <span className="text-neutral-500 font-normal">/10</span>
-                      </span>
-                      {effectiveOmdb.imdbVotes && (
-                        <span className="text-[10px] text-neutral-400 hidden sm:inline">
-                          ({effectiveOmdb.imdbVotes})
-                        </span>
-                      )}
-                    </a>
-                  )}
-
-                  {/* RT chip */}
-                  {effectiveOmdb.rottenTomatoes &&
-                    (() => {
-                      const pct = parseInt(effectiveOmdb.rottenTomatoes!);
-                      const isFresh = pct >= 60;
-                      return (
-                        <div
-                          className={cn(
-                            'flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 shadow-sm',
-                            isFresh
-                              ? 'border-red-500/25 bg-red-500/8'
-                              : 'border-white/10 bg-white/[0.03]',
-                          )}
-                        >
-                          <svg
-                            viewBox="0 0 32 32"
-                            width="15"
-                            height="15"
-                            aria-label="Rotten Tomatoes"
-                          >
-                            {isFresh ? (
-                              <>
-                                <circle cx="16" cy="18" r="12" fill="#FA320A" />
-                                <ellipse cx="16" cy="8" rx="4" ry="6" fill="#22C55E" />
-                                <ellipse
-                                  cx="20"
-                                  cy="6"
-                                  rx="2.5"
-                                  ry="5"
-                                  fill="#16A34A"
-                                  transform="rotate(20 20 6)"
-                                />
-                                <circle cx="12" cy="20" r="3" fill="#fff" opacity="0.25" />
-                              </>
-                            ) : (
-                              <>
-                                <circle cx="16" cy="16" r="13" fill="#6B7280" />
-                                <text
-                                  x="16"
-                                  y="21"
-                                  textAnchor="middle"
-                                  fontFamily="sans-serif"
-                                  fontSize="14"
-                                  fill="#fff"
-                                  fontWeight="bold"
-                                >
-                                  ☔
-                                </text>
-                              </>
-                            )}
-                          </svg>
-                          <span
-                            className={cn(
-                              'text-xs font-black',
-                              isFresh ? 'text-red-400' : 'text-neutral-400',
-                            )}
-                          >
-                            {effectiveOmdb.rottenTomatoes}
-                          </span>
-                          <span
-                            className={cn(
-                              'text-[10px] font-bold px-1.5 py-px rounded-full',
-                              isFresh
-                                ? 'bg-red-500/20 text-red-400'
-                                : 'bg-neutral-700/60 text-neutral-500',
-                            )}
-                          >
-                            {isFresh ? 'Tươi' : 'Héo'}
-                          </span>
-                        </div>
-                      );
-                    })()}
 
                   {/* Metacritic chip */}
                   {effectiveOmdb.metacritic &&
@@ -2686,6 +2593,18 @@ export default function FilmDetailPage({
                 ))}
               </div>
             )}
+
+            {/* Bảng điểm đánh giá uy tín (TMDB, IMDb, Cà chua Tomatometer, Bỏng ngô Popcornmeter) */}
+            <div className="pt-2">
+              <MovieRatingBadges
+                tmdbScore={effectiveOmdb?.tmdbRating || displayTmdbScore}
+                imdbScore={effectiveOmdb?.imdbRating || displayImdbScore}
+                tomatoScore={effectiveOmdb?.rottenTomatoes}
+                popcornScore={effectiveOmdb?.rottenTomatoesAudience}
+                imdbId={effectiveOmdb?.imdbId}
+                tmdbId={film?.tmdb?.id || (film as any)?.tmdbId}
+              />
+            </div>
           </section>
 
           <section className="space-y-3 pt-4 border-t border-white/5">
