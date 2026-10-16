@@ -34,7 +34,7 @@ const ISSUE_CATEGORIES = [
   { id: 'playback', label: 'Video không phát / Link hỏng', icon: Film },
   { id: 'subtitles', label: 'Lỗi phụ đề / Sai Vietsub', icon: Subtitles },
   { id: 'audio', label: 'Lệch tiếng / Mất âm thanh', icon: Volume2 },
-  { id: 'lag', label: 'Giật lag / Tải chậm 4K', icon: WifiOff },
+  { id: 'lag', label: 'Giật lag / Tải chậm', icon: WifiOff },
   { id: 'duplicate', label: 'Trùng tập / Thiếu tập phim', icon: RefreshCw },
   { id: 'ui_bug', label: 'Lỗi giao diện / Tính năng web', icon: Sliders },
 ];

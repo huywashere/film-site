@@ -423,18 +423,18 @@ function getFilmDetailMeta(film: HeroFilm) {
     ageRating = "P";
   }
 
-  let qualityBadge = "4K";
+  let qualityBadge = "FHD";
   if (film.quality) {
     if (
       film.quality.toUpperCase() === "TMDB HD" ||
       film.quality.toUpperCase() === "HD"
     ) {
-      qualityBadge = "4K";
+      qualityBadge = "FHD";
     } else {
       qualityBadge = film.quality;
     }
   } else {
-    qualityBadge = "4K";
+    qualityBadge = "FHD";
   }
 
   let langBadge = "Vietsub";
@@ -2229,7 +2229,7 @@ export default function HeroBanner({
                 />
               </div>
 
-              {/* Badges Pill Row (⭐ Rating, Year, 4K, Vietsub/Lồng tiếng) */}
+              {/* Badges Pill Row (⭐ Rating, Year, FHD, Vietsub/Lồng tiếng) */}
               <div className="flex items-center justify-center gap-2 sm:gap-2.5 flex-wrap my-1 sm:my-1.5">
                 <span className="bg-black/60 backdrop-blur-md border border-white/15 px-3 py-0.5 sm:px-3.5 sm:py-1 rounded-full text-[11px] sm:text-xs font-extrabold text-amber-400 flex items-center gap-1 shadow-lg">
                   <Star size={12} className="fill-amber-400 text-amber-400" />

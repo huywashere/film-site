@@ -347,7 +347,7 @@ export function ContactClient() {
             </h4>
             <p className="text-xs text-neutral-400">
               Không. FlexPhim cung cấp dịch vụ xem phim hoàn toàn miễn phí cho tất cả mọi người với
-              chất lượng lên tới 4K Ultra HD.
+              chất lượng Full HD sắc nét.
             </p>
           </div>
           <div className="rounded-xl border border-neutral-800 bg-[#161a26] p-4">

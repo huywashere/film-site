@@ -207,7 +207,7 @@ export function CuratedSpotlightSection({
                 <div className="mb-2 flex flex-wrap items-center gap-1.5">
                   {activeFilm.quality && (
                     <span className="rounded bg-white/20 px-1.5 py-0.5 text-[9px] font-black text-white backdrop-blur-sm">
-                      {activeFilm.quality}
+                      {activeFilm.quality.replace(/4k\s*ultra\s*hd|4k/gi, 'FHD')}
                     </span>
                   )}
                   {activeFilm.year && (
@@ -234,6 +234,7 @@ export function CuratedSpotlightSection({
                   key={activeFilm.slug}
                   film={activeFilm}
                   prefetchFilm={nextFilm}
+                  priority={true}
                   fallbackTextClassName={`${cardFont.className} text-lg font-extrabold tracking-tight text-white line-clamp-2 sm:text-2xl lg:text-3xl`}
                   imageClassName="max-h-12 sm:max-h-16 md:max-h-20 lg:max-h-22"
                   showSubtitle

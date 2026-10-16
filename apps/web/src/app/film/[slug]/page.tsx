@@ -34,10 +34,10 @@ export async function generateMetadata({
     return {
       title: "Xem Phim Online | FlexPhim",
       description:
-        "Nền tảng xem phim online chất lượng cao 4K. Phim bộ, phim lẻ, hoạt hình với phụ đề tiếng Việt.",
+        "Nền tảng xem phim online chất lượng cao Full HD. Phim bộ, phim lẻ, hoạt hình với phụ đề tiếng Việt.",
       openGraph: {
         title: "FlexPhim — Xem Phim Online Chất Lượng Cao",
-        description: "Xem phim online miễn phí Full HD/4K tại FlexPhim.",
+        description: "Xem phim online miễn phí Full HD tại FlexPhim.",
         url: filmUrl,
         siteName: "FlexPhim",
         type: "website",

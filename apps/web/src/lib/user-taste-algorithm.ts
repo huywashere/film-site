@@ -153,8 +153,7 @@ export function calculateFilmMatchScore(
 
   // D. Rating & Quality Boost
   if (
-    film.quality?.toLowerCase().includes("hd") ||
-    film.quality?.toLowerCase().includes("4k")
+    film.quality?.toLowerCase().includes("hd") || film.quality?.toLowerCase().includes("fhd")
   ) {
     score += 5;
   }

@@ -231,7 +231,7 @@ export function MaintenanceGuard() {
             </h1>
             <p className="text-sm sm:text-base text-neutral-300 leading-relaxed max-w-md mx-auto">
               {config?.maintenanceNotice ||
-                "Chúng tôi đang tiến hành nâng cấp hệ thống máy chủ và tối ưu hóa hạ tầng phát sóng 4K để mang lại trải nghiệm xem phim hoàn hảo nhất cho bạn. Toàn bộ kho phim sẽ mở lại ngay sau khi hoàn tất. Xin cảm ơn quý khán giả đã kiên nhẫn đồng hành!"}
+                "Chúng tôi đang tiến hành nâng cấp hệ thống máy chủ và tối ưu hóa hạ tầng phát sóng để mang lại trải nghiệm xem phim hoàn hảo nhất cho bạn. Toàn bộ kho phim sẽ mở lại ngay sau khi hoàn tất. Xin cảm ơn quý khán giả đã kiên nhẫn đồng hành!"}
             </p>
           </div>
 

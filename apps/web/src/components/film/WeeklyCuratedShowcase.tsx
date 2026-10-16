@@ -372,11 +372,7 @@ export function WeeklyCuratedShowcase({
                   );
 
                 const quality = (film.quality || 'FHD').toUpperCase();
-                const qualityBadge = quality.includes('4K')
-                  ? '4K'
-                  : quality.includes('HD') && !quality.includes('FHD')
-                    ? 'HD'
-                    : 'FHD';
+                const qualityBadge = quality.includes('HD') && !quality.includes('FHD') ? 'HD' : 'FHD';
 
                 const imdbRaw =
                   film.imdb?.vote_average ??

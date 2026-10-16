@@ -411,7 +411,7 @@ export function Sidebar() {
                       </span>
                     </div>
                     <p className="text-[10px] text-cyan-200/90 mt-0.5 font-medium">
-                      Phụ đề kép Anh - Việt • Luyện nghe 4K
+                      Phụ đề kép Anh - Việt • Luyện nghe chuẩn FHD
                     </p>
                   </div>
                 ) : (

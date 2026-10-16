@@ -1598,7 +1598,7 @@ export default function UserDashboardPage() {
       {
         id: "usr-comm-3",
         username: "member_vip",
-        displayName: "Mọt Phim 4K",
+        displayName: "Mọt Phim FHD",
         avatarUrl: null,
         totalHours: 32.0,
         totalEpisodes: 45,

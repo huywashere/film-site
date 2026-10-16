@@ -194,7 +194,7 @@ export function TrailerModal({
 
     // 4. API Resolved Key
     if (resolvedKey && !list.some((v) => v.key === resolvedKey)) {
-      list.push({ key: resolvedKey, name: "Trailer 4K / HD", type: "Trailer" });
+      list.push({ key: resolvedKey, name: "Trailer Full HD", type: "Trailer" });
     }
 
     // 5. Raw provider fallback

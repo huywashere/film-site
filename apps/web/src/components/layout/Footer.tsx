@@ -192,7 +192,7 @@ export function Footer() {
             <p className="mt-3 text-xs sm:text-[13px] leading-relaxed text-neutral-400">
               {t(
                 "footer.description",
-                "Nền tảng xem phim trực tuyến miễn phí, chất lượng cao Full HD & 4K Ultra HD.",
+                "Nền tảng xem phim trực tuyến miễn phí, chất lượng cao Full HD.",
               )}
             </p>
           </div>

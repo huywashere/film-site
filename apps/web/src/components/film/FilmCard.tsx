@@ -112,7 +112,7 @@ function FilmCardComponent({
   // Extract top-right quality badge (FHD / 4K / HD / CAM)
   const qualityBadge = (() => {
     const raw = (film.quality || '').toUpperCase();
-    if (raw.includes('4K')) return '4K';
+    if (raw.includes('4K')) return 'FHD';
     if (
       raw.includes('FHD') ||
       raw.includes('FULL HD') ||
@@ -376,7 +376,7 @@ function FilmCardComponent({
               </div>
             )}
 
-            {/* ── Top-right: Quality (FHD / HD / 4K - sát mép trên) ── */}
+            {/* ── Top-right: Quality (FHD / HD - sát mép trên) ── */}
             {!isPosterPill && qualityBadge && (
               <div className="pointer-events-none absolute right-0 top-0 z-20">
                 <span className="inline-flex items-center rounded-bl-[4px] border-b border-l border-white/15 bg-black/85 px-1.5 py-[2.5px] text-[8px] font-extrabold uppercase leading-none tracking-wider text-white shadow-md sm:px-2 sm:py-[3px] sm:text-[9px]">

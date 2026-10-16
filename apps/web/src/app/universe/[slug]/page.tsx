@@ -14,14 +14,14 @@ export async function generateMetadata({
     return {
       title: "Vũ Trụ Marvel Studios | FlexPhim",
       description:
-        "Khám phá toàn bộ bom tấn Marvel Studios, Avengers, Spider-Man, X-Men và đa vũ trụ đỉnh cao chất lượng 4K Ultra HD.",
+        "Khám phá toàn bộ bom tấn Marvel Studios, Avengers, Spider-Man, X-Men và đa vũ trụ đỉnh cao chất lượng Full HD siêu nét.",
     };
   }
   if (slug === "dc") {
     return {
       title: "Vũ Trụ DC Universe | FlexPhim",
       description:
-        "Khám phá toàn bộ kiệt tác điện ảnh DC Universe, Batman, Superman, Justice League và thế giới siêu anh hùng DC chất lượng 4K Ultra HD.",
+        "Khám phá toàn bộ kiệt tác điện ảnh DC Universe, Batman, Superman, Justice League và thế giới siêu anh hùng DC chất lượng Full HD siêu nét.",
     };
   }
   if (slug === "doraemon") {

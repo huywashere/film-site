@@ -111,7 +111,7 @@ const WEIGHTS = {
   fuzzy: 100, // gần giống
   multiSource: 120, // xuất hiện ở nhiều nguồn = uy tín/phổ biến hơn
   yearBoost: 30, // phim mới hơn được ưu tiên nhẹ
-  qualityHD: 200, // HD / FHD / 4K
+  qualityHD: 200, // HD / FHD
   hasPoster: 100, // có ảnh poster hợp lệ
   trailerPenalty: -700, // Trừ điểm nặng phim Trailer / Cam / Preview
 };
@@ -253,7 +253,6 @@ function scoreFilm(
   // ── 6. Quality & Completeness Boosts ──
   const qStr = String(film.quality || "").toLowerCase();
   if (
-    qStr.includes("4k") ||
     qStr.includes("fhd") ||
     qStr.includes("hd") ||
     qStr.includes("bluray")

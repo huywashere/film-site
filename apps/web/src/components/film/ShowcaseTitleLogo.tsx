@@ -45,7 +45,7 @@ export function ShowcaseTitleLogo({
   fallbackTextClassName,
   showSubtitle = true,
   subtitleClassName,
-  priority = false,
+  priority = true,
 }: ShowcaseTitleLogoProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [nearViewport, setNearViewport] = useState(priority);

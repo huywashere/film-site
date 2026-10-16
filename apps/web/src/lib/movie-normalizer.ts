@@ -234,6 +234,13 @@ export function normalizeFilmItem(
   const sources = Array.from(new Set([source, ...existingSources])).sort(
     (left, right) => sourcePriority(left) - sourcePriority(right),
   );
+  const rawQuality = readString(record.quality);
+  let quality = rawQuality;
+  if (quality && quality.toUpperCase().includes("4K")) {
+    quality = quality.replace(/4k\s*ultra\s*hd|4k/gi, "FHD").trim();
+    if (!quality || quality.toUpperCase() === "FHD") quality = "FHD";
+  }
+
   const existingSlugs = isRecord(record._sourceSlugs)
     ? (record._sourceSlugs as Partial<Record<MovieSource, string>>)
     : {};
@@ -244,6 +251,7 @@ export function normalizeFilmItem(
     name,
     origin_name: originName,
     year,
+    ...(quality !== undefined ? { quality } : {}),
     _source: source,
     _sources: sources,
     _sourceSlugs: { ...existingSlugs, [source]: slug },

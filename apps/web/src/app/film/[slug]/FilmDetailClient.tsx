@@ -2012,9 +2012,7 @@ export default function FilmDetailPage({
                         <span
                           className={cn(
                             'rounded px-2 py-0.5 text-[10px] sm:text-[11px] font-black uppercase tracking-wide shadow-sm select-none',
-                            displayFilm.quality.toUpperCase().includes('4K')
-                              ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-black'
-                              : displayFilm.quality.toUpperCase().includes('FHD')
+                            displayFilm.quality.toUpperCase().includes('FHD')
                                 ? 'bg-[#00c5ff] text-black'
                                 : displayFilm.quality.toUpperCase().includes('HD')
                                   ? 'bg-[#00b4d8] text-black'

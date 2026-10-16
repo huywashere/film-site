@@ -229,6 +229,7 @@ export function HeroShowcaseSection({ title, films, isLoading, href }: HeroShowc
                   key={activeFilm.slug}
                   film={activeFilm}
                   prefetchFilm={nextFilm}
+                  priority={true}
                   fallbackTextClassName={`${cardFont.className} text-base font-extrabold tracking-tight text-white line-clamp-2 sm:text-2xl lg:text-3xl`}
                   imageClassName="max-h-12 sm:max-h-16 md:max-h-20 lg:max-h-22"
                   showSubtitle

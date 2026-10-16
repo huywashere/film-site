@@ -31,7 +31,7 @@ export const MARVEL_SPOTLIGHTS: UniverseSpotlightItem[] = [
     name: "Deadpool Và Wolverine",
     origin_name: "Deadpool & Wolverine",
     year: 2024,
-    quality: "4K Ultra HD",
+    quality: "Full HD",
     lang: "Vietsub + Thuyết Minh",
     rating: 7.8,
     spotlightBadge: "🔥 BOM TẤN ĐA VŨ TRỤ MARVEL",
@@ -47,7 +47,7 @@ export const MARVEL_SPOTLIGHTS: UniverseSpotlightItem[] = [
     name: "Biệt Đội Siêu Anh Hùng 4: Hồi Kết",
     origin_name: "Avengers: Endgame",
     year: 2019,
-    quality: "4K Ultra HD",
+    quality: "Full HD",
     lang: "Vietsub + Thuyết Minh",
     rating: 8.4,
     spotlightBadge: "🏆 HUYỀN THOẠI AVENGERS SAGA",
@@ -63,7 +63,7 @@ export const MARVEL_SPOTLIGHTS: UniverseSpotlightItem[] = [
     name: "Biệt Đội Siêu Anh Hùng 3: Cuộc Chiến Vô Cực",
     origin_name: "Avengers: Infinity War",
     year: 2018,
-    quality: "4K Ultra HD",
+    quality: "Full HD",
     lang: "Vietsub + Thuyết Minh",
     rating: 8.3,
     spotlightBadge: "💎 SIÊU PHẨM CHIẾU RẠP KỶ LỤC",
@@ -79,7 +79,7 @@ export const MARVEL_SPOTLIGHTS: UniverseSpotlightItem[] = [
     name: "Người Nhện: Không Còn Nhà",
     origin_name: "Spider-Man: No Way Home",
     year: 2021,
-    quality: "4K Ultra HD",
+    quality: "Full HD",
     lang: "Vietsub + Thuyết Minh",
     rating: 8.1,
     spotlightBadge: "🕷️ KỶ LỤC DOANH THU MULTIVERSE",
@@ -95,7 +95,7 @@ export const MARVEL_SPOTLIGHTS: UniverseSpotlightItem[] = [
     name: "Vệ Binh Dải Ngân Hà 3",
     origin_name: "Guardians of the Galaxy Vol. 3",
     year: 2023,
-    quality: "4K Ultra HD",
+    quality: "Full HD",
     lang: "Vietsub + Thuyết Minh",
     rating: 8.0,
     spotlightBadge: "🚀 PHIÊU LƯU VŨ TRỤ CẢM XÚC",
@@ -111,7 +111,7 @@ export const MARVEL_SPOTLIGHTS: UniverseSpotlightItem[] = [
     name: "Phù Thủy Tối Thượng Trong Đa Vũ Trụ Hỗn Loạn",
     origin_name: "Doctor Strange in the Multiverse of Madness",
     year: 2022,
-    quality: "4K Ultra HD",
+    quality: "Full HD",
     lang: "Vietsub + Thuyết Minh",
     rating: 7.4,
     spotlightBadge: "✨ HUYỀN THUẬT ĐA VŨ TRỤ",
@@ -130,7 +130,7 @@ export const DC_SPOTLIGHTS: UniverseSpotlightItem[] = [
     name: "Kỵ Sĩ Bóng Đêm",
     origin_name: "The Dark Knight",
     year: 2008,
-    quality: "4K Ultra HD",
+    quality: "Full HD",
     lang: "Vietsub + Thuyết Minh",
     rating: 9.0,
     spotlightBadge: "🦇 #1 KIỆT TÁC ĐIỆN ẢNH DC",
@@ -146,7 +146,7 @@ export const DC_SPOTLIGHTS: UniverseSpotlightItem[] = [
     name: "Người Dơi",
     origin_name: "The Batman",
     year: 2022,
-    quality: "4K Ultra HD",
+    quality: "Full HD",
     lang: "Vietsub + Thuyết Minh",
     rating: 7.8,
     spotlightBadge: "🌑 THÁM TỬ BÓNG ĐÊM GOTHAM",
@@ -162,7 +162,7 @@ export const DC_SPOTLIGHTS: UniverseSpotlightItem[] = [
     name: "Người Đàn Ông Thép",
     origin_name: "Man of Steel",
     year: 2013,
-    quality: "4K Ultra HD",
+    quality: "Full HD",
     lang: "Vietsub + Thuyết Minh",
     rating: 7.5,
     spotlightBadge: "⚡ KHỞI ĐẦU SIÊU NHÂN DC",
@@ -178,7 +178,7 @@ export const DC_SPOTLIGHTS: UniverseSpotlightItem[] = [
     name: "Joker",
     origin_name: "Joker",
     year: 2019,
-    quality: "4K Ultra HD",
+    quality: "Full HD",
     lang: "Vietsub + Thuyết Minh",
     rating: 8.4,
     spotlightBadge: "🃏 ĐẠT 2 GIẢI OSCAR DANH GIÁ",
@@ -15248,13 +15248,7 @@ export function getUniverseFilms(
 
   if (options?.quality && options.quality !== "all") {
     const q = options.quality.toLowerCase();
-    if (q === "4k") {
-      list = list.filter(
-        (f) =>
-          (f.quality || "").toLowerCase().includes("4k") ||
-          (f.name || "").toLowerCase().includes("4k")
-      );
-    } else if (q === "fhd") {
+    if (q === "fhd") {
       list = list.filter(
         (f) =>
           (f.quality || "").toLowerCase().includes("1080") ||

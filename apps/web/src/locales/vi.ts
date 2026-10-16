@@ -56,7 +56,7 @@ export const vi = {
     viewAll: "Xem tất cả",
     exploreTopics: "Bạn đang quan tâm gì?",
     heroDesc:
-      "Chào mừng bạn đến với FlexPhim. Xem phim trực tuyến chất lượng cao 4K Ultra HD, cập nhật liên tục các nguồn phim nhanh nhất hiện nay.",
+      "Chào mừng bạn đến với FlexPhim. Xem phim trực tuyến chất lượng cao Full HD, cập nhật liên tục các nguồn phim nhanh nhất hiện nay.",
     scrollDown: "Cuộn xuống",
   },
   sections: {
@@ -331,7 +331,7 @@ export const vi = {
     languageSetting: "Ngôn ngữ hiển thị",
   },
   footer: {
-    description: "FlexPhim - Nền tảng xem phim trực tuyến miễn phí chất lượng cao Full HD & 4K Ultra HD. Kho phim đa dạng, phong phú với tốc độ phát mượt mà.",
+    description: "FlexPhim - Nền tảng xem phim trực tuyến miễn phí chất lượng cao Full HD. Kho phim đa dạng, phong phú với tốc độ phát mượt mà.",
     quickLinks: "Liên Kết Nhanh",
     genres: "Thể Loại Phổ Biến",
     support: "Hỗ Trợ & Bản Quyền",

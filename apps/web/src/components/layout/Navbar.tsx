@@ -539,7 +539,7 @@ export function Navbar() {
       id: WELCOME_NOTIFICATION_ID,
       title: WELCOME_NOTIFICATION_TITLE,
       message:
-        "Xem phim chuẩn 4K siêu nét, tự động lọc sạch quảng cáo nhà cái từ gốc M3U8.",
+        "Xem phim chuẩn Full HD siêu nét, tự động lọc sạch quảng cáo nhà cái từ gốc M3U8.",
       time: "Hôm nay",
       tag: "Hệ thống",
       read: false,

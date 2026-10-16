@@ -40,7 +40,6 @@ const QUICK_TYPES = [
 
 const QUALITIES = [
   { label: "Chất lượng", value: "all" },
-  { label: "4K Ultra HD", value: "4k" },
   { label: "Full HD (1080p)", value: "fhd" },
   { label: "HD (720p)", value: "hd" },
 ];
@@ -354,13 +353,7 @@ function BrowseFilmsContent({
     }
 
     if (selectedQuality !== "all") {
-      if (selectedQuality === "4k") {
-        list = list.filter(
-          (f) =>
-            (f.quality || "").toLowerCase().includes("4k") ||
-            (f.name || "").toLowerCase().includes("4k"),
-        );
-      } else if (selectedQuality === "fhd") {
+      if (selectedQuality === "fhd") {
         list = list.filter(
           (f) =>
             (f.quality || "").toLowerCase().includes("1080") ||

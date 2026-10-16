@@ -108,7 +108,7 @@ export default function BilingualFilmsPage() {
           <div className="flex flex-wrap items-center gap-2 mb-3">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-gradient-to-r from-cyan-400 to-violet-500 text-black shadow-lg shadow-cyan-500/20 uppercase tracking-wider">
               <Sparkles size={13} />
-              Dual Subtitles 4K
+              Dual Subtitles FHD
             </span>
             <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-cyan-300">
               Phụ Đề Song Ngữ Anh - Việt
@@ -116,7 +116,7 @@ export default function BilingualFilmsPage() {
           </div>
 
           <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white max-w-3xl leading-tight">
-            Xem Phim Song Ngữ Chuẩn 4K & Luyện Tiếng Anh Tự Nhiên
+            Xem Phim Song Ngữ Chuẩn Full HD & Luyện Tiếng Anh Tự Nhiên
           </h1>
 
           <p className="mt-3 text-xs sm:text-sm text-neutral-300 max-w-2xl leading-relaxed">

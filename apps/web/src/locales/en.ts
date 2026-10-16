@@ -56,7 +56,7 @@ export const en = {
     viewAll: "View All",
     exploreTopics: "What are you looking for?",
     heroDesc:
-      "Welcome to FlexPhim. Stream high-quality 4K Ultra HD movies online, updated constantly with the fastest streaming servers.",
+      "Welcome to FlexPhim. Stream high-quality Full HD movies online, updated constantly with the fastest streaming servers.",
     scrollDown: "Scroll down",
   },
   sections: {
@@ -330,7 +330,7 @@ export const en = {
     languageSetting: "Display Language",
   },
   footer: {
-    description: "FlexPhim - Free online movie streaming platform in Full HD & 4K Ultra HD. Comprehensive catalog with blazing fast streaming performance.",
+    description: "FlexPhim - Free online movie streaming platform in Full HD. Comprehensive catalog with blazing fast streaming performance.",
     quickLinks: "Quick Links",
     genres: "Popular Genres",
     support: "Support & Legal",

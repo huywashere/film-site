@@ -157,7 +157,7 @@ export async function GET(request: NextRequest) {
           thumb_url: hero.thumb_url || hero.poster_url,
           poster_url: hero.poster_url || hero.thumb_url,
           year: hero.year || 2024,
-          quality: hero.quality || "4K VIP",
+          quality: hero.quality || "FHD",
           lang: hero.lang || "Vietsub + Thuyết Minh",
           episode_current:
             hero.episode_current ||

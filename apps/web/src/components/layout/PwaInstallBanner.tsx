@@ -96,7 +96,7 @@ export function PwaInstallBanner() {
               </span>
             </div>
             <p className="text-xs text-neutral-400 mt-1 leading-relaxed">
-              Thêm vào màn hình chính để xem phim 4K mượt mà như ứng dụng cài sẵn.
+              Thêm vào màn hình chính để xem phim Full HD mượt mà như ứng dụng cài sẵn.
             </p>
 
             {/* iOS Guide Popup */}

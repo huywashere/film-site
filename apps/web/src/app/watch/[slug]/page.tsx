@@ -41,7 +41,7 @@ export async function generateMetadata({
         "Xem phim online tốc độ cao, không giật lag, hỗ trợ phụ đề tiếng Việt và thuyết minh tại FlexPhim.",
       openGraph: {
         title: "FlexPhim — Trình Phát Phim Online",
-        description: "Xem phim online chất lượng cao 4K tại FlexPhim.",
+        description: "Xem phim online chất lượng cao Full HD tại FlexPhim.",
         url: watchUrl,
         siteName: "FlexPhim",
         type: "video.other",

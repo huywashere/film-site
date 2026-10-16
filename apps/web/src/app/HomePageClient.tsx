@@ -75,7 +75,7 @@ const CURATED_VFX_FILM_ITEMS: FilmItem[] = CURATED_VFX_HERO_POOL.map((item) => (
   thumb_url: item.thumb_url,
   heroBackdrop: item.heroBackdrop,
   titleLogo: item.titleLogo,
-  quality: item.quality || "4K",
+  quality: item.quality || "FHD",
   lang: item.lang || "Vietsub + Thuyết Minh",
   year: item.year,
   type: item.type || "single",
@@ -100,7 +100,7 @@ const CURATED_SCIFI_FILM_ITEMS: FilmItem[] = CURATED_SCIFI_HERO_POOL.map((item) 
   thumb_url: item.thumb_url,
   heroBackdrop: item.heroBackdrop,
   titleLogo: item.titleLogo,
-  quality: item.quality || "4K",
+  quality: item.quality || "FHD",
   lang: item.lang || "Vietsub + Thuyết Minh",
   year: item.year,
   type: item.type || "single",
@@ -125,7 +125,7 @@ const CURATED_ACTION_FILM_ITEMS: FilmItem[] = CURATED_ACTION_HERO_POOL.map((item
   thumb_url: item.thumb_url,
   heroBackdrop: item.heroBackdrop,
   titleLogo: item.titleLogo,
-  quality: item.quality || "4K",
+  quality: item.quality || "FHD",
   lang: item.lang || "Vietsub + Thuyết Minh",
   year: item.year,
   type: item.type || "single",
@@ -1089,7 +1089,7 @@ export default function HomePageClient({
     enabled: showMoreSections,
   });
 
-  // 9. Phim chất lượng 4K (Hollywood 4K Movies)
+  // 9. Phim chất lượng cao Hollywood
   const singleData = useMemo(
     () =>
       homeFeedSections?.single
