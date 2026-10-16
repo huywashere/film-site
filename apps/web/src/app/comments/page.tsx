@@ -65,136 +65,7 @@ const TRENDING_MOVIE_SUGGESTIONS = [
   { name: "Chú Thuật Hồi Chiến (Mùa 2)", slug: "chu-thuat-hoi-chien-phan-2", genre: "anime" },
 ];
 
-const REAL_COMMUNITY_SEED: CommunityComment[] = [
-  {
-    id: "cmt_seed_oppenheimer",
-    movieSlug: "oppenheimer",
-    movieName: "Oppenheimer",
-    moviePoster: "https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg",
-    episodeName: "Tập Full",
-    userName: "Văn Đức",
-    userAvatar: "https://api.dicebear.com/7.x/bottts/svg?seed=VanDucCinema",
-    userRole: "Top Reviewer",
-    content: "Khoảnh khắc vụ nổ thử nghiệm Trinity diễn ra trong im lặng tuyệt đối trước khi tiếng sóng xung kích dội vào là một trong những trải nghiệm điện ảnh sâu sắc nhất. Cillian Murphy diễn xuất bằng ánh mắt quá đỉnh cao, hoàn toàn xứng đáng với tượng vàng Oscar!",
-    rating: 5,
-    likes: 310,
-    replyCount: 41,
-    createdAt: Date.now() - 1000 * 60 * 45,
-    genreSlug: "chieu-rap",
-  },
-  {
-    id: "cmt_seed_dune2",
-    movieSlug: "dune-phan-hai",
-    movieName: "Hành Tinh Cát: Phần Hai (Dune: Part Two)",
-    moviePoster: "https://image.tmdb.org/t/p/w500/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg",
-    episodeName: "Tập Full",
-    userName: "Hải Nam Cinema",
-    userAvatar: "https://api.dicebear.com/7.x/bottts/svg?seed=HaiNamAdmin",
-    userRole: "ADMIN",
-    content: "Âm thanh của Hans Zimmer kết hợp góc máy đại cảnh của Denis Villeneuve làm nổi da gà từ đầu đến cuối! Phân cảnh Paul Atreides thuần phục và cưỡi sâu cát khổng lồ Shai-Hulud xứng đáng đi vào lịch sử phim điện ảnh viễn tưởng.",
-    rating: 5,
-    likes: 389,
-    replyCount: 45,
-    createdAt: Date.now() - 1000 * 60 * 120,
-    genreSlug: "chieu-rap",
-  },
-  {
-    id: "cmt_seed_exhuma",
-    movieSlug: "quat-mo-trung-ma",
-    movieName: "Quật Mộ Trùng Ma (Exhuma)",
-    moviePoster: "https://image.tmdb.org/t/p/w500/kDp1vUBnMpe8ak4rjgl3cLELqjU.jpg",
-    episodeName: "Tập Full",
-    userName: "Phương Linh",
-    userAvatar: "https://api.dicebear.com/7.x/bottts/svg?seed=PhuongLinhK",
-    userRole: "VIP",
-    content: "Không khí tâm linh phong thủy Hàn Quốc nghẹt thở từ phút đầu tiên. Kim Go-eun vào vai pháp sư Hwarim làm lễ Daesal Gut xuất thần, ánh mắt và điệu múa trừ tà rợn tóc gáy. Nửa sau chuyển hướng lịch sử rất bất ngờ và ý nghĩa!",
-    rating: 5,
-    likes: 245,
-    replyCount: 38,
-    createdAt: Date.now() - 1000 * 60 * 180,
-    genreSlug: "chieu-rap",
-  },
-  {
-    id: "cmt_seed_shogun",
-    movieSlug: "shogun-2024",
-    movieName: "Shōgun: Tướng Quân",
-    moviePoster: "https://image.tmdb.org/t/p/w500/7O4iVfOMQmdCSxhOg1WnzG1AgYT.jpg",
-    episodeName: "Tập 10 (Full)",
-    userName: "Quốc Hưng",
-    userAvatar: "https://api.dicebear.com/7.x/bottts/svg?seed=QuocHungSamurai",
-    userRole: "Top Reviewer",
-    content: "Bối cảnh Nhật Bản thời kỳ Chiến Quốc được tái hiện tỉ mỉ đến từng nếp áo kimono và nghi thức trà đạo. Hiroyuki Sanada trong vai Toranaga thể hiện đỉnh cao sự thâm trầm của bậc mưu lược gia. Series cổ trang chất lượng nhất năm!",
-    rating: 5,
-    likes: 198,
-    replyCount: 26,
-    createdAt: Date.now() - 1000 * 60 * 240,
-    genreSlug: "series",
-  },
-  {
-    id: "cmt_seed_queen_of_tears",
-    movieSlug: "nu-hoang-nuoc-mat",
-    movieName: "Nữ Hoàng Nước Mắt (Queen of Tears)",
-    moviePoster: "https://image.tmdb.org/t/p/w500/39p59N5C3jZ3sQnZg78eZl8.jpg",
-    episodeName: "Tập 16",
-    userName: "Thanh Trúc",
-    userAvatar: "https://api.dicebear.com/7.x/bottts/svg?seed=ThanhTrucVip",
-    userRole: "VIP",
-    content: "Kim Soo Hyun và Kim Ji Won diễn xuất quá ăn ý, chemistry bùng nổ qua từng tập. Cảnh tỏ tình ở Đức xem đi xem lại vẫn không biết chán. Nhạc phim Hold Me Back nghe da diết vô cùng. Đoạn kết trọn vẹn và rất xúc động!",
-    rating: 5,
-    likes: 184,
-    replyCount: 22,
-    createdAt: Date.now() - 1000 * 60 * 420,
-    genreSlug: "series",
-  },
-  {
-    id: "cmt_seed_jujutsu",
-    movieSlug: "chu-thuat-hoi-chien-phan-2",
-    movieName: "Chú Thuật Hồi Chiến (Mùa 2 - Sự Kiện Shibuya)",
-    moviePoster: "https://image.tmdb.org/t/p/w500/hD8pZ1f6m4P56F4gV8h7.jpg",
-    episodeName: "Tập 23",
-    userName: "Kaito Anime",
-    userAvatar: "https://api.dicebear.com/7.x/bottts/svg?seed=KaitoOtaku",
-    userRole: "Member",
-    content: "Trận Sukuna vs Mahoraga hoạt họa điên rồ của MAPPA xem trên màn hình lớn sướng mắt thực sự! Nhạc nền vang lên kết hợp hiệu ứng âm thanh dội bass quá mãn nhãn. Đoạn kết của Nanami làm người xem đau lòng thực sự.",
-    rating: 5,
-    likes: 275,
-    replyCount: 29,
-    createdAt: Date.now() - 1000 * 60 * 600,
-    genreSlug: "anime",
-  },
-  {
-    id: "cmt_seed_latmat7",
-    movieSlug: "lat-mat-7-mot-dieu-uoc",
-    movieName: "Lật Mặt 7: Một Điều Ước",
-    moviePoster: "https://image.tmdb.org/t/p/w500/y3A78pZ1f6m4P56F4gV8h7.jpg",
-    episodeName: "Tập Full",
-    userName: "Thu Hà",
-    userAvatar: "https://api.dicebear.com/7.x/bottts/svg?seed=ThuHaReview",
-    userRole: "Top Reviewer",
-    content: "Diễn xuất của má Hai làm cả rạp khóc hết nước mắt. Phim Việt Nam chạm được vào tình cảm gia đình như thế này rất đáng quý. Ai xa nhà xem phim này chắc chắn sẽ gọi ngay về cho mẹ.",
-    rating: 5,
-    likes: 218,
-    replyCount: 32,
-    createdAt: Date.now() - 1000 * 60 * 720,
-    genreSlug: "chieu-rap",
-  },
-  {
-    id: "cmt_seed_solo_leveling",
-    movieSlug: "solo-leveling-toi-cuong-thang-cap",
-    movieName: "Tôi Thăng Cấp Một Mình (Solo Leveling)",
-    moviePoster: "https://image.tmdb.org/t/p/w500/geCRueV3ElhRTr0xtJuviJggOWJ.jpg",
-    episodeName: "Tập 12",
-    userName: "Hoàng Long",
-    userAvatar: "https://api.dicebear.com/7.x/bottts/svg?seed=HoangLongHunter",
-    userRole: "Member",
-    content: "Cảnh Sung Jinwoo thức tỉnh và triệu hồi đội quân bóng tối Arise xem rùng mình thật sự! Studio A-1 Pictures làm hoạt họa đánh đấm cực kỳ mượt mà, bám rất sát nguyên tác manhwa. Mong chờ mùa 2!",
-    rating: 5,
-    likes: 195,
-    replyCount: 19,
-    createdAt: Date.now() - 1000 * 60 * 840,
-    genreSlug: "anime",
-  },
-];
+
 
 function formatTimeAgo(timestamp: number): string {
   const diffSec = Math.floor((Date.now() - timestamp) / 1000);
@@ -233,6 +104,7 @@ export default function CommentsPage() {
   const [newRating, setNewRating] = useState(5);
   const [hasSpoiler, setHasSpoiler] = useState(false);
   const [customComments, setCustomComments] = useState<CommunityComment[]>([]);
+  const [watchComments, setWatchComments] = useState<CommunityComment[]>([]);
 
   // Fetch real reviews from Backend API
   const fetchRealComments = useCallback(async () => {
@@ -268,13 +140,13 @@ export default function CommentsPage() {
         setDbComments(mapped);
       }
     } catch {
-      // Graceful fallback to community seeds if API returns empty
+      // Backend reviews catch
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // Load initial data
+  // Load initial real data
   useEffect(() => {
     void fetchRealComments();
 
@@ -284,7 +156,73 @@ export default function CommentsPage() {
         if (savedLikes) setUserLikes(JSON.parse(savedLikes));
 
         const savedCustom = localStorage.getItem("netphim_community_custom_comments");
-        if (savedCustom) setCustomComments(JSON.parse(savedCustom));
+        let customList: CommunityComment[] = [];
+        if (savedCustom) {
+          const parsed = JSON.parse(savedCustom);
+          if (Array.isArray(parsed)) {
+            customList = parsed.filter(
+              (c: any) => !c.id?.startsWith("cmt_seed_") && !c.id?.startsWith("seed-"),
+            );
+            // Clean localStorage of any old demo seed comments
+            if (customList.length !== parsed.length) {
+              localStorage.setItem(
+                "netphim_community_custom_comments",
+                JSON.stringify(customList),
+              );
+            }
+          }
+        }
+        setCustomComments(customList);
+
+        // Gather real user comments submitted on movie watch pages
+        const collected: CommunityComment[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith("netphim_comments_tree_")) {
+            const slug = key.replace("netphim_comments_tree_", "");
+            if (slug && slug !== "default") {
+              const raw = localStorage.getItem(key);
+              if (raw) {
+                try {
+                  const parsed = JSON.parse(raw);
+                  if (Array.isArray(parsed)) {
+                    parsed.forEach((c: any) => {
+                      if (
+                        c.id &&
+                        !c.id.startsWith("seed-") &&
+                        !c.id.startsWith("cmt_seed_") &&
+                        c.content
+                      ) {
+                        collected.push({
+                          id: c.id,
+                          movieSlug: slug,
+                          movieName:
+                            c.movieName ||
+                            slug
+                              .replace(/-/g, " ")
+                              .replace(/\b\w/g, (l: string) => l.toUpperCase()),
+                          episodeName: c.episode || "Tập Full",
+                          userName: c.user?.name || "Thành viên FlexPhim",
+                          userAvatar:
+                            c.user?.avatar ||
+                            `https://ui-avatars.com/api/?name=${encodeURIComponent(c.user?.name || "U")}&background=1e293b&color=fff`,
+                          userRole: c.user?.role || "Thành viên",
+                          content: c.content,
+                          rating: c.rating || 5,
+                          likes: c.likes || 0,
+                          replyCount: Array.isArray(c.replies) ? c.replies.length : 0,
+                          createdAt: c.createdAt || Date.now(),
+                          genreSlug: "single",
+                        });
+                      }
+                    });
+                  }
+                } catch {}
+              }
+            }
+          }
+        }
+        setWatchComments(collected);
       } catch {}
     };
 
@@ -298,17 +236,17 @@ export default function CommentsPage() {
     };
   }, [fetchRealComments]);
 
-  // Aggregate: DB Real Reviews > Custom User Posts > High Quality Seed Reviews
+  // Aggregate: Real comments only (Community Posts + Watch Page Comments + Database Reviews)
   const allComments = useMemo(() => {
-    const combined = [...customComments, ...dbComments, ...REAL_COMMUNITY_SEED];
+    const combined = [...customComments, ...watchComments, ...dbComments];
     // Deduplicate by ID
     const seen = new Set<string>();
     return combined.filter((c) => {
-      if (seen.has(c.id)) return false;
+      if (!c.id || seen.has(c.id)) return false;
       seen.add(c.id);
       return true;
     });
-  }, [customComments, dbComments]);
+  }, [customComments, watchComments, dbComments]);
 
   // Filter & sort comments
   const displayedComments = useMemo(() => {
@@ -359,7 +297,7 @@ export default function CommentsPage() {
     } catch {}
 
     // If authenticated and this is a backend review id, sync to API
-    if (user && !commentId.startsWith("cmt_seed_")) {
+    if (user && !commentId.startsWith("cmt_user_")) {
       try {
         await reviewsApi.like(commentId);
       } catch {}
@@ -702,10 +640,14 @@ export default function CommentsPage() {
                 <MessageSquare size={22} />
               </div>
               <h3 className="text-base font-bold text-white">
-                Không tìm thấy bình luận phù hợp
+                {searchQuery.trim() || selectedCategory !== "all"
+                  ? "Không tìm thấy bình luận phù hợp"
+                  : "Chưa có bình luận nào"}
               </h3>
               <p className="text-xs text-neutral-400 max-w-sm mx-auto">
-                Hãy thử chọn danh mục khác hoặc tìm kiếm với từ khóa ngắn hơn.
+                {searchQuery.trim() || selectedCategory !== "all"
+                  ? "Hãy thử chọn danh mục khác hoặc tìm kiếm với từ khóa ngắn hơn."
+                  : "Hãy là người đầu tiên chia sẻ cảm nhận và đánh giá bộ phim bạn yêu thích!"}
               </p>
             </div>
           ) : (
