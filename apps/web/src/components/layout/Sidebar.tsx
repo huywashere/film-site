@@ -93,7 +93,7 @@ export function Sidebar() {
   const isWatchPage = pathname.startsWith('/watch/');
   const isGenresPage = pathname === '/genres';
   const isUniversePage = pathname.startsWith('/universe/');
-  const isGenrePage = pathname.startsWith('/genre/') || isGenresPage;
+  const isGenrePage = pathname.startsWith('/genre/');
   const isCountryPage = pathname.startsWith('/country/');
   const isFilmsPage = pathname === '/films' || pathname.startsWith('/films/');
   const isUserActivityPage =
@@ -112,7 +112,9 @@ export function Sidebar() {
   const isPinnedPage =
     isFilmDetailPage ||
     isWatchPage ||
-    isUserActivityPage;
+    isUserActivityPage ||
+    isGenresPage ||
+    optimisticPath === '/genres';
   const isAlwaysPinnedPage = isPinnedPage;
   const isHeroBannerPage = isHomePage || isCountryPage || isGenrePage || isFilmsPage || isUniversePage;
   const shouldShowSidebar = isPinnedPage || isHeroBannerPage;
@@ -185,6 +187,11 @@ export function Sidebar() {
       if (warmedRoutesRef.current.has(href)) return;
       warmedRoutesRef.current.add(href);
 
+      if (href === '/genres') {
+        try {
+          router.prefetch('/genres');
+        } catch {}
+      }
       if (href === '/films') {
         void queryClient.prefetchQuery({
           queryKey: ['browse-films-v2', '', 'all', 'all', '', '', '', 'all', 'all', 'modified.time', 1],

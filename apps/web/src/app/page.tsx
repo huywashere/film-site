@@ -80,7 +80,15 @@ async function resolveInitialHeroFilms(heroSlugs?: string[]): Promise<CuratedHer
   return ensureSixHeroFilms(valid) as CuratedHeroMovie[];
 }
 
+let cachedPublicConfig: PublicSiteConfiguration | null = null;
+let lastConfigFetch = 0;
+
 async function getInitialPublicConfiguration(): Promise<PublicSiteConfiguration | null> {
+  const now = Date.now();
+  if (cachedPublicConfig && now - lastConfigFetch < 120_000) {
+    return cachedPublicConfig;
+  }
+
   const apiBase = (
     process.env.API_INTERNAL_URL ||
     process.env.NEXT_PUBLIC_API_URL ||
@@ -90,12 +98,15 @@ async function getInitialPublicConfiguration(): Promise<PublicSiteConfiguration 
   try {
     const response = await fetch(`${apiBase}/config/public`, {
       next: { revalidate: 60, tags: ["public-site-configuration"] },
-      signal: AbortSignal.timeout(2500),
+      signal: AbortSignal.timeout(250),
     });
-    if (!response.ok) return null;
-    return (await response.json()) as PublicSiteConfiguration;
+    if (!response.ok) return cachedPublicConfig;
+    cachedPublicConfig = (await response.json()) as PublicSiteConfiguration;
+    lastConfigFetch = now;
+    return cachedPublicConfig;
   } catch {
-    return null;
+    lastConfigFetch = now;
+    return cachedPublicConfig;
   }
 }
 

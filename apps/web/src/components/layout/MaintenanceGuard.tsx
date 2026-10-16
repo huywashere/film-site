@@ -55,9 +55,9 @@ export function MaintenanceGuard() {
   const { data: config, refetch } = useQuery<PublicSiteConfiguration>({
     queryKey: ["public-site-configuration"],
     queryFn: () => siteConfigApi.getPublic().then((res) => res.data),
-    staleTime: 8_000,
+    staleTime: 5 * 60 * 1000,
     refetchInterval: (query) => (query.state.data?.maintenanceMode ? 12_000 : false),
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
   });
 
   const isMaintenanceActive = Boolean(config?.maintenanceMode);

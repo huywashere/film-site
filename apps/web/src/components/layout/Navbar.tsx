@@ -332,11 +332,14 @@ const MORE_NAV_ITEMS = [
   },
 ];
 
-function AnimatedNavbarLogo() {
+function AnimatedNavbarLogo({ onPrefetch }: { onPrefetch?: () => void }) {
   return (
     <Link
       href="/"
       prefetch={false}
+      onMouseEnter={onPrefetch}
+      onPointerDown={onPrefetch}
+      onTouchStart={onPrefetch}
       aria-label="FlexPhim - Trang chủ"
       className="group flex select-none items-center space-x-2.5"
     >
@@ -830,7 +833,7 @@ export function Navbar() {
             >
               <Menu size={23} className="stroke-[2.2]" />
             </button>
-            <AnimatedNavbarLogo />
+            <AnimatedNavbarLogo onPrefetch={() => prefetchNav("/")} />
           </div>
 
           <nav className="absolute left-1/2 z-10 hidden -translate-x-1/2 items-center justify-center whitespace-nowrap text-sm font-semibold text-neutral-200 xl:flex xl:space-x-0.5 min-[1700px]:space-x-2">

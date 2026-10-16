@@ -114,6 +114,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
               </button>
           <Link
             href="/"
+            prefetch={true}
             className="flex items-center space-x-2"
             onClick={onClose}
           >
