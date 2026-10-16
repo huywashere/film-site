@@ -47,7 +47,6 @@ import {
 import flexphimLogo from "../../../web/public/flexphim-logo.png";
 import { adminFetch } from "@/lib/admin-api";
 import { AdminDevToolsGuard } from "@/components/security/AdminDevToolsGuard";
-import { AdminIdleLock } from "@/components/security/AdminIdleLock";
 import { AdminAntiScreenshot } from "@/components/security/AdminAntiScreenshot";
 import { AdminSessionSync } from "@/components/security/AdminSessionSync";
 
@@ -486,7 +485,6 @@ export default function AdminRootLayout({
       <body className={`${ibmPlexSans.variable} ${plusJakartaSans.variable}`}>
         <AdminDevToolsGuard />
         <AdminSessionSync />
-        <AdminIdleLock />
         <AdminAntiScreenshot enabled={screenshotProtectionEnabled} />
         <div className="admin-shell min-h-screen bg-[var(--admin-sidebar)] lg:grid lg:grid-cols-[245px_minmax(0,1fr)]">
           <aside
