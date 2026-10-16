@@ -29,6 +29,7 @@ import {
 } from "@/components/film/FilmCard";
 import { Pagination } from "@/components/film/Pagination";
 import { TrailerModal } from "@/components/film/TrailerModal";
+import { TmdbLogoIcon, ImdbLogoIcon } from "@/components/film/MovieRatingBadges";
 import { cardFont } from "@/lib/fonts";
 import { DeferredSection } from "@/components/layout/DeferredSection";
 import { useDeferredContent } from "@/hooks/useDeferredContent";
@@ -486,23 +487,19 @@ function GenreCuratedHeroBanner({
             {/* Enhanced Metadata Row: IMDb | TMDB | Year | Movie Genres | Audio */}
             <div className="flex flex-wrap items-center gap-1.5 sm:gap-3 text-[11px] sm:text-sm md:text-base font-semibold text-neutral-200">
               {/* IMDb Rating Chip */}
-              <div className="hidden items-center gap-1 rounded-md border border-white/15 bg-neutral-900/80 px-2 py-0.5 shadow-sm backdrop-blur-md sm:inline-flex sm:gap-1.5 sm:rounded-lg sm:px-2.5 sm:py-1">
-                <Star size={12} className="sm:w-3.5 sm:h-3.5 fill-[#f5c518] text-[#f5c518] shrink-0" />
+              <div className="hidden items-center gap-1.5 rounded-md border border-white/15 bg-neutral-900/80 px-2 py-0.5 shadow-sm backdrop-blur-md sm:inline-flex sm:rounded-lg sm:px-2.5 sm:py-1">
+                <ImdbLogoIcon className="h-3.5 sm:h-4 w-auto" />
                 <span className="text-white font-extrabold text-[11px] sm:text-sm tracking-tight">
-                  {(currentItem.imdb_rating || currentItem.vote_average || 8.5).toFixed(1)}
+                  {(currentItem.imdb_rating || currentItem.vote_average || 8.5).toFixed(1).replace('.', ',')}
                 </span>
-                <span className="text-[9px] sm:text-[11px] font-bold text-neutral-400 uppercase tracking-wider">IMDb</span>
               </div>
 
               {/* TMDB Rating Chip */}
-              <div className="inline-flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg bg-neutral-900/80 border border-white/15 backdrop-blur-md shadow-sm">
-                <div className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full bg-gradient-to-tr from-[#90cea1] to-[#01b4e4] flex items-center justify-center shrink-0 p-[1.5px] sm:p-[2px]">
-                  <div className="w-full h-full rounded-full bg-[#12141c]" />
-                </div>
-                <span className="text-cyan-300 font-extrabold text-[11px] sm:text-sm tracking-tight">
+              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg bg-neutral-900/80 border border-white/15 backdrop-blur-md shadow-sm">
+                <TmdbLogoIcon className="h-3.5 sm:h-4 w-auto" />
+                <span className="text-white font-extrabold text-[11px] sm:text-sm tracking-tight">
                   {Math.round((currentItem.tmdb_rating || (currentItem.tmdb as any)?.vote_average || currentItem.vote_average || 8.0) * 10)}%
                 </span>
-                <span className="text-[9px] sm:text-[11px] font-bold text-neutral-400 uppercase tracking-wider">TMDB</span>
               </div>
 
               <span className="text-white font-bold">{currentItem.year}</span>

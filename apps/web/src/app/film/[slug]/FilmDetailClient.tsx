@@ -2066,28 +2066,17 @@ export default function FilmDetailPage({
                           {displayFilm.time}
                         </span>
                       )}
-                      {displayTmdbScore && (
-                        <span
-                          className="inline-flex items-center gap-1.5 rounded bg-[#01b4e4]/15 border border-[#01b4e4]/40 px-2 py-0.5 text-[10px] sm:text-[11px] font-bold text-cyan-300 shadow-sm select-none"
-                          title="Điểm TMDB"
-                        >
-                          <span className="bg-[#01b4e4] text-black font-black px-1 rounded text-[9px] leading-tight">
-                            TMDB
-                          </span>
-                          <span>{displayTmdbScore}/10</span>
-                        </span>
-                      )}
-                      {displayImdbScore && (
-                        <span
-                          className="inline-flex items-center gap-1.5 rounded bg-[#f5c518]/15 border border-[#f5c518]/40 px-2 py-0.5 text-[10px] sm:text-[11px] font-bold text-amber-300 shadow-sm select-none"
-                          title="Điểm IMDb"
-                        >
-                          <span className="bg-[#f5c518] text-black font-black px-1 rounded text-[9px] leading-tight">
-                            IMDb
-                          </span>
-                          <span>{displayImdbScore}/10</span>
-                        </span>
-                      )}
+                      {/* Bảng điểm đánh giá chuẩn logo chính hãng (TMDB, IMDb, Cà chua Tomatometer, Bỏng ngô Popcornmeter) */}
+                      <MovieRatingBadges
+                        size="sm"
+                        tmdbScore={effectiveOmdb?.tmdbRating || displayTmdbScore}
+                        imdbScore={effectiveOmdb?.imdbRating || displayImdbScore}
+                        tomatoScore={effectiveOmdb?.rottenTomatoes}
+                        popcornScore={effectiveOmdb?.rottenTomatoesAudience}
+                        imdbId={effectiveOmdb?.imdbId}
+                        tmdbId={displayFilm?.tmdb?.id || (displayFilm as any)?.tmdbId}
+                        className="inline-flex py-0 ml-1.5 gap-x-3.5 sm:gap-x-4 items-center"
+                      />
                     </div>
                   </div>
                 );
@@ -2268,17 +2257,6 @@ export default function FilmDetailPage({
           );
         })()}
 
-            {/* ── Official Ratings Bar (TMDB, IMDb, Rotten Tomatoes, Popcornmeter) ── */}
-            <div className="pt-3 w-full">
-              <MovieRatingBadges
-                tmdbScore={effectiveOmdb?.tmdbRating || displayTmdbScore}
-                imdbScore={effectiveOmdb?.imdbRating || displayImdbScore}
-                tomatoScore={effectiveOmdb?.rottenTomatoes}
-                popcornScore={effectiveOmdb?.rottenTomatoesAudience}
-                imdbId={effectiveOmdb?.imdbId}
-                tmdbId={displayFilm?.tmdb?.id || (displayFilm as any)?.tmdbId}
-              />
-            </div>
 
             {/* ── Extra OMDB Details (Metacritic, Awards, Box Office) ── */}
             <AnimatePresence>

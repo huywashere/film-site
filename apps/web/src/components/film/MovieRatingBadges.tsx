@@ -11,6 +11,7 @@ export interface MovieRatingBadgesProps {
   imdbId?: string | null;
   tmdbId?: string | number | null;
   className?: string;
+  size?: 'sm' | 'md';
 }
 
 /**
@@ -20,7 +21,7 @@ export function TmdbLogoIcon({ className }: { className?: string }) {
   return (
     <svg
       viewBox="0 0 56 24"
-      className={cn('h-5 sm:h-6 w-auto shrink-0 select-none drop-shadow-sm', className)}
+      className={cn('w-auto shrink-0 select-none drop-shadow-sm', className || 'h-5 sm:h-6')}
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-label="The Movie Database"
@@ -76,7 +77,7 @@ export function ImdbLogoIcon({ className }: { className?: string }) {
   return (
     <svg
       viewBox="0 0 46 24"
-      className={cn('h-5 sm:h-6 w-auto shrink-0 select-none rounded shadow-sm', className)}
+      className={cn('w-auto shrink-0 select-none rounded shadow-sm', className || 'h-5 sm:h-6')}
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-label="IMDb"
@@ -106,7 +107,7 @@ export function RottenTomatoesIcon({
     return (
       <svg
         viewBox="0 0 32 32"
-        className={cn('h-5 sm:h-6 w-auto shrink-0 select-none drop-shadow-sm', className)}
+        className={cn('w-auto shrink-0 select-none drop-shadow-sm', className || 'h-5 sm:h-6')}
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         aria-label="Rotten Tomatoes Fresh"
@@ -181,7 +182,7 @@ export function PopcornIcon({
     return (
       <svg
         viewBox="0 0 32 32"
-        className={cn('h-5 sm:h-6 w-auto shrink-0 select-none drop-shadow-sm', className)}
+        className={cn('w-auto shrink-0 select-none drop-shadow-sm', className || 'h-5 sm:h-6')}
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         aria-label="Rotten Tomatoes Popcorn Audience"
@@ -224,7 +225,7 @@ export function PopcornIcon({
   return (
     <svg
       viewBox="0 0 32 32"
-      className={cn('h-5 sm:h-6 w-auto shrink-0 select-none drop-shadow-sm', className)}
+      className={cn('w-auto shrink-0 select-none drop-shadow-sm', className || 'h-5 sm:h-6')}
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-label="Rotten Tomatoes Audience Spilled Popcorn"
@@ -251,7 +252,14 @@ export function MovieRatingBadges({
   imdbId,
   tmdbId,
   className,
+  size = 'md',
 }: MovieRatingBadgesProps) {
+  const isSm = size === 'sm';
+  const iconClass = isSm ? 'h-3.5 sm:h-4' : 'h-5 sm:h-6';
+  const textClass = isSm
+    ? 'text-xs sm:text-[13px] font-black text-white tracking-tight leading-none'
+    : 'text-sm sm:text-base font-extrabold text-white tracking-tight leading-none';
+
   // Format TMDB score: if passed as 8.2 or "8.2", format to 82%
   const formattedTmdb = React.useMemo(() => {
     if (!tmdbScore) return null;
@@ -302,7 +310,9 @@ export function MovieRatingBadges({
   return (
     <div
       className={cn(
-        'flex flex-wrap items-center justify-center sm:justify-start gap-x-5 sm:gap-x-6 gap-y-2 py-1 select-none',
+        isSm
+          ? 'inline-flex flex-wrap items-center gap-x-3.5 sm:gap-x-4 gap-y-1.5 select-none'
+          : 'flex flex-wrap items-center justify-center sm:justify-start gap-x-5 sm:gap-x-6 gap-y-2 py-1 select-none',
         className,
       )}
       aria-label="Đánh giá phim từ các bảng xếp hạng uy tín"
@@ -320,15 +330,15 @@ export function MovieRatingBadges({
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 focus:outline-none"
             >
-              <TmdbLogoIcon />
-              <span className="text-sm sm:text-base font-extrabold text-white tracking-tight leading-none">
+              <TmdbLogoIcon className={iconClass} />
+              <span className={textClass}>
                 {formattedTmdb}
               </span>
             </a>
           ) : (
             <>
-              <TmdbLogoIcon />
-              <span className="text-sm sm:text-base font-extrabold text-white tracking-tight leading-none">
+              <TmdbLogoIcon className={iconClass} />
+              <span className={textClass}>
                 {formattedTmdb}
               </span>
             </>
@@ -349,15 +359,15 @@ export function MovieRatingBadges({
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 focus:outline-none"
             >
-              <ImdbLogoIcon />
-              <span className="text-sm sm:text-base font-extrabold text-white tracking-tight leading-none">
+              <ImdbLogoIcon className={iconClass} />
+              <span className={textClass}>
                 {formattedImdb}
               </span>
             </a>
           ) : (
             <>
-              <ImdbLogoIcon />
-              <span className="text-sm sm:text-base font-extrabold text-white tracking-tight leading-none">
+              <ImdbLogoIcon className={iconClass} />
+              <span className={textClass}>
                 {formattedImdb}
               </span>
             </>
@@ -371,8 +381,8 @@ export function MovieRatingBadges({
           title={`Rotten Tomatoes Tomatometer (Giới phê bình): ${formattedTomato}`}
           className="inline-flex items-center gap-1.5 transition-transform duration-150 hover:scale-105"
         >
-          <RottenTomatoesIcon score={tomatoNum} />
-          <span className="text-sm sm:text-base font-extrabold text-white tracking-tight leading-none">
+          <RottenTomatoesIcon score={tomatoNum} className={iconClass} />
+          <span className={textClass}>
             {formattedTomato}
           </span>
         </div>
@@ -384,8 +394,8 @@ export function MovieRatingBadges({
           title={`Rotten Tomatoes Popcornmeter (Điểm khán giả): ${formattedPopcorn}`}
           className="inline-flex items-center gap-1.5 transition-transform duration-150 hover:scale-105"
         >
-          <PopcornIcon score={popcornNum} />
-          <span className="text-sm sm:text-base font-extrabold text-white tracking-tight leading-none">
+          <PopcornIcon score={popcornNum} className={iconClass} />
+          <span className={textClass}>
             {formattedPopcorn}
           </span>
         </div>
