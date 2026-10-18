@@ -75,7 +75,7 @@ function normalizeEpisodes(episodes: unknown): XinkRecord[] {
       };
     });
 
-    const serverName = String(server?.server_name || "Xink")
+    const serverName = String(server?.server_name || "VodPhim")
       .replace(/[\r\n]+/g, " ")
       .replace(/\s+/g, " ")
       .trim();
@@ -85,6 +85,7 @@ function normalizeEpisodes(episodes: unknown): XinkRecord[] {
       server_name: serverName,
       server_data: normalizedData,
       _source: "xink",
+      _type: "song-ngu",
     };
   });
 }

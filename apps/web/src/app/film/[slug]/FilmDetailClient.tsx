@@ -70,6 +70,7 @@ import {
 } from '@/lib/image-cdn';
 import { safeJsonLd } from '@/lib/safe-json-ld';
 import { cardFont } from '@/lib/fonts';
+import { getSiteUrl } from '@/lib/seo';
 import { guestDataStorage } from '@/lib/user-data';
 import { watchProgressStorage } from '@/lib/watch-progress';
 import { useOmdb, type OmdbData } from '@/hooks/useOmdb';
@@ -1835,7 +1836,7 @@ export default function FilmDetailPage({
       '@type': 'WatchAction',
       target: {
         '@type': 'EntryPoint',
-        urlTemplate: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://netphim.app'}/watch/${slug}`,
+        urlTemplate: `${getSiteUrl()}/watch/${slug}`,
         actionPlatform: [
           'http://schema.org/DesktopWebPlatform',
           'http://schema.org/MobileWebPlatform',
@@ -1844,6 +1845,7 @@ export default function FilmDetailPage({
     },
   };
 
+  const siteUrl = getSiteUrl();
   const breadcrumbJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -1852,29 +1854,24 @@ export default function FilmDetailPage({
         '@type': 'ListItem',
         position: 1,
         name: 'Trang Chủ',
-        item: process.env.NEXT_PUBLIC_SITE_URL || 'https://netphim.app',
+        item: siteUrl,
       },
       {
         '@type': 'ListItem',
         position: 2,
         name: typeLabel,
-        item: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://netphim.app'}/films/${film?.type === 'series' ? 'series' : 'single'}`,
+        item: `${siteUrl}/films/${film?.type === 'series' ? 'series' : 'single'}`,
       },
       {
         '@type': 'ListItem',
         position: 3,
         name: filmName,
-        item: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://netphim.app'}/film/${slug}`,
+        item: `${siteUrl}/film/${slug}`,
       },
     ],
   };
 
   const jsonLdPayload = [jsonLd, breadcrumbJsonLd];
-
-  const seoTitle = `${filmName} ${originName ? `(${originName})` : ''} ${film?.year ? `- ${film.year}` : ''} Vietsub HD | FlexPhim`;
-  const seoDescription = cleanContent
-    ? cleanContent.slice(0, 160)
-    : `Xem phim ${filmName} (${originName}) chất lượng cao Vietsub Thuyết minh HD miễn phí trên FlexPhim.`;
 
   return (
     <div
@@ -1885,20 +1882,6 @@ export default function FilmDetailPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLdPayload) }}
       />
-
-      {/* ── DYNAMIC HEAD META TAGS (OPEN GRAPH & TWITTER CARDS) ── */}
-      <title>{seoTitle}</title>
-      <meta name="description" content={seoDescription} />
-      <link rel="canonical" href={`${process.env.NEXT_PUBLIC_SITE_URL || 'https://netphim.app'}/film/${slug}`} />
-      <meta property="og:title" content={seoTitle} />
-      <meta property="og:description" content={seoDescription} />
-      <meta property="og:url" content={`${process.env.NEXT_PUBLIC_SITE_URL || 'https://netphim.app'}/film/${slug}`} />
-      <meta property="og:image" content={posterUrl || backdropUrl || undefined} />
-      <meta property="og:type" content="video.movie" />
-      <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:title" content={seoTitle} />
-      <meta name="twitter:description" content={seoDescription} />
-      <meta name="twitter:image" content={posterUrl || backdropUrl || undefined} />
       {/* ── Giant Backdrop Banner (Plex Style Left-to-Right Blended Layout) ── */}
       {(backdropUrl || posterUrl || providerBackdropUrl || providerPosterUrl || displayBackdropCandidates.length > 0) && (
         <div className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[86vh] min-h-[720px] w-full select-none overflow-hidden md:h-[105vh] md:max-h-[1040px]">

@@ -6,6 +6,8 @@ import {
   getMovieFromPageData,
   getMoviePageData,
 } from "@/lib/server/movie-page-data";
+import { getMovieTmdbServer } from "@/lib/server/movie-tmdb-server";
+import { getSiteUrl, buildSeoMetadata, resolveOgImageUrl } from "@/lib/seo";
 
 export const revalidate = 3600;
 
@@ -27,26 +29,16 @@ export async function generateMetadata({
   const epNumber = Array.isArray(epParam) ? epParam[0] : epParam;
 
   const movie = getMovieFromPageData(await getMoviePageData(slug));
-
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL || "https://netphim.app";
-  const watchUrl = epNumber
-    ? `${siteUrl}/watch/${slug}?ep=${epNumber}`
-    : `${siteUrl}/watch/${slug}`;
+  const pagePath = epNumber ? `/watch/${slug}?ep=${epNumber}` : `/watch/${slug}`;
 
   if (!movie) {
-    return {
+    return buildSeoMetadata({
       title: "Xem Phim Online Full HD | FlexPhim",
       description:
         "Xem phim online tốc độ cao, không giật lag, hỗ trợ phụ đề tiếng Việt và thuyết minh tại FlexPhim.",
-      openGraph: {
-        title: "FlexPhim — Trình Phát Phim Online",
-        description: "Xem phim online chất lượng cao Full HD tại FlexPhim.",
-        url: watchUrl,
-        siteName: "FlexPhim",
-        type: "video.other",
-      },
-    };
+      path: pagePath,
+      type: "video.other",
+    });
   }
 
   const name = movie.name || movie.title || slug;
@@ -63,13 +55,20 @@ export async function generateMetadata({
         .slice(0, 180) + "..."
     : `Xem phim ${name}${epLabel} online Full HD Vietsub thuyết minh chất lượng cao miễn phí tại FlexPhim.`;
 
+  const tmdbServer = await getMovieTmdbServer(movie);
   const rawImage = movie.poster_url || movie.thumb_url;
   const imageUrl =
-    normalizeMovieArtworkUrl(rawImage) || `${siteUrl}/flexphim-logo.png`;
+    tmdbServer?.tmdbBackdropUrl ||
+    tmdbServer?.tmdbPosterUrl ||
+    normalizeMovieArtworkUrl(rawImage);
 
-  return {
+  return buildSeoMetadata({
     title: metaTitle,
     description: cleanDesc,
+    path: pagePath,
+    imageUrl,
+    imageAlt: `${name}${epLabel}`,
+    type: "video.episode",
     keywords: [
       name,
       movie.origin_name,
@@ -79,32 +78,7 @@ export async function generateMetadata({
       `${name} thuyết minh`,
       "FlexPhim",
     ].filter(Boolean) as string[],
-    alternates: {
-      canonical: watchUrl,
-    },
-    openGraph: {
-      type: "video.episode",
-      url: watchUrl,
-      title: `Xem Phim ${name}${originName}${epLabel} - Full HD | FlexPhim`,
-      description: cleanDesc,
-      siteName: "FlexPhim",
-      locale: "vi_VN",
-      images: [
-        {
-          url: imageUrl,
-          width: 1200,
-          height: 630,
-          alt: `${name}${epLabel}`,
-        },
-      ],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: `Xem Phim ${name}${originName}${epLabel} - Full HD | FlexPhim`,
-      description: cleanDesc,
-      images: [imageUrl],
-    },
-  };
+  });
 }
 
 export default async function WatchPageWrapper({ params }: PageProps) {
@@ -113,8 +87,7 @@ export default async function WatchPageWrapper({ params }: PageProps) {
   const initialData = await getMoviePageData(slug);
   const movie = getMovieFromPageData(initialData);
 
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL || "https://netphim.app";
+  const siteUrl = getSiteUrl();
   const watchUrl = `${siteUrl}/watch/${slug}`;
 
   const jsonLd = movie
@@ -125,7 +98,7 @@ export default async function WatchPageWrapper({ params }: PageProps) {
         description: movie.content
           ? movie.content.replace(/<[^>]*>?/gm, "").trim()
           : `Xem phim ${movie.name} online tại FlexPhim`,
-        thumbnailUrl: normalizeMovieArtworkUrl(
+        thumbnailUrl: resolveOgImageUrl(
           movie.poster_url || movie.thumb_url,
         ),
         uploadDate: movie.year ? `${movie.year}-01-01` : undefined,
@@ -136,6 +109,11 @@ export default async function WatchPageWrapper({ params }: PageProps) {
 
   return (
     <>
+      <link rel="preconnect" href="https://image.tmdb.org" crossOrigin="anonymous" />
+      <link rel="preconnect" href="https://phimimg.com" crossOrigin="anonymous" />
+      <link rel="dns-prefetch" href="https://phimapi.com" />
+      <link rel="dns-prefetch" href="https://kkphimplayer.com" />
+      <link rel="dns-prefetch" href="https://vicdn.cc" />
       {jsonLd && (
         <script
           type="application/ld+json"

@@ -4,6 +4,7 @@ export const en = {
     films: "Movies",
     series: "TV Series",
     single: "Feature Films",
+    bilingual: "Bilingual",
     anime: "Anime",
     tvshows: "TV Shows",
     actors: "Actors",
@@ -61,7 +62,8 @@ export const en = {
   },
   sections: {
     latest: "Recently Updated Movies",
-    vfx: "Mythology & Visual Effects",
+    wuxia: "Featured Period & Martial Arts",
+    vfx: "Sci-Fi Movies",
     usUkSeries: "Top Western & US-UK Series",
     action: "Action & Thriller Blockbusters",
     scifi: "Sci-Fi & Cyberpunk Masterpieces",

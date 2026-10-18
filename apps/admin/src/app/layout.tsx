@@ -43,6 +43,9 @@ import {
   IconCamera,
   IconCameraOff,
   IconSparkles,
+  IconLayoutSidebar,
+  IconShoppingBag,
+  IconMail,
 } from "@tabler/icons-react";
 import flexphimLogo from "../../../web/public/flexphim-logo.png";
 import { adminFetch } from "@/lib/admin-api";
@@ -486,27 +489,22 @@ export default function AdminRootLayout({
         <AdminDevToolsGuard />
         <AdminSessionSync />
         <AdminAntiScreenshot enabled={screenshotProtectionEnabled} />
-        <div className="admin-shell min-h-screen bg-[var(--admin-sidebar)] lg:grid lg:grid-cols-[245px_minmax(0,1fr)]">
+        <div className="admin-shell min-h-screen bg-[var(--admin-canvas)] lg:grid lg:grid-cols-[260px_minmax(0,1fr)]">
           <aside
-            className={`fixed inset-y-0 left-0 z-40 flex w-[245px] flex-col bg-[var(--admin-sidebar)] text-slate-200 transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${mobileNavigationOpen ? "translate-x-0" : "-translate-x-full"}`}
+            className={`fixed inset-y-0 left-0 z-40 flex w-[260px] flex-col border-r border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#0b0f19] text-slate-800 dark:text-slate-100 transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${mobileNavigationOpen ? "translate-x-0" : "-translate-x-full"}`}
             aria-label="Điều hướng quản trị"
           >
-            <div className="flex h-[66px] items-center justify-between px-[22px]">
+            <div className="flex h-16 items-center justify-between px-5 border-b border-slate-100 dark:border-slate-800/80">
               <Link
                 href="/"
                 className="flex items-center gap-2.5"
                 onClick={() => setMobileNavigationOpen(false)}
               >
-                <Image
-                  src={flexphimLogo}
-                  alt="FlexPhim"
-                  width={34}
-                  height={34}
-                  priority
-                  className="h-[34px] w-[34px] object-contain"
-                />
-                <span className="text-[20px] font-extrabold tracking-[-.035em] text-white">
-                  Flex<span className="text-[#9b72ff]">Phim</span>
+                <span className="grid h-8 w-8 place-items-center rounded-full bg-black text-white dark:bg-white dark:text-black font-extrabold text-[15px] shadow-xs">
+                  /
+                </span>
+                <span className="text-[19px] font-extrabold tracking-tight text-slate-900 dark:text-white">
+                  flexphim<span className="text-slate-400 font-normal">.</span>
                 </span>
               </Link>
               <button
@@ -518,13 +516,13 @@ export default function AdminRootLayout({
               </button>
             </div>
 
-            <nav className="flex-1 overflow-y-auto px-2.5 pb-6 pt-3">
+            <nav className="flex-1 overflow-y-auto px-3.5 py-4 space-y-6">
               {NAV_GROUPS.map((group) => (
-                <div key={group.label.en} className="mb-7">
-                  <p className="mb-2 px-3 text-[10px] font-bold tracking-[.13em] text-[#8091aa]">
+                <div key={group.label.en}>
+                  <p className="mb-2 px-3 text-[11px] font-bold tracking-wider text-slate-400 dark:text-slate-500 uppercase">
                     {group.label[locale]}
                   </p>
-                  <div className="space-y-0.5">
+                  <div className="space-y-1">
                     {group.items
                       .filter(
                         (item) =>
@@ -540,27 +538,37 @@ export default function AdminRootLayout({
                           key={href}
                           href={href}
                           onClick={() => setMobileNavigationOpen(false)}
-                          className={`group flex h-[39px] items-center gap-3 rounded-md px-3 text-[13px] transition-colors ${active ? "bg-[#344155] text-white" : "text-[#9aabc2] hover:bg-white/[.045] hover:text-white"}`}
+                          className={`group flex h-10 items-center gap-3 rounded-lg px-3.5 text-[13px] font-medium transition-all duration-200 ease-in-out ${
+                            active
+                              ? "bg-black text-white dark:bg-white dark:text-black font-semibold shadow-xs translate-x-1"
+                              : "text-slate-600 dark:text-slate-400 hover:bg-slate-100/80 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white hover:translate-x-1"
+                          }`}
                         >
                           <Icon
                             size={18}
-                            stroke={1.65}
+                            stroke={1.8}
                             className={
                               active
-                                ? "text-[#7ba7ff]"
-                                : "text-[#8fa2bc] group-hover:text-white"
+                                ? "text-white dark:text-black"
+                                : "text-slate-400 dark:text-slate-500 group-hover:text-slate-900 dark:group-hover:text-white transition-colors"
                             }
                           />
-                          <span className="font-semibold">{label[locale]}</span>
+                          <span>{label[locale]}</span>
                           {badge && (
-                            <span className="ml-auto rounded-full bg-[#f7577e] px-2 py-0.5 text-[9px] font-bold text-white">
+                            <span
+                              className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                                active
+                                  ? "bg-white/20 text-white dark:bg-black/20 dark:text-black"
+                                  : "bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400 border border-rose-200 dark:border-rose-900/60"
+                              }`}
+                            >
                               {badge}
                             </span>
                           )}
                           {!badge && href !== "/" && (
                             <IconChevronRight
                               size={13}
-                              className="ml-auto opacity-45"
+                              className={`ml-auto transition-transform ${active ? "opacity-90" : "opacity-30 group-hover:opacity-70 group-hover:translate-x-0.5"}`}
                             />
                           )}
                         </Link>
@@ -571,24 +579,47 @@ export default function AdminRootLayout({
               ))}
             </nav>
 
-            <div className="border-t border-white/[.07] p-3">
-              <div className="flex items-center gap-3 rounded-md px-2 py-2">
-                <span className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-[#f9bf59] to-[#f7577e] text-[11px] font-extrabold text-white">
-                  {adminInitials}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <strong className="block truncate text-[12px] text-white">
+            {/* Sidebar Bottom Pro Widget */}
+            <div className="p-3 border-t border-slate-100 dark:border-slate-800/80">
+              <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 p-3.5 text-center space-y-2.5">
+                <div className="mx-auto grid h-10 w-10 place-items-center rounded-full bg-white dark:bg-slate-700 shadow-xs border border-slate-200/60 dark:border-slate-700 text-amber-500">
+                  <IconSparkles size={20} />
+                </div>
+                <div>
+                  <h4 className="text-[13px] font-bold text-slate-800 dark:text-slate-100">FlexPhim Pro</h4>
+                  <p className="text-[11px] text-slate-400">Tối ưu vận hành & AI</p>
+                </div>
+                <Link
+                  href="/system"
+                  className="inline-block w-full rounded-lg bg-black text-white dark:bg-white dark:text-black py-2 text-[12px] font-semibold hover:opacity-90 transition-opacity"
+                >
+                  Kiểm tra hệ thống
+                </Link>
+              </div>
+            </div>
+
+            {/* Admin User Profile Bottom Strip */}
+            <div className="border-t border-slate-100 dark:border-slate-800/80 p-3">
+              <div className="flex items-center gap-3 rounded-lg p-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                <div className="relative">
+                  <span className="grid h-9 w-9 place-items-center rounded-full bg-slate-900 dark:bg-white text-[12px] font-bold text-white dark:text-black shadow-xs">
+                    {adminInitials}
+                  </span>
+                  <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <strong className="block truncate text-[12px] font-semibold text-slate-800 dark:text-slate-100">
                     {adminName}
                   </strong>
-                  <small className="block truncate text-[10px] text-[#8190a4]">
+                  <small className="block truncate text-[11px] text-slate-400">
                     {roleLabel(adminProfile?.role)}
                   </small>
-                </span>
+                </div>
                 <a
                   href="http://localhost:3000"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[#8190a4] hover:text-white"
+                  className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
                   title="Mở FlexPhim"
                 >
                   <IconExternalLink size={16} />
@@ -605,56 +636,43 @@ export default function AdminRootLayout({
             />
           )}
 
-          <div className="admin-workspace min-w-0 overflow-hidden bg-[var(--admin-canvas)] lg:rounded-tl-[22px]">
+          <div className="admin-workspace min-w-0 overflow-hidden bg-[var(--admin-canvas)]">
             <header
               ref={headerRef}
-              className="admin-topbar sticky top-0 z-20 h-[66px] border-b border-[var(--admin-line)] bg-white/95 backdrop-blur-xl"
+              className="admin-topbar sticky top-0 z-20 h-16 border-b border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-[#0f172a]/95 backdrop-blur-md"
             >
-              <div className="flex h-full items-center gap-3 px-4 sm:px-5 lg:px-6">
+              <div className="flex h-full items-center gap-3 px-4 sm:px-6">
                 <button
-                  className="admin-topbar-button lg:hidden"
-                  onClick={() => setMobileNavigationOpen(true)}
-                  aria-label="Mở menu"
+                  className="admin-topbar-button"
+                  onClick={() => setMobileNavigationOpen(!mobileNavigationOpen)}
+                  aria-label="Thu gọn hoặc mở menu"
                 >
-                  <IconMenu2 size={20} />
+                  <IconLayoutSidebar size={18} />
                 </button>
+
                 <form
                   onSubmit={submitSearch}
-                  className="relative hidden w-[230px] sm:block"
+                  className="relative hidden w-64 sm:block"
                 >
                   <IconSearch
-                    size={17}
-                    stroke={1.7}
-                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#9ba6b7]"
+                    size={16}
+                    stroke={1.8}
+                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
                   />
                   <input
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
-                    className="admin-search h-9 w-full rounded-full border-0 bg-[#f3f5f9] pl-9 pr-3 text-[12px] text-[#4c4c5c] outline-none placeholder:text-[#a4aec0] focus:ring-2 focus:ring-blue-100"
-                    placeholder={
-                      locale === "vi" ? "Tìm kiếm nhanh..." : "Quick Search..."
-                    }
+                    className="h-9 w-full rounded-lg border border-slate-200/80 dark:border-slate-700/80 bg-slate-50/80 dark:bg-slate-800/40 pl-9 pr-14 text-[12.5px] text-slate-800 dark:text-slate-100 outline-none placeholder:text-slate-400 focus:border-black dark:focus:border-white focus:bg-white dark:focus:bg-slate-900 transition-all"
+                    placeholder="Search..."
                     aria-label="Tìm phim"
                   />
+                  <kbd className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-1.5 py-0.5 text-[10px] font-medium text-slate-400">
+                    Ctrl K
+                  </kbd>
                 </form>
-                <button
-                  onClick={() => toggleMenu("apps")}
-                  className="hidden items-center gap-1.5 px-2 text-[12px] font-semibold text-[#596174] hover:text-[var(--admin-brand)] md:flex"
-                  aria-expanded={openMenu === "apps"}
-                >
-                  {locale === "vi" ? "Menu tổng" : "Mega Menu"}{" "}
-                  <IconChevronDown size={13} />
-                </button>
-                <button
-                  onClick={() => toggleMenu("apps")}
-                  className="hidden items-center gap-1.5 px-2 text-[12px] font-semibold text-[#596174] hover:text-[var(--admin-brand)] md:flex"
-                  aria-expanded={openMenu === "apps"}
-                >
-                  {locale === "vi" ? "Ứng dụng" : "Apps"}{" "}
-                  <IconChevronDown size={13} />
-                </button>
 
-                <div className="ml-auto flex items-center gap-1">
+                <div className="ml-auto flex items-center gap-2">
+                  {/* 1. Dark Mode Toggle */}
                   <button
                     onClick={toggleTheme}
                     className="admin-topbar-button"
@@ -666,93 +684,69 @@ export default function AdminRootLayout({
                     aria-pressed={darkMode}
                     title={darkMode ? "Giao diện sáng" : "Giao diện tối"}
                   >
-                    {darkMode ? <IconSun size={18} /> : <IconMoon size={18} />}
+                    {darkMode ? <IconSun size={17} /> : <IconMoon size={17} />}
                   </button>
+
+                  {/* 2. Language Switcher (Flag) */}
                   <button
-                    onClick={() => toggleMenu("apps")}
-                    className="admin-topbar-button hidden sm:inline-flex"
-                    aria-label={locale === "vi" ? "Mở ứng dụng" : "Open apps"}
-                    aria-expanded={openMenu === "apps"}
+                    onClick={() => chooseLocale(locale === "vi" ? "en" : "vi")}
+                    className="admin-topbar-button font-bold text-[12px]"
+                    title={
+                      locale === "vi"
+                        ? "Đang chọn Tiếng Việt (Bấm để đổi sang English)"
+                        : "English selected (Click to switch to Vietnamese)"
+                    }
                   >
-                    <IconApps size={18} />
+                    {locale === "vi" ? "🇻🇳" : "🇬🇧"}
                   </button>
+
+                  {/* 3. Tasks / Shopping Queue Badge */}
+                  <Link
+                    href="/operations"
+                    className="admin-topbar-button relative"
+                    title="Tác vụ & Vận hành"
+                  >
+                    <IconShoppingBag size={17} />
+                    <span className="absolute -top-0.5 -right-0.5 min-w-4 rounded-full bg-black text-white dark:bg-white dark:text-black px-1 text-center text-[9px] font-bold leading-4 shadow-xs">
+                      11
+                    </span>
+                  </Link>
+
+                  {/* 4. Notification Bell with status dot */}
                   <button
                     onClick={() => toggleMenu("notifications")}
                     className="admin-topbar-button relative"
                     aria-label={locale === "vi" ? "Thông báo" : "Notifications"}
                     aria-expanded={openMenu === "notifications"}
                   >
-                    <IconBell size={18} />
+                    <IconBell size={17} />
                     {notificationCount > 0 && (
-                      <span className="absolute right-0.5 top-0.5 min-w-4 rounded-full bg-[#f7577e] px-1 text-center text-[8px] font-bold leading-4 text-white">
-                        {notificationCount > 99 ? "99+" : notificationCount}
-                      </span>
+                      <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-slate-900" />
                     )}
                   </button>
-                  <button
-                    onClick={() => void toggleFullscreen()}
-                    className="admin-topbar-button hidden sm:inline-flex"
-                    aria-label={
-                      fullscreen ? "Thoát toàn màn hình" : "Toàn màn hình"
-                    }
-                    aria-pressed={fullscreen}
-                  >
-                    {fullscreen ? (
-                      <IconMinimize size={18} />
-                    ) : (
-                      <IconMaximize size={18} />
-                    )}
-                  </button>
-                  <button
-                    onClick={() => toggleMenu("palette")}
-                    className="admin-topbar-button hidden md:inline-flex"
-                    aria-label={
-                      locale === "vi" ? "Màu giao diện" : "Theme colors"
-                    }
-                    aria-expanded={openMenu === "palette"}
-                  >
-                    <IconPalette size={18} />
-                  </button>
+
+                  {/* 5. Mail / Messages */}
                   <Link
-                    href="/configuration"
-                    onClick={() => setOpenMenu(null)}
-                    className="admin-topbar-button hidden md:inline-flex"
-                    aria-label={locale === "vi" ? "Cấu hình" : "Settings"}
+                    href="/reviews"
+                    className="admin-topbar-button"
+                    title="Bình luận & Phản hồi"
                   >
-                    <IconSettings size={18} />
+                    <IconMail size={17} />
                   </Link>
-                  <span className="mx-1 hidden h-6 w-px bg-[var(--admin-line)] lg:block" />
-                  <button
-                    onClick={() => chooseLocale("vi")}
-                    className="hidden items-center gap-1 rounded-md px-2 py-1.5 text-[11px] font-bold text-[#596174] hover:bg-[#f6f7fb] lg:flex"
-                    aria-label="Chuyển ngay sang tiếng Việt"
-                    title="Chuyển ngay sang tiếng Việt"
-                  >
-                    <IconLanguage size={17} /> VI
-                  </button>
+
+                  {/* 6. User Profile Avatar with Online Status Dot */}
                   <button
                     onClick={() => toggleMenu("profile")}
-                    className="ml-1 flex items-center gap-2.5 rounded-md px-1.5 py-1 hover:bg-[#f6f7fb]"
+                    className="relative ml-1 flex items-center gap-2 rounded-full p-0.5 hover:ring-2 hover:ring-slate-200 dark:hover:ring-slate-700 transition-all cursor-pointer"
                     aria-label={
                       locale === "vi" ? "Menu tài khoản" : "Account menu"
                     }
                     aria-expanded={openMenu === "profile"}
                   >
-                    <span className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-[#f9bf59] to-[#f7577e] text-[11px] font-extrabold text-white">
+                    <span className="relative grid h-8 w-8 place-items-center rounded-full bg-gradient-to-tr from-slate-900 to-slate-700 dark:from-white dark:to-slate-200 text-white dark:text-black font-extrabold text-[12px] shadow-xs">
                       {adminInitials}
+                      <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900" />
                     </span>
-                    <span className="hidden text-left xl:block">
-                      <strong className="block max-w-32 truncate text-[12px] leading-4 text-[#4c4c5c]">
-                        {adminName}
-                      </strong>
-                      <small className="block text-[10px] text-[#9ba6b7]">
-                        {roleLabel(adminProfile?.role)}
-                      </small>
-                    </span>
-                    <IconChevronDown
-                      size={14}
-                      className="hidden text-[#9ba6b7] xl:block"
-                    />
                   </button>
                 </div>
 

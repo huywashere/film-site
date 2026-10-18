@@ -111,7 +111,23 @@ export function buildHeroImageCandidates(input: {
       candidates.push(candidate);
   };
 
-  for (const value of [input.heroBackdrop, input.thumbUrl, input.posterUrl]) {
+  const rawValues = [input.heroBackdrop, input.thumbUrl, input.posterUrl].filter(
+    (v): v is string => Boolean(v && v.trim()),
+  );
+
+  // TMDB images are authentic high-definition widescreen (1280x720/1920x1080) artwork.
+  // Prioritize them over low-res third-party provider thumbnails.
+  const tmdbValues = rawValues.filter((v) => {
+    const raw = rawProxyUrl(v) || v;
+    return isTmdbImage(raw);
+  });
+  const otherValues = rawValues.filter((v) => {
+    const raw = rawProxyUrl(v) || v;
+    return !isTmdbImage(raw);
+  });
+  const orderedValues = [...tmdbValues, ...otherValues];
+
+  for (const value of orderedValues) {
     const normalized = normalizeMovieImage(value);
     if (!normalized) continue;
 
@@ -181,10 +197,17 @@ export function buildHeroCardImageCandidates(
     if (!direct.includes(sized)) direct.push(sized);
   };
 
-  const ordered =
+  // For 16:9 landscape thumbnails, prefer 16:9 widescreen backdrops first.
+  // For vertical 2:3 posters, prefer vertical poster artwork first.
+  const baseOrdered =
     variant === "poster"
       ? [input.posterUrl, input.thumbUrl, input.heroBackdrop]
-      : [input.thumbUrl, input.posterUrl, input.heroBackdrop];
+      : [input.heroBackdrop, input.thumbUrl, input.posterUrl];
+
+  // Prioritize TMDB artwork over low-res provider crops
+  const tmdbOrdered = baseOrdered.filter((v): v is string => Boolean(v && isTmdbImage(v)));
+  const otherOrdered = baseOrdered.filter((v): v is string => Boolean(v && !isTmdbImage(v)));
+  const ordered = [...tmdbOrdered, ...otherOrdered];
 
   for (const value of ordered) {
     addDirect(value);

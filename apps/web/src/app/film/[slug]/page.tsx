@@ -9,6 +9,7 @@ import {
 import { getMovieTmdbServer } from "@/lib/server/movie-tmdb-server";
 import { tmdbLogo } from "@/lib/tmdb";
 import { buildArtworkCandidates } from "@/lib/image-cdn";
+import { getSiteUrl, buildSeoMetadata } from "@/lib/seo";
 
 export const revalidate = 3600;
 
@@ -26,23 +27,14 @@ export async function generateMetadata({
   const slug = resolvedParams?.slug || "";
   const movie = getMovieFromPageData(await getMoviePageData(slug));
 
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL || "https://netphim.app";
-  const filmUrl = `${siteUrl}/film/${slug}`;
-
   if (!movie) {
-    return {
+    return buildSeoMetadata({
       title: "Xem Phim Online | FlexPhim",
       description:
         "Nền tảng xem phim online chất lượng cao Full HD. Phim bộ, phim lẻ, hoạt hình với phụ đề tiếng Việt.",
-      openGraph: {
-        title: "FlexPhim — Xem Phim Online Chất Lượng Cao",
-        description: "Xem phim online miễn phí Full HD tại FlexPhim.",
-        url: filmUrl,
-        siteName: "FlexPhim",
-        type: "website",
-      },
-    };
+      path: `/film/${slug}`,
+      type: "website",
+    });
   }
 
   const name = movie.name || movie.title || slug;
@@ -64,8 +56,7 @@ export async function generateMetadata({
   const imageUrl =
     tmdbServer?.tmdbBackdropUrl ||
     tmdbServer?.tmdbPosterUrl ||
-    normalizeMovieArtworkUrl(rawImage) ||
-    `${siteUrl}/flexphim-logo.png`;
+    normalizeMovieArtworkUrl(rawImage);
 
   const keywords = [
     name,
@@ -79,36 +70,15 @@ export async function generateMetadata({
     "xem phim online",
   ].filter(Boolean) as string[];
 
-  return {
+  return buildSeoMetadata({
     title: metaTitle,
     description: cleanDesc,
+    path: `/film/${slug}`,
+    imageUrl,
+    imageAlt: `${name}${originName}`,
+    type: "video.movie",
     keywords,
-    alternates: {
-      canonical: filmUrl,
-    },
-    openGraph: {
-      type: "video.movie",
-      url: filmUrl,
-      title: `${name}${originName} - Full HD Vietsub | FlexPhim`,
-      description: cleanDesc,
-      siteName: "FlexPhim",
-      locale: "vi_VN",
-      images: [
-        {
-          url: imageUrl,
-          width: 1200,
-          height: 630,
-          alt: name,
-        },
-      ],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: `${name}${originName} - Full HD Vietsub | FlexPhim`,
-      description: cleanDesc,
-      images: [imageUrl],
-    },
-  };
+  });
 }
 
 export default async function FilmPage({ params }: PageProps) {
@@ -131,8 +101,7 @@ export default async function FilmPage({ params }: PageProps) {
       })[0] || initialLogoUrl
     : null;
 
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL || "https://netphim.app";
+  const siteUrl = getSiteUrl();
   const filmUrl = `${siteUrl}/film/${slug}`;
 
   // JSON-LD Structured Data Schema for Google Rich Snippets
@@ -173,6 +142,9 @@ export default async function FilmPage({ params }: PageProps) {
 
   return (
     <>
+      <link rel="preconnect" href="https://image.tmdb.org" crossOrigin="anonymous" />
+      <link rel="preconnect" href="https://phimimg.com" crossOrigin="anonymous" />
+      <link rel="dns-prefetch" href="https://phimapi.com" />
       {initialOptimizedLogoUrl && (
         <link
           rel="preload"

@@ -7,6 +7,7 @@ import {
   type CuratedHeroMovie,
 } from "@/lib/curated-hero-pool";
 import { localImageProxyUrl } from "@/lib/image-cdn";
+import { getMovieTmdbServer } from "@/lib/server/movie-tmdb-server";
 
 export const revalidate = 60;
 
@@ -36,7 +37,7 @@ async function resolveInitialHeroFilms(heroSlugs?: string[]): Promise<CuratedHer
       try {
         const detailRes = await Promise.race([
           movieApi.getDetail(mappedSlug),
-          new Promise<null>((resolve) => setTimeout(() => resolve(null), 1200)),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)),
         ]);
         if (!detailRes) return null;
 
@@ -47,6 +48,25 @@ async function resolveInitialHeroFilms(heroSlugs?: string[]): Promise<CuratedHer
         const thumb = movie.thumb_url || movie.poster_url;
         const poster = movie.poster_url || movie.thumb_url;
 
+        let resolvedBackdrop = thumb;
+        let resolvedPoster = poster;
+        let resolvedLogo: string | undefined;
+
+        try {
+          const tmdbServer = await getMovieTmdbServer(movie);
+          if (tmdbServer?.tmdbBackdropUrl) {
+            resolvedBackdrop = tmdbServer.tmdbBackdropUrl;
+          }
+          if (tmdbServer?.tmdbPosterUrl) {
+            resolvedPoster = tmdbServer.tmdbPosterUrl;
+          }
+          if (tmdbServer?.tmdbLogoUrl) {
+            resolvedLogo = tmdbServer.tmdbLogoUrl;
+          }
+        } catch {
+          // Keep raw provider images if TMDB resolution fails
+        }
+
         const film: CuratedHeroMovie = {
           _id: movie._id || movie.id || cleanSlug,
           name: movie.name,
@@ -56,9 +76,10 @@ async function resolveInitialHeroFilms(heroSlugs?: string[]): Promise<CuratedHer
           tmdbId: movie.tmdb?.id ? Number(movie.tmdb.id) : 0,
           tmdb: movie.tmdb,
           trailer_url: movie.trailer_url,
-          poster_url: poster,
-          thumb_url: thumb,
-          heroBackdrop: thumb,
+          poster_url: resolvedPoster,
+          thumb_url: resolvedBackdrop || thumb,
+          heroBackdrop: resolvedBackdrop || thumb,
+          titleLogo: resolvedLogo,
           quality: movie.quality || "HD",
           lang: movie.lang || "Vietsub",
           year: movie.year || undefined,
@@ -85,7 +106,7 @@ let lastConfigFetch = 0;
 
 async function getInitialPublicConfiguration(): Promise<PublicSiteConfiguration | null> {
   const now = Date.now();
-  if (cachedPublicConfig && now - lastConfigFetch < 120_000) {
+  if (cachedPublicConfig && now - lastConfigFetch < 5_000) {
     return cachedPublicConfig;
   }
 
@@ -97,8 +118,8 @@ async function getInitialPublicConfiguration(): Promise<PublicSiteConfiguration 
 
   try {
     const response = await fetch(`${apiBase}/config/public`, {
-      next: { revalidate: 60, tags: ["public-site-configuration"] },
-      signal: AbortSignal.timeout(250),
+      next: { revalidate: 5, tags: ["public-site-configuration"] },
+      signal: AbortSignal.timeout(2500),
     });
     if (!response.ok) return cachedPublicConfig;
     cachedPublicConfig = (await response.json()) as PublicSiteConfiguration;
@@ -117,9 +138,10 @@ export default async function HomePage() {
   const initialDesktopBackdrop = initialHero?.heroBackdrop
     ? localImageProxyUrl(initialHero.heroBackdrop, { strict: true })
     : null;
-  const initialMobileBackdrop = initialHero?.poster_url
+  const rawMobile = initialHero?.heroBackdrop || initialHero?.poster_url;
+  const initialMobileBackdrop = rawMobile
     ? localImageProxyUrl(
-        initialHero.poster_url.replace("/t/p/w500/", "/t/p/w780/"),
+        rawMobile.replace("/t/p/w1280/", "/t/p/w1280/"),
         { strict: true },
       )
     : null;

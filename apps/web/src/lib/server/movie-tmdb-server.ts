@@ -1,3 +1,4 @@
+import { cache } from "react";
 import {
   TmdbImage,
   TmdbImages,
@@ -42,7 +43,7 @@ function normalizeTitle(val?: unknown): string {
  * Pre-fetches high-resolution TMDB artwork directly on the server.
  * Uses reachable api.tmdb.org edge to bypass regional DNS blocking.
  */
-export async function getMovieTmdbServer(movie: any): Promise<ServerTmdbResult | null> {
+export const getMovieTmdbServer = cache(async (movie: any): Promise<ServerTmdbResult | null> => {
   if (!movie) return null;
 
   const tmdbToken = process.env.TMDB_ACCESS_TOKEN?.trim() || "";
@@ -195,4 +196,4 @@ export async function getMovieTmdbServer(movie: any): Promise<ServerTmdbResult |
     // Fail silently so server rendering is never broken
     return null;
   }
-}
+});

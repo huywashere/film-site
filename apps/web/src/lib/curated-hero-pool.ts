@@ -2426,6 +2426,7 @@ export function getRandomCuratedHeroSet(count = 6): CuratedHeroMovie[] {
 }
 
 export const CURATED_HERO_SLUG_ALIASES: Record<string, string> = {
+  "hope-vung-tu-dia": "vung-tu-dia",
   "joker-2019": "joker",
   "the-batman": "nguoi-doi-2022",
   "batman-2022": "nguoi-doi-2022",

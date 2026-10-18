@@ -37,9 +37,28 @@
   -webkit-tap-highlight-color: transparent !important;
 }
 
-html,
+html {
+  scroll-behavior: smooth;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 body {
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: none;
+}
+
+/* ── Hardware Acceleration & Smooth 60/120fps Rendering ── */
+[data-film-card='true'] {
+  contain: layout;
+  transform: translateZ(0);
+}
+
+.film-carousel-track {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scroll-behavior: smooth;
 }
 
 @keyframes netphim-splash-brand-reveal {

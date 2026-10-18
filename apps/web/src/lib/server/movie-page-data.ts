@@ -1,10 +1,12 @@
 import { cache } from "react";
 import { addSignedHlsFallbacksInPayload } from "@/lib/hls-proxy-signature";
+import { normalizeVicdnPayload } from "@/lib/vicdn-normalizer";
+import { normalizeXinkPayload } from "@/lib/xink-normalizer";
 
 type MoviePagePayload = Record<string, any>;
 
 const PAGE_DATA_REVALIDATE_SECONDS = 60 * 60;
-const PAGE_DATA_TIMEOUT_MS = 1_800;
+const PAGE_DATA_TIMEOUT_MS = 2_200;
 
 async function fetchGatewayBootstrap(
   slug: string,
@@ -57,11 +59,41 @@ async function fetchProviderPayload(
   };
 }
 
+async function fetchVicdnPayload(slug: string): Promise<MoviePagePayload> {
+  const response = await fetch(`https://vicdn.cc/api/info/${encodeURIComponent(slug)}`, {
+    headers: { Referer: "https://vicdn.cc/", Origin: "https://vicdn.cc" },
+    signal: AbortSignal.timeout(PAGE_DATA_TIMEOUT_MS),
+    next: { revalidate: PAGE_DATA_REVALIDATE_SECONDS },
+  });
+  if (!response.ok) throw new Error(`vicdn:${response.status}`);
+  const payload = normalizeVicdnPayload(await response.json()) as MoviePagePayload;
+  if (!payload?.movie) throw new Error("vicdn:empty");
+  return {
+    ...payload,
+    _source: "vicdn",
+  };
+}
+
+async function fetchVodphimPayload(slug: string): Promise<MoviePagePayload> {
+  const response = await fetch(`https://api.xink.pro/api/content/phim/${encodeURIComponent(slug)}`, {
+    signal: AbortSignal.timeout(PAGE_DATA_TIMEOUT_MS),
+    next: { revalidate: PAGE_DATA_REVALIDATE_SECONDS },
+  });
+  if (!response.ok) throw new Error(`vodphim:${response.status}`);
+  const payload = normalizeXinkPayload(await response.json()) as MoviePagePayload;
+  if (!payload?.movie) throw new Error("vodphim:empty");
+  return {
+    ...payload,
+    _source: "vodphim",
+  };
+}
+
 async function fetchInternalApiMovie(slug: string): Promise<MoviePagePayload | null> {
   const apiBase =
     process.env.INTERNAL_API_URL?.trim() ||
-    process.env.NEXT_PUBLIC_API_URL?.trim() ||
-    "http://127.0.0.1:3001/api/v1";
+    process.env.NEXT_PUBLIC_API_URL?.trim();
+  if (!apiBase) return null;
+
   try {
     const response = await fetch(
       `${apiBase.replace(/\/$/, "")}/movies/${encodeURIComponent(slug)}`,
@@ -94,47 +126,81 @@ export const getMoviePageData = cache(async (slug: string) => {
   const cleanSlug = encodeURIComponent(rawSlug);
   if (!cleanSlug) return null;
 
-  const internal = fetchInternalApiMovie(rawSlug).then((payload) => {
-    if (!payload) throw new Error("internal:empty");
-    return payload;
-  });
+  const isVicdnSlug = rawSlug.startsWith("mv-") || rawSlug.startsWith("tv-");
+  if (isVicdnSlug) {
+    try {
+      return await fetchVicdnPayload(rawSlug);
+    } catch {
+      // Fallback to other providers below
+    }
+  }
 
-  const gateway = fetchGatewayBootstrap(rawSlug).then((payload) => {
-    if (!payload) throw new Error("gateway:empty");
-    return payload;
-  });
+  const candidates: Promise<MoviePagePayload>[] = [];
 
-  // KKPhim is the primary detail origin for fast Direct HLS / ArtPlayer playback.
-  // Hedge OPhim after a short delay if KKPhim takes long or fails.
-  let fallbackTimer: ReturnType<typeof setTimeout> | undefined;
-  let startFallback: (() => void) | undefined;
+  if (process.env.INTERNAL_API_URL?.trim() || process.env.NEXT_PUBLIC_API_URL?.trim()) {
+    candidates.push(
+      fetchInternalApiMovie(rawSlug).then((payload) => {
+        if (!payload) throw new Error("internal:empty");
+        return payload;
+      }),
+    );
+  }
+
+  if (process.env.MEDIA_GATEWAY_INTERNAL_URL?.trim()) {
+    candidates.push(
+      fetchGatewayBootstrap(rawSlug).then((payload) => {
+        if (!payload) throw new Error("gateway:empty");
+        return payload;
+      }),
+    );
+  }
+
+  // KKPhim is the primary detail origin for fast Direct HLS / ArtPlayer playback (~95% of films).
+  // Hedge OPhim and VodPhim after 250ms or immediately on primary failure.
+  let hedgedTimer: ReturnType<typeof setTimeout> | undefined;
+  let startHedged: (() => void) | undefined;
+
   const primary = fetchProviderPayload(
     `https://phimapi.com/phim/${cleanSlug}`,
     "kkphim",
   );
-  const fallback = new Promise<MoviePagePayload>((resolve, reject) => {
+  candidates.push(primary);
+
+  const hedgedProviders = new Promise<MoviePagePayload>((resolve, reject) => {
     const run = () => {
-      fallbackTimer = undefined;
-      void fetchProviderPayload(
-        `https://ophim1.com/phim/${cleanSlug}`,
-        "ophim",
-      ).then(resolve, reject);
+      hedgedTimer = undefined;
+      const hedgedList = [
+        fetchProviderPayload(`https://ophim1.com/phim/${cleanSlug}`, "ophim"),
+        fetchVodphimPayload(rawSlug),
+      ];
+      void Promise.any(hedgedList).then(resolve, reject);
     };
-    startFallback = run;
-    fallbackTimer = setTimeout(run, 350);
-  });
-  void primary.catch(() => {
-    if (!fallbackTimer || !startFallback) return;
-    clearTimeout(fallbackTimer);
-    startFallback();
+    startHedged = run;
+    hedgedTimer = setTimeout(run, 250);
   });
 
+  void primary.catch(() => {
+    if (!hedgedTimer || !startHedged) return;
+    clearTimeout(hedgedTimer);
+    startHedged();
+  });
+
+  candidates.push(hedgedProviders);
+
   try {
-    return await Promise.any([internal, gateway, primary, fallback]);
+    return await Promise.any(candidates);
   } catch {
+    // Last-ditch ViCDN attempt if not tried yet
+    if (!isVicdnSlug) {
+      try {
+        return await fetchVicdnPayload(rawSlug);
+      } catch {
+        // Not on ViCDN either
+      }
+    }
     return null;
   } finally {
-    if (fallbackTimer) clearTimeout(fallbackTimer);
+    if (hedgedTimer) clearTimeout(hedgedTimer);
   }
 });
 

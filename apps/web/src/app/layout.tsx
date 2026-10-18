@@ -20,6 +20,7 @@ import { LogoSplashIntro } from "@/components/layout/LogoSplashIntro";
 import { TopRouteProgress } from "@/components/layout/TopRouteProgress";
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import { cardFont, logoFont } from "@/lib/fonts";
+import { getSiteUrl } from "@/lib/seo";
 
 const PREPAINT_SCRIPT = `
 (() => {
@@ -60,9 +61,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL || "https://netphim.app",
-  ),
+  metadataBase: new URL(getSiteUrl()),
   title: {
     default: "FlexPhim — Xem Phim Online",
     template: "%s | FlexPhim",
@@ -98,16 +97,17 @@ export const metadata: Metadata = {
     title: "FlexPhim — Xem Phim Online",
     description:
       "Nền tảng xem phim online chất lượng cao. Phim bộ, phim lẻ, anime với phụ đề tiếng Việt và thuyết minh.",
-    url: process.env.NEXT_PUBLIC_SITE_URL || "https://netphim.app",
+    url: getSiteUrl(),
     siteName: "FlexPhim",
     locale: "vi_VN",
     type: "website",
     images: [
       {
-        url: "/flexphim-logo.png",
+        url: "/og-img/background.png",
         width: 1200,
         height: 630,
-        alt: "FlexPhim — Xem Phim Online",
+        alt: "FlexPhim — Nền Tảng Xem Phim Online Chất Lượng Cao",
+        type: "image/png",
       },
     ],
   },
@@ -116,7 +116,7 @@ export const metadata: Metadata = {
     title: "FlexPhim — Xem Phim Online",
     description:
       "Nền tảng xem phim online chất lượng cao với hàng ngàn bộ phim bom tấn mới nhất.",
-    images: ["/flexphim-logo.png"],
+    images: ["/og-img/background.png"],
   },
 };
 
@@ -125,15 +125,16 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const siteUrl = getSiteUrl();
   const websiteSchema = {
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: "FlexPhim",
     alternateName: "FlexPhim Xem Phim Online",
-    url: "https://netphim.app",
+    url: siteUrl,
     potentialAction: {
       "@type": "SearchAction",
-      target: "https://netphim.app/search?q={search_term_string}",
+      target: `${siteUrl}/search?q={search_term_string}`,
       "query-input": "required name=search_term_string",
     },
   };

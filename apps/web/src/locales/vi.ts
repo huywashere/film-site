@@ -4,6 +4,7 @@ export const vi = {
     films: "Phim",
     series: "Phim Bộ",
     single: "Phim Lẻ",
+    bilingual: "Song Ngữ",
     anime: "Hoạt Hình",
     tvshows: "TV Shows",
     actors: "Diễn viên",
@@ -61,7 +62,8 @@ export const vi = {
   },
   sections: {
     latest: "Phim Mới Cập Nhật",
-    vfx: "Phim Thần Thoại & Kỹ Xảo",
+    wuxia: "Cổ Trang Kiếm Hiệp Đặc Sắc",
+    vfx: "Phim Viễn Tưởng",
     usUkSeries: "Series Âu Mỹ Đỉnh Cao",
     action: "Phim Hành Động Kịch Tính",
     scifi: "Tuyệt Tác Khoa Học Viễn Tưởng",

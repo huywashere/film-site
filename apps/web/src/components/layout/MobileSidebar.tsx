@@ -58,6 +58,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
     { title: t("nav.home"), href: "/", icon: Home },
     { title: t("nav.series"), href: "/films/series", icon: Tv },
     { title: t("nav.single"), href: "/films/single", icon: FilmIcon },
+    { title: t("nav.bilingual", "Song Ngữ"), href: "/song-ngu", icon: Languages },
     { title: t("nav.anime"), href: "/films/anime", icon: Clapperboard },
     { title: lang === "en" ? "Watch Party" : "Xem Chung", href: "/watch-party", icon: Users },
   ];

@@ -260,8 +260,9 @@ export class AdminService implements OnModuleInit {
     const where: any = {};
     if (params.search?.trim()) {
       where.OR = [
-        { title: { contains: params.search, mode: "insensitive" } },
-        { originName: { contains: params.search, mode: "insensitive" } },
+        { id: { equals: params.search.trim() } },
+        { title: { contains: params.search.trim(), mode: "insensitive" } },
+        { originName: { contains: params.search.trim(), mode: "insensitive" } },
       ];
     }
     if (params.type) where.type = params.type;

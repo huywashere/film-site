@@ -4,15 +4,11 @@ import Link from "next/link";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import gsap from "gsap";
-import { keyframes } from "@emotion/react";
-import styled from "@emotion/styled";
 import {
   Play,
   Star,
   Film,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
   Bookmark,
 } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -43,6 +39,7 @@ import {
   tmdbPoster,
   getBestTitleLogo,
   sortTmdbLogos,
+  sortTmdbImages,
   type TmdbImage,
   type TmdbMovie,
 } from "@/lib/tmdb";
@@ -69,92 +66,7 @@ const TrailerModal = dynamic(
   { ssr: false },
 );
 
-const fanCardReveal = keyframes`
-  from { opacity: 0; }
-  to { opacity: 1; }
-`;
 
-const FanCardButton = styled.button<{
-  $x: number;
-  $y: number;
-  $scale: number;
-  $brightness: number;
-  $layer: number;
-  $order: number;
-  $featured: boolean;
-}>`
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 158px;
-  overflow: hidden;
-  border-radius: 15px;
-  border: 1px solid
-    ${({ $featured }) =>
-      $featured ? "rgba(255, 255, 255, 0.35)" : "rgba(255, 255, 255, 0.18)"};
-  background: #0d1017;
-  color: inherit;
-  cursor: pointer;
-  text-align: left;
-  z-index: ${({ $layer }) => $layer};
-  transform: translate3d(${({ $x }) => $x}px, ${({ $y }) => $y}px, 0)
-    scale(${({ $scale }) => $scale});
-  filter: brightness(${({ $brightness }) => $brightness});
-  box-shadow:
-    0 22px 54px rgba(2, 6, 16, 0.7),
-    inset 0 1px 0 rgba(255, 255, 255, 0.09);
-  backface-visibility: hidden;
-  contain: layout paint style;
-  will-change: transform;
-  animation: ${fanCardReveal} 480ms cubic-bezier(0.16, 1, 0.3, 1) both;
-  animation-delay: ${({ $order }) => $order * 70}ms;
-  transition:
-    transform 380ms cubic-bezier(0.16, 1, 0.3, 1),
-    filter 280ms ease,
-    border-color 280ms ease,
-    box-shadow 380ms cubic-bezier(0.16, 1, 0.3, 1);
-
-  &:hover,
-  &:focus-visible {
-    z-index: 50;
-    transform: translate3d(${({ $x }) => $x}px, ${({ $y }) => $y - 12}px, 0)
-      scale(${({ $scale }) => $scale * 1.045});
-    filter: brightness(1.04);
-    border-color: rgba(255, 255, 255, 0.66);
-    box-shadow:
-      0 30px 72px rgba(2, 6, 16, 0.78),
-      0 0 0 1px rgba(255, 255, 255, 0.08),
-      inset 0 1px 0 rgba(255, 255, 255, 0.14);
-  }
-
-  &:focus-visible {
-    outline: 2px solid rgba(255, 255, 255, 0.7);
-    outline-offset: 4px;
-  }
-
-  &:active {
-    transform: translate3d(${({ $x }) => $x}px, ${({ $y }) => $y - 8}px, 0)
-      scale(${({ $scale }) => $scale * 1.015});
-  }
-
-  &:hover .fan-card-image,
-  &:focus-visible .fan-card-image {
-    transform: scale(1.035);
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    animation: none;
-    transition: none;
-    will-change: auto;
-
-    &:hover,
-    &:focus-visible,
-    &:active {
-      transform: translate3d(${({ $x }) => $x}px, ${({ $y }) => $y}px, 0)
-        scale(${({ $scale }) => $scale});
-    }
-  }
-`;
 
 interface HeroBannerProps {
   films?: FilmItem[];
@@ -378,6 +290,7 @@ function getFilmDetailMeta(film: HeroFilm) {
   }
 
   let genresStr = "Hành động • Phiêu lưu";
+  let genreList: string[] = [];
   if (film.category && film.category.length > 0) {
     const genreNames = film.category
       .map((c) => c.name)
@@ -385,7 +298,11 @@ function getFilmDetailMeta(film: HeroFilm) {
       .slice(0, 3);
     if (genreNames.length > 0) {
       genresStr = genreNames.join(" • ");
+      genreList = genreNames;
     }
+  } else if ((film as any).genres && (film as any).genres.length > 0) {
+    genreList = (film as any).genres.slice(0, 3);
+    genresStr = genreList.join(" • ");
   } else {
     const lower = (film.name + " " + (film.origin_name || "")).toLowerCase();
     if (
@@ -405,6 +322,30 @@ function getFilmDetailMeta(film: HeroFilm) {
       genresStr = "Chính kịch • Lịch sử • Tiêu điểm";
     } else if (lower.includes("avatar")) {
       genresStr = "Viễn tưởng • Phiêu lưu • Bom tấn";
+    }
+    genreList = genresStr.split(" • ");
+  }
+
+  let countryStr = "";
+  if (film.country && film.country.length > 0) {
+    countryStr = film.country[0]?.name || "";
+  } else if ((film as any).origin_country) {
+    const orig = String((film as any).origin_country);
+    if (orig.includes("KR") || orig.includes("Korea")) countryStr = "Hàn Quốc";
+    else if (orig.includes("CN") || orig.includes("China")) countryStr = "Trung Quốc";
+    else if (orig.includes("JP") || orig.includes("Japan")) countryStr = "Nhật Bản";
+    else if (orig.includes("US") || orig.includes("United States")) countryStr = "Âu Mỹ";
+  }
+  if (!countryStr) {
+    const lower = (film.name + " " + (film.origin_name || "")).toLowerCase();
+    if (
+      lower.includes("bác sĩ x") ||
+      lower.includes("doctor x") ||
+      lower.includes("korea") ||
+      lower.includes("hàn quốc") ||
+      lower.includes("tingle")
+    ) {
+      countryStr = "Hàn Quốc";
     }
   }
 
@@ -450,7 +391,7 @@ function getFilmDetailMeta(film: HeroFilm) {
     }
   }
 
-  return { durationStr, genresStr, ageRating, qualityBadge, langBadge };
+  return { durationStr, genresStr, genreList, countryStr, ageRating, qualityBadge, langBadge };
 }
 
 // getBestTitleLogo and sortTmdbLogos are imported from @/lib/tmdb
@@ -458,7 +399,10 @@ function getFilmDetailMeta(film: HeroFilm) {
 async function enrichHeroTitleLogos(playlist: HeroFilm[]): Promise<HeroFilm[]> {
   return Promise.all(
     playlist.map(async (film) => {
-      if (film.titleLogoResolved && film.titleLogo) return film;
+      const hasTmdbBackdrop = Boolean(
+        film.heroBackdrop && film.heroBackdrop.includes("image.tmdb.org"),
+      );
+      if (film.titleLogoResolved && film.titleLogo && hasTmdbBackdrop) return film;
 
       let tmdbId = Number(
         (film as any).tmdbId ||
@@ -522,8 +466,14 @@ async function enrichHeroTitleLogos(playlist: HeroFilm[]): Promise<HeroFilm[]> {
         if (!images) return { ...film, titleLogoResolved: true };
 
         const bestLogo = getBestTitleLogo(images.logos || []);
-        const bestBackdrop = images.backdrops?.[0]?.file_path
-          ? tmdbBackdrop(images.backdrops[0].file_path, "w1280")
+        const cleanBackdrops = sortTmdbImages(images.backdrops || []);
+        const bestBackdrop = cleanBackdrops[0]?.file_path
+          ? tmdbBackdrop(cleanBackdrops[0].file_path, "w1280")
+          : undefined;
+
+        const cleanPosters = sortTmdbImages(images.posters || []);
+        const bestPoster = cleanPosters[0]?.file_path
+          ? tmdbPoster(cleanPosters[0].file_path, "w500")
           : undefined;
 
         const resolvedTitleLogo =
@@ -538,13 +488,38 @@ async function enrichHeroTitleLogos(playlist: HeroFilm[]): Promise<HeroFilm[]> {
           if (preloadUrl) void preloadMovieLogo(preloadUrl);
         }
 
+        const isCurrentBackdropTmdb =
+          Boolean(film.heroBackdrop?.includes("image.tmdb.org"));
+
+        const resolvedBackdrop =
+          (isCurrentBackdropTmdb ? film.heroBackdrop : bestBackdrop) ||
+          bestBackdrop ||
+          film.heroBackdrop ||
+          undefined;
+
+        const isCurrentThumbTmdb =
+          Boolean(film.thumb_url?.includes("image.tmdb.org"));
+
+        const resolvedThumb =
+          (isCurrentThumbTmdb ? film.thumb_url : bestBackdrop) ||
+          bestBackdrop ||
+          film.thumb_url;
+
+        const isCurrentPosterTmdb =
+          Boolean(film.poster_url?.includes("image.tmdb.org"));
+
+        const resolvedPoster =
+          (isCurrentPosterTmdb ? film.poster_url : bestPoster) ||
+          bestPoster ||
+          film.poster_url;
+
         return {
           ...film,
           tmdb: { ...film.tmdb, id: String(tmdbId), type: mediaType },
           titleLogo: resolvedTitleLogo,
-          // A curated/provider backdrop is already tied to this exact film.
-          // Logo enrichment must not replace it with a loose TMDB search hit.
-          heroBackdrop: film.heroBackdrop || bestBackdrop || undefined,
+          heroBackdrop: resolvedBackdrop,
+          thumb_url: resolvedThumb,
+          poster_url: resolvedPoster,
           titleLogoResolved: true,
         };
       } catch {
@@ -647,11 +622,11 @@ function HeroMovieTitle({
 
   return (
     <div
-      className="relative flex min-h-14 w-full items-center justify-center overflow-visible sm:min-h-24 md:min-h-28"
+      className="relative flex min-h-12 sm:min-h-24 md:min-h-28 w-full items-center justify-center overflow-visible"
     >
       <h1
         data-hero-title-text={film.slug}
-        className={`absolute inset-x-0 max-w-xl sm:max-w-2xl mx-auto line-clamp-2 text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black uppercase leading-[1.2] sm:leading-[1.15] tracking-tight text-white drop-shadow-[0_10px_35px_rgba(0,0,0,0.95)] pt-2 pb-1 px-2 overflow-visible transition-opacity duration-300 ${hasLogoCandidate && logoLoaded ? "opacity-0" : "opacity-100"}`}
+        className={`absolute inset-x-0 text-center mx-auto max-w-xl sm:max-w-2xl line-clamp-2 text-xl sm:text-4xl md:text-5xl lg:text-6xl font-black uppercase leading-[1.2] sm:leading-[1.15] tracking-tight text-white drop-shadow-[0_10px_35px_rgba(0,0,0,0.95)] pt-1 sm:pt-2 pb-1 overflow-visible transition-opacity duration-300 ${hasLogoCandidate && logoLoaded ? "opacity-0" : "opacity-100"}`}
         style={{ fontFamily: "'Be Vietnam Pro', 'Inter', sans-serif" }}
       >
         {title}
@@ -687,7 +662,7 @@ function HeroMovieTitle({
               onReady();
             }
           }}
-          className={`h-auto max-h-16 sm:max-h-24 md:max-h-28 lg:max-h-36 w-auto max-w-[76vw] sm:max-w-[28rem] md:max-w-[34rem] lg:max-w-[40rem] object-contain drop-shadow-[0_12px_30px_rgba(0,0,0,0.85)] transition-opacity duration-200 ${logoLoaded ? "opacity-100" : "opacity-0"}`}
+          className={`h-auto max-h-14 sm:max-h-24 md:max-h-28 lg:max-h-36 w-auto max-w-[78vw] sm:max-w-[28rem] md:max-w-[34rem] lg:max-w-[40rem] object-contain object-center mx-auto drop-shadow-[0_12px_30px_rgba(0,0,0,0.85)] transition-opacity duration-200 ${logoLoaded ? "opacity-100" : "opacity-0"}`}
         />
       ) : null}
     </div>
@@ -825,7 +800,7 @@ function getMobileHeroBackdrop(src: string) {
   return src.includes("image.tmdb.org/t/p/")
     ? src.replace(
         /\/t\/p\/(?:original|w300|w342|w500|w780|w1280)\//i,
-        "/t/p/w500/", // w500 (~80-100KB) tải nhanh hơn 2-3x so với w780/w1280 trên 4G
+        "/t/p/w1280/",
       )
     : src;
 }
@@ -934,7 +909,11 @@ function HeroBackdropImage({
       thumbUrl: film.thumb_url,
       posterUrl: film.poster_url,
     });
-    return preferredLandscapeSrc
+    const hasTmdb = built.some((c) => c.includes("image.tmdb.org"));
+    const isPreferredTmdb = preferredLandscapeSrc?.includes("image.tmdb.org");
+    const usePreferred =
+      preferredLandscapeSrc && (!hasTmdb || isPreferredTmdb);
+    return usePreferred
       ? [
           preferredLandscapeSrc,
           ...built.filter((candidate) => candidate !== preferredLandscapeSrc),
@@ -955,11 +934,15 @@ function HeroBackdropImage({
             thumbUrl: film.thumb_url,
             posterUrl: film.poster_url,
           },
-          "poster",
+          "thumbnail",
         ).map(getMobileHeroBackdrop),
       ),
     );
-    return preferredPortraitSrc
+    const hasTmdb = built.some((c) => c.includes("image.tmdb.org"));
+    const isPreferredTmdb = preferredPortraitSrc?.includes("image.tmdb.org");
+    const usePreferred =
+      preferredPortraitSrc && (!hasTmdb || isPreferredTmdb);
+    return usePreferred
       ? [
           preferredPortraitSrc,
           ...built.filter((candidate) => candidate !== preferredPortraitSrc),
@@ -988,7 +971,7 @@ function HeroBackdropImage({
   const portraitSrc =
     portraitCandidates[portraitCandidateIndex] ||
     (src ? getMobileHeroBackdrop(src) : "");
-  const portraitSrcSet = buildHeroResponsiveSrcSet(portraitSrc, "poster");
+  const portraitSrcSet = buildHeroResponsiveSrcSet(portraitSrc, "backdrop");
   const landscapeSrcSet = buildHeroResponsiveSrcSet(src, "backdrop");
 
   useEffect(() => {
@@ -1069,7 +1052,7 @@ function HeroBackdropImage({
           alt=""
           aria-hidden="true"
           decoding="async"
-          className="absolute inset-0 h-full w-full object-cover object-[center_18%] opacity-100 brightness-[0.72] sm:object-[center_20%] md:object-[center_24%] lg:object-center"
+          className="absolute inset-0 h-full w-full object-cover object-[center_18%] opacity-100 brightness-[0.85] sm:object-[center_20%] md:object-[center_24%] lg:object-center"
         />
       )}
       {src && !exhausted && (
@@ -1079,8 +1062,8 @@ function HeroBackdropImage({
             media="(max-width: 1023px) and (orientation: portrait)"
             srcSet={portraitSrcSet || portraitSrc}
             sizes="100vw"
-            width={500}
-            height={750}
+            width={1280}
+            height={720}
           />
 
           <img
@@ -1103,7 +1086,7 @@ function HeroBackdropImage({
               onReady();
             }}
             onError={tryNextCandidate}
-            className="h-full w-full object-cover object-[center_18%] opacity-100 brightness-[0.72] sm:object-[center_20%] md:object-[center_24%] lg:object-center"
+            className="h-full w-full object-cover object-[center_18%] opacity-100 brightness-[0.85] sm:object-[center_20%] md:object-[center_24%] lg:object-center"
           />
         </picture>
       )}
@@ -1262,9 +1245,13 @@ export default function HeroBanner({
   initialConfig,
   randomizeCuratedPool = false,
 }: HeroBannerProps) {
-  const [current, setCurrent] = useState(() =>
-    cachedHeroPlaylist?.length ? cachedHeroIndex : 0,
-  );
+  const [current, setCurrent] = useState(() => {
+    const pinnedSlugs = (initialConfig?.heroMovieSlugs || [])
+      .map((slug) => slug.trim())
+      .filter(Boolean);
+    if (pinnedSlugs.length > 0) return 0;
+    return cachedHeroPlaylist?.length ? cachedHeroIndex : 0;
+  });
   const [autoRotateEnabled, setAutoRotateEnabled] = useState(false);
   const [pageVisible, setPageVisible] = useState(true);
   const attemptedTitleLogos = useRef(new Set<string>());
@@ -1277,17 +1264,20 @@ export default function HeroBanner({
       .map((slug) => slug.trim())
       .filter(Boolean);
     if (pinnedSlugs.length > 0) {
-      const pinned = pinnedSlugs
+      const mapped = pinnedSlugs
         .map((slug) => {
-          const mapped = CURATED_HERO_SLUG_ALIASES[slug] || slug;
+          const alias = CURATED_HERO_SLUG_ALIASES[slug] || slug;
+          const fromFilms = films?.find(
+            (f) => f.slug === slug || f.slug === alias,
+          );
+          if (fromFilms) return fromFilms as HeroFilm;
           return CURATED_HERO_FRANCHISE_POOL.find(
-            (film) => film.slug === mapped || film.slug === slug,
+            (film) => film.slug === alias || film.slug === slug,
           );
         })
-        .filter((film): film is (typeof CURATED_HERO_FRANCHISE_POOL)[number] =>
-          Boolean(film),
-        );
-      if (pinned.length > 0) return ensureSixHeroFilms(pinned) as HeroFilm[];
+        .filter((film): film is HeroFilm => Boolean(film));
+      if (mapped.length > 0) return ensureSixHeroFilms(mapped) as HeroFilm[];
+      if (films && films.length > 0) return ensureSixHeroFilms(films as HeroFilm[]) as HeroFilm[];
     }
     if (cachedHeroPlaylist?.length && cachedHeroPlaylist.length >= 6) return cachedHeroPlaylist.slice(0, 6);
     if (films && films.length > 0) return ensureSixHeroFilms(films as HeroFilm[]) as HeroFilm[];
@@ -1387,14 +1377,25 @@ export default function HeroBanner({
         .filter(Boolean);
 
       if (requestedSlugs.length) {
+        restoredIndex = 0;
         try {
           const resolved = await Promise.all(
             requestedSlugs.slice(0, 6).map(async (slug) => {
               const mapped = CURATED_HERO_SLUG_ALIASES[slug] || slug;
+
+              // 1. Check if film is already passed in films prop (from SSR)
+              const fromFilms = films?.find(
+                (film) => film.slug === mapped || film.slug === slug,
+              );
+              if (fromFilms) return fromFilms as HeroFilm;
+
+              // 2. Check curated franchise pool
               const curated = CURATED_HERO_FRANCHISE_POOL.find(
                 (film) => film.slug === mapped || film.slug === slug,
               );
               if (curated) return curated as HeroFilm;
+
+              // 3. Fallback to API detail
               try {
                 const detail = (await movieApi.getDetail(mapped)).data as any;
                 const movie =
@@ -1441,15 +1442,29 @@ export default function HeroBanner({
       const nextIndex = playlist.length > 1
         ? (selectedIndex + 1) % playlist.length
         : selectedIndex;
-      const initialLogoTargets = [playlist[selectedIndex], playlist[nextIndex]]
+      const initialLogoTargets = playlist
+        .slice(0, 6)
         .filter(
           (film, index, items): film is HeroFilm =>
-            Boolean(film) && items.indexOf(film) === index && !film.titleLogo,
+            Boolean(film) &&
+            items.indexOf(film) === index &&
+            (!film.titleLogo || !film.heroBackdrop?.includes("image.tmdb.org")),
         );
       const withLogos = initialLogoTargets.length
         ? await enrichHeroTitleLogos(initialLogoTargets)
         : [];
       if (!active) return;
+      withLogos.forEach((film) => {
+        if (film.heroBackdrop && film.heroBackdrop.includes("image.tmdb.org")) {
+          const pref = preferredHeroBackdrops.get(film.slug) || {};
+          preferredHeroBackdrops.set(film.slug, {
+            ...pref,
+            landscape: film.heroBackdrop,
+          });
+          preloadedHeroBackdrops.add(film.heroBackdrop);
+          markVisualReady(film.slug, "backdrop");
+        }
+      });
       const enrichedBySlug = new Map(
         withLogos.map((film) => [film.slug, film] as const),
       );
@@ -1533,15 +1548,14 @@ export default function HeroBanner({
     };
   }, [films, initialConfig, markVisualReady, randomizeCuratedPool]);
 
-  // Resolve featured title artwork in the background.
+  // Resolve featured title artwork and TMDB HD backdrops in the background.
   useEffect(() => {
     if (!featured.length) return;
-    const nextIndex = featured.length > 1 ? (current + 1) % featured.length : current;
-    const targets = [featured[current], featured[nextIndex]].filter(
+    const targets = featured.filter(
       (film) =>
         Boolean(film) &&
-        !film.titleLogo &&
-        !getMovieLogo(film.slug) &&
+        ((!film.titleLogo && !getMovieLogo(film.slug)) ||
+          !film.heroBackdrop?.includes("image.tmdb.org")) &&
         !attemptedTitleLogos.current.has(film.slug),
     );
     if (!targets.length) return;
@@ -1557,6 +1571,17 @@ export default function HeroBanner({
           .map((url) => preloadMovieLogo(url)),
       );
       if (!active) return;
+      enrichedFilms.forEach((film) => {
+        if (film.heroBackdrop && film.heroBackdrop.includes("image.tmdb.org")) {
+          const pref = preferredHeroBackdrops.get(film.slug) || {};
+          preferredHeroBackdrops.set(film.slug, {
+            ...pref,
+            landscape: film.heroBackdrop,
+          });
+          preloadedHeroBackdrops.add(film.heroBackdrop);
+          markVisualReady(film.slug, "backdrop");
+        }
+      });
       const enrichedBySlug = new Map(
         enrichedFilms.map((film) => [film.slug, film] as const),
       );
@@ -1571,7 +1596,7 @@ export default function HeroBanner({
     return () => {
       active = false;
     };
-  }, [current, featured]);
+  }, [current, featured, markVisualReady]);
 
   // Keep only the visible and next title logo warm. Loading the whole playlist
   // competes with the current LCP image on a cold/mobile connection.
@@ -1645,12 +1670,24 @@ export default function HeroBanner({
       let prepared = target;
       let logoUrl = target.titleLogo || getMovieLogo(target.slug);
 
-      if (!logoUrl && !target.titleLogoResolved) {
+      if (
+        (!logoUrl && !target.titleLogoResolved) ||
+        !target.heroBackdrop?.includes("image.tmdb.org")
+      ) {
         void enrichHeroTitleLogos([target]).then(([enriched]) => {
           if (!enriched) return;
           const resolvedLogo = enriched.titleLogo || getMovieLogo(enriched.slug);
           const preloadUrl = getPrimaryHeroLogoUrl(resolvedLogo);
           if (preloadUrl) void preloadMovieLogo(preloadUrl);
+          if (enriched.heroBackdrop?.includes("image.tmdb.org")) {
+            const pref = preferredHeroBackdrops.get(enriched.slug) || {};
+            preferredHeroBackdrops.set(enriched.slug, {
+              ...pref,
+              landscape: enriched.heroBackdrop,
+            });
+            preloadedHeroBackdrops.add(enriched.heroBackdrop);
+            markVisualReady(enriched.slug, "backdrop");
+          }
           setFeatured((playlist) =>
             playlist.map((item, index) =>
               index === nextIndex ? enriched : item,
@@ -1675,7 +1712,7 @@ export default function HeroBanner({
                   thumbUrl: target.thumb_url,
                   posterUrl: target.poster_url,
                 },
-                "poster",
+                "thumbnail",
               ).map(getMobileHeroBackdrop),
             ),
           )
@@ -1931,7 +1968,7 @@ export default function HeroBanner({
         data-hero-banner="true"
         aria-busy="true"
         aria-label="Đang tải banner nổi bật"
-        className="relative mt-16 h-[78svh] min-h-[590px] max-h-[680px] w-full overflow-hidden bg-[#141414] sm:mt-0 sm:h-auto sm:min-h-[100dvh] sm:max-h-none"
+        className="relative mt-16 h-[52svh] min-h-[380px] max-h-[460px] w-full overflow-hidden bg-[#141414] sm:mt-0 sm:h-auto sm:min-h-[100dvh] sm:max-h-none"
       >
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_62%_34%,rgba(57,64,77,0.3),transparent_44%),linear-gradient(135deg,#101318_0%,#171b22_52%,#101216_100%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_24%,rgba(10,12,16,0.54)_70%,rgba(10,12,16,0.94)_100%),linear-gradient(to_top,#14181c_0%,rgba(20,24,28,0.78)_28%,transparent_62%),linear-gradient(to_bottom,rgba(10,12,16,0.76)_0%,transparent_30%)]" />
@@ -2007,7 +2044,7 @@ export default function HeroBanner({
     film.tmdb?.vote_average || film.vote_average || film.rating || 8.3;
   const heroContentReady = Boolean(visualReadiness[film.slug]?.title);
 
-  const { durationStr, genresStr, ageRating, qualityBadge, langBadge } =
+  const { durationStr, genresStr, genreList, countryStr, ageRating, qualityBadge, langBadge } =
     getFilmDetailMeta(film);
 
   const watchProgress = watchHistoryMap.get(film.slug);
@@ -2038,7 +2075,7 @@ export default function HeroBanner({
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       onTouchCancel={handleTouchCancel}
-      className="font-cinema relative mt-0 h-[100dvh] min-h-[580px] max-h-[860px] sm:min-h-[680px] sm:max-h-[940px] md:h-[94vh] md:min-h-[720px] lg:h-[96vh] lg:min-h-[760px] lg:max-h-[1050px] xl:h-[100dvh] w-full overflow-hidden bg-[#0c0d14] transform-gpu contain-paint select-none touch-pan-y"
+      className="font-cinema relative mt-0 h-[52svh] min-h-[380px] max-h-[460px] sm:h-auto sm:min-h-[680px] sm:max-h-[940px] md:h-[94vh] md:min-h-[720px] lg:h-[96vh] lg:min-h-[760px] lg:max-h-[1050px] xl:h-[100dvh] w-full overflow-hidden bg-[#0c0d14] transform-gpu contain-paint select-none touch-pan-y"
     >
       <TrailerModal
         film={trailerModalFilm}
@@ -2154,18 +2191,21 @@ export default function HeroBanner({
               const config = fanConfigs[index] || fanConfigs[0];
 
               return (
-                <FanCardButton
+                <button
                   key={`${cardFilm.slug}-${index}`}
                   type="button"
                   aria-label={`Chuyển banner sang phim ${cardFilm.name}`}
-                  $x={config.x}
-                  $y={config.y}
-                  $scale={config.scale}
-                  $brightness={config.brightness}
-                  $layer={config.zIndex}
-                  $order={index}
-                  $featured={index === 0}
-                  className="fan-card-item"
+                  style={{
+                    transform: `translate3d(${config.x}px, ${config.y}px, 0) scale(${config.scale})`,
+                    filter: `brightness(${config.brightness})`,
+                    zIndex: config.zIndex,
+                  }}
+                  className={cn(
+                    "fan-card-item absolute left-0 top-0 w-[158px] overflow-hidden rounded-[15px] border bg-[#0d1017] text-left cursor-pointer transition-all duration-300 ease-out will-change-transform [backface-visibility:hidden] [contain:layout_paint_style] shadow-[0_22px_54px_rgba(2,6,16,0.7)] hover:shadow-[0_30px_72px_rgba(2,6,16,0.78)] hover:scale-[1.045] hover:-translate-y-3 hover:brightness-105 hover:border-white/60 focus-visible:outline-2 focus-visible:outline-white/70 active:scale-[0.98]",
+                    index === 0
+                      ? "border-white/35"
+                      : "border-white/[0.18]",
+                  )}
                   onClick={() => {
                     const targetIndex = featured.findIndex(
                       (f) => f.slug === cardFilm.slug,
@@ -2200,14 +2240,14 @@ export default function HeroBanner({
                       </div>
                     </div>
                   </div>
-                </FanCardButton>
+                </button>
               );
             })}
         </div>
       </div>
 
       {/* Main Content Area (Fluid Responsive Spacing with Safe Area Bottom Clearance) */}
-      <div className="absolute inset-0 z-20 flex flex-col items-center justify-end px-4 sm:px-6 md:px-8 pt-18 sm:pt-24 md:pt-28 pb-20 sm:pb-16 md:pb-20 lg:pb-22 text-center pointer-events-none">
+      <div className="absolute inset-0 z-20 flex flex-col items-center justify-end px-4 sm:px-6 md:px-8 pb-5 sm:pb-16 md:pb-20 lg:pb-22 text-center pointer-events-none">
         <div
           ref={contentRef}
           key={film.slug}
@@ -2221,204 +2261,214 @@ export default function HeroBanner({
             "max-w-2xl mx-auto w-full flex flex-col items-center pointer-events-auto touch-pan-y opacity-100",
           )}
         >
-              {/* Official TMDB title artwork with an accessible text fallback. */}
-              <div className="w-full flex justify-center mb-1.5 sm:mb-2.5">
-                <HeroMovieTitle
-                  key={`${film.slug}:${film.titleLogo || (film.titleLogoResolved ? "text" : "pending")}`}
-                  film={film}
-                  onReady={() => markVisualReady(film.slug, "title")}
-                />
-              </div>
+          {/* Official TMDB title artwork with an accessible text fallback */}
+          <Link
+            href={getWatchHref(film)}
+            prefetch={false}
+            className="w-full flex justify-center mb-1 sm:mb-2.5 cursor-pointer active:opacity-85 transition-opacity"
+            aria-label={`Xem phim ${film.name}`}
+          >
+            <HeroMovieTitle
+              key={`${film.slug}:${film.titleLogo || (film.titleLogoResolved ? "text" : "pending")}`}
+              film={film}
+              onReady={() => markVisualReady(film.slug, "title")}
+            />
+          </Link>
 
-              {/* Badges Pill Row (⭐ Rating, Year, FHD, Vietsub/Lồng tiếng) */}
-              <div className="flex items-center justify-center gap-2 sm:gap-2.5 flex-wrap my-1 sm:my-1.5">
-                <span className="bg-black/60 backdrop-blur-md border border-white/15 px-3 py-0.5 sm:px-3.5 sm:py-1 rounded-full text-[11px] sm:text-xs font-extrabold text-amber-400 flex items-center gap-1 shadow-lg">
-                  <Star size={12} className="fill-amber-400 text-amber-400" />
-                  <span>
-                    {typeof ratingVal === "number"
-                      ? ratingVal.toFixed(1)
-                      : ratingVal}
-                  </span>
-                </span>
+          {/* 📱 Mobile compact metadata & navigation (Centered) */}
+          <div className="flex sm:hidden flex-col items-center gap-1.5 w-full my-0.5 text-center">
+            {/* Row 1: TOP 10 Badge + Year | Country | Episode/Quality */}
+            <div className="flex items-center justify-center gap-2 text-xs font-semibold text-neutral-200/90 flex-wrap">
+              <span className="bg-gradient-to-r from-[#a855f7] to-[#7c3aed] text-white font-black text-[10px] px-1.5 py-0.5 rounded tracking-tight shadow-[0_2px_8px_rgba(124,58,237,0.45)]">
+                TOP 10
+              </span>
+              <span>{film.year || 2026}</span>
+              {countryStr ? (
+                <>
+                  <span className="text-neutral-500 font-bold">|</span>
+                  <span>{countryStr}</span>
+                </>
+              ) : null}
+              <span className="text-neutral-500 font-bold">|</span>
+              <span className="text-neutral-300">
+                {film.episode_current || qualityBadge || langBadge}
+              </span>
+            </div>
 
-                {film.year && (
-                  <span className="bg-black/60 backdrop-blur-md border border-white/15 px-3 py-0.5 sm:px-3.5 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold text-neutral-200 shadow-lg">
-                    {film.year}
-                  </span>
-                )}
-
-                <span className="bg-black/60 backdrop-blur-md border border-white/15 px-3 py-0.5 sm:px-3.5 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold text-purple-300 shadow-lg">
-                  {langBadge}
-                </span>
-              </div>
-
-              {/* Movie Detail Sub-Info Line (Duration • Genres • Age Rating) */}
-              <div className="flex items-center justify-center gap-2 sm:gap-2.5 text-xs sm:text-sm font-semibold text-neutral-300/90 tracking-wide flex-wrap px-2 my-1 sm:my-1.5">
-                <span>{durationStr}</span>
-                <span className="text-neutral-500 font-bold">•</span>
-                <span>{genresStr}</span>
-                <span className="text-neutral-500 font-bold">•</span>
-                <span className="px-1.5 py-0.5 rounded bg-white/10 text-[11px] font-extrabold text-neutral-200 border border-white/15">
-                  {ageRating}
-                </span>
-              </div>
-
-              {/* Centered Overview Text */}
-              <p className="text-xs sm:text-sm text-neutral-300/90 max-w-lg sm:max-w-xl mx-auto leading-relaxed line-clamp-2 font-normal drop-shadow-md px-3 sm:px-4 my-2 sm:my-2.5">
-                {film.content
-                  ? cleanMovieDescription(film.content)
-                  : film.origin_name
-                    ? `${film.origin_name} - ` + t("home.heroDesc")
-                    : t("home.heroDesc")}
-              </p>
-
-              {/* Action Buttons (Watch Now / Resume Watch + Trailer + Bookmark with Tooltip) */}
-              <div
-                className={`${cardFont.className} flex items-center justify-center gap-3 sm:gap-3.5 pt-2 sm:pt-3 pb-1`}
-              >
-                {hasWatched ? (
-                  <Link
-                    href={getWatchHref(film)}
-                    prefetch={false}
-                    className={`${cardFont.className} flex flex-col items-center justify-center bg-white hover:bg-neutral-200 text-black px-6 py-2.5 sm:px-7 sm:py-3 rounded-full transition-all duration-200 shadow-2xl hover:scale-105 active:scale-95 group min-w-[145px]`}
-                  >
-                    <div className="flex items-center gap-1.5 text-xs font-black tracking-wide uppercase">
-                      <Play size={14} className="fill-black" />
-                      <span>
-                        {t("home.resumeWatch", "Xem tiếp")}{" "}
-                        {formatProgressTime(progressSecs)}
-                      </span>
-                    </div>
-                    {progressPct > 0 && (
-                      <div className="w-full bg-neutral-300 h-1 rounded-full overflow-hidden mt-1">
-                        <div
-                          className="bg-[#e50914] h-full rounded-full transition-all"
-                          style={{ width: `${progressPct}%` }}
-                        />
-                      </div>
-                    )}
-                  </Link>
-                ) : (
-                  <Link
-                    href={getWatchHref(film)}
-                    prefetch={false}
-                    className={`${cardFont.className} flex items-center gap-1.5 sm:gap-2 bg-white hover:bg-neutral-200 text-black px-6 py-2.5 sm:px-7 sm:py-3 rounded-full text-xs font-black tracking-wide uppercase transition-all duration-200 shadow-2xl hover:scale-105 active:scale-95`}
-                  >
-                    <Play size={14} className="fill-black" />
-                    <span>{t("home.watchNow", "Xem ngay")}</span>
-                  </Link>
-                )}
-
-                <button
-                  type="button"
-                  onClick={() => setTrailerModalFilm(film)}
-                  className={`${cardFont.className} flex items-center gap-1.5 sm:gap-2 rounded-full border border-white/10 bg-[#181b22] px-5 py-2.5 sm:px-6 sm:py-3 text-xs font-extrabold uppercase tracking-wider text-white shadow-xl transition-all duration-200 hover:scale-105 hover:bg-[#222731] hover:border-white/20 active:scale-95 cursor-pointer`}
+            {/* Row 2: Genre Pills */}
+            <div className="flex items-center justify-center gap-1.5 flex-wrap mt-0.5">
+              {(genreList.length > 0 ? genreList.slice(0, 3) : ["Chính Kịch", "Hành Động"]).map((g, idx) => (
+                <span
+                  key={idx}
+                  className="bg-black/60 backdrop-blur-md border border-purple-500/25 px-2.5 py-0.5 rounded-full text-[10.5px] font-medium text-purple-100 shadow-md"
                 >
-                  <Film size={14} className="text-white/80" />
-                  <span>{t("home.trailer", "Trailer")}</span>
-                </button>
+                  {g}
+                </span>
+              ))}
+            </div>
 
-                {/* Bookmark CTA with hover tooltip */}
-                <div className="relative group">
-                  <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-lg bg-[#181b22] border border-white/15 text-[10px] font-semibold text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-200 shadow-2xl z-40 translate-y-1 group-hover:translate-y-0 uppercase tracking-wider">
-                    {t("home.saveWatchlist", "Tủ phim")}
-                  </span>
+            {/* Row 3: Slider pagination dots */}
+            {featured.length > 1 && (
+              <div className="flex items-center justify-center gap-1.5 pt-1 select-none">
+                {featured.map((_, i) => (
                   <button
+                    key={`mobile-hero-dot-${i}`}
                     type="button"
-                    onClick={() => {
-                      const movieData = {
-                        title: film.name,
-                        titleEn: film.origin_name,
-                        posterUrl: film.poster_url,
-                        thumbUrl: film.thumb_url,
-                        type: film.type,
-                        year: film.year,
-                      };
-                      if (!user) {
-                        guestDataStorage.addWatchlist(film.slug, movieData);
-                        toast(
-                          t(
-                            "home.savedWatchlistLocal",
-                            "Đã lưu vào tủ phim (trên thiết bị này)",
-                          ),
-                          "success",
-                        );
-                        return;
-                      }
-                      watchlistApi
-                        .add(film.slug, movieData)
-                        .then(() =>
-                          toast(
-                            `${t("home.savedWatchlist", "Đã lưu vào tủ phim")}: ${film.name}`,
-                            "success",
-                          ),
-                        )
-                        .catch(() => {
-                          guestDataStorage.addWatchlist(film.slug, movieData);
-                          toast(
-                            "Đã lưu cục bộ, sẽ đồng bộ lại khi kết nối ổn định",
-                            "info",
-                          );
-                        });
-                    }}
-                    aria-label="Thêm vào tủ phim"
-                    className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#181b22] hover:bg-[#222731] border border-white/10 hover:border-white/20 text-neutral-200 hover:text-white flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer shadow-xl"
-                  >
-                    <Bookmark size={16} />
-                  </button>
-                </div>
+                    onClick={() => void activateSlide(i)}
+                    aria-label={`Chuyển đến banner ${i + 1}`}
+                    aria-current={i === current ? "true" : undefined}
+                    className={cn(
+                      "rounded-full transition-all duration-300 cursor-pointer",
+                      i === current
+                        ? "w-5 h-1.5 bg-gradient-to-r from-[#a855f7] to-[#7c3aed] shadow-[0_0_8px_rgba(168,85,247,0.7)]"
+                        : "w-1.5 h-1.5 bg-white/40 hover:bg-white/80",
+                    )}
+                  />
+                ))}
               </div>
-        </div>
+            )}
+          </div>
 
-          {/* Mobile previous / pagination / next controls - Perfectly positioned above mobile bottom bar */}
-          {featured.length > 1 && (
-            <div className="mt-3.5 sm:mt-4 flex items-center justify-center gap-3 pt-1 sm:hidden select-none z-30 pointer-events-auto">
-              <button
-                type="button"
-                onClick={prevSlide}
-                aria-label="Banner trước"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/20 bg-black/60 text-white backdrop-blur-md transition-all hover:bg-white/20 active:scale-90 cursor-pointer shadow-lg"
+          {/* Badges Pill Row (⭐ Rating, Year, FHD, Vietsub/Lồng tiếng) - Desktop only */}
+          <div className="hidden sm:flex items-center justify-center gap-2 sm:gap-2.5 flex-wrap my-1 sm:my-1.5">
+            <span className="bg-black/60 backdrop-blur-md border border-white/15 px-3 py-0.5 sm:px-3.5 sm:py-1 rounded-full text-[11px] sm:text-xs font-extrabold text-amber-400 flex items-center gap-1 shadow-lg">
+              <Star size={12} className="fill-amber-400 text-amber-400" />
+              <span>
+                {typeof ratingVal === "number"
+                  ? ratingVal.toFixed(1)
+                  : ratingVal}
+              </span>
+            </span>
+
+            {film.year && (
+              <span className="bg-black/60 backdrop-blur-md border border-white/15 px-3 py-0.5 sm:px-3.5 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold text-neutral-200 shadow-lg">
+                {film.year}
+              </span>
+            )}
+
+            <span className="bg-black/60 backdrop-blur-md border border-white/15 px-3 py-0.5 sm:px-3.5 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold text-purple-300 shadow-lg">
+              {langBadge}
+            </span>
+          </div>
+
+          {/* Movie Detail Sub-Info Line (Duration • Genres • Age Rating) - Desktop only */}
+          <div className="hidden sm:flex items-center justify-center gap-2 sm:gap-2.5 text-xs sm:text-sm font-semibold text-neutral-300/90 tracking-wide flex-wrap px-2 my-1 sm:my-1.5">
+            <span>{durationStr}</span>
+            <span className="text-neutral-500 font-bold">•</span>
+            <span>{genresStr}</span>
+            <span className="text-neutral-500 font-bold">•</span>
+            <span className="px-1.5 py-0.5 rounded bg-white/10 text-[11px] font-extrabold text-neutral-200 border border-white/15">
+              {ageRating}
+            </span>
+          </div>
+
+          {/* Centered Overview Text - Desktop only */}
+          <p className="hidden sm:block text-xs sm:text-sm text-neutral-300/90 max-w-lg sm:max-w-xl mx-auto leading-relaxed line-clamp-2 font-normal drop-shadow-md px-3 sm:px-4 my-2 sm:my-2.5">
+            {film.content
+              ? cleanMovieDescription(film.content)
+              : film.origin_name
+                ? `${film.origin_name} - ` + t("home.heroDesc")
+                : t("home.heroDesc")}
+          </p>
+
+          {/* Action Buttons (Watch Now / Resume Watch + Trailer + Bookmark with Tooltip) - Desktop only */}
+          <div
+            className={cn(cardFont.className, "hidden sm:flex items-center justify-center gap-3 sm:gap-3.5 pt-2 sm:pt-3 pb-1")}
+          >
+            {hasWatched ? (
+              <Link
+                href={getWatchHref(film)}
+                prefetch={false}
+                className={`${cardFont.className} flex flex-col items-center justify-center bg-white hover:bg-neutral-200 text-black px-6 py-2.5 sm:px-7 sm:py-3 rounded-full transition-all duration-200 shadow-2xl hover:scale-105 active:scale-95 group min-w-[145px]`}
               >
-                <ChevronLeft size={18} aria-hidden="true" />
-              </button>
-
-              <div className="flex min-h-9 items-center justify-center gap-2 rounded-full border border-white/20 bg-black/60 px-3.5 backdrop-blur-md shadow-lg">
-                {featured.length <= 6 ? (
-                  featured.map((_, i) => (
-                    <button
-                      key={`mobile-dot-${i}`}
-                      type="button"
-                      onClick={() => void activateSlide(i)}
-                      aria-label={`Chuyển đến phim ${i + 1}`}
-                      aria-current={i === current ? "true" : undefined}
-                      className={cn(
-                        "h-1.5 rounded-full transition-all duration-300 cursor-pointer",
-                        i === current
-                          ? "w-7 bg-white shadow-sm"
-                          : "w-1.5 bg-white/40 hover:bg-white/80",
-                      )}
-                    />
-                  ))
-                ) : (
-                  <span className="text-xs font-mono font-bold text-white tracking-wider select-none px-1">
-                    {String(current + 1).padStart(2, "0")}{" "}
-                    <span className="text-neutral-500 font-normal">/</span>{" "}
-                    {String(featured.length).padStart(2, "0")}
+                <div className="flex items-center gap-1.5 text-xs font-black tracking-wide uppercase">
+                  <Play size={14} className="fill-black" />
+                  <span>
+                    {t("home.resumeWatch", "Xem tiếp")}{" "}
+                    {formatProgressTime(progressSecs)}
                   </span>
+                </div>
+                {progressPct > 0 && (
+                  <div className="w-full bg-neutral-300 h-1 rounded-full overflow-hidden mt-1">
+                    <div
+                      className="bg-[#e50914] h-full rounded-full transition-all"
+                      style={{ width: `${progressPct}%` }}
+                    />
+                  </div>
                 )}
-              </div>
+              </Link>
+            ) : (
+              <Link
+                href={getWatchHref(film)}
+                prefetch={false}
+                className={`${cardFont.className} flex items-center gap-1.5 sm:gap-2 bg-white hover:bg-neutral-200 text-black px-6 py-2.5 sm:px-7 sm:py-3 rounded-full text-xs font-black tracking-wide uppercase transition-all duration-200 shadow-2xl hover:scale-105 active:scale-95`}
+              >
+                <Play size={14} className="fill-black" />
+                <span>{t("home.watchNow", "Xem ngay")}</span>
+              </Link>
+            )}
 
+            <button
+              type="button"
+              onClick={() => setTrailerModalFilm(film)}
+              className={`${cardFont.className} flex items-center gap-1.5 sm:gap-2 rounded-full border border-white/10 bg-[#181b22] px-5 py-2.5 sm:px-6 sm:py-3 text-xs font-extrabold uppercase tracking-wider text-white shadow-xl transition-all duration-200 hover:scale-105 hover:bg-[#222731] hover:border-white/20 active:scale-95 cursor-pointer`}
+            >
+              <Film size={14} className="text-white/80" />
+              <span>{t("home.trailer", "Trailer")}</span>
+            </button>
+
+            {/* Bookmark CTA with hover tooltip */}
+            <div className="relative group">
+              <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-lg bg-[#181b22] border border-white/15 text-[10px] font-semibold text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-200 shadow-2xl z-40 translate-y-1 group-hover:translate-y-0 uppercase tracking-wider">
+                {t("home.saveWatchlist", "Tủ phim")}
+              </span>
               <button
                 type="button"
-                onClick={nextSlide}
-                aria-label="Banner tiếp theo"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/20 bg-black/60 text-white backdrop-blur-md transition-all hover:bg-white/20 active:scale-90 cursor-pointer shadow-lg"
+                onClick={() => {
+                  const movieData = {
+                    title: film.name,
+                    titleEn: film.origin_name,
+                    posterUrl: film.poster_url,
+                    thumbUrl: film.thumb_url,
+                    type: film.type,
+                    year: film.year,
+                  };
+                  if (!user) {
+                    guestDataStorage.addWatchlist(film.slug, movieData);
+                    toast(
+                      t(
+                        "home.savedWatchlistLocal",
+                        "Đã lưu vào tủ phim (trên thiết bị này)",
+                      ),
+                      "success",
+                    );
+                    return;
+                  }
+                  watchlistApi
+                    .add(film.slug, movieData)
+                    .then(() =>
+                      toast(
+                        `${t("home.savedWatchlist", "Đã lưu vào tủ phim")}: ${film.name}`,
+                        "success",
+                      ),
+                    )
+                    .catch(() => {
+                      guestDataStorage.addWatchlist(film.slug, movieData);
+                      toast(
+                        "Đã lưu cục bộ, sẽ đồng bộ lại khi kết nối ổn định",
+                        "info",
+                      );
+                    });
+                }}
+                aria-label="Thêm vào tủ phim"
+                className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#181b22] hover:bg-[#222731] border border-white/10 hover:border-white/20 text-neutral-200 hover:text-white flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer shadow-xl"
               >
-                <ChevronRight size={18} aria-hidden="true" />
+                <Bookmark size={16} />
               </button>
             </div>
-          )}
+          </div>
         </div>
+      </div>
 
       {/* Mouse Scroll Indicator */}
       <div
@@ -2482,9 +2532,9 @@ export default function HeroBanner({
         <div className="hidden xl:flex items-center gap-2 overflow-x-auto p-1 scrollbar-none [&::-webkit-scrollbar]:hidden [scrollbar-width:none] [-ms-overflow-style:none]">
             {visibleThumbnails.map(({ item, index: i }) => {
               const cardImg =
+                (item as any).heroBackdrop ||
                 item.thumb_url ||
                 item.poster_url ||
-                (item as any).heroBackdrop ||
                 "";
               const isActive = i === current;
 

@@ -456,3 +456,31 @@ test('ensureSixHeroFilms always guarantees exactly six films on reload/reset', (
   assert.equal(batmanEntry?.name, 'Người Dơi');
 });
 
+test('buildHeroImageCandidates prioritizes TMDB HD backdrops over low-res provider thumbnails', () => {
+  const candidates = buildHeroImageCandidates({
+    heroBackdrop: 'https://phimimg.com/uploads/movies/20261010/bac-si-x-thumb.webp',
+    thumbUrl: 'https://image.tmdb.org/t/p/w1280/hMEulOCbZtnS7gFFBDuQCpYQs5a.jpg',
+    posterUrl: 'https://image.tmdb.org/t/p/w500/jzqPdwpiDTPzvnbV0pZzTtOIgWz.jpg',
+  });
+
+  // The first candidate must be the proxy or direct TMDB w1280 HD backdrop
+  assert.ok(decodeURIComponent(candidates[0]).includes('/w1280/hMEulOCbZtnS7gFFBDuQCpYQs5a.jpg'));
+  assert.equal(candidates[1], 'https://image.tmdb.org/t/p/w1280/hMEulOCbZtnS7gFFBDuQCpYQs5a.jpg');
+  // The raw provider URL should be pushed to the end as fallback
+  assert.ok(candidates.indexOf('https://phimimg.com/uploads/movies/20261010/bac-si-x-thumb.webp') > 2);
+});
+
+test('buildHeroCardImageCandidates prioritizes TMDB backdrops for 16:9 thumbnail cards', () => {
+  const candidates = buildHeroCardImageCandidates(
+    {
+      heroBackdrop: 'https://image.tmdb.org/t/p/w1280/hMEulOCbZtnS7gFFBDuQCpYQs5a.jpg',
+      thumbUrl: 'https://phimimg.com/uploads/movies/20261010/bac-si-x-thumb.webp',
+      posterUrl: 'https://phimimg.com/uploads/movies/20261010/bac-si-x-poster.webp',
+    },
+    'thumbnail',
+  );
+
+  // For 16:9 thumbnails, TMDB backdrop resized to w300 should be the first candidate
+  assert.equal(candidates[0], 'https://image.tmdb.org/t/p/w300/hMEulOCbZtnS7gFFBDuQCpYQs5a.jpg');
+});
+

@@ -57,6 +57,8 @@ import { MediaIngestService } from "./media-ingest.service";
 import { CrawlerService } from "./crawler.service";
 import { StoryboardService } from "./storyboard.service";
 import { CreateMediaUploadDto } from "./media-upload.dto";
+import { PrismaService } from "../prisma/prisma.service";
+import { MoviesService } from "../movies/movies.service";
 
 const mediaUploadDirectory = resolve(
   process.env.MEDIA_UPLOAD_TMP_DIR || "../../.local-data/uploads",
@@ -81,6 +83,29 @@ function paginationValue(
     : fallback;
 }
 
+const HERO_SLUG_ALIASES: Record<string, string> = {
+  "hope-vung-tu-dia": "vung-tu-dia",
+  "joker-2019": "joker",
+  "the-batman": "nguoi-doi-2022",
+  "batman-2022": "nguoi-doi-2022",
+  "avengers-hoi-ket": "biet-doi-sieu-anh-hung-4-hoi-ket",
+  "avengers-endgame": "biet-doi-sieu-anh-hung-4-hoi-ket",
+  "avengers-cuoc-chien-vo-cuc": "biet-doi-sieu-anh-hung-3-cuoc-chien-vo-cuc",
+  "avengers-infinity-war": "biet-doi-sieu-anh-hung-3-cuoc-chien-vo-cuc",
+  "the-dark-knight": "ky-si-bong-dem",
+  "top-gun-maverick": "phi-cong-sieu-dang-maverick",
+  "inception": "ke-danh-cap-giac-mo",
+  "interstellar": "ho-den-tu-than",
+  "avatar-2": "avatar-2-dong-chay-cua-nuoc",
+  "spider-man-no-way-home": "nguoi-nhen-khong-con-nha",
+  "dune-2": "dune-hanh-tinh-cat-2",
+  "the-wolf-of-wall-street": "soi-gia-pho-wall",
+  "the-revenant": "nguoi-ve-tu-coi-chet",
+  "once-upon-a-time-in-hollywood": "chuyen-ngay-xua-o-hollywood",
+  "the-irishman": "nguoi-dan-ong-xu-ireland",
+  "the-departed": "ke-di-san",
+};
+
 @Controller("admin")
 @UseGuards(AdminSessionGuard, AdminPermissionGuard)
 export class AdminController {
@@ -94,6 +119,8 @@ export class AdminController {
     private readonly mediaIngest: MediaIngestService,
     private readonly crawler: CrawlerService,
     private readonly storyboard: StoryboardService,
+    private readonly prisma: PrismaService,
+    private readonly moviesService: MoviesService,
   ) {}
 
   // ── 1. Overview Dashboard ─────────────────────────────────────────
@@ -109,6 +136,185 @@ export class AdminController {
   }
 
   // ── 2. Movie Management ───────────────────────────────────────────
+  @Get("movies/catalog-search")
+  @RequireAdminPermissions("movies.read")
+  async searchMovieCatalog(
+    @Query("search") search?: string,
+    @Query("slug") slug?: string,
+    @Query("limit") limit?: string,
+  ) {
+    const limitNum = paginationValue(limit, 8, 50);
+    const targetSlug = slug?.trim();
+    const query = search?.trim();
+
+    const formatImageUrl = (url?: string) => {
+      if (!url) return "";
+      if (url.startsWith("http://") || url.startsWith("https://")) return url;
+      const clean = url.startsWith("/") ? url : `/${url}`;
+      return `https://phimimg.com${clean}`;
+    };
+
+    const mapToMovieItem = (item: any) => ({
+      id: item.slug || item.id || item._id,
+      title: item.name || item.title || item.slug,
+      originName: item.origin_name || item.originName || "",
+      posterUrl: formatImageUrl(
+        item.poster_url || item.posterUrl || item.thumb_url || item.thumbUrl,
+      ),
+      thumbUrl: formatImageUrl(
+        item.thumb_url ||
+          item.thumbUrl ||
+          item.heroBackdrop ||
+          item.poster_url ||
+          item.posterUrl,
+      ),
+      year: item.year ? Number(item.year) : undefined,
+      type: item.type || "single",
+      quality: item.quality || "4K UHD",
+      description: item.content || item.description || "",
+      genres: Array.isArray(item.category)
+        ? item.category.map((c: any) =>
+            typeof c === "string" ? c : c.name || c.slug,
+          )
+        : Array.isArray(item.genres)
+          ? item.genres
+          : [],
+    });
+
+    if (targetSlug) {
+      const lookup = HERO_SLUG_ALIASES[targetSlug] || targetSlug;
+      const local = await this.prisma.movie
+        .findFirst({
+          where: {
+            OR: [{ id: targetSlug }, { id: lookup }],
+          },
+        })
+        .catch(() => null);
+      if (local) {
+        const mapped = mapToMovieItem(local);
+        mapped.id = targetSlug;
+        return { items: [mapped] };
+      }
+
+      try {
+        const detail = await this.moviesService
+          .getDetail(lookup)
+          .catch(() => null);
+        const movie =
+          (detail as any)?.movie ||
+          (detail as any)?.data?.movie ||
+          (detail as any)?.data?.item ||
+          (detail as any)?.item;
+        if (movie?.name) {
+          const mapped = mapToMovieItem(movie);
+          mapped.id = targetSlug;
+          return { items: [mapped] };
+        }
+      } catch {}
+
+      // Fallback search upstream by slug or alias
+      try {
+        const searchRes = await this.moviesService
+          .search(lookup, 1, 1)
+          .catch(() => null);
+        const first =
+          (searchRes as any)?.data?.items?.[0] ||
+          (searchRes as any)?.items?.[0];
+        if (first?.slug) {
+          const detail = await this.moviesService
+            .getDetail(first.slug)
+            .catch(() => null);
+          const movie =
+            (detail as any)?.movie ||
+            (detail as any)?.data?.movie ||
+            (detail as any)?.data?.item ||
+            first;
+          if (movie?.name) {
+            const mapped = mapToMovieItem(movie);
+            mapped.id = targetSlug;
+            return { items: [mapped] };
+          }
+        }
+      } catch {}
+
+      return { items: [] };
+    }
+
+    if (!query) {
+      return { items: [] };
+    }
+
+    const cleanQuery = query.toLowerCase().trim();
+    const mappedAlias = HERO_SLUG_ALIASES[cleanQuery] || cleanQuery;
+
+    const [localResults, upstreamResults, directSlugMatch, directAliasMatch] =
+      await Promise.all([
+        this.prisma.movie
+          .findMany({
+            where: {
+              OR: [
+                { id: { contains: query, mode: "insensitive" } },
+                { title: { contains: query, mode: "insensitive" } },
+                { originName: { contains: query, mode: "insensitive" } },
+                ...(mappedAlias !== cleanQuery
+                  ? [{ id: { contains: mappedAlias, mode: "insensitive" as const } }]
+                  : []),
+              ],
+            },
+            take: limitNum,
+          })
+          .catch(() => []),
+        this.moviesService.search(query, 1, limitNum).catch(() => null),
+        !query.includes(" ")
+          ? this.moviesService.getDetail(query).catch(() => null)
+          : null,
+        mappedAlias !== cleanQuery
+          ? this.moviesService.getDetail(mappedAlias).catch(() => null)
+          : null,
+      ]);
+
+    const items: any[] = [];
+    const seenSlugs = new Set<string>();
+
+    const addCandidate = (raw: any) => {
+      if (!raw) return;
+      const mapped = mapToMovieItem(raw);
+      if (!mapped.id || seenSlugs.has(mapped.id)) return;
+      seenSlugs.add(mapped.id);
+      items.push(mapped);
+    };
+
+    const directMovie =
+      (directSlugMatch as any)?.movie ||
+      (directSlugMatch as any)?.data?.movie ||
+      (directSlugMatch as any)?.data?.item;
+    if (directMovie?.name) {
+      addCandidate(directMovie);
+    }
+
+    const directAliasMovie =
+      (directAliasMatch as any)?.movie ||
+      (directAliasMatch as any)?.data?.movie ||
+      (directAliasMatch as any)?.data?.item;
+    if (directAliasMovie?.name) {
+      addCandidate(directAliasMovie);
+    }
+
+    for (const m of localResults) {
+      addCandidate(m);
+    }
+
+    const upstreamList: any[] =
+      (upstreamResults as any)?.data?.items ||
+      (upstreamResults as any)?.items ||
+      [];
+    for (const m of upstreamList) {
+      addCandidate(m);
+    }
+
+    return { items: items.slice(0, limitNum) };
+  }
+
   @Get("movies")
   @RequireAdminPermissions("movies.read")
   getMovies(

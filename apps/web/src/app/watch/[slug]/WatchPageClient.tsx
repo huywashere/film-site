@@ -81,6 +81,7 @@ import { useTmdb } from '@/hooks/useTmdb';
 import { useTmdbArtwork } from '@/hooks/useTmdbArtwork';
 import { tmdbBackdrop, tmdbPoster, tmdbProfile } from '@/lib/tmdb';
 import { cardFont } from '@/lib/fonts';
+import { getSiteUrl } from '@/lib/seo';
 import dynamic from 'next/dynamic';
 import { watchProgressStorage } from '@/lib/watch-progress';
 import { guestDataStorage } from '@/lib/user-data';
@@ -3892,7 +3893,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       dateCreated: film?.year ? String(film.year) : undefined,
       potentialAction: {
         '@type': 'WatchAction',
-        target: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://netphim.app'}/watch/${slug}`,
+        target: `${getSiteUrl()}/watch/${slug}`,
       },
     },
     {
@@ -3903,7 +3904,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       thumbnailUrl: posterUrl || tmdbBackdropUrl,
       uploadDate: film?.year ? `${film.year}-01-01` : '2024-01-01',
       embedUrl:
-        iframeUrl || `${process.env.NEXT_PUBLIC_SITE_URL || 'https://netphim.app'}/watch/${slug}`,
+        iframeUrl || `${getSiteUrl()}/watch/${slug}`,
       inLanguage: 'vi',
     },
   ];
@@ -3932,15 +3933,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
         </div>
       )}
 
-      {/* ── DYNAMIC WATCH PAGE SEO META TAGS ── */}
-      <title>{watchSeoTitle}</title>
-      <meta name="description" content={watchSeoDescription} />
-      <meta property="og:title" content={watchSeoTitle} />
-      <meta property="og:description" content={watchSeoDescription} />
-      <meta property="og:type" content="video.episode" />
-      <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:title" content={watchSeoTitle} />
-      <meta name="twitter:description" content={watchSeoDescription} />
+
 
       {/* ── MAIN — padded top for navbar (68px/72px/64px) + safe left padding for sidebar (80px) ── */}
       <main

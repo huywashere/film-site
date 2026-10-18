@@ -180,7 +180,7 @@ const nextConfig = {
         headers: [
           {
             key: "Access-Control-Allow-Origin",
-            value: process.env.NEXT_PUBLIC_APP_URL || "https://netphim.app",
+            value: process.env.NEXT_PUBLIC_APP_URL || "https://film-site-web.vercel.app",
           },
           { key: "Access-Control-Allow-Methods", value: "GET, OPTIONS" },
         ],

@@ -153,6 +153,7 @@ async function loadMovieNotificationFeed(channel: MovieNotificationChannel) {
 const NAV_LINKS = [
   { href: "/films/series", key: "nav.series", label: "Phim Bộ" },
   { href: "/films/single", key: "nav.single", label: "Phim Lẻ" },
+  { href: "/song-ngu", key: "nav.bilingual", label: "Song Ngữ" },
 ];
 
 export const GENRES_LIST = [

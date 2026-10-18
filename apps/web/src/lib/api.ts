@@ -523,8 +523,10 @@ export const xinkApi = {
   getByYear: (year: number, page = 1, limit = 24) =>
     fetchXink(`/nam/${year}/page/${page}?limit=${limit}`),
   search: (keyword: string, page = 1, limit = 24) =>
-    fetchXink(`/tim-kiem?keyword=${encodeURIComponent(keyword)}&page=${page}&limit=${limit}`),
+    fetchXink(`/tim-kiem?q=${encodeURIComponent(keyword)}&keyword=${encodeURIComponent(keyword)}&page=${page}&limit=${limit}`),
 };
+
+export const vodphimApi = xinkApi;
 
 const fetchVicdn = async (endpoint: string) => {
   let proxyStatus = 0;
@@ -933,10 +935,22 @@ async function searchAllSources(
   return result;
 }
 
+const DETAIL_CACHE_MAX_AGE_MS = 1000 * 60 * 15; // 15 minutes
+const globalDetailCache = new Map<string, { data: any; timestamp: number }>();
+
 async function getDetailFromAnySource(slug: string, preferredSource?: MovieSource): Promise<any> {
+  const cacheKey = `${slug}__${preferredSource || 'any'}`;
+  const cached = globalDetailCache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < DETAIL_CACHE_MAX_AGE_MS) {
+    return cached.data;
+  }
+
   try {
     const bootstrap = await fetchCatalogGateway(`/movies/${encodeURIComponent(slug)}/bootstrap`);
-    if (isUsableMovieDetail(bootstrap)) return bootstrap;
+    if (isUsableMovieDetail(bootstrap)) {
+      globalDetailCache.set(cacheKey, { data: bootstrap, timestamp: Date.now() });
+      return bootstrap;
+    }
   } catch {
     // Preserve direct provider fallback when Go is unavailable.
   }
@@ -982,11 +996,8 @@ async function getDetailFromAnySource(slug: string, preferredSource?: MovieSourc
       ]
     : requests;
 
-  // Race every provider once. The old sequential loop could wait for four
-  // individual timeouts and then repeated the same four requests in parallel,
-  // leaving both detail and watch pages on skeletons for several seconds.
   try {
-    return await Promise.any(
+    const result = await Promise.any(
       orderedRequests.map(async (entry) => {
         const data = await entry.request();
         if (isUsableMovieDetail(data)) {
@@ -995,6 +1006,10 @@ async function getDetailFromAnySource(slug: string, preferredSource?: MovieSourc
         throw new Error('Detail not usable');
       }),
     );
+    if (result && isUsableMovieDetail(result)) {
+      globalDetailCache.set(cacheKey, { data: result, timestamp: Date.now() });
+    }
+    return result;
   } catch {
     return {
       status: false,
@@ -1109,7 +1124,7 @@ async function getMergedCatalogPage(
     items: settled[index].status === 'fulfilled' ? extractFilmItems(settled[index].value) : [],
   }));
   const merged = dedupeFilmsBySource(groups);
-  const sourceOrder: MovieSource[] = ['kkphim', 'nguonc', 'vsmov', 'ophim'];
+  const sourceOrder: MovieSource[] = ['kkphim', 'xink', 'nguonc', 'vsmov', 'ophim'];
   const buckets = new Map<MovieSource, typeof merged>();
 
   for (const film of merged) {

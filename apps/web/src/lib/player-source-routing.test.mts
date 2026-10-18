@@ -223,6 +223,8 @@ test("builds documented vicdn.cc movie and TV embed URLs", () => {
 
 test("formats provider abbreviations correctly", () => {
   assert.equal(getSourceAbbr("kkphim"), "KP");
+  assert.equal(getSourceAbbr("vodphim"), "VP");
+  assert.equal(getSourceAbbr("xink"), "VP");
   assert.equal(getSourceAbbr("nguonc"), "NC");
   assert.equal(getSourceAbbr("vsmov"), "VS");
   assert.equal(getSourceAbbr("ophim"), "OP");
@@ -236,6 +238,8 @@ test("formats provider abbreviations correctly", () => {
 
 test("keeps ViCDN, VidSrc, VidLink, 2Embed, VidCore in dedicated language groups and defaults VN providers to vietsub", () => {
   assert.equal(resolveServerType("vicdn", "Server 1"), "song-ngu");
+  assert.equal(resolveServerType("xink", "Server 1"), "song-ngu");
+  assert.equal(resolveServerType("vodphim", "Thuyết Minh"), "song-ngu");
   assert.equal(resolveServerType("vidsrc", "Server 1"), "engsub");
   assert.equal(resolveServerType("vidlink", "Server 2"), "engsub");
   assert.equal(resolveServerType("2embed", "Server 3"), "engsub");
@@ -246,6 +250,8 @@ test("keeps ViCDN, VidSrc, VidLink, 2Embed, VidCore in dedicated language groups
   assert.equal(resolveServerType("vsmov", "VIP 1"), "vietsub");
   assert.equal(resolveServerType("nguonc", "Thuyết Minh"), "thuyet-minh");
   assert.equal(getSourceLabel("kkphim"), "KKPhim");
+  assert.equal(getSourceLabel("vodphim"), "VodPhim");
+  assert.equal(getSourceLabel("xink"), "VodPhim");
   assert.equal(getSourceLabel("vidsrc"), "VidSrc");
   assert.equal(getSourceLabel("vidlink"), "VidLink");
   assert.equal(getSourceLabel("2embed"), "2Embed");

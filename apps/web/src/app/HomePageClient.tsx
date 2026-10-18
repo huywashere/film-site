@@ -91,6 +91,159 @@ const CURATED_VFX_FILM_ITEMS: FilmItem[] = CURATED_VFX_HERO_POOL.map((item) => (
   tmdb: item.tmdb,
 }));
 
+const CURATED_ADVENTURE_FILM_ITEMS: FilmItem[] = [
+  {
+    _id: "tho-san-co-vat",
+    slug: "tho-san-co-vat",
+    name: "Thợ Săn Cổ Vật",
+    origin_name: "Uncharted",
+    poster_url: "https://phimimg.com/upload/vod/20230926-1/9fd12ecb8a43850ff2e5b785a0c1ae72.jpg",
+    thumb_url: "https://phimimg.com/upload/vod/20230926-1/be9b88427f1745af49ad15bf54642b9e.jpg",
+    quality: "FHD",
+    lang: "Vietsub + Thuyết Minh",
+    year: 2022,
+    type: "single",
+    vote_average: 7.2,
+    category: [{ name: "Phiêu Lưu", slug: "phieu-luu" }, { name: "Hành Động", slug: "hanh-dong" }],
+    country: [{ name: "Âu Mỹ", slug: "au-my" }],
+  },
+  {
+    _id: "indiana-jones-va-vong-quay-dinh-menh",
+    slug: "indiana-jones-va-vong-quay-dinh-menh",
+    name: "Indiana Jones Và Vòng Quay Định Mệnh",
+    origin_name: "Indiana Jones and the Dial of Destiny",
+    poster_url: "https://phimimg.com/upload/vod/20230910-1/c88666e8c1a1d01d599a67cff53ab7d7.jpg",
+    thumb_url: "https://phimimg.com/upload/vod/20230910-1/c88666e8c1a1d01d599a67cff53ab7d7.jpg",
+    quality: "FHD",
+    lang: "Vietsub + Thuyết Minh",
+    year: 2023,
+    type: "single",
+    vote_average: 6.7,
+    category: [{ name: "Phiêu Lưu", slug: "phieu-luu" }, { name: "Hành Động", slug: "hanh-dong" }],
+    country: [{ name: "Âu Mỹ", slug: "au-my" }],
+  },
+  {
+    _id: "jumanji-tro-choi-ky-ao-thang-cap",
+    slug: "jumanji-tro-choi-ky-ao-thang-cap",
+    name: "Jumanji - Trò Chơi Kỳ Ảo: Thăng Cấp",
+    origin_name: "Jumanji: The Next Level",
+    poster_url: "https://phimimg.com/upload/vod/20250915-1/ef204a33c091b37cf932193e67ab3d86.jpg",
+    thumb_url: "https://phimimg.com/upload/vod/20250915-1/6bb50206f676e7e4ab4b76c4121b06b2.jpg",
+    quality: "FHD",
+    lang: "Vietsub + Thuyết Minh",
+    year: 2019,
+    type: "single",
+    vote_average: 7.0,
+    category: [{ name: "Phiêu Lưu", slug: "phieu-luu" }, { name: "Hài Hước", slug: "hai-huoc" }],
+    country: [{ name: "Âu Mỹ", slug: "au-my" }],
+  },
+  {
+    _id: "cuop-bien-vung-caribbean-loi-nguyen-tau-ngoc-trai-den",
+    slug: "cuop-bien-vung-caribbean-loi-nguyen-tau-ngoc-trai-den",
+    name: "Cướp Biển Vùng Caribbean: Lời Nguyền Tàu Ngọc Trai Đen",
+    origin_name: "Pirates of the Caribbean: The Curse of the Black Pearl",
+    poster_url: "https://phimimg.com/upload/vod/20241008-1/44ee66be4e1e248afdb9a5aec76617b0.jpg",
+    thumb_url: "https://phimimg.com/upload/vod/20241008-1/c7193f8762bd01569d49ca33b8a9d72b.jpg",
+    quality: "FHD",
+    lang: "Vietsub + Thuyết Minh",
+    year: 2003,
+    type: "single",
+    vote_average: 8.0,
+    category: [{ name: "Phiêu Lưu", slug: "phieu-luu" }, { name: "Hành Động", slug: "hanh-dong" }],
+    country: [{ name: "Âu Mỹ", slug: "au-my" }],
+  },
+  {
+    _id: "cuop-bien-vung-caribbean-chiec-ruong-tu-than",
+    slug: "cuop-bien-vung-caribbean-chiec-ruong-tu-than",
+    name: "Cướp Biển Vùng Caribbean: Chiếc Rương Tử Thần",
+    origin_name: "Pirates of the Caribbean: Dead Man's Chest",
+    poster_url: "https://phimimg.com/upload/vod/20231102-1/8a3ffed4ba581125318ef8466101c8f9.jpg",
+    thumb_url: "https://phimimg.com/upload/vod/20231102-1/1a717a73d2a10c4c26edefd5a4bfdfdf.jpg",
+    quality: "FHD",
+    lang: "Vietsub + Thuyết Minh",
+    year: 2006,
+    type: "single",
+    vote_average: 7.4,
+    category: [{ name: "Phiêu Lưu", slug: "phieu-luu" }, { name: "Hành Động", slug: "hanh-dong" }],
+    country: [{ name: "Âu Mỹ", slug: "au-my" }],
+  },
+  {
+    _id: "kong-dao-dau-lau",
+    slug: "kong-dao-dau-lau",
+    name: "Kong: Đảo Đầu Lâu",
+    origin_name: "Kong: Skull Island",
+    poster_url: "https://phimimg.com/upload/vod/20260108-1/6c3b562a404a7a7d3178962b8e714dc3.jpg",
+    thumb_url: "https://phimimg.com/upload/vod/20260108-1/af51948f63db9f6bf7c9ba3f9408b872.jpg",
+    quality: "FHD",
+    lang: "Vietsub + Thuyết Minh",
+    year: 2017,
+    type: "single",
+    vote_average: 6.5,
+    category: [{ name: "Phiêu Lưu", slug: "phieu-luu" }, { name: "Hành Động", slug: "hanh-dong" }],
+    country: [{ name: "Âu Mỹ", slug: "au-my" }],
+  },
+  {
+    _id: "nguoi-hobbit-hanh-trinh-vo-dinh",
+    slug: "nguoi-hobbit-hanh-trinh-vo-dinh",
+    name: "Người Hobbit: Hành Trình Vô Định",
+    origin_name: "The Hobbit: An Unexpected Journey",
+    poster_url: "https://phimimg.com/upload/vod/20250531-1/1af4d14c37fc5b1b69cdf7ed5923df3e.jpg",
+    thumb_url: "https://phimimg.com/upload/vod/20250531-1/e9301d1c4a7d4f0b315f0c0974f71b70.jpg",
+    quality: "FHD",
+    lang: "Vietsub + Thuyết Minh",
+    year: 2012,
+    type: "single",
+    vote_average: 7.8,
+    category: [{ name: "Phiêu Lưu", slug: "phieu-luu" }, { name: "Kỳ Ảo", slug: "ky-ao" }],
+    country: [{ name: "Âu Mỹ", slug: "au-my" }],
+  },
+  {
+    _id: "nguoi-hobbit-dai-chien-voi-rong-lua",
+    slug: "nguoi-hobbit-dai-chien-voi-rong-lua",
+    name: "Người Hobbit: Đại Chiến Với Rồng Lửa",
+    origin_name: "The Hobbit: The Desolation of Smaug",
+    poster_url: "https://phimimg.com/upload/vod/20250531-1/17c9567604f918b82399bf076c51b5ee.jpg",
+    thumb_url: "https://phimimg.com/upload/vod/20250531-1/13544113937967705074b76de7bb22a8.jpg",
+    quality: "FHD",
+    lang: "Vietsub + Thuyết Minh",
+    year: 2013,
+    type: "single",
+    vote_average: 7.8,
+    category: [{ name: "Phiêu Lưu", slug: "phieu-luu" }, { name: "Kỳ Ảo", slug: "ky-ao" }],
+    country: [{ name: "Âu Mỹ", slug: "au-my" }],
+  },
+  {
+    _id: "cuoc-doi-cua-pi",
+    slug: "cuoc-doi-cua-pi",
+    name: "Cuộc Đời Của Pi",
+    origin_name: "Life of Pi",
+    poster_url: "https://phimimg.com/upload/vod/20231023-1/97760d0209f95609b76a90e9cd05ac44.jpg",
+    thumb_url: "https://phimimg.com/upload/vod/20231023-1/0d931233a1bf7c7259ff848e61913f79.jpg",
+    quality: "FHD",
+    lang: "Vietsub + Thuyết Minh",
+    year: 2012,
+    type: "single",
+    vote_average: 7.9,
+    category: [{ name: "Phiêu Lưu", slug: "phieu-luu" }, { name: "Chính Kịch", slug: "chinh-kich" }],
+    country: [{ name: "Âu Mỹ", slug: "au-my" }],
+  },
+  {
+    _id: "tomb-raider-huyen-thoai-bat-dau",
+    slug: "tomb-raider-huyen-thoai-bat-dau",
+    name: "Tomb Raider: Huyền Thoại Bắt Đầu",
+    origin_name: "Tomb Raider",
+    poster_url: "https://phimimg.com/upload/vod/20251002-1/4a17777db8336a77babdbe6a63558ae4.jpg",
+    thumb_url: "https://phimimg.com/upload/vod/20251002-1/ca0166b6277df0b90d90fb515d4f44a8.jpg",
+    quality: "FHD",
+    lang: "Vietsub + Thuyết Minh",
+    year: 2018,
+    type: "single",
+    vote_average: 6.4,
+    category: [{ name: "Phiêu Lưu", slug: "phieu-luu" }, { name: "Hành Động", slug: "hanh-dong" }],
+    country: [{ name: "Âu Mỹ", slug: "au-my" }],
+  },
+];
+
 const CURATED_SCIFI_FILM_ITEMS: FilmItem[] = CURATED_SCIFI_HERO_POOL.map((item) => ({
   _id: item._id,
   slug: item.slug,
@@ -372,41 +525,53 @@ const REAL_TRENDING_TOP10_POOL: FilmItem[] = [
   },
 ];
 
-// Helper: Nhận diện phim Anime hoặc Hoạt hình 3D (Đấu La, Trảm Thần, Tiên Ni...)
+// Helper: Nhận diện và lọc triệt để phim Anime, Donghua 3D, Tokusatsu
 function isAnimationOrAnime(film: FilmItem): boolean {
   if (!film || !film.name) return false;
-  const name = film.name.toLowerCase();
+  const name = (film.name || "").toLowerCase();
+  const originName = (film.origin_name || "").toLowerCase();
   const slug = (film.slug || "").toLowerCase();
   const type = (film.type || "").toLowerCase();
 
   if (
     type === "hoathinh" ||
+    type === "anime" ||
     slug.includes("hoat-hinh") ||
     slug.includes("anime")
   ) {
     return true;
   }
 
-  // Keywords for Chinese 3D Donghua / Anime
-  const animKeywords = [
-    "hoạt hình",
-    "anime",
-    "3d",
-    "phong thần",
-    "trảm thần",
-    "tiên nghịch",
-    "đẩu la",
-    "vạn cổ",
-    "thôn phệ",
-    "thế giới hoàn mỹ",
-    "già thiên",
-    "đại chủ tể",
-    "thần ấn",
-    "ngẫu nhiên",
-    "manga",
-  ];
+  if (
+    movieTaxonomyContains(film.category, [
+      "hoạt hình",
+      "hoat-hinh",
+      "anime",
+      "animation",
+      "donghua",
+    ])
+  ) {
+    return true;
+  }
 
-  return animKeywords.some((kw) => name.includes(kw) || slug.includes(kw));
+  const combined = `${name} ${originName} ${slug}`;
+
+  const animRegex =
+    /hoạt hình|anime|donghua|manga|isekai|chuyển sinh|thánh nữ|trùm cuối|pokemon|kanata kara|ultraman|chiến binh ánh sáng|zombie sagashitemasu|yasei no last boss|tensei shita|phàm nhân tu tiên|đấu la đại lục|thôn phệ tinh không|vạn giới|độc tôn|tiên nghịch|già thiên|đại chúa tể|thần ấn vương tọa|nghịch thiên chí tôn|thương nguyên đồ|huyết quỷ|jojo|slime|tòa tháp thần linh|one piece|naruto|dragon ball|conan|doraemon|shin cậu bé|inuyasha|bleach|attack on titan|shingeki|demon slayer|kimetsu|jujutsu kaisen|chainsaw man|tokyo ghoul|black clover|my hero academia|boku no hero|hunter x hunter|sword art online|death note|gintama|haikyuu|fairy tail|seven deadly sins|nanatsu no taizai|yêu thần ký|luyện khí mười vạn năm|vạn cổ chí tôn|độc kiếm cửu thiên|sư huynh quá cẩn trọng/i;
+
+  if (animRegex.test(combined)) {
+    return true;
+  }
+
+  const isJapan = movieTaxonomyContains(film.country, ["nhật bản", "nhat-ban", "japan"]);
+  if (isJapan && film.time && /\d+\s*phút\/tập/i.test(film.time)) {
+    const match = film.time.match(/(\d+)\s*phút/i);
+    if (match && Number(match[1]) <= 26) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 // Lọc CHỈ giữ lại phim người đóng thật (Live-Action), loại bỏ 3D/Anime cho các hàng phim thông thường
@@ -429,7 +594,9 @@ const SECTION_TITLE_TONES: Record<string, string> = {
   "Phim Mới Cập Nhật": "from-cyan-400 via-sky-400 to-indigo-300",
   "Series Âu-Mỹ Đỉnh Cao": "from-violet-400 via-purple-400 to-fuchsia-300",
   "Series Âu Mỹ Đỉnh Cao": "from-violet-400 via-purple-400 to-fuchsia-300",
+  "Cổ Trang Kiếm Hiệp Đặc Sắc": "from-amber-300 via-orange-400 to-red-400",
   "Tuyệt Tác Khoa Học Viễn Tưởng": "from-orange-400 via-amber-400 to-yellow-300",
+  "Phim Viễn Tưởng": "from-violet-400 via-fuchsia-400 to-rose-300",
   "Phim Thần Thoại & Kỹ Xảo": "from-violet-400 via-fuchsia-400 to-rose-300",
   "Phim Hành Động": "from-orange-400 via-amber-400 to-yellow-300",
   "Phim Hành Động Kịch Tính": "from-orange-400 via-amber-400 to-yellow-300",
@@ -785,8 +952,8 @@ export default function HomePageClient({
 
   const queryClient = useQueryClient();
   const hasCachedFeed = Boolean(queryClient.getQueryData(["home-feed-v1", 24]));
-  const [catalogReady, setCatalogReady] = useState(hasCachedFeed);
-  const [secondaryCatalogReady, setSecondaryCatalogReady] = useState(hasCachedFeed);
+  const [catalogReady, setCatalogReady] = useState(true);
+  const [secondaryCatalogReady, setSecondaryCatalogReady] = useState(true);
   const { data: publicConfig } = useQuery({
     queryKey: ["public-site-configuration"],
     queryFn: () => siteConfigApi.getPublic().then((response) => response.data),
@@ -794,7 +961,7 @@ export default function HomePageClient({
     // The first-party endpoint returns a safe default when the API is cold.
     // Keep the browser query enabled so a missed SSR fetch can still recover.
     enabled: true,
-    staleTime: 60_000,
+    staleTime: 5_000,
     retry: false,
   });
   useEffect(() => {
@@ -920,7 +1087,7 @@ export default function HomePageClient({
     const rawList = [
       ...(remoteUsUkSeries || []),
       ...(homeFeedSections?.series || []).filter(
-        (film) =>
+        (film: FilmItem) =>
           movieTaxonomyContains(film.country, [
             "âu mỹ",
             "au-my",
@@ -1021,6 +1188,24 @@ export default function HomePageClient({
         : historicalFallbackData,
     [historicalFallbackData, homeFeedSections?.historical],
   );
+
+  const { data: wuxiaQueryData, isLoading: wuxiaQueryLoading } = useQuery({
+    queryKey: ["home-section-wuxia-v1"],
+    queryFn: () => movieApi.getByGenre("co-trang", 1).then((r) => r.data),
+    staleTime: 10 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    retry: false,
+    refetchOnWindowFocus: false,
+    enabled: !homeFeedSections?.historical?.length,
+  });
+  const wuxiaData = useMemo(
+    () =>
+      homeFeedSections?.historical?.length
+        ? asCatalogPayload(homeFeedSections.historical)
+        : wuxiaQueryData || historicalData,
+    [homeFeedSections?.historical, wuxiaQueryData, historicalData],
+  );
+  const wuxiaLoading = !homeFeedSections?.historical?.length && wuxiaQueryLoading && !wuxiaData;
   const theatricalData = useMemo(
     () =>
       homeFeedSections?.theatrical?.length
@@ -1069,9 +1254,9 @@ export default function HomePageClient({
     enabled: showMoreSections,
   });
 
-  // 8. Phim phiêu lưu mạo hiểm (Hollywood Adventure Movies)
+  // 8. Phim phiêu lưu mạo hiểm (Hollywood & International Adventure Movies)
   const { data: adventureUsUkData, isLoading: adventureLoading } = useQuery({
-    queryKey: ["adventure-movies-us-uk"],
+    queryKey: ["adventure-movies-us-uk-v2"],
     queryFn: () =>
       movieApi
         .getFiltered({
@@ -1084,8 +1269,16 @@ export default function HomePageClient({
     enabled: showMoreSections,
   });
   const { data: adventureData } = useQuery({
-    queryKey: ["adventure-movies"],
-    queryFn: () => movieApi.getByGenre("phieu-luu", 1).then((r) => r.data),
+    queryKey: ["adventure-movies-feature-films-v2"],
+    queryFn: () =>
+      movieApi
+        .getFiltered({
+          type: "phim-le",
+          category: "phieu-luu",
+          page: 1,
+          limit: 24,
+        })
+        .then((r) => r.data),
     enabled: showMoreSections,
   });
 
@@ -1267,6 +1460,27 @@ export default function HomePageClient({
     );
   }, [horrorData, trendingFilms]);
 
+  const wuxiaFilms = useMemo(() => {
+    const list = wuxiaData?.data?.items || wuxiaData?.items || [];
+    const poolMatches = homeFeedPool.filter((film) =>
+      movieTaxonomyContains(film.category, [
+        "cổ trang",
+        "co-trang",
+        "kiếm hiệp",
+        "kiem-hiep",
+        "tiên hiệp",
+        "tien-hiep",
+        "võ thuật",
+      ]),
+    );
+    return deduplicate(
+      rankHotCatalogFilms(
+        filterLiveActionOnly([...list, ...poolMatches]),
+        trendingFilms,
+      ),
+    );
+  }, [wuxiaData, homeFeedPool, trendingFilms]);
+
   const historicalFilms = useMemo(() => {
     const list = historicalData?.data?.items || historicalData?.items || [];
     return deduplicate(
@@ -1300,11 +1514,33 @@ export default function HomePageClient({
   }, [animeData, animeGenreData]);
 
   const adventureFilms = useMemo(() => {
-    const usUkList =
-      adventureUsUkData?.data?.items || adventureUsUkData?.items || [];
-    const genList = adventureData?.data?.items || adventureData?.items || [];
-    return filterLiveActionOnly(deduplicate([...usUkList, ...genList]));
-  }, [adventureUsUkData, adventureData]);
+    const isGenuineAdventure = (film: FilmItem) => {
+      if (!film?.name || !film?.slug) return false;
+      if (isAnimationOrAnime(film)) return false;
+      const combined = `${film.name} ${film.origin_name || ""} ${film.content || ""}`.toLowerCase();
+      if (
+        /chiến binh ánh sáng|ultraman|chuyển sinh|thánh nữ|trùm cuối|kanata|zombie sagashitemasu|vạn giới|độc tôn|tu tiên|độc kiếm|sư huynh|gián đột biến|tàn thuốc|luang pho|tiên hiệp|ngôn tình|đam mỹ|boys love|hài kịch thái lan/i.test(
+          combined,
+        )
+      ) {
+        return false;
+      }
+      return true;
+    };
+
+    const usUkList = (adventureUsUkData?.data?.items || adventureUsUkData?.items || []).filter(isGenuineAdventure);
+    const featureList = (adventureData?.data?.items || adventureData?.items || []).filter(isGenuineAdventure);
+    const poolMatches = homeFeedPool.filter(
+      (film) =>
+        movieTaxonomyContains(film.category, ["phiêu lưu", "phieu-luu", "adventure"]) &&
+        isGenuineAdventure(film),
+    );
+
+    return deduplicate([
+      ...CURATED_ADVENTURE_FILM_ITEMS,
+      ...filterLiveActionOnly([...usUkList, ...featureList, ...poolMatches]),
+    ]);
+  }, [adventureUsUkData, adventureData, homeFeedPool]);
 
   const singleFilms = useMemo(() => {
     const list = singleData?.data?.items || singleData?.items || [];
@@ -1344,6 +1580,7 @@ export default function HomePageClient({
   const {
     top10List,
     latestRowList,
+    wuxiaRowList,
     vfxRowList,
     usUkSeriesRowList,
     actionRowList,
@@ -1368,6 +1605,7 @@ export default function HomePageClient({
 
     // Initial Sections
     const latestRowList = buildRow(latestFilms, 21);
+    const wuxiaRowList = buildRow(wuxiaFilms, 14);
     const vfxRowList = buildRow(vfxFilms, 14);
     const usUkSeriesRowList = buildRow(usUkSeriesFilms, 30);
     const actionRowList = buildRow(actionFilms, 14);
@@ -1391,6 +1629,7 @@ export default function HomePageClient({
     const sectionSlugs = new Set(
       [
         ...latestRowList,
+        ...wuxiaRowList,
         ...vfxRowList,
         ...usUkSeriesRowList,
         ...actionRowList,
@@ -1443,6 +1682,7 @@ export default function HomePageClient({
     return {
       top10List,
       latestRowList,
+      wuxiaRowList,
       vfxRowList,
       usUkSeriesRowList,
       actionRowList,
@@ -1603,13 +1843,23 @@ export default function HomePageClient({
         </div>
       </LazySection>
     ),
+    wuxia: (
+      <LazySection initiallyVisible>
+        <FilmSection
+          title={t("sections.wuxia", "Cổ Trang Kiếm Hiệp Đặc Sắc")}
+          films={wuxiaRowList}
+          isLoading={wuxiaLoading}
+          href="/genre/co-trang"
+        />
+      </LazySection>
+    ),
     vfx: (
       <LazySection>
         <FilmSection
-          title={t("sections.vfx", "Phim Thần Thoại & Kỹ Xảo")}
+          title={t("sections.vfx", "Phim Viễn Tưởng")}
           films={vfxRowList}
           isLoading={vfxLoading}
-          href="/genre/than-thoai"
+          href="/genre/vien-tuong"
         />
       </LazySection>
     ),
@@ -1710,6 +1960,7 @@ export default function HomePageClient({
     "top10",
     "continue",
     "latest",
+    "wuxia",
     "vfx",
     "usuk-series",
     "action",

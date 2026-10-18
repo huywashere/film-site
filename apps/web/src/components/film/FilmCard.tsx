@@ -10,6 +10,7 @@ import { cardFont } from '@/lib/fonts';
 import { normalizeMovieArtworkUrl } from '@/lib/movie-image-url';
 import { TmdbArtwork } from '@/components/film/TmdbArtwork';
 import { useSettingsStore } from '@/store/settingsStore';
+import { movieApi } from '@/lib/api';
 
 export interface FilmItem {
   _id?: string;
@@ -297,6 +298,7 @@ function FilmCardComponent({
     if (!slug) return;
     try {
       router.prefetch(`/film/${slug}`);
+      void movieApi.getDetail(slug);
     } catch {}
   }, [router, slug]);
 

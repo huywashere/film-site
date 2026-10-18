@@ -16,11 +16,13 @@ import {
   IconFileCode,
   IconBolt,
   IconPlayerPlay,
+  IconLoader2,
 } from "@tabler/icons-react";
 import { adminFetch, queryString } from "@/lib/admin-api";
 
 type MovieItem = {
   id: string;
+  slug?: string;
   title: string;
   originName?: string;
   posterUrl?: string;
@@ -32,20 +34,175 @@ type MovieItem = {
   description?: string;
 };
 
-const CURATED_SAMPLE_HEROES = [
-  { slug: "oppenheimer", title: "Oppenheimer", year: 2023, badge: "Oscar 2024" },
-  { slug: "dune-hanh-tinh-cat-2", title: "Dune: Hành Tinh Cát 2", year: 2024, badge: "Sci-Fi 4K" },
-  { slug: "avatar-2-dong-chay-cua-nuoc", title: "Avatar 2: Dòng Chảy Nước", year: 2022, badge: "Bom Tấn" },
-  { slug: "ho-den-tu-than", title: "Hố Đen Tử Thần (Interstellar)", year: 2014, badge: "Kiệt Tác" },
-  { slug: "ky-si-bong-dem", title: "Kỵ Sĩ Bóng Đêm (The Dark Knight)", year: 2008, badge: "Huyền Thoại" },
-  { slug: "biet-doi-sieu-anh-hung-4-hoi-ket", title: "Avengers: Hồi Kết (Endgame)", year: 2019, badge: "Marvel" },
-  { slug: "nguoi-nhen-khong-con-nha", title: "Spider-Man: Không Còn Nhà", year: 2021, badge: "Marvel" },
-  { slug: "phi-cong-sieu-dang-maverick", title: "Top Gun: Maverick", year: 2022, badge: "Hành Động" },
-  { slug: "ke-danh-cap-giac-mo", title: "Inception", year: 2010, badge: "Khoa Học" },
-  { slug: "nguoi-doi-2022", title: "The Batman", year: 2022, badge: "DC Cinema" },
-  { slug: "titanic", title: "Titanic", year: 1997, badge: "Kinh Điển" },
-  { slug: "joker", title: "Joker", year: 2019, badge: "Tâm Lý" },
+const CURATED_SAMPLE_HEROES: (MovieItem & { slug: string; badge: string })[] = [
+  {
+    id: "oppenheimer",
+    slug: "oppenheimer",
+    title: "Oppenheimer",
+    originName: "Oppenheimer",
+    year: 2023,
+    badge: "Oscar 2024",
+    posterUrl: "https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg",
+    thumbUrl: "https://image.tmdb.org/t/p/w1280/neeNHeXjMF5fXoCJRsOmkNGC7q.jpg",
+    quality: "4K UHD",
+    description: "Câu chuyện về cuộc đời và sự nghiệp của nhà vật lý lý thuyết J. Robert Oppenheimer, người lãnh đạo Dự án Manhattan phát triển bom nguyên tử.",
+  },
+  {
+    id: "dune-hanh-tinh-cat-2",
+    slug: "dune-hanh-tinh-cat-2",
+    title: "Dune: Hành Tinh Cát 2",
+    originName: "Dune: Part Two",
+    year: 2024,
+    badge: "Sci-Fi 4K",
+    posterUrl: "https://image.tmdb.org/t/p/w500/8b8R8l88Qje9dn9OE8PY05Nxl1X.jpg",
+    thumbUrl: "https://image.tmdb.org/t/p/w1280/xOMo8BRK7PfcJv9JCnx7s5hj0PX.jpg",
+    quality: "4K IMAX",
+    description: "Paul Atreides hợp lực cùng Chani và tộc người Fremen khi anh tìm kiếm sự trả thù chống lại những kẻ đã hủy hoại gia đình mình.",
+  },
+  {
+    id: "avatar-2-dong-chay-cua-nuoc",
+    slug: "avatar-2-dong-chay-cua-nuoc",
+    title: "Avatar 2: Dòng Chảy Nước",
+    originName: "Avatar: The Way of Water",
+    year: 2022,
+    badge: "Bom Tấn",
+    posterUrl: "https://image.tmdb.org/t/p/w500/t6HIqrRAclMCA60NsSmeqe9RmNV.jpg",
+    thumbUrl: "https://image.tmdb.org/t/p/w1280/8sMmAmwhTNPrjjKj7qE81h4yMvs.jpg",
+    quality: "4K 3D",
+    description: "Jake Sully và Ney'tiri lập gia đình và nỗ lực hết mình để ở bên nhau. Tuy nhiên, họ phải rời khỏi nhà và khám phá các vùng đất của Pandora.",
+  },
+  {
+    id: "ho-den-tu-than",
+    slug: "ho-den-tu-than",
+    title: "Hố Đen Tử Thần (Interstellar)",
+    originName: "Interstellar",
+    year: 2014,
+    badge: "Kiệt Tác",
+    posterUrl: "https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg",
+    thumbUrl: "https://image.tmdb.org/t/p/w1280/rAiYTsqhk0n0GeDM365u0aY7mO4.jpg",
+    quality: "4K IMAX",
+    description: "Khi thời gian của Trái Đất sắp kết thúc, một nhóm nhà thám hiểm thực hiện sứ mệnh quan trọng nhất trong lịch sử nhân loại để tìm kiếm sự sống ngoài vũ trụ.",
+  },
+  {
+    id: "ky-si-bong-dem",
+    slug: "ky-si-bong-dem",
+    title: "Kỵ Sĩ Bóng Đêm (The Dark Knight)",
+    originName: "The Dark Knight",
+    year: 2008,
+    badge: "Huyền Thoại",
+    posterUrl: "https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg",
+    thumbUrl: "https://image.tmdb.org/t/p/w1280/dqK9Hag1054tghRQSqLSfrkvQnA.jpg",
+    quality: "4K UHD",
+    description: "Khi hiểm họa mang tên Joker tàn phá thành phố Gotham, Người Dơi phải chấp nhận một trong những thử thách tâm lý và thể chất lớn nhất để chống lại sự bất công.",
+  },
+  {
+    id: "biet-doi-sieu-anh-hung-4-hoi-ket",
+    slug: "biet-doi-sieu-anh-hung-4-hoi-ket",
+    title: "Avengers: Hồi Kết (Endgame)",
+    originName: "Avengers: Endgame",
+    year: 2019,
+    badge: "Marvel",
+    posterUrl: "https://image.tmdb.org/t/p/w500/or06FN3Dka5tukK1e9sl16pB3iy.jpg",
+    thumbUrl: "https://image.tmdb.org/t/p/w1280/7RyHsO4yDXtBv1zUU3mTpHeQ0d5.jpg",
+    quality: "4K HDR",
+    description: "Sau những sự kiện tàn khốc của Infinity War, vũ trụ bị hủy hoại. Với sự giúp đỡ của các đồng minh còn lại, các Avengers tập hợp một lần nữa để đảo ngược hành động của Thanos.",
+  },
+  {
+    id: "nguoi-nhen-khong-con-nha",
+    slug: "nguoi-nhen-khong-con-nha",
+    title: "Spider-Man: Không Còn Nhà",
+    originName: "Spider-Man: No Way Home",
+    year: 2021,
+    badge: "Marvel",
+    posterUrl: "https://image.tmdb.org/t/p/w500/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg",
+    thumbUrl: "https://image.tmdb.org/t/p/w1280/14QbnygCuTO0vl7CAFmPf1fgZfV.jpg",
+    quality: "4K UHD",
+    description: "Lần đầu tiên trong lịch sử điện ảnh của Người Nhện, danh tính người anh hùng thân thiện của khu phố bị lộ diện, khiến trách nhiệm Siêu anh hùng xung đột với cuộc sống bình thường.",
+  },
+  {
+    id: "phi-cong-sieu-dang-maverick",
+    slug: "phi-cong-sieu-dang-maverick",
+    title: "Top Gun: Maverick",
+    originName: "Top Gun: Maverick",
+    year: 2022,
+    badge: "Hành Động",
+    posterUrl: "https://image.tmdb.org/t/p/w500/62HCnUTziyWcpDaBO2i1DX17ljH.jpg",
+    thumbUrl: "https://image.tmdb.org/t/p/w1280/odJ4hx6g6vBt4lBWKFD1tI8WS4x.jpg",
+    quality: "4K IMAX",
+    description: "Sau hơn 30 năm phục vụ với tư cách một trong những phi công hàng đầu của Hải quân, Pete 'Maverick' Mitchell đào tạo một biệt đội tốt nghiệp Top Gun cho một nhiệm vụ chuyên biệt.",
+  },
+  {
+    id: "ke-danh-cap-giac-mo",
+    slug: "ke-danh-cap-giac-mo",
+    title: "Inception",
+    originName: "Inception",
+    year: 2010,
+    badge: "Khoa Học",
+    posterUrl: "https://image.tmdb.org/t/p/w500/oYuLEt3zVCKq57qu2F8dT7NIa6f.jpg",
+    thumbUrl: "https://image.tmdb.org/t/p/w1280/8ZTVqvKDQ8emSGUEMjsS4yHAwrp.jpg",
+    quality: "4K UHD",
+    description: "Một tên trộm lành nghề có khả năng thâm nhập vào tiềm thức của người khác để đánh cắp bí mật được trao cơ hội xóa sạch hồ sơ tội phạm nếu thực hiện thành công việc cấy ghép ý niệm.",
+  },
+  {
+    id: "nguoi-doi-2022",
+    slug: "nguoi-doi-2022",
+    title: "The Batman",
+    originName: "The Batman",
+    year: 2022,
+    badge: "DC Cinema",
+    posterUrl: "https://image.tmdb.org/t/p/w500/74xTEgt7R36Fpooo50r9T25onhq.jpg",
+    thumbUrl: "https://image.tmdb.org/t/p/w1280/5P8SmMzSNYikXpxil6BYz9G660E.jpg",
+    quality: "4K UHD",
+    description: "Khi một kẻ giết người hàng loạt nhắm vào tầng lớp tinh hoa của Gotham với một loạt các mưu đồ tàn bạo, một chuỗi các manh mối bí ẩn đưa thám tử vĩ đại nhất thế giới vào cuộc điều tra.",
+  },
+  {
+    id: "titanic",
+    slug: "titanic",
+    title: "Titanic",
+    originName: "Titanic",
+    year: 1997,
+    badge: "Kinh Điển",
+    posterUrl: "https://image.tmdb.org/t/p/w500/9xjZS2rlVxm8SFx8kPC3aIGCOYQ.jpg",
+    thumbUrl: "https://image.tmdb.org/t/p/w1280/yDI6D5ZQh67YU4r2ms8qcSbAviZ.jpg",
+    quality: "4K Remastered",
+    description: "Một thành viên quý tộc mười bảy tuổi phải lòng một nghệ sĩ tốt bụng nhưng nghèo khổ trên con tàu sang trọng Titanic xấu số.",
+  },
+  {
+    id: "joker",
+    slug: "joker",
+    title: "Joker",
+    originName: "Joker",
+    year: 2019,
+    badge: "Tâm Lý",
+    posterUrl: "https://image.tmdb.org/t/p/w500/udDclJoHjfjb8Ekgsd4FDteOkCU.jpg",
+    thumbUrl: "https://image.tmdb.org/t/p/w1280/n6bUvigpRFqSwmPp1m2YADdbRBc.jpg",
+    quality: "4K UHD",
+    description: "Một diễn viên hài độc thoại thất bại bị cô lập, bắt nạt và xem thường bởi xã hội đã rơi vào vòng xoáy điên loạn và trở thành biểu tượng tội phạm Joker.",
+  },
 ];
+
+const HERO_SLUG_ALIASES: Record<string, string> = {
+  "hope-vung-tu-dia": "vung-tu-dia",
+  "joker-2019": "joker",
+  "the-batman": "nguoi-doi-2022",
+  "batman-2022": "nguoi-doi-2022",
+  "avengers-hoi-ket": "biet-doi-sieu-anh-hung-4-hoi-ket",
+  "avengers-endgame": "biet-doi-sieu-anh-hung-4-hoi-ket",
+  "avengers-cuoc-chien-vo-cuc": "biet-doi-sieu-anh-hung-3-cuoc-chien-vo-cuc",
+  "avengers-infinity-war": "biet-doi-sieu-anh-hung-3-cuoc-chien-vo-cuc",
+  "the-dark-knight": "ky-si-bong-dem",
+  "top-gun-maverick": "phi-cong-sieu-dang-maverick",
+  "inception": "ke-danh-cap-giac-mo",
+  "interstellar": "ho-den-tu-than",
+  "avatar-2": "avatar-2-dong-chay-cua-nuoc",
+  "spider-man-no-way-home": "nguoi-nhen-khong-con-nha",
+  "dune-2": "dune-hanh-tinh-cat-2",
+  "the-wolf-of-wall-street": "soi-gia-pho-wall",
+  "the-revenant": "nguoi-ve-tu-coi-chet",
+  "once-upon-a-time-in-hollywood": "chuyen-ngay-xua-o-hollywood",
+  "the-irishman": "nguoi-dan-ong-xu-ireland",
+  "the-departed": "ke-di-san",
+};
 
 export function HeroBannerStudio({
   heroMovieSlugs,
@@ -83,25 +240,30 @@ export function HeroBannerStudio({
     const fetchMetadata = async () => {
       const updates: Record<string, MovieItem> = {};
       for (const slug of missing.slice(0, 12)) {
+        const alias = HERO_SLUG_ALIASES[slug] || slug;
+        const sample = CURATED_SAMPLE_HEROES.find(
+          (s) => s.slug === slug || s.id === slug || s.slug === alias || s.id === alias,
+        );
+        if (sample && sample.thumbUrl) {
+          updates[slug] = { ...sample, id: slug, slug };
+          continue;
+        }
+
         try {
           const res = await adminFetch<{ items?: MovieItem[] }>(
-            `movies?${queryString({ search: slug, limit: 1 })}`,
+            `movies/catalog-search?${queryString({ slug, limit: 1 })}`,
+          ).catch(() =>
+            adminFetch<{ items?: MovieItem[] }>(
+              `movies?${queryString({ search: slug, limit: 1 })}`,
+            ),
           );
           if (res?.items?.[0]) {
             updates[slug] = res.items[0];
-          } else {
-            const sample = CURATED_SAMPLE_HEROES.find((s) => s.slug === slug);
-            if (sample) {
-              updates[slug] = {
-                id: slug,
-                title: sample.title,
-                year: sample.year,
-                type: "single",
-              };
-            }
+          } else if (sample) {
+            updates[slug] = sample;
           }
         } catch {
-          // ignore error for individual movie metadata
+          if (sample) updates[slug] = sample;
         }
       }
       if (active && Object.keys(updates).length > 0) {
@@ -115,7 +277,7 @@ export function HeroBannerStudio({
     };
   }, [heroMovieSlugs, movieMetaMap]);
 
-  // Live search debounced
+  // Live search debounced across the entire website catalog
   const handleSearchChange = (query: string) => {
     setSearch(query);
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
@@ -130,18 +292,33 @@ export function HeroBannerStudio({
     searchTimeoutRef.current = setTimeout(async () => {
       try {
         const res = await adminFetch<{ items: MovieItem[] }>(
-          `movies?${queryString({ search: clean, limit: 8 })}`,
+          `movies/catalog-search?${queryString({ search: clean, limit: 8 })}`,
+        ).catch(() =>
+          adminFetch<{ items: MovieItem[] }>(
+            `movies?${queryString({ search: clean, limit: 8 })}`,
+          ),
         );
-        setSearchResults(res.items || []);
+        const items = res?.items || [];
+        const lowerClean = clean.toLowerCase();
+        const alias = HERO_SLUG_ALIASES[lowerClean];
+        const curatedMatches = CURATED_SAMPLE_HEROES.filter(
+          (c) =>
+            (c.title.toLowerCase().includes(lowerClean) ||
+              (c.originName && c.originName.toLowerCase().includes(lowerClean)) ||
+              c.slug.includes(lowerClean) ||
+              (alias && c.slug.includes(alias))) &&
+            !items.some((it) => it.id === c.id),
+        );
+        setSearchResults([...curatedMatches, ...items]);
       } catch {
         setSearchResults([]);
       } finally {
         setSearching(false);
       }
-    }, 280);
+    }, 250);
   };
 
-  const addSlug = (slugToAdd: string) => {
+  const addSlug = async (slugToAdd: string) => {
     const clean = slugToAdd.trim();
     if (!clean) return;
     if (heroMovieSlugs.includes(clean)) return;
@@ -153,6 +330,27 @@ export function HeroBannerStudio({
     onChange(next);
     setSearch("");
     setSearchResults([]);
+    setPreviewSlug(clean);
+
+    if (!movieMetaMap[clean]) {
+      const alias = HERO_SLUG_ALIASES[clean] || clean;
+      const sample = CURATED_SAMPLE_HEROES.find(
+        (s) => s.slug === clean || s.id === clean || s.slug === alias || s.id === alias,
+      );
+      if (sample && sample.thumbUrl) {
+        setMovieMetaMap((prev) => ({ ...prev, [clean]: { ...sample, id: clean, slug: clean } }));
+      } else {
+        try {
+          const res = await adminFetch<{ items?: MovieItem[] }>(
+            `movies/catalog-search?${queryString({ slug: clean, limit: 1 })}`,
+          );
+          const item = res?.items?.[0];
+          if (item) {
+            setMovieMetaMap((prev) => ({ ...prev, [clean]: item }));
+          }
+        } catch {}
+      }
+    }
   };
 
   const removeSlug = (slugToRemove: string) => {
@@ -175,7 +373,18 @@ export function HeroBannerStudio({
     onChange(sampleSlugs);
   };
 
-  const currentPreviewMovie = previewSlug ? movieMetaMap[previewSlug] : null;
+  const currentPreviewMovie = previewSlug
+    ? movieMetaMap[previewSlug] ||
+      (HERO_SLUG_ALIASES[previewSlug] ? movieMetaMap[HERO_SLUG_ALIASES[previewSlug]] : null) ||
+      CURATED_SAMPLE_HEROES.find(
+        (s) =>
+          s.slug === previewSlug ||
+          s.id === previewSlug ||
+          (HERO_SLUG_ALIASES[previewSlug] &&
+            (s.slug === HERO_SLUG_ALIASES[previewSlug] || s.id === HERO_SLUG_ALIASES[previewSlug])),
+      ) ||
+      null
+    : null;
 
   return (
     <section className="admin-card overflow-hidden">
@@ -266,22 +475,39 @@ export function HeroBannerStudio({
                 type="text"
                 value={search}
                 onChange={(e) => handleSearchChange(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    if (searchResults.length > 0) {
+                      const movie = searchResults[0];
+                      setMovieMetaMap((prev) => ({ ...prev, [movie.id]: movie }));
+                      addSlug(movie.id);
+                    } else if (search.trim()) {
+                      addSlug(search.trim());
+                    }
+                  }
+                }}
                 placeholder="Tìm kiếm phim theo tên tiếng Việt, tên gốc hoặc nhập trực tiếp slug phim..."
-                className="admin-control w-full pl-10 pr-10 py-2 text-[13px] bg-[var(--admin-surface)] transition-all rounded-lg"
+                className="admin-control w-full pl-10 pr-16 py-2 text-[13px] bg-[var(--admin-surface)] transition-all rounded-lg"
               />
-              {search && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSearch("");
-                    setSearchResults([]);
-                  }}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600"
-                  aria-label="Xóa từ khóa tìm kiếm"
-                >
-                  <IconX size={15} />
-                </button>
-              )}
+              <div className="absolute inset-y-0 right-0 flex items-center pr-3 gap-1.5">
+                {searching && (
+                  <IconLoader2 size={16} className="animate-spin text-[var(--admin-brand)]" />
+                )}
+                {search && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearch("");
+                      setSearchResults([]);
+                    }}
+                    className="flex items-center text-slate-400 hover:text-slate-600 cursor-pointer"
+                    aria-label="Xóa từ khóa tìm kiếm"
+                  >
+                    <IconX size={15} />
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Direct slug add quick action if user types something */}
@@ -306,6 +532,13 @@ export function HeroBannerStudio({
               </div>
             )}
 
+            {/* Empty state when searching has finished with 0 results */}
+            {search.trim() && !searching && searchResults.length === 0 && (
+              <div className="rounded-lg border border-dashed border-[var(--admin-line)] bg-[var(--admin-surface)] p-3 text-center text-[12px] text-slate-500">
+                Không tìm thấy phim có từ khóa &ldquo;{search.trim()}&rdquo; trong kho dữ liệu. Bạn có thể bấm nút &ldquo;Ghim trực tiếp slug&rdquo; bên trên để thêm phim này vào Hero Banner.
+              </div>
+            )}
+
             {/* Search Results Dropdown List */}
             {searchResults.length > 0 && (
               <div className="rounded-lg border border-[var(--admin-line)] bg-[var(--admin-surface)] shadow-lg max-h-72 overflow-y-auto divide-y divide-[var(--admin-line)] z-20">
@@ -314,7 +547,15 @@ export function HeroBannerStudio({
                   return (
                     <div
                       key={movie.id}
-                      className="flex items-center justify-between gap-3 p-3 hover:bg-[var(--admin-surface-muted)] transition-colors"
+                      onClick={() => {
+                        if (!isPinned) {
+                          setMovieMetaMap((prev) => ({ ...prev, [movie.id]: movie }));
+                          addSlug(movie.id);
+                        }
+                      }}
+                      className={`flex items-center justify-between gap-3 p-3 transition-colors ${
+                        isPinned ? "bg-[var(--admin-surface)] opacity-70" : "hover:bg-[var(--admin-surface-muted)] cursor-pointer"
+                      }`}
                     >
                       <div className="flex items-center gap-3 min-w-0">
                         <div className="relative h-12 w-9 shrink-0 overflow-hidden rounded bg-slate-100 dark:bg-slate-800 border border-[var(--admin-line)]">
