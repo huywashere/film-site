@@ -38,6 +38,13 @@ const ContinueWatchingRow = dynamic(() =>
     (module) => module.ContinueWatchingRow,
   ),
 );
+const AuthHistoryCalloutBanner = dynamic(
+  () =>
+    import("@/components/auth/AuthHistoryCalloutBanner").then(
+      (module) => module.AuthHistoryCalloutBanner,
+    ),
+  { ssr: false },
+);
 const HeroShowcaseSection = dynamic(() =>
   import("@/components/film/HeroShowcaseSection").then(
     (module) => module.HeroShowcaseSection,
@@ -2268,13 +2275,12 @@ export default function HomePageClient({
   const primarySections: Record<string, React.ReactNode> = {
     top10: (
       <LazySection initiallyVisible>
-        <div className="hidden md:block">
-          <Top10RankedRow films={configuredTop10List} />
-        </div>
+        <Top10RankedRow films={configuredTop10List} />
       </LazySection>
     ),
     continue: (
       <LazySection initiallyVisible>
+        <AuthHistoryCalloutBanner className="mb-8" />
         <ContinueWatchingRow fallbackFilms={homeFeedPool} />
       </LazySection>
     ),
