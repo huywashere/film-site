@@ -1,112 +1,84 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
-import Link from "next/link";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import {
-  Languages,
-  Sparkles,
   Search,
-  BookOpen,
-  Sliders,
   RotateCcw,
-  Tv,
-  Layers,
-  X,
-  GraduationCap,
-  Volume2,
   Film,
-  Zap,
+  X,
+  ChevronDown,
 } from "lucide-react";
-import { vicdnApi, vodphimApi, movieApi } from "@/lib/api";
-import { FilmCard, FilmCardSkeleton, type FilmItem } from "@/components/film/FilmCard";
+import {
+  FilmCard,
+  FilmCardSkeleton,
+  type FilmItem,
+  resolveImageUrl,
+} from "@/components/film/FilmCard";
 import { Pagination } from "@/components/film/Pagination";
+import { vicdnApi, vodphimApi, movieApi } from "@/lib/api";
 import { cardFont } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
 
-export type BilingualSource = "all" | "vicdn" | "vodphim";
+// ── Định nghĩa các tùy chọn bộ lọc chuẩn phong cách Duyệt Tìm (/films) ──
 
-interface SourceOption {
-  id: BilingualSource;
-  label: string;
-  badge: string;
-  desc: string;
-  icon: typeof Languages;
-  activeColor: string;
-}
+const YEARS = Array.from({ length: 27 }, (_, i) => 2026 - i);
 
-const SOURCE_OPTIONS: SourceOption[] = [
-  {
-    id: "all",
-    label: "Tất Cả Nguồn",
-    badge: "ViCDN + VodPhim",
-    desc: "Tổng hợp toàn bộ phim song ngữ Anh - Việt từ 2 nguồn chất lượng cao",
-    icon: Layers,
-    activeColor: "from-cyan-500 to-violet-600 border-cyan-400 text-white shadow-cyan-500/25",
-  },
-  {
-    id: "vicdn",
-    label: "ViCDN Song Ngữ",
-    badge: "Dual-Sub FHD",
-    desc: "Phụ đề kép Anh - Việt chất lượng Full HD, tối ưu hóa luyện phát âm",
-    icon: Languages,
-    activeColor: "from-cyan-500 to-blue-600 border-cyan-400 text-white shadow-cyan-500/25",
-  },
-  {
-    id: "vodphim",
-    label: "VodPhim Song Ngữ",
-    badge: "Đa Dạng Thể Loại",
-    desc: "Kho phim lẻ, phim bộ, hoạt hình tốc độ cao & hỗ trợ thuyết minh song ngữ",
-    icon: Tv,
-    activeColor: "from-violet-500 to-fuchsia-600 border-violet-400 text-white shadow-violet-500/25",
-  },
+const QUICK_FORMATS = [
+  { label: "Tất cả", value: "all" },
+  { label: "Phim Bộ", value: "series" },
+  { label: "Phim Lẻ", value: "single" },
+  { label: "Hoạt Hình", value: "hoat-hinh" },
+  { label: "Viễn Tưởng", value: "vien-tuong" },
+  { label: "Hành Động", value: "hanh-dong" },
+  { label: "Chiếu Rạp", value: "chieu-rap" },
 ];
 
-const CATEGORIES_BY_SOURCE: Record<BilingualSource, Array<{ id: string; label: string }>> = {
-  all: [
-    { id: "all", label: "Tất Cả Thể Loại" },
-    { id: "hoat-hinh", label: "Hoạt Hình (Disney / Pixar)" },
-    { id: "series", label: "Phim Bộ Song Ngữ" },
-    { id: "single", label: "Phim Lẻ Chiếu Rạp" },
-    { id: "vien-tuong", label: "Viễn Tưởng & Sci-Fi" },
-    { id: "hanh-dong", label: "Hành Động" },
-  ],
-  vicdn: [
-    { id: "all", label: "Mới Cập Nhật" },
-    { id: "hoat-hinh", label: "Hoạt Hình Disney / Pixar" },
-    { id: "vien-tuong", label: "Khoa Học Viễn Tưởng" },
-    { id: "hanh-dong", label: "Bom Tấn Hành Động" },
-    { id: "hinh-su", label: "Hình Sự & Tội Phạm" },
-    { id: "bi-an", label: "Bí Ẩn & Giật Gân" },
-  ],
-  vodphim: [
-    { id: "all", label: "Mới Cập Nhật" },
-    { id: "phim-bo", label: "Phim Bộ Song Ngữ" },
-    { id: "phim-le", label: "Phim Lẻ Song Ngữ" },
-    { id: "hoat-hinh", label: "Hoạt Hình / Anime" },
-    { id: "phim-chieu-rap", label: "Phim Chiếu Rạp" },
-    { id: "phim-dang-chieu", label: "Phim Đang Chiếu" },
-  ],
-};
+const BILINGUAL_GENRES = [
+  { slug: "", label: "Thể Loại" },
+  { slug: "hoat-hinh", label: "Hoạt Hình (Disney / Pixar)" },
+  { slug: "vien-tuong", label: "Khoa Học & Viễn Tưởng" },
+  { slug: "hanh-dong", label: "Hành Động & Phiêu Lưu" },
+  { slug: "hai-huoc", label: "Hài Hước" },
+  { slug: "tam-ly", label: "Tâm Lý & Chính Kịch" },
+  { slug: "hinh-su", label: "Hình Sự & Tội Phạm" },
+  { slug: "bi-an", label: "Bí Ẩn & Giật Gân" },
+  { slug: "kinh-di", label: "Kinh Dị" },
+  { slug: "tinh-cam", label: "Tình Cảm & Lãng Mạn" },
+];
+
+const QUALITIES = [
+  { label: "Chất lượng", value: "all" },
+  { label: "Full HD (1080p)", value: "fhd" },
+  { label: "HD (720p)", value: "hd" },
+];
+
+const SORTS = [
+  { label: "Mới cập nhật", value: "modified.time" },
+  { label: "Năm phát hành", value: "year" },
+  { label: "Đánh giá cao nhất", value: "rating" },
+];
+
+// ── Hàm tổng hợp dữ liệu phim song ngữ từ hệ thống (Hoàn toàn ẩn thông tin nguồn) ──
 
 async function fetchBilingualFilms({
-  source,
-  category,
+  format,
+  genre,
   search,
   page,
 }: {
-  source: BilingualSource;
-  category: string;
+  format: string;
+  genre: string;
   search: string;
   page: number;
-}): Promise<{ items: FilmItem[]; totalPages: number }> {
+}): Promise<{ items: FilmItem[]; totalPages: number; totalItems?: number }> {
   const trimmed = search.trim();
 
-  // 1. Search Query Mode
+  // 1. Chế độ tìm kiếm từ khóa
   if (trimmed) {
     const [vodphimRes, movieRes] = await Promise.allSettled([
-      vodphimApi.search(trimmed, page, 24),
-      movieApi.search(trimmed, page, 24),
+      vodphimApi.search(trimmed, page, 28),
+      movieApi.search(trimmed, page, 28),
     ]);
 
     const items: FilmItem[] = [];
@@ -124,9 +96,9 @@ async function fetchBilingualFilms({
           seen.add(item.slug);
           items.push({
             ...item,
-            _source: "xink",
-            _sourceName: "VodPhim",
-            lang: item.lang || "Song Ngữ",
+            _sourceName: undefined,
+            lang: "Song Ngữ",
+            quality: item.quality || "FHD",
           });
         }
       }
@@ -144,130 +116,51 @@ async function fetchBilingualFilms({
       for (const item of raw) {
         if (item.slug && !seen.has(item.slug)) {
           seen.add(item.slug);
-          items.push(item);
+          items.push({
+            ...item,
+            _sourceName: undefined,
+            lang: "Song Ngữ",
+            quality: item.quality || "FHD",
+          });
         }
       }
     }
 
     return {
       items,
-      totalPages: Math.min(items.length > 0 ? 10 : 1, 20),
+      totalPages: Math.min(items.length > 0 ? 10 : 1, 25),
+      totalItems: items.length,
     };
   }
 
-  // 2. ViCDN Source
-  if (source === "vicdn") {
-    try {
-      const res: any =
-        category === "all"
-          ? await vicdnApi.getLatest(page)
-          : await vicdnApi.getByCategory(category, page);
-
-      const rawItems = Array.isArray(res?.items)
-        ? res.items
-        : Array.isArray(res?.data)
-          ? res.data
-          : [];
-
-      const items: FilmItem[] = rawItems.map((item: any) => ({
-        ...item,
-        _source: "vicdn",
-        _sourceName: "ViCDN",
-        lang: "Song Ngữ",
-        quality: item.quality || "FHD",
-      }));
-
-      const totalPages = Math.min(
-        res?.pagination?.pageRanges ||
-          Math.ceil((res?.pagination?.totalItems || 100) / (res?.pagination?.totalItemsPerPage || 10)) ||
-          10,
-        50,
-      );
-
-      return {
-        items,
-        totalPages: Math.max(1, totalPages),
-      };
-    } catch {
-      return { items: [], totalPages: 1 };
-    }
-  }
-
-  // 3. VodPhim Source
-  if (source === "vodphim") {
-    try {
-      let res: any;
-      if (category === "all") {
-        res = await vodphimApi.getLatest(page, 24);
-      } else if (category === "phim-bo") {
-        res = await vodphimApi.getSeries(page, 24);
-      } else if (category === "phim-le") {
-        res = await vodphimApi.getSingle(page, 24);
-      } else if (category === "phim-chieu-rap") {
-        res = await vodphimApi.getChieuRap(page, 24);
-      } else if (category === "phim-dang-chieu") {
-        res = await vodphimApi.getDangChieu(page, 24);
-      } else {
-        res = await vodphimApi.getByGenre(category, page, 24);
-      }
-
-      const rawItems = Array.isArray(res?.data?.items)
-        ? res.data.items
-        : Array.isArray(res?.items)
-          ? res.items
-          : [];
-
-      const items: FilmItem[] = rawItems.map((item: any) => ({
-        ...item,
-        _source: "xink",
-        _sourceName: "VodPhim",
-        lang: item.lang || "Song Ngữ",
-      }));
-
-      const pagination = res?.data?.params?.pagination || res?.pagination;
-      const totalPages = Math.min(
-        pagination?.totalPages ||
-          Math.ceil((pagination?.totalItems || 240) / 24) ||
-          15,
-        50,
-      );
-
-      return {
-        items,
-        totalPages: Math.max(1, totalPages),
-      };
-    } catch {
-      return { items: [], totalPages: 1 };
-    }
-  }
-
-  // 4. Combined All (ViCDN + VodPhim)
+  // 2. Chế độ duyệt danh mục & định dạng tổng hợp
   try {
+    const targetCat = genre || (format !== "all" && format !== "series" && format !== "single" ? format : "");
+
     const [vicdnRes, vodphimRes] = await Promise.allSettled([
-      category === "hoat-hinh"
-        ? vicdnApi.getByCategory("hoat-hinh", page)
-        : category === "vien-tuong"
-          ? vicdnApi.getByCategory("vien-tuong", page)
-          : category === "hanh-dong"
-            ? vicdnApi.getByCategory("hanh-dong", page)
-            : vicdnApi.getLatest(page),
-      category === "hoat-hinh"
-        ? vodphimApi.getByGenre("hoat-hinh", page, 24)
-        : category === "series"
-          ? vodphimApi.getSeries(page, 24)
-          : category === "single"
-            ? vodphimApi.getSingle(page, 24)
+      targetCat
+        ? vicdnApi.getByCategory(targetCat, page)
+        : vicdnApi.getLatest(page),
+      format === "series"
+        ? vodphimApi.getSeries(page, 24)
+        : format === "single"
+          ? vodphimApi.getSingle(page, 24)
+          : targetCat
+            ? vodphimApi.getByGenre(targetCat, page, 24)
             : vodphimApi.getLatest(page, 24),
     ]);
 
     let vicdnItems: FilmItem[] = [];
     if (vicdnRes.status === "fulfilled" && vicdnRes.value) {
       const val: any = vicdnRes.value;
-      const raw = Array.isArray(val?.items) ? val.items : Array.isArray(val?.data) ? val.data : [];
+      const raw = Array.isArray(val?.items)
+        ? val.items
+        : Array.isArray(val?.data)
+          ? val.data
+          : [];
       vicdnItems = raw.map((item: any) => ({
         ...item,
-        _source: "vicdn",
-        _sourceName: "ViCDN",
+        _sourceName: undefined,
         lang: "Song Ngữ",
         quality: item.quality || "FHD",
       }));
@@ -283,13 +176,13 @@ async function fetchBilingualFilms({
           : [];
       vodphimItems = raw.map((item: any) => ({
         ...item,
-        _source: "xink",
-        _sourceName: "VodPhim",
-        lang: item.lang || "Song Ngữ",
+        _sourceName: undefined,
+        lang: "Song Ngữ",
+        quality: item.quality || "FHD",
       }));
     }
 
-    // Interleave & Deduplicate
+    // Đan xen mượt mà và loại bỏ trùng lặp slug
     const merged: FilmItem[] = [];
     const seen = new Set<string>();
     const maxLen = Math.max(vicdnItems.length, vodphimItems.length);
@@ -314,27 +207,32 @@ async function fetchBilingualFilms({
     return {
       items: merged,
       totalPages: 25,
+      totalItems: merged.length * 25,
     };
   } catch {
     return { items: [], totalPages: 1 };
   }
 }
 
+// ── Component Chính: Giao diện Chuẩn Dark Cinema Đồng Bộ Trang Home & Duyệt Tìm ──
+
 export function SongNguClient({
-  initialSource = "all",
   initialPage = 1,
 }: {
-  initialSource?: BilingualSource;
+  initialSource?: any;
   initialPage?: number;
 }) {
-  const queryClient = useQueryClient();
-  const [activeSource, setActiveSource] = useState<BilingualSource>(initialSource);
-  const [selectedCat, setSelectedCat] = useState("all");
+  const [format, setFormat] = useState("all");
+  const [selectedGenre, setSelectedGenre] = useState("");
+  const [selectedYear, setSelectedYear] = useState("");
+  const [selectedQuality, setSelectedQuality] = useState("all");
+  const [selectedSort, setSelectedSort] = useState("modified.time");
   const [page, setPage] = useState(initialPage);
+
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Debounce search query
+  // Debounce tìm kiếm
   useEffect(() => {
     const timer = setTimeout(() => {
       setSearchQuery(searchInput.trim());
@@ -343,21 +241,17 @@ export function SongNguClient({
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  const categories = useMemo(() => {
-    return CATEGORIES_BY_SOURCE[activeSource] || CATEGORIES_BY_SOURCE.all;
-  }, [activeSource]);
-
   const queryKey = useMemo(
-    () => ["bilingual-films", activeSource, selectedCat, searchQuery, page],
-    [activeSource, selectedCat, searchQuery, page],
+    () => ["bilingual-films-catalog", format, selectedGenre, searchQuery, page],
+    [format, selectedGenre, searchQuery, page],
   );
 
-  const { data, isLoading, isFetching } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey,
     queryFn: () =>
       fetchBilingualFilms({
-        source: activeSource,
-        category: selectedCat,
+        format,
+        genre: selectedGenre,
         search: searchQuery,
         page,
       }),
@@ -369,203 +263,146 @@ export function SongNguClient({
   const rawItems = data?.items || [];
   const totalPages = data?.totalPages || 1;
 
-  // Prefetch next page
-  const prefetchPage = useCallback(
-    (targetPage: number) => {
-      if (targetPage < 1 || targetPage > totalPages) return;
-      void queryClient.prefetchQuery({
-        queryKey: ["bilingual-films", activeSource, selectedCat, searchQuery, targetPage],
-        queryFn: () =>
-          fetchBilingualFilms({
-            source: activeSource,
-            category: selectedCat,
-            search: searchQuery,
-            page: targetPage,
-          }),
-        staleTime: 10 * 60 * 1000,
-      });
-    },
-    [queryClient, activeSource, selectedCat, searchQuery, totalPages],
-  );
+  // Lọc và sắp xếp phía Client
+  const films: FilmItem[] = useMemo(() => {
+    let list: FilmItem[] = rawItems.map((item): FilmItem => {
+      const anyItem = item as any;
+      const pUrl = String(item.poster_url || item.thumb_url || "");
+      const tUrl = String(item.thumb_url || item.poster_url || "");
+      return {
+        _id: String(item._id || anyItem.id || item.slug || ""),
+        name: String(item.name || anyItem.title || ""),
+        origin_name: String(item.origin_name || anyItem.original_title || ""),
+        slug: String(item.slug || ""),
+        poster_url: resolveImageUrl(pUrl, tUrl) || pUrl,
+        thumb_url: resolveImageUrl(tUrl, pUrl) || tUrl,
+        year: Number(item.year) || 2026,
+        episode_current: String(item.episode_current || "FHD"),
+        quality: String(item.quality || "FHD"),
+        lang: "Song Ngữ",
+        category: Array.isArray(item.category) ? item.category : [],
+        country: Array.isArray(item.country) ? item.country : [],
+        vote_average: Number(item.vote_average || anyItem.rating) || 8.5,
+      };
+    });
 
-  useEffect(() => {
-    if (page < totalPages) {
-      const nextPage = page + 1;
-      const timer = setTimeout(() => {
-        prefetchPage(nextPage);
-      }, 1800);
-      return () => clearTimeout(timer);
+    if (selectedYear) {
+      list = list.filter((f) => String(f.year) === String(selectedYear));
     }
-  }, [page, totalPages, prefetchPage]);
 
-  const handleSourceChange = (newSource: BilingualSource) => {
-    if (newSource === activeSource) return;
-    setActiveSource(newSource);
-    setSelectedCat("all");
-    setPage(1);
-  };
+    if (selectedQuality !== "all") {
+      if (selectedQuality === "fhd") {
+        list = list.filter(
+          (f) =>
+            (f.quality || "").toLowerCase().includes("1080") ||
+            (f.quality || "").toLowerCase().includes("fhd"),
+        );
+      } else if (selectedQuality === "hd") {
+        list = list.filter(
+          (f) =>
+            (f.quality || "").toLowerCase().includes("720") ||
+            (f.quality || "").toLowerCase().includes("hd"),
+        );
+      }
+    }
 
-  const handleCategoryChange = (newCat: string) => {
-    if (newCat === selectedCat && !searchQuery) return;
-    setSelectedCat(newCat);
+    if (selectedSort === "rating") {
+      list = [...list].sort(
+        (a, b) => (b.vote_average || 0) - (a.vote_average || 0),
+      );
+    } else if (selectedSort === "year") {
+      list = [...list].sort((a, b) => (b.year || 0) - (a.year || 0));
+    }
+
+    return list;
+  }, [rawItems, selectedYear, selectedQuality, selectedSort]);
+
+  const isFiltered =
+    format !== "all" ||
+    Boolean(selectedGenre) ||
+    Boolean(selectedYear) ||
+    selectedQuality !== "all" ||
+    selectedSort !== "modified.time" ||
+    Boolean(searchQuery);
+
+  const handleResetAll = useCallback(() => {
+    setFormat("all");
+    setSelectedGenre("");
+    setSelectedYear("");
+    setSelectedQuality("all");
+    setSelectedSort("modified.time");
     setSearchInput("");
     setSearchQuery("");
     setPage(1);
-  };
+  }, []);
 
   return (
-    <main className={cn("min-h-screen bg-[#0c0d12] text-white pt-20 pb-28", cardFont.className)}>
-      {/* ── HERO BANNER SECTION ── */}
-      <section className="relative overflow-hidden border-b border-cyan-500/20 bg-gradient-to-b from-cyan-950/40 via-violet-950/20 to-[#0c0d12] py-12 px-4 sm:px-8">
-        {/* Background Glowing Ambient Orbs */}
-        <div className="absolute -top-24 left-1/4 h-80 w-80 rounded-full bg-cyan-500/15 blur-[100px] pointer-events-none" />
-        <div className="absolute -top-20 right-1/4 h-80 w-80 rounded-full bg-violet-600/15 blur-[100px] pointer-events-none" />
+    <main
+      data-eager-hydration="true"
+      className={cn(
+        cardFont.className,
+        "relative min-h-[100dvh] bg-[#0a0b10] text-white pb-24 sm:pb-28 pt-16 sm:pt-20 select-none",
+      )}
+    >
+      {/* ── Ambient Studio Lighting (Đồng bộ chuẩn 100% với Trang Chủ và Duyệt Tìm) ── */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden z-0">
+        <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[1200px] h-[500px] bg-gradient-to-b from-white/[0.025] to-transparent blur-[140px] rounded-full" />
+      </div>
 
-        <div className="mx-auto max-w-[1400px] relative z-10">
-          <div className="flex flex-wrap items-center gap-2 mb-3">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-gradient-to-r from-cyan-400 via-sky-400 to-violet-500 text-black shadow-lg shadow-cyan-500/20 uppercase tracking-wider">
-              <Sparkles size={13} />
-              Dual Subtitles FHD
-            </span>
-            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-cyan-300">
-              Nguồn ViCDN & VodPhim
-            </span>
-            <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-              Học Tiếng Anh Qua Phim
-            </span>
+      <div className="relative z-10 mx-auto w-full max-w-[1720px] px-3.5 sm:px-6 md:pl-20 md:pr-6 lg:pl-24 lg:pr-10 xl:pl-28 xl:pr-12 space-y-5 sm:space-y-6">
+        {/* ── Header Tiêu Đề Tối Giản & Sang Trọng ── */}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between pb-3 sm:pb-4 border-b border-white/[0.08] gap-1.5 sm:gap-2">
+          <div>
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-white">
+              Phim Song Ngữ
+            </h1>
           </div>
-
-          <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white max-w-3xl leading-tight">
-            Kho Phim Song Ngữ Chuẩn Full HD & Luyện Ngoại Ngữ Tự Nhiên
-          </h1>
-
-          <p className="mt-3 text-xs sm:text-sm text-neutral-300 max-w-2xl leading-relaxed">
-            Xem phim với phụ đề kép Anh - Việt song song từ nguồn <strong>ViCDN</strong> và <strong>VodPhim</strong>. Hỗ trợ hiển thị 2 dòng phụ đề đồng thời, tua lại câu thoại 5s và tra cứu từ vựng trực tiếp trên trình phát.
+          <p className="text-[11px] sm:text-xs text-neutral-400 font-medium">
+            Kho phim điện ảnh và phim bộ với phụ đề kép Anh - Việt chọn lọc
           </p>
-
-          {/* Quick Feature Badges */}
-          <div className="mt-6 flex flex-wrap items-center gap-3 text-xs">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-neutral-200">
-              <Languages size={14} className="text-cyan-400" />
-              <span>Phụ đề kép Anh - Việt song song</span>
-            </div>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-neutral-200">
-              <RotateCcw size={14} className="text-violet-400" />
-              <span>Tua lại câu thoại 5s (phím J)</span>
-            </div>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-neutral-200">
-              <Sliders size={14} className="text-emerald-400" />
-              <span>Tốc độ phát linh hoạt 0.75x - 1.25x</span>
-            </div>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-neutral-200">
-              <Zap size={14} className="text-amber-400" />
-              <span>Tải nhanh & không quảng cáo phiền nhiễu</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── MAIN CONTENT CONTAINER ── */}
-      <div className="mx-auto max-w-[1400px] px-4 sm:px-8 mt-8">
-        {/* ── 1. SOURCE SELECTOR TABS (ViCDN / VodPhim / All) ── */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between gap-2 mb-3">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-black uppercase tracking-wider text-cyan-400">
-                Nguồn Dữ Liệu Song Ngữ
-              </span>
-              <span className="text-[11px] text-neutral-500">
-                (Chọn kho dữ liệu để khám phá)
-              </span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {SOURCE_OPTIONS.map((opt) => {
-              const isSelected = activeSource === opt.id;
-              const Icon = opt.icon;
-              return (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => handleSourceChange(opt.id)}
-                  className={cn(
-                    "relative flex items-start gap-3.5 p-3.5 rounded-2xl border text-left transition-all cursor-pointer select-none",
-                    isSelected
-                      ? "bg-gradient-to-r from-white/[0.08] to-white/[0.03] border-cyan-400/80 shadow-lg shadow-cyan-500/10 ring-1 ring-cyan-400/50"
-                      : "bg-white/[0.02] border-white/[0.08] hover:bg-white/[0.05] hover:border-white/20 text-neutral-400",
-                  )}
-                >
-                  <div
-                    className={cn(
-                      "flex items-center justify-center w-10 h-10 rounded-xl shrink-0 transition-transform",
-                      isSelected
-                        ? "bg-gradient-to-br from-cyan-500 to-violet-600 text-white shadow-md shadow-cyan-500/30 scale-105"
-                        : "bg-white/[0.05] text-neutral-400",
-                    )}
-                  >
-                    <Icon size={20} />
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className={cn("text-xs font-bold truncate", isSelected ? "text-white" : "text-neutral-300")}>
-                        {opt.label}
-                      </span>
-                      <span
-                        className={cn(
-                          "px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider shrink-0",
-                          isSelected
-                            ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/30"
-                            : "bg-white/[0.04] text-neutral-500 border border-white/[0.06]",
-                        )}
-                      >
-                        {opt.badge}
-                      </span>
-                    </div>
-                    <p className="mt-1 text-[11px] text-neutral-400 line-clamp-1">
-                      {opt.desc}
-                    </p>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
         </div>
 
-        {/* ── 2. FILTER TABS & SEARCH BAR ── */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-white/[0.08]">
-          {/* Category Tabs */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 lg:pb-0 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {categories.map((cat) => {
-              const isSelected = selectedCat === cat.id && !searchQuery;
+        {/* ── Hàng 1: Quick Format Pills & Ô Tìm Kiếm Nhanh ── */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          {/* Quick Format Pills */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth py-0.5 -mx-3.5 px-3.5 sm:mx-0 sm:px-0">
+            {QUICK_FORMATS.map((item) => {
+              const isActive = format === item.value;
+              const pillStyle = isActive
+                ? "bg-white text-black shadow-sm font-black border-white"
+                : "bg-[#12141c] text-neutral-400 hover:text-white hover:bg-white/[0.06] border border-white/[0.08]";
+
               return (
                 <button
-                  key={cat.id}
+                  key={item.value}
                   type="button"
-                  onClick={() => handleCategoryChange(cat.id)}
+                  onClick={() => {
+                    setFormat(item.value);
+                    setPage(1);
+                  }}
                   className={cn(
-                    "px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer border select-none shrink-0",
-                    isSelected
-                      ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white border-cyan-400 shadow-md shadow-cyan-500/20 scale-[1.02]"
-                      : "bg-white/[0.03] text-neutral-400 border-white/[0.08] hover:bg-white/[0.08] hover:text-white",
+                    "px-3 py-1.5 rounded-xl text-xs whitespace-nowrap transition-all duration-200 cursor-pointer select-none shrink-0",
+                    pillStyle,
                   )}
                 >
-                  {cat.label}
+                  {item.label}
                 </button>
               );
             })}
           </div>
 
-          {/* Quick Search */}
-          <div className="relative w-full lg:w-80 shrink-0">
-            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500" />
+          {/* Ô tìm kiếm nhanh nhỏ gọn */}
+          <div className="relative w-full md:w-72 shrink-0">
+            <Search
+              size={14}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
+            />
             <input
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Tìm phim song ngữ (Anh, Việt)..."
-              className="w-full rounded-xl border border-white/10 bg-white/[0.04] pl-9 pr-9 py-2 text-xs text-white placeholder:text-neutral-500 outline-none focus:border-cyan-400/50 focus:bg-white/[0.08] transition-all"
+              placeholder="Tìm phim song ngữ..."
+              className="w-full bg-[#12141c] border border-white/10 hover:border-white/20 focus:border-cyan-400/60 rounded-xl pl-9 pr-8 py-1.5 text-xs text-white placeholder:text-neutral-500 focus:outline-none transition-colors"
             />
             {searchInput && (
               <button
@@ -574,115 +411,209 @@ export function SongNguClient({
                   setSearchInput("");
                   setSearchQuery("");
                 }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white p-0.5 rounded cursor-pointer"
-                title="Xóa tìm kiếm"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-neutral-400 hover:text-white rounded-full transition-colors"
               >
-                <X size={14} />
+                <X size={12} />
               </button>
             )}
           </div>
         </div>
 
-        {/* ── FILM GRID (Standard 7-Cols Desktop) ── */}
-        <div className="mt-8">
-          {isLoading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-x-3.5 gap-y-6">
-              {Array.from({ length: 14 }).map((_, i) => (
-                <FilmCardSkeleton key={i} />
-              ))}
-            </div>
-          ) : rawItems.length === 0 ? (
-            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-12 text-center">
-              <Languages size={40} className="mx-auto text-neutral-600 mb-3" />
-              <h3 className="text-base font-bold text-white">Chưa tìm thấy phim song ngữ phù hợp</h3>
-              <p className="mt-1 text-xs text-neutral-500 max-w-sm mx-auto">
-                Hãy thử chọn nguồn phim khác (ViCDN hoặc VodPhim) hoặc xóa từ khóa tìm kiếm để khám phá danh sách đầy đủ.
-              </p>
-              {(selectedCat !== "all" || searchQuery) && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedCat("all");
-                    setSearchInput("");
-                    setSearchQuery("");
-                    setPage(1);
-                  }}
-                  className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-white/[0.06] hover:bg-white/[0.1] text-cyan-300 border border-white/10 transition-colors cursor-pointer"
-                >
-                  <RotateCcw size={13} />
-                  <span>Xem tất cả phim song ngữ</span>
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-x-3.5 gap-y-6">
-              {rawItems.map((film, idx) => (
-                <div key={film.slug || film._id || idx} className="relative group/card">
-                  <FilmCard film={film} priority={idx < 7} />
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* ── PAGINATION ── */}
-          {totalPages > 1 && !isLoading && (
-            <div className="mt-12 flex justify-center">
-              <Pagination
-                currentPage={page}
-                totalPages={totalPages}
-                onPageChange={(newPage) => {
-                  setPage(newPage);
-                  window.scrollTo({ top: 380, behavior: "smooth" });
+        {/* ── Hàng 2: Bộ Lọc Tinh Gọn Dạng Select Pills ── */}
+        <div className="flex flex-wrap items-center justify-between gap-2.5 pt-1">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* 1. Thể Loại */}
+            <div className="relative">
+              <select
+                value={selectedGenre}
+                onChange={(e) => {
+                  setSelectedGenre(e.target.value);
+                  setPage(1);
                 }}
-                onPrefetchPage={prefetchPage}
+                className={cn(
+                  "appearance-none bg-[#12141c] border rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold focus:outline-none focus:border-cyan-400/60 cursor-pointer transition-colors",
+                  selectedGenre
+                    ? "border-cyan-400/60 text-cyan-300"
+                    : "border-white/10 text-neutral-300 hover:border-white/20",
+                )}
+              >
+                {BILINGUAL_GENRES.map((g) => (
+                  <option
+                    key={g.slug}
+                    value={g.slug}
+                    className="bg-[#12141c] text-white"
+                  >
+                    {g.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown
+                size={12}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
               />
             </div>
-          )}
+
+            {/* 2. Năm Phát Hành */}
+            <div className="relative">
+              <select
+                value={selectedYear}
+                onChange={(e) => {
+                  setSelectedYear(e.target.value);
+                  setPage(1);
+                }}
+                className={cn(
+                  "appearance-none bg-[#12141c] border rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold focus:outline-none focus:border-cyan-400/60 cursor-pointer transition-colors",
+                  selectedYear
+                    ? "border-cyan-400/60 text-cyan-300"
+                    : "border-white/10 text-neutral-300 hover:border-white/20",
+                )}
+              >
+                <option value="">Năm</option>
+                {YEARS.map((y) => (
+                  <option
+                    key={y}
+                    value={y}
+                    className="bg-[#12141c] text-white"
+                  >
+                    {y}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown
+                size={12}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
+              />
+            </div>
+
+            {/* 3. Chất Lượng */}
+            <div className="relative">
+              <select
+                value={selectedQuality}
+                onChange={(e) => {
+                  setSelectedQuality(e.target.value);
+                  setPage(1);
+                }}
+                className={cn(
+                  "appearance-none bg-[#12141c] border rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold focus:outline-none focus:border-cyan-400/60 cursor-pointer transition-colors",
+                  selectedQuality !== "all"
+                    ? "border-cyan-400/60 text-cyan-300"
+                    : "border-white/10 text-neutral-300 hover:border-white/20",
+                )}
+              >
+                {QUALITIES.map((q) => (
+                  <option
+                    key={q.value}
+                    value={q.value}
+                    className="bg-[#12141c] text-white"
+                  >
+                    {q.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown
+                size={12}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
+              />
+            </div>
+
+            {/* 4. Sắp Xếp */}
+            <div className="relative">
+              <select
+                value={selectedSort}
+                onChange={(e) => {
+                  setSelectedSort(e.target.value);
+                  setPage(1);
+                }}
+                className="appearance-none bg-[#12141c] border border-white/10 hover:border-white/20 rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold text-neutral-300 focus:outline-none focus:border-cyan-400/60 cursor-pointer transition-colors"
+              >
+                {SORTS.map((s) => (
+                  <option
+                    key={s.value}
+                    value={s.value}
+                    className="bg-[#12141c] text-white"
+                  >
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown
+                size={12}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
+              />
+            </div>
+
+            {/* Nút Xóa Bộ Lọc Nhanh */}
+            {isFiltered && (
+              <button
+                type="button"
+                onClick={handleResetAll}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-red-400/90 hover:text-red-300 bg-red-500/10 hover:bg-red-500/15 border border-red-500/20 rounded-xl transition-colors cursor-pointer"
+              >
+                <RotateCcw size={12} />
+                <span>Đặt lại</span>
+              </button>
+            )}
+          </div>
+
+          {/* Số lượng phim */}
+          <span className="text-[11px] sm:text-xs text-neutral-400 font-medium self-center">
+            {films.length} phim
+          </span>
         </div>
 
-        {/* ── LEARNING GUIDE & SHADOWING TIPS ── */}
-        <section className="mt-16 rounded-2xl border border-cyan-500/20 bg-gradient-to-r from-cyan-950/30 via-violet-950/20 to-black p-6 sm:p-8 shadow-xl">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            <div className="space-y-3">
-              <div className="inline-flex items-center gap-1.5 text-xs font-black text-cyan-400 uppercase tracking-wider">
-                <GraduationCap size={15} />
-                Phương Pháp Học Ngoại Ngữ Qua Phim (Dual-Sub Method)
-              </div>
-              <h3 className="text-lg sm:text-xl font-bold text-white">
-                Bí quyết cải thiện khả năng nghe nói tiếng Anh cùng FlexPhim
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs text-neutral-300">
-                <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                  <span className="font-bold text-cyan-300 block mb-1">1. Xem Lần Đầu</span>
-                  Bật phụ đề song ngữ Anh - Việt để nắm trọn ngữ cảnh và câu chuyện mà không bị áp lực từ mới.
-                </div>
-                <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                  <span className="font-bold text-violet-300 block mb-1">2. Tua Lại & Phân Tích</span>
-                  Gặp câu giao tiếp hay, nhấn phím <strong>J</strong> để tua lại 5s, nghe kỹ ngữ điệu và nối âm của diễn viên.
-                </div>
-                <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                  <span className="font-bold text-emerald-300 block mb-1">3. Luyện Nói Nhại (Shadowing)</span>
-                  Lặp lại ngay sau câu thoại của nhân vật để luyện phản xạ phát âm tự nhiên và ngữ điệu bản xứ.
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row lg:flex-col gap-2 shrink-0">
-              <Link
-                href="/films/anime"
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-cyan-400 text-black hover:bg-cyan-300 transition-all cursor-pointer shadow-lg shadow-cyan-400/20 active:scale-95"
-              >
-                <span>Khám phá Hoạt Hình Disney</span>
-              </Link>
-              <Link
-                href="/films/series"
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-white/[0.06] hover:bg-white/[0.1] text-white border border-white/10 transition-all cursor-pointer active:scale-95"
-              >
-                <span>Khám phá Phim Bộ Âu Mỹ</span>
-              </Link>
-            </div>
+        {/* ── Lưới Thẻ Phim Chuẩn 7 Cột Phong Cách Trang Chủ (2xl:grid-cols-7) ── */}
+        {isLoading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2.5 sm:gap-3.5 lg:gap-4 pt-2">
+            {Array.from({ length: 14 }).map((_, i) => (
+              <FilmCardSkeleton key={i} />
+            ))}
           </div>
-        </section>
+        ) : films.length === 0 ? (
+          <div className="text-center py-20 bg-[#12141c]/50 border border-white/[0.08] rounded-2xl p-8 max-w-md mx-auto space-y-3">
+            <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto text-neutral-500">
+              <Film size={24} />
+            </div>
+            <h3 className="text-sm sm:text-base font-bold text-white">
+              Không tìm thấy bộ phim song ngữ phù hợp
+            </h3>
+            <p className="text-xs text-neutral-400 leading-relaxed">
+              Hãy thử nới lỏng các tiêu chí lọc hoặc tìm bằng từ khóa khác.
+            </p>
+            {isFiltered && (
+              <button
+                type="button"
+                onClick={handleResetAll}
+                className="px-4 py-2 bg-white text-black font-extrabold text-xs rounded-xl hover:bg-neutral-200 transition-colors cursor-pointer"
+              >
+                Bỏ chọn bộ lọc
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2.5 sm:gap-3.5 lg:gap-4 pt-2 cv-grid-auto">
+            {films.map((film, idx) => (
+              <FilmCard
+                key={`${film.slug || film._id || idx}-${idx}`}
+                film={film}
+                priority={idx < 7}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* ── Phân Trang ── */}
+        {totalPages > 1 && (
+          <div className="pt-6">
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={(newPage) => {
+                setPage(newPage);
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+            />
+          </div>
+        )}
       </div>
     </main>
   );

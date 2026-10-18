@@ -9,6 +9,8 @@ import {
   Star,
   Film,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Bookmark,
 } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -392,6 +394,36 @@ function getFilmDetailMeta(film: HeroFilm) {
   }
 
   return { durationStr, genresStr, genreList, countryStr, ageRating, qualityBadge, langBadge };
+}
+
+function getShortHeroOverview(
+  content?: string,
+  originName?: string,
+  fallbackDesc?: string,
+): string {
+  if (!content) {
+    return originName && fallbackDesc
+      ? `${originName} - ${fallbackDesc}`
+      : fallbackDesc || "";
+  }
+
+  const cleaned = cleanMovieDescription(content);
+  // Lấy đoạn đầu tiên nếu có phân đoạn
+  const firstParagraph = cleaned.split(/\n+/)[0]?.trim() || cleaned;
+
+  // Giới hạn độ dài ngắn gọn cỡ 1 đoạn (~150 - 180 ký tự) kèm "..."
+  const MAX_CHARS = 160;
+  if (firstParagraph.length <= MAX_CHARS) {
+    return firstParagraph;
+  }
+
+  // Cắt tại ranh giới từ để không bị đứt chữ
+  const truncated = firstParagraph.slice(0, MAX_CHARS);
+  const lastSpace = truncated.lastIndexOf(" ");
+  const cleanTruncated =
+    lastSpace > 100 ? truncated.slice(0, lastSpace) : truncated;
+
+  return cleanTruncated.replace(/[.,;:\-\s]+$/, "") + "...";
 }
 
 // getBestTitleLogo and sortTmdbLogos are imported from @/lib/tmdb
@@ -1245,10 +1277,13 @@ export default function HeroBanner({
   initialConfig,
   randomizeCuratedPool = false,
 }: HeroBannerProps) {
+  const pinnedSlugs = (initialConfig?.heroMovieSlugs || [])
+    .map((slug) => slug.trim())
+    .filter(Boolean);
+  const pinnedSlugsKey = pinnedSlugs.join(",");
+  const prevPinnedSlugsKeyRef = useRef(pinnedSlugsKey);
+
   const [current, setCurrent] = useState(() => {
-    const pinnedSlugs = (initialConfig?.heroMovieSlugs || [])
-      .map((slug) => slug.trim())
-      .filter(Boolean);
     if (pinnedSlugs.length > 0) return 0;
     return cachedHeroPlaylist?.length ? cachedHeroIndex : 0;
   });
@@ -1260,9 +1295,6 @@ export default function HeroBanner({
   // empty initial list made production wait for /config/public before the LCP
   // image and title even existed in the DOM.
   const [featured, setFeatured] = useState<HeroFilm[]>(() => {
-    const pinnedSlugs = (initialConfig?.heroMovieSlugs || [])
-      .map((slug) => slug.trim())
-      .filter(Boolean);
     if (pinnedSlugs.length > 0) {
       const mapped = pinnedSlugs
         .map((slug) => {
@@ -1279,8 +1311,8 @@ export default function HeroBanner({
       if (mapped.length > 0) return ensureSixHeroFilms(mapped) as HeroFilm[];
       if (films && films.length > 0) return ensureSixHeroFilms(films as HeroFilm[]) as HeroFilm[];
     }
-    if (cachedHeroPlaylist?.length && cachedHeroPlaylist.length >= 6) return cachedHeroPlaylist.slice(0, 6);
     if (films && films.length > 0) return ensureSixHeroFilms(films as HeroFilm[]) as HeroFilm[];
+    if (cachedHeroPlaylist?.length && cachedHeroPlaylist.length >= 6) return cachedHeroPlaylist.slice(0, 6);
     return CURATED_HERO_FRANCHISE_POOL.slice(0, 6) as HeroFilm[];
   });
   const [trailerModalFilm, setTrailerModalFilm] = useState<FilmItem | null>(
@@ -1312,6 +1344,43 @@ export default function HeroBanner({
   const { user } = useAuthStore();
   const { toast } = useToast();
   const { t } = useTranslation();
+
+  useEffect(() => {
+    if (prevPinnedSlugsKeyRef.current !== pinnedSlugsKey) {
+      prevPinnedSlugsKeyRef.current = pinnedSlugsKey;
+      cachedHeroIndex = 0;
+      cachedHeroPlaylist = null;
+      if (typeof window !== "undefined") {
+        try {
+          window.sessionStorage.removeItem(HERO_SESSION_KEY);
+          window.sessionStorage.removeItem(HERO_INDEX_SESSION_KEY);
+        } catch {
+          // ignore
+        }
+      }
+      setCurrent(0);
+      setDepartingFilm(null);
+      setDepartingVisible(false);
+
+      const requested = pinnedSlugsKey ? pinnedSlugsKey.split(",") : [];
+      if (requested.length > 0) {
+        const immediate = requested
+          .map((slug) => {
+            const alias = CURATED_HERO_SLUG_ALIASES[slug] || slug;
+            return (
+              films?.find((f) => f.slug === slug || f.slug === alias) ||
+              CURATED_HERO_FRANCHISE_POOL.find(
+                (f) => f.slug === slug || f.slug === alias,
+              )
+            );
+          })
+          .filter(Boolean) as HeroFilm[];
+        if (immediate.length > 0) {
+          setFeatured(ensureSixHeroFilms(immediate) as HeroFilm[]);
+        }
+      }
+    }
+  }, [films, pinnedSlugsKey]);
 
   useEffect(() => {
     const enable = () => setAutoRotateEnabled(true);
@@ -1517,9 +1586,15 @@ export default function HeroBanner({
         markVisualReady(target.slug, "backdrop");
       }
 
+      const isPinnedPlaylist = requestedSlugs.length > 0;
       if (outgoing && outgoing.slug !== target?.slug) {
-        setDepartingFilm(outgoing);
-        setDepartingVisible(true);
+        if (!isPinnedPlaylist) {
+          setDepartingFilm(outgoing);
+          setDepartingVisible(true);
+        } else {
+          setDepartingFilm(null);
+          setDepartingVisible(false);
+        }
       }
       setFeatured(initialPlaylist);
       setCurrent(selectedIndex);
@@ -1527,14 +1602,19 @@ export default function HeroBanner({
       initialPaintFilm.current = target || null;
 
       if (outgoing && outgoing.slug !== target?.slug) {
-        firstFrame = window.requestAnimationFrame(() => {
-          secondFrame = window.requestAnimationFrame(() => {
-            if (active) setDepartingVisible(false);
+        if (!isPinnedPlaylist) {
+          firstFrame = window.requestAnimationFrame(() => {
+            secondFrame = window.requestAnimationFrame(() => {
+              if (active) setDepartingVisible(false);
+            });
           });
-        });
-        transitionTimer = window.setTimeout(() => {
-          if (active) setDepartingFilm(null);
-        }, 1_050);
+          transitionTimer = window.setTimeout(() => {
+            if (active) setDepartingFilm(null);
+          }, 1_050);
+        } else {
+          setDepartingFilm(null);
+          setDepartingVisible(false);
+        }
       }
     };
 
@@ -1700,7 +1780,7 @@ export default function HeroBanner({
       if (preloadUrl) await preloadMovieLogo(preloadUrl);
       if (requestId !== slideActivationRequest.current) return;
 
-      const usesPortraitArtwork = window.matchMedia(
+      const usesPortraitArtwork = typeof window !== "undefined" && window.matchMedia(
         "(max-width: 1023px) and (orientation: portrait)",
       ).matches;
       const backdropCandidates = usesPortraitArtwork
@@ -1725,11 +1805,12 @@ export default function HeroBanner({
         backdropCandidates,
       );
       if (requestId !== slideActivationRequest.current) return;
-      if (!readyBackdrop) return;
+
       const preference = preferredHeroBackdrops.get(target.slug) || {};
       preferredHeroBackdrops.set(target.slug, {
         ...preference,
-        [usesPortraitArtwork ? "portrait" : "landscape"]: readyBackdrop,
+        [usesPortraitArtwork ? "portrait" : "landscape"]:
+          readyBackdrop || backdropCandidates[0] || target.heroBackdrop || "",
       });
       markVisualReady(target.slug, "backdrop");
 
@@ -1751,13 +1832,17 @@ export default function HeroBanner({
 
   useEffect(() => {
     if (featured.length === 0) return;
-    cachedHeroIndex = current;
+    const hasPinned = (initialConfig?.heroMovieSlugs || []).length > 0;
+    cachedHeroIndex = hasPinned ? 0 : current;
     try {
-      window.sessionStorage.setItem(HERO_INDEX_SESSION_KEY, String(current));
+      window.sessionStorage.setItem(
+        HERO_INDEX_SESSION_KEY,
+        String(hasPinned ? 0 : current),
+      );
     } catch {
       // See storeHeroPlaylist: session storage is an optional optimization.
     }
-  }, [current, featured.length]);
+  }, [current, featured.length, initialConfig?.heroMovieSlugs]);
 
   useEffect(() => {
     if (
@@ -1873,24 +1958,20 @@ export default function HeroBanner({
         );
       }
 
-      // 2. Cascading Fan Cards shift: subtle staggered slide
+      // 2. Cascading Fan Cards shift: subtle entrance on the container to preserve cards' coordinate transforms
       if (fanCardsRef.current) {
-        const cards = fanCardsRef.current.querySelectorAll(".fan-card-item");
-        if (cards.length > 0) {
-          gsap.killTweensOf(cards);
-          gsap.fromTo(
-            cards,
-            { opacity: 0.5, x: "+=12" },
-            {
-              opacity: 1,
-              x: 0,
-              duration: 0.45,
-              stagger: 0.06,
-              ease: "power2.out",
-              clearProps: "transform,opacity",
-            },
-          );
-        }
+        gsap.killTweensOf(fanCardsRef.current);
+        gsap.fromTo(
+          fanCardsRef.current,
+          { opacity: 0.7, x: -14 },
+          {
+            opacity: 1,
+            x: 0,
+            duration: 0.4,
+            ease: "power2.out",
+            clearProps: "opacity",
+          },
+        );
       }
     }, heroContainerRef);
 
@@ -2075,7 +2156,7 @@ export default function HeroBanner({
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       onTouchCancel={handleTouchCancel}
-      className="font-cinema relative mt-0 h-[52svh] min-h-[380px] max-h-[460px] sm:h-auto sm:min-h-[680px] sm:max-h-[940px] md:h-[94vh] md:min-h-[720px] lg:h-[96vh] lg:min-h-[760px] lg:max-h-[1050px] xl:h-[100dvh] w-full overflow-hidden bg-[#0c0d14] transform-gpu contain-paint select-none touch-pan-y"
+      className="font-cinema relative mt-0 h-[65svh] min-h-[460px] max-h-[560px] sm:h-auto sm:min-h-[680px] sm:max-h-[940px] md:h-[94vh] md:min-h-[720px] lg:h-[96vh] lg:min-h-[760px] lg:max-h-[1050px] xl:h-[100dvh] w-full overflow-hidden bg-[#0c0d14] transform-gpu contain-paint select-none touch-pan-y"
     >
       <TrailerModal
         film={trailerModalFilm}
@@ -2207,10 +2288,7 @@ export default function HeroBanner({
                       : "border-white/[0.18]",
                   )}
                   onClick={() => {
-                    const targetIndex = featured.findIndex(
-                      (f) => f.slug === cardFilm.slug,
-                    );
-                    if (targetIndex !== -1) void activateSlide(targetIndex);
+                    void activateSlide(cardEntry.targetIndex);
                   }}
                 >
                   <div className="aspect-[2/3] overflow-hidden bg-[#131822] relative group">
@@ -2246,8 +2324,30 @@ export default function HeroBanner({
         </div>
       </div>
 
+      {/* Side Navigation Arrow Buttons (Desktop & Tablet) */}
+      {featured.length > 1 && (
+        <>
+          <button
+            type="button"
+            onClick={prevSlide}
+            aria-label="Banner trước"
+            className="hidden sm:flex absolute left-3 sm:left-6 md:left-8 top-1/2 -translate-y-1/2 z-30 h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-black/50 hover:bg-[#7c3aed] text-white/80 hover:text-white backdrop-blur-md border border-white/15 transition-all duration-200 active:scale-90 cursor-pointer shadow-xl group pointer-events-auto"
+          >
+            <ChevronLeft size={22} className="transition-transform group-hover:-translate-x-0.5" />
+          </button>
+          <button
+            type="button"
+            onClick={nextSlide}
+            aria-label="Banner tiếp theo"
+            className="hidden sm:flex absolute right-3 sm:right-6 md:right-8 top-1/2 -translate-y-1/2 z-30 h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-black/50 hover:bg-[#7c3aed] text-white/80 hover:text-white backdrop-blur-md border border-white/15 transition-all duration-200 active:scale-90 cursor-pointer shadow-xl group pointer-events-auto"
+          >
+            <ChevronRight size={22} className="transition-transform group-hover:translate-x-0.5" />
+          </button>
+        </>
+      )}
+
       {/* Main Content Area (Fluid Responsive Spacing with Safe Area Bottom Clearance) */}
-      <div className="absolute inset-0 z-20 flex flex-col items-center justify-end px-4 sm:px-6 md:px-8 pb-5 sm:pb-16 md:pb-20 lg:pb-22 text-center pointer-events-none">
+      <div className="absolute inset-0 z-20 flex flex-col items-center justify-end px-4 sm:px-6 md:px-8 pb-4 sm:pb-16 md:pb-20 lg:pb-22 text-center pointer-events-none">
         <div
           ref={contentRef}
           key={film.slug}
@@ -2275,114 +2375,60 @@ export default function HeroBanner({
             />
           </Link>
 
-          {/* 📱 Mobile compact metadata & navigation (Centered) */}
-          <div className="flex sm:hidden flex-col items-center gap-1.5 w-full my-0.5 text-center">
-            {/* Row 1: TOP 10 Badge + Year | Country | Episode/Quality */}
-            <div className="flex items-center justify-center gap-2 text-xs font-semibold text-neutral-200/90 flex-wrap">
-              <span className="bg-gradient-to-r from-[#a855f7] to-[#7c3aed] text-white font-black text-[10px] px-1.5 py-0.5 rounded tracking-tight shadow-[0_2px_8px_rgba(124,58,237,0.45)]">
-                TOP 10
-              </span>
-              <span>{film.year || 2026}</span>
-              {countryStr ? (
-                <>
-                  <span className="text-neutral-500 font-bold">|</span>
-                  <span>{countryStr}</span>
-                </>
-              ) : null}
-              <span className="text-neutral-500 font-bold">|</span>
-              <span className="text-neutral-300">
-                {film.episode_current || qualityBadge || langBadge}
-              </span>
-            </div>
-
-            {/* Row 2: Genre Pills */}
-            <div className="flex items-center justify-center gap-1.5 flex-wrap mt-0.5">
-              {(genreList.length > 0 ? genreList.slice(0, 3) : ["Chính Kịch", "Hành Động"]).map((g, idx) => (
-                <span
-                  key={idx}
-                  className="bg-black/60 backdrop-blur-md border border-purple-500/25 px-2.5 py-0.5 rounded-full text-[10.5px] font-medium text-purple-100 shadow-md"
-                >
-                  {g}
-                </span>
-              ))}
-            </div>
-
-            {/* Row 3: Slider pagination dots */}
-            {featured.length > 1 && (
-              <div className="flex items-center justify-center gap-1.5 pt-1 select-none">
-                {featured.map((_, i) => (
-                  <button
-                    key={`mobile-hero-dot-${i}`}
-                    type="button"
-                    onClick={() => void activateSlide(i)}
-                    aria-label={`Chuyển đến banner ${i + 1}`}
-                    aria-current={i === current ? "true" : undefined}
-                    className={cn(
-                      "rounded-full transition-all duration-300 cursor-pointer",
-                      i === current
-                        ? "w-5 h-1.5 bg-gradient-to-r from-[#a855f7] to-[#7c3aed] shadow-[0_0_8px_rgba(168,85,247,0.7)]"
-                        : "w-1.5 h-1.5 bg-white/40 hover:bg-white/80",
-                    )}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Badges Pill Row (⭐ Rating, Year, FHD, Vietsub/Lồng tiếng) - Desktop only */}
-          <div className="hidden sm:flex items-center justify-center gap-2 sm:gap-2.5 flex-wrap my-1 sm:my-1.5">
-            <span className="bg-black/60 backdrop-blur-md border border-white/15 px-3 py-0.5 sm:px-3.5 sm:py-1 rounded-full text-[11px] sm:text-xs font-extrabold text-amber-400 flex items-center gap-1 shadow-lg">
-              <Star size={12} className="fill-amber-400 text-amber-400" />
+          {/* ── 1. Top Badges (⭐ Rating, Year, Vietsub/Lồng tiếng) ── */}
+          <div className="flex items-center justify-center gap-2 sm:gap-2.5 flex-wrap my-1 sm:my-1.5">
+            <span className="bg-black/60 backdrop-blur-md border border-white/15 px-3 py-0.5 sm:px-3.5 sm:py-1 rounded-full text-xs font-bold text-amber-400 flex items-center gap-1 shadow-md">
+              <Star size={11} className="fill-amber-400 text-amber-400" />
               <span>
                 {typeof ratingVal === "number"
                   ? ratingVal.toFixed(1)
-                  : ratingVal}
+                  : ratingVal || "8.3"}
               </span>
             </span>
 
             {film.year && (
-              <span className="bg-black/60 backdrop-blur-md border border-white/15 px-3 py-0.5 sm:px-3.5 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold text-neutral-200 shadow-lg">
+              <span className="bg-black/60 backdrop-blur-md border border-white/15 px-3 py-0.5 sm:px-3.5 sm:py-1 rounded-full text-xs font-bold text-white shadow-md">
                 {film.year}
               </span>
             )}
 
-            <span className="bg-black/60 backdrop-blur-md border border-white/15 px-3 py-0.5 sm:px-3.5 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold text-purple-300 shadow-lg">
-              {langBadge}
+            <span className="bg-black/60 backdrop-blur-md border border-white/15 px-3 py-0.5 sm:px-3.5 sm:py-1 rounded-full text-xs font-bold text-[#c084fc] shadow-md">
+              {langBadge || "Vietsub"}
             </span>
           </div>
 
-          {/* Movie Detail Sub-Info Line (Duration • Genres • Age Rating) - Desktop only */}
-          <div className="hidden sm:flex items-center justify-center gap-2 sm:gap-2.5 text-xs sm:text-sm font-semibold text-neutral-300/90 tracking-wide flex-wrap px-2 my-1 sm:my-1.5">
+          {/* ── 2. Movie Detail Sub-Info Line (Duration • Genres • Age Rating) ── */}
+          <div className="flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold text-neutral-300 tracking-wide flex-wrap px-2 my-1 sm:my-1.5">
             <span>{durationStr}</span>
             <span className="text-neutral-500 font-bold">•</span>
             <span>{genresStr}</span>
             <span className="text-neutral-500 font-bold">•</span>
-            <span className="px-1.5 py-0.5 rounded bg-white/10 text-[11px] font-extrabold text-neutral-200 border border-white/15">
+            <span className="px-1.5 py-0.5 rounded border border-white/20 bg-white/5 text-[11px] font-bold text-neutral-200">
               {ageRating}
             </span>
           </div>
 
-          {/* Centered Overview Text - Desktop only */}
-          <p className="hidden sm:block text-xs sm:text-sm text-neutral-300/90 max-w-lg sm:max-w-xl mx-auto leading-relaxed line-clamp-2 font-normal drop-shadow-md px-3 sm:px-4 my-2 sm:my-2.5">
-            {film.content
-              ? cleanMovieDescription(film.content)
-              : film.origin_name
-                ? `${film.origin_name} - ` + t("home.heroDesc")
-                : t("home.heroDesc")}
+          {/* ── 3. Centered Overview / Synopsis (Rút gọn 1 đoạn ngắn cỡ 2 dòng kèm ...) ── */}
+          <p className="text-xs sm:text-[13px] text-neutral-300/85 max-w-sm sm:max-w-xl mx-auto leading-relaxed line-clamp-2 overflow-hidden [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2] font-normal drop-shadow-md px-3 sm:px-4 my-1.5 sm:my-2 text-center">
+            {getShortHeroOverview(
+              film.content,
+              film.origin_name,
+              t("home.heroDesc"),
+            )}
           </p>
 
-          {/* Action Buttons (Watch Now / Resume Watch + Trailer + Bookmark with Tooltip) - Desktop only */}
+          {/* ── 4. Action Buttons (Watch Now / Resume + Trailer + Bookmark) ── */}
           <div
-            className={cn(cardFont.className, "hidden sm:flex items-center justify-center gap-3 sm:gap-3.5 pt-2 sm:pt-3 pb-1")}
+            className={cn(cardFont.className, "flex items-center justify-center gap-2.5 sm:gap-3.5 pt-1.5 sm:pt-2 pb-1")}
           >
             {hasWatched ? (
               <Link
                 href={getWatchHref(film)}
                 prefetch={false}
-                className={`${cardFont.className} flex flex-col items-center justify-center bg-white hover:bg-neutral-200 text-black px-6 py-2.5 sm:px-7 sm:py-3 rounded-full transition-all duration-200 shadow-2xl hover:scale-105 active:scale-95 group min-w-[145px]`}
+                className={`${cardFont.className} flex flex-col items-center justify-center bg-white hover:bg-neutral-200 text-black px-5 py-2.5 sm:px-7 sm:py-3 rounded-full transition-all duration-200 shadow-xl hover:scale-105 active:scale-95 group min-w-[130px]`}
               >
                 <div className="flex items-center gap-1.5 text-xs font-black tracking-wide uppercase">
-                  <Play size={14} className="fill-black" />
+                  <Play size={13} className="fill-black text-black" />
                   <span>
                     {t("home.resumeWatch", "Xem tiếp")}{" "}
                     {formatProgressTime(progressSecs)}
@@ -2401,9 +2447,9 @@ export default function HeroBanner({
               <Link
                 href={getWatchHref(film)}
                 prefetch={false}
-                className={`${cardFont.className} flex items-center gap-1.5 sm:gap-2 bg-white hover:bg-neutral-200 text-black px-6 py-2.5 sm:px-7 sm:py-3 rounded-full text-xs font-black tracking-wide uppercase transition-all duration-200 shadow-2xl hover:scale-105 active:scale-95`}
+                className={`${cardFont.className} flex items-center gap-1.5 sm:gap-2 bg-white hover:bg-neutral-200 text-black px-5 py-2.5 sm:px-7 sm:py-3 rounded-full text-xs font-black tracking-wide uppercase transition-all duration-200 shadow-xl hover:scale-105 active:scale-95`}
               >
-                <Play size={14} className="fill-black" />
+                <Play size={13} className="fill-black text-black" />
                 <span>{t("home.watchNow", "Xem ngay")}</span>
               </Link>
             )}
@@ -2411,9 +2457,9 @@ export default function HeroBanner({
             <button
               type="button"
               onClick={() => setTrailerModalFilm(film)}
-              className={`${cardFont.className} flex items-center gap-1.5 sm:gap-2 rounded-full border border-white/10 bg-[#181b22] px-5 py-2.5 sm:px-6 sm:py-3 text-xs font-extrabold uppercase tracking-wider text-white shadow-xl transition-all duration-200 hover:scale-105 hover:bg-[#222731] hover:border-white/20 active:scale-95 cursor-pointer`}
+              className={`${cardFont.className} flex items-center gap-1.5 sm:gap-2 rounded-full border border-white/15 bg-white/10 hover:bg-white/15 backdrop-blur-md px-4 py-2.5 sm:px-6 sm:py-3 text-xs font-extrabold uppercase tracking-wider text-white shadow-xl transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer`}
             >
-              <Film size={14} className="text-white/80" />
+              <Film size={14} className="text-white/90" />
               <span>{t("home.trailer", "Trailer")}</span>
             </button>
 
@@ -2461,12 +2507,33 @@ export default function HeroBanner({
                     });
                 }}
                 aria-label="Thêm vào tủ phim"
-                className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#181b22] hover:bg-[#222731] border border-white/10 hover:border-white/20 text-neutral-200 hover:text-white flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer shadow-xl"
+                className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/10 hover:bg-white/15 backdrop-blur-md border border-white/15 text-neutral-200 hover:text-white flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer shadow-xl shrink-0"
               >
-                <Bookmark size={16} />
+                <Bookmark size={15} />
               </button>
             </div>
           </div>
+
+          {/* ── 5. Mobile Slider Pagination Dots ── */}
+          {featured.length > 1 && (
+            <div className="flex sm:hidden items-center justify-center gap-1.5 pt-2 select-none z-30">
+              {featured.map((_, i) => (
+                <button
+                  key={`mobile-hero-dot-${i}`}
+                  type="button"
+                  onClick={() => void activateSlide(i)}
+                  aria-label={`Chuyển đến banner ${i + 1}`}
+                  aria-current={i === current ? "true" : undefined}
+                  className={cn(
+                    "rounded-full transition-all duration-300 cursor-pointer",
+                    i === current
+                      ? "w-5 h-1.5 bg-[#7c3aed]"
+                      : "w-1.5 h-1.5 bg-white/40 hover:bg-white/80",
+                  )}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

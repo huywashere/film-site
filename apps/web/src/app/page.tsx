@@ -9,7 +9,13 @@ import {
 import { localImageProxyUrl } from "@/lib/image-cdn";
 import { getMovieTmdbServer } from "@/lib/server/movie-tmdb-server";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+const heroDetailServerCache = new Map<
+  string,
+  { film: CuratedHeroMovie; expiresAt: number }
+>();
 
 function getDefaultHeroFilms(): CuratedHeroMovie[] {
   // Keep the server paint identical across hard reloads. Browsers retain the
@@ -33,7 +39,13 @@ async function resolveInitialHeroFilms(heroSlugs?: string[]): Promise<CuratedHer
       );
       if (curated) return curated;
 
-      // 2. Fetch from movie detail API for any custom film
+      // 2. Check in-memory detail cache for previously resolved custom hero films
+      const cached = heroDetailServerCache.get(mappedSlug);
+      if (cached && cached.expiresAt > Date.now()) {
+        return cached.film;
+      }
+
+      // 3. Fetch from movie detail API for any custom film
       try {
         const detailRes = await Promise.race([
           movieApi.getDetail(mappedSlug),
@@ -90,6 +102,10 @@ async function resolveInitialHeroFilms(heroSlugs?: string[]): Promise<CuratedHer
             ? movie.category.map((c: any) => c.name || c)
             : [],
         };
+        heroDetailServerCache.set(mappedSlug, {
+          film,
+          expiresAt: Date.now() + 60_000,
+        });
         return film;
       } catch {
         return null;
@@ -106,7 +122,7 @@ let lastConfigFetch = 0;
 
 async function getInitialPublicConfiguration(): Promise<PublicSiteConfiguration | null> {
   const now = Date.now();
-  if (cachedPublicConfig && now - lastConfigFetch < 5_000) {
+  if (cachedPublicConfig && now - lastConfigFetch < 2_500) {
     return cachedPublicConfig;
   }
 
@@ -118,7 +134,7 @@ async function getInitialPublicConfiguration(): Promise<PublicSiteConfiguration 
 
   try {
     const response = await fetch(`${apiBase}/config/public`, {
-      next: { revalidate: 5, tags: ["public-site-configuration"] },
+      cache: "no-store",
       signal: AbortSignal.timeout(2500),
     });
     if (!response.ok) return cachedPublicConfig;
