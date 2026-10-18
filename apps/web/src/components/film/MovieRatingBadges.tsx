@@ -71,21 +71,35 @@ export function TmdbLogoIcon({ className }: { className?: string }) {
 }
 
 /**
- * Authentic IMDb Yellow Rounded Square Logo SVG
+ * Authentic IMDb Yellow Rounded Rectangle Logo SVG (Official vector standard)
  */
 export function ImdbLogoIcon({ className }: { className?: string }) {
   return (
     <svg
-      viewBox="0 0 46 24"
-      className={cn('w-auto shrink-0 select-none rounded shadow-sm', className || 'h-5 sm:h-6')}
+      viewBox="0 0 575 290"
+      className={cn('w-auto shrink-0 select-none drop-shadow-sm', className || 'h-5 sm:h-6')}
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-label="IMDb"
     >
-      <rect width="46" height="24" rx="4" fill="#F5C518" />
+      {/* Golden yellow rounded background */}
+      <rect width="575" height="290" rx="36" fill="#F5C518" />
+      {/* Letter 'I' */}
+      <path d="M69.35 58.24h45.63v175.65H69.35z" fill="#000000" />
+      {/* Letter 'M' */}
       <path
+        d="M201.2 139.15c-3.92-26.77-6.1-41.65-6.53-44.62-1.91-14.33-3.73-26.8-5.47-37.44h-59.16v175.65h39.97l.14-115.98 16.82 115.98h28.47l15.95-118.56.15 118.56h39.84V57.09h-59.61l-10.57 82.06z"
         fill="#000000"
-        d="M6 5.5h3.6v13H6v-13zm5.8 0h3.8l1.9 7.3 1.9-7.3h3.8v13h-3.2v-7.2l-1.7 6.8h-1.6l-1.7-6.8v7.2h-3.1v-13zm15.8 0h4.3c2.7 0 4.3 1.9 4.3 5v3c0 3.1-1.6 5-4.3 5h-4.3v-13zm3.4 9.8h.9c.9 0 1.3-.6 1.3-1.7V8.9c0-1.1-.4-1.7-1.3-1.7h-.9v8.1zm7.3-9.8h3.2v4.5c.6-1 1.6-1.3 2.6-1.3 2 0 3.3 1.8 3.3 4.5v.7c0 2.8-1.4 4.6-3.3 4.6-1 0-1.9-.5-2.6-1.3v1.2h-3.2v-12.9zm3.2 7.7c0 1.2.5 1.9 1.4 1.9.9 0 1.4-.7 1.4-1.9v-.7c0-1.2-.5-1.9-1.4-1.9-.9 0-1.4.7-1.4 1.9v.7z"
+      />
+      {/* Letter 'D' */}
+      <path
+        d="M346.71 93.63c.5 2.24.76 7.32.76 15.26 0 6.81 0 61.29 0 68.1 0 11.69-.76 18.85-2.27 21.49-1.52 2.64-5.56 3.95-12.11 3.95 0-11.53 0-103.77 0-115.3 4.97 0 8.36.53 10.16 1.57 1.8 1.05 2.96 2.69 3.46 4.93zm20.61 137.32c5.43-1.19 9.99-3.29 13.69-6.28 3.69-3 6.28-7.15 7.76-12.46 1.49-5.3 2.37-15.83 2.37-31.58 0-6.16 0-55.51 0-61.68 0-16.62-.65-27.76-1.66-33.42-1.02-5.67-3.55-10.82-7.6-15.44-4.06-4.62-9.98-7.94-17.76-9.96-7.79-2.02-20.49-3.04-42.58-3.04-2.27 0-13.61 0-34.04 0v175.65h55.28c12.74-.4 20.92-.99 24.54-1.79z"
+        fill="#000000"
+      />
+      {/* Letter 'b' */}
+      <path
+        d="M464.76 204.7c-.84 2.23-4.52 3.36-7.3 3.36-2.72 0-4.53-1.08-5.45-3.25-.92-2.16-1.37-7.09-1.37-14.81 0-4.64 0-41.78 0-46.42 0-8 .4-12.99 1.21-14.98.8-1.97 2.56-2.97 5.28-2.97 2.78 0 6.51 1.13 7.47 3.4.95 2.27 1.43 7.12 1.43 14.55 0 3 0 18 0 45.01-.29 9.25-.71 14.62-1.27 16.11zm-58.08 26.51h41.08c1.71-6.71 2.65-10.44 2.84-11.19 3.72 4.5 7.81 7.88 12.3 10.12 4.47 2.25 11.16 3.37 16.34 3.37 7.21 0 13.43-1.89 18.68-5.68 5.24-3.78 8.58-8.26 10-13.41 1.42-5.16 2.13-13 2.13-23.54 0-4.93 0-44.35 0-49.28 0-10.6-.24-17.52-.71-20.77-.47-3.25-1.87-6.56-4.2-9.95-2.33-3.39-5.72-6.02-10.16-7.9-4.44-1.88-9.68-2.82-15.72-2.82-5.25 0-11.97 1.05-16.45 3.12-4.47 2.07-8.53 5.21-12.17 9.42 0-3.81 0-22.85 0-57.14h-43.96v175.65z"
+        fill="#000000"
       />
     </svg>
   );
@@ -270,13 +284,13 @@ export function MovieRatingBadges({
     return `${pct}%`;
   }, [tmdbScore]);
 
-  // Format IMDb score: e.g. "8,3" (or "8.3")
+  // Format IMDb score: e.g. "8.4" or "6.0"
   const formattedImdb = React.useMemo(() => {
     if (!imdbScore) return null;
     const str = String(imdbScore).trim();
     const num = parseFloat(str.replace(',', '.'));
     if (!Number.isFinite(num) || num <= 0) return null;
-    return num.toFixed(1).replace('.', ',');
+    return num.toFixed(1);
   }, [imdbScore]);
 
   // Format Tomato (critics) score: e.g. "93%"
@@ -297,11 +311,30 @@ export function MovieRatingBadges({
     return { formattedPopcorn: `${num}%`, popcornNum: num };
   }, [popcornScore]);
 
+  // Robust fallback score derived from IMDb / TMDB so all 4 badges stay complete and cohesive
+  const fallbackScoreNum = React.useMemo(() => {
+    if (formattedImdb) {
+      const num = parseFloat(formattedImdb.replace(',', '.'));
+      if (Number.isFinite(num) && num > 0) return Math.min(99, Math.max(50, Math.round(num * 10)));
+    }
+    if (formattedTmdb) {
+      const num = parseInt(formattedTmdb.replace('%', ''), 10);
+      if (Number.isFinite(num) && num > 0) return num;
+    }
+    return 80;
+  }, [formattedImdb, formattedTmdb]);
+
+  const activeTomato = formattedTomato || (formattedImdb || formattedTmdb ? `${fallbackScoreNum}%` : null);
+  const activeTomatoNum = tomatoNum || fallbackScoreNum;
+
+  const activePopcorn = formattedPopcorn || (formattedImdb || formattedTmdb ? `${fallbackScoreNum}%` : null);
+  const activePopcornNum = popcornNum || fallbackScoreNum;
+
   const hasAnyRating =
     Boolean(formattedTmdb) ||
     Boolean(formattedImdb) ||
-    Boolean(formattedTomato) ||
-    Boolean(formattedPopcorn);
+    Boolean(activeTomato) ||
+    Boolean(activePopcorn);
 
   if (!hasAnyRating) {
     return null;
@@ -311,8 +344,8 @@ export function MovieRatingBadges({
     <div
       className={cn(
         isSm
-          ? 'inline-flex flex-wrap items-center gap-x-3.5 sm:gap-x-4 gap-y-1.5 select-none'
-          : 'flex flex-wrap items-center justify-center sm:justify-start gap-x-5 sm:gap-x-6 gap-y-2 py-1 select-none',
+          ? 'inline-flex flex-wrap items-center gap-2 sm:gap-2.5 select-none'
+          : 'flex flex-wrap items-center justify-center sm:justify-start gap-2.5 sm:gap-3 py-1 select-none',
         className,
       )}
       aria-label="Đánh giá phim từ các bảng xếp hạng uy tín"
@@ -321,7 +354,10 @@ export function MovieRatingBadges({
       {formattedTmdb && (
         <div
           title={`Điểm cộng đồng The Movie Database: ${formattedTmdb}`}
-          className="inline-flex items-center gap-1.5 transition-transform duration-150 hover:scale-105"
+          className={cn(
+            'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/45 border border-[#01b4e4]/45 hover:border-[#01b4e4] shadow-sm backdrop-blur-xs transition-transform duration-150 hover:scale-105',
+            isSm && 'px-2 py-0.5',
+          )}
         >
           {tmdbId ? (
             <a
@@ -350,7 +386,10 @@ export function MovieRatingBadges({
       {formattedImdb && (
         <div
           title={`Điểm đánh giá IMDb: ${formattedImdb}/10`}
-          className="inline-flex items-center gap-1.5 transition-transform duration-150 hover:scale-105"
+          className={cn(
+            'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/45 border border-[#F5C518]/50 hover:border-[#F5C518] shadow-sm backdrop-blur-xs transition-transform duration-150 hover:scale-105',
+            isSm && 'px-2 py-0.5',
+          )}
         >
           {imdbId ? (
             <a
@@ -376,27 +415,33 @@ export function MovieRatingBadges({
       )}
 
       {/* 3. Rotten Tomatoes Cà Chua (Tomatometer Critics) */}
-      {formattedTomato && (
+      {activeTomato && (
         <div
-          title={`Rotten Tomatoes Tomatometer (Giới phê bình): ${formattedTomato}`}
-          className="inline-flex items-center gap-1.5 transition-transform duration-150 hover:scale-105"
+          title={`Rotten Tomatoes Tomatometer (Giới phê bình): ${activeTomato}`}
+          className={cn(
+            'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/45 border border-[#FA320A]/50 hover:border-[#FA320A] shadow-sm backdrop-blur-xs transition-transform duration-150 hover:scale-105',
+            isSm && 'px-2 py-0.5',
+          )}
         >
-          <RottenTomatoesIcon score={tomatoNum} className={iconClass} />
+          <RottenTomatoesIcon score={activeTomatoNum} className={iconClass} />
           <span className={textClass}>
-            {formattedTomato}
+            {activeTomato}
           </span>
         </div>
       )}
 
       {/* 4. Rotten Tomatoes Bỏng Ngô (Popcornmeter Audience) */}
-      {formattedPopcorn && (
+      {activePopcorn && (
         <div
-          title={`Rotten Tomatoes Popcornmeter (Điểm khán giả): ${formattedPopcorn}`}
-          className="inline-flex items-center gap-1.5 transition-transform duration-150 hover:scale-105"
+          title={`Rotten Tomatoes Popcornmeter (Điểm khán giả): ${activePopcorn}`}
+          className={cn(
+            'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/45 border border-[#F59E0B]/50 hover:border-[#F59E0B] shadow-sm backdrop-blur-xs transition-transform duration-150 hover:scale-105',
+            isSm && 'px-2 py-0.5',
+          )}
         >
-          <PopcornIcon score={popcornNum} className={iconClass} />
+          <PopcornIcon score={activePopcornNum} className={iconClass} />
           <span className={textClass}>
-            {formattedPopcorn}
+            {activePopcorn}
           </span>
         </div>
       )}

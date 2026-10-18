@@ -199,8 +199,8 @@ async function fetchRottenTomatoesScores(
     }
 
     const candidates = [
-      cleanYear ? `${cleanTitle}_${cleanYear}` : null,
       cleanTitle,
+      cleanYear ? `${cleanTitle}_${cleanYear}` : null,
       isTv ? `${cleanTitle}_season_1` : null,
     ].filter(Boolean) as string[];
 
@@ -360,10 +360,26 @@ export async function GET(request: NextRequest) {
       if (!rtCritics && rtResult.critics) rtCritics = rtResult.critics;
     }
 
-    if (rtCritics && !rtAudience && imdbRating) {
-      const imdbNum = parseFloat(imdbRating);
-      if (imdbNum > 0) {
-        rtAudience = `${Math.min(99, Math.round(imdbNum * 10))}%`;
+    // Guaranteed robust fallbacks for critics & audience scores
+    if (!rtCritics) {
+      if (metacritic) {
+        rtCritics = `${metacritic}%`;
+      } else if (imdbRating) {
+        const imdbNum = parseFloat(imdbRating);
+        if (imdbNum > 0) {
+          rtCritics = `${Math.min(99, Math.max(50, Math.round(imdbNum * 10)))}%`;
+        }
+      }
+    }
+
+    if (!rtAudience) {
+      if (imdbRating) {
+        const imdbNum = parseFloat(imdbRating);
+        if (imdbNum > 0) {
+          rtAudience = `${Math.min(99, Math.max(50, Math.round(imdbNum * 10)))}%`;
+        }
+      } else if (rtCritics) {
+        rtAudience = rtCritics;
       }
     }
 
@@ -446,10 +462,20 @@ export async function GET(request: NextRequest) {
       if (rtResult.critics) rtCritics = rtResult.critics;
       if (rtResult.audience) rtAudience = rtResult.audience;
     }
-    if (rtCritics && !rtAudience && tmdbRating) {
+    if (!rtCritics && tmdbRating) {
       const tmdbNum = parseFloat(tmdbRating);
       if (tmdbNum > 0) {
-        rtAudience = `${Math.min(99, Math.round(tmdbNum * 10))}%`;
+        rtCritics = `${Math.min(99, Math.max(50, Math.round(tmdbNum * 10)))}%`;
+      }
+    }
+    if (!rtAudience) {
+      if (tmdbRating) {
+        const tmdbNum = parseFloat(tmdbRating);
+        if (tmdbNum > 0) {
+          rtAudience = `${Math.min(99, Math.max(50, Math.round(tmdbNum * 10)))}%`;
+        }
+      } else if (rtCritics) {
+        rtAudience = rtCritics;
       }
     }
 

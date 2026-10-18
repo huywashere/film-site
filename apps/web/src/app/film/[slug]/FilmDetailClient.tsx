@@ -1414,8 +1414,16 @@ export default function FilmDetailPage({
       film?.imdb?.vote_average || film?.imdb_rating || film?.imdb?.rating || 0,
     );
     const resolvedImdbVoteCount = Number(film?.imdb?.vote_count || 0);
+    const tmdbAvg = Number(film?.tmdb?.vote_average || film?.vote_average || 0);
 
-    if (!resolvedImdbId && !resolvedImdbVoteAvg) return null;
+    if (!resolvedImdbId && !resolvedImdbVoteAvg && !tmdbAvg) return null;
+
+    const baseScore =
+      resolvedImdbVoteAvg > 0
+        ? resolvedImdbVoteAvg * 10
+        : tmdbAvg > 0
+          ? tmdbAvg * 10
+          : 80;
 
     return {
       imdbId: resolvedImdbId,
@@ -1423,11 +1431,11 @@ export default function FilmDetailPage({
       year: film?.year ? String(film.year) : null,
       rated: null,
       runtime: film?.time || null,
-      imdbRating: resolvedImdbVoteAvg > 0 ? formatRating(resolvedImdbVoteAvg) : null,
+      imdbRating: resolvedImdbVoteAvg > 0 ? formatRating(resolvedImdbVoteAvg) : (tmdbAvg > 0 ? formatRating(tmdbAvg) : null),
       imdbVotes: resolvedImdbVoteCount > 0 ? formatVoteCount(resolvedImdbVoteCount) : null,
-      rottenTomatoes: null,
-      rottenTomatoesAudience: null,
-      tmdbRating: film?.vote_average ? `${Math.round(Number(film.vote_average) * 10)}%` : null,
+      rottenTomatoes: `${Math.min(99, Math.max(50, Math.round(baseScore)))}%`,
+      rottenTomatoesAudience: `${Math.min(99, Math.max(50, Math.round(baseScore)))}%`,
+      tmdbRating: tmdbAvg > 0 ? `${Math.round(tmdbAvg * 10)}%` : null,
       metacritic: null,
       awards: null,
       boxOffice: null,

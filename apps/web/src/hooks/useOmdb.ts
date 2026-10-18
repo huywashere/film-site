@@ -33,15 +33,20 @@ function getCacheKey(imdbId: string | null | undefined, title: string, year?: st
 
 function readClientCachedOmdb(key: string): OmdbData | null {
   if (omdbMemoryCache.has(key)) {
-    return omdbMemoryCache.get(key)!;
+    const mem = omdbMemoryCache.get(key)!;
+    if (mem && (mem.rottenTomatoes || mem.rottenTomatoesAudience)) {
+      return mem;
+    }
   }
   if (typeof window !== "undefined") {
     try {
-      const stored = localStorage.getItem(`omdb_cache_v2_${key}`);
+      const stored = localStorage.getItem(`omdb_cache_v5_${key}`);
       if (stored) {
         const parsed = JSON.parse(stored);
-        omdbMemoryCache.set(key, parsed);
-        return parsed;
+        if (parsed && (parsed.rottenTomatoes || parsed.rottenTomatoesAudience)) {
+          omdbMemoryCache.set(key, parsed);
+          return parsed;
+        }
       }
     } catch {}
   }
@@ -52,7 +57,7 @@ function writeClientCachedOmdb(key: string, data: OmdbData) {
   omdbMemoryCache.set(key, data);
   if (typeof window !== "undefined") {
     try {
-      localStorage.setItem(`omdb_cache_v2_${key}`, JSON.stringify(data));
+      localStorage.setItem(`omdb_cache_v5_${key}`, JSON.stringify(data));
     } catch {}
   }
 }
@@ -112,7 +117,7 @@ export function useOmdb(film: any, enabled = true) {
   const initialCached = readClientCachedOmdb(cacheKey);
 
   const query = useQuery<OmdbData | null>({
-    queryKey: ["omdb", cacheKey],
+    queryKey: ["omdb_v5", cacheKey],
     queryFn: () => fetchOmdbData(film, cacheKey),
     initialData: initialCached || undefined,
     enabled: enabled && !!film && !!(imdbId || tmdbId || title),
