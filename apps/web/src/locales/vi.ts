@@ -80,6 +80,8 @@ export const vi = {
     war: "Phim Chiến Tranh & Lịch Sử",
     comedy: "Phim Hài Hước & Gia Đình",
     romance: "Phim Lãng Mạn & Tình Cảm",
+    healing: "Phim Chữa Lành",
+    koreanRomance: "Phim Tình Cảm Hàn Quốc",
     topicCogu: "Tuyệt Phẩm Cổ Trang",
     topicCoguDesc: "Khám phá những siêu phẩm cổ trang lôi cuốn đầy kịch tính.",
     topicWeekend: "Cày Phim Cuối Tuần",

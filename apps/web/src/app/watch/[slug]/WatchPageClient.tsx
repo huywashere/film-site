@@ -73,6 +73,7 @@ import { TmdbArtwork } from '@/components/film/TmdbArtwork';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/providers/ToastProvider';
 import { useAuthStore } from '@/store/authStore';
+import { useAuthModalStore } from '@/store/authModalStore';
 import { useReliableNavigation } from '@/hooks/useReliableNavigation';
 import { useTranslation } from '@/store/langStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -100,10 +101,11 @@ import WatchPageSkeleton from './loading';
 import { safeJsonLd } from '@/lib/safe-json-ld';
 import { cleanMovieDescription } from '@/lib/string-utils';
 import {
-  buildTwoEmbedUrl,
+  buildVaplayerEmbedUrl,
   buildVidcoreEmbedUrl,
+  buildVidfastEmbedUrl,
   buildVidlinkEmbedUrl,
-  buildVidsrcEmbedUrl,
+  buildVidupEmbedUrl,
   episodeNumberFromLabel,
   findMatchingEpisode,
   getSourceAbbr,
@@ -1032,6 +1034,8 @@ function ReportStreamModal({
   lang: string;
 }) {
   const { toast } = useToast();
+  const user = useAuthStore((s) => s.user);
+  const openAuthModal = useAuthModalStore((s) => s.openModal);
   const [selectedReason, setSelectedReason] = useState('cannot_play');
   const [submitted, setSubmitted] = useState(false);
 
@@ -1057,6 +1061,17 @@ function ReportStreamModal({
   ];
 
   const handleSubmitReport = () => {
+    if (!user) {
+      toast(
+        lang === 'en'
+          ? 'Please log in to report stream issues.'
+          : 'Vui lòng đăng nhập để gửi báo cáo lỗi phim.',
+        'warning',
+      );
+      openAuthModal('login');
+      return;
+    }
+
     setSubmitted(true);
     toast(
       lang === 'en'
@@ -2496,29 +2511,73 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     const vsmovEps = extractEpisodes(vsmovData);
     const ophimEps = extractEpisodes(ophimData);
     const vicdnEps = extractEpisodes(vicdnData);
-    let vidsrcEps: any[] = [];
+    let vidfastEps: any[] = [];
+    let vidupEps: any[] = [];
+    let vaplayerEps: any[] = [];
     let vidlinkEps: any[] = [];
-    let twoEmbedEps: any[] = [];
     let vidcoreEps: any[] = [];
 
     if (tmdbId) {
       if (tmdbMediaType === 'movie') {
-        const vidsrcEmbedUrl = buildVidsrcEmbedUrl({
+        const vidfastEmbedUrl = buildVidfastEmbedUrl({
           tmdbId,
           mediaType: 'movie',
           autoplay: autoPlayConfig,
-          subtitle: 'en',
-          color: '23ade5',
+          theme: '23ade5',
         });
-        if (vidsrcEmbedUrl) {
-          vidsrcEps = [
+        if (vidfastEmbedUrl) {
+          vidfastEps = [
             {
-              server_name: 'VidSrc Engsub',
+              server_name: 'VidFast Engsub',
               server_data: [
                 {
                   name: 'Full Movie (Engsub)',
                   slug: 'full-engsub',
-                  link_embed: vidsrcEmbedUrl,
+                  link_embed: vidfastEmbedUrl,
+                  link_m3u8: '',
+                },
+              ],
+            },
+          ];
+        }
+
+        const vidupEmbedUrl = buildVidupEmbedUrl({
+          tmdbId,
+          mediaType: 'movie',
+          autoplay: autoPlayConfig,
+          theme: '23ade5',
+        });
+        if (vidupEmbedUrl) {
+          vidupEps = [
+            {
+              server_name: 'VidUp Engsub',
+              server_data: [
+                {
+                  name: 'Full Movie (Engsub)',
+                  slug: 'full-engsub',
+                  link_embed: vidupEmbedUrl,
+                  link_m3u8: '',
+                },
+              ],
+            },
+          ];
+        }
+
+        const vaplayerEmbedUrl = buildVaplayerEmbedUrl({
+          tmdbId,
+          mediaType: 'movie',
+          autoplay: autoPlayConfig,
+          primaryColor: '23ade5',
+        });
+        if (vaplayerEmbedUrl) {
+          vaplayerEps = [
+            {
+              server_name: 'VAPlayer Engsub',
+              server_data: [
+                {
+                  name: 'Full Movie (Engsub)',
+                  slug: 'full-engsub',
+                  link_embed: vaplayerEmbedUrl,
                   link_m3u8: '',
                 },
               ],
@@ -2541,26 +2600,6 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                   name: 'Full Movie (Engsub)',
                   slug: 'full-engsub',
                   link_embed: vidlinkEmbedUrl,
-                  link_m3u8: '',
-                },
-              ],
-            },
-          ];
-        }
-
-        const twoEmbedUrl = buildTwoEmbedUrl({
-          tmdbId,
-          mediaType: 'movie',
-        });
-        if (twoEmbedUrl) {
-          twoEmbedEps = [
-            {
-              server_name: '2Embed Engsub',
-              server_data: [
-                {
-                  name: 'Full Movie (Engsub)',
-                  slug: 'full-engsub',
-                  link_embed: twoEmbedUrl,
                   link_m3u8: '',
                 },
               ],
@@ -2620,15 +2659,14 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
           ([left], [right]) => left - right,
         );
 
-        const vidsrcServerData = sortedEpisodes.flatMap(([episodeNumber, sourceEpisode]) => {
-          const embedUrl = buildVidsrcEmbedUrl({
+        const vidfastServerData = sortedEpisodes.flatMap(([episodeNumber, sourceEpisode]) => {
+          const embedUrl = buildVidfastEmbedUrl({
             tmdbId,
             mediaType: 'tv',
             season: vidsrcSeason,
             episode: episodeNumber,
             autoplay: autoPlayConfig,
-            subtitle: 'en',
-            color: '23ade5',
+            theme: '23ade5',
           });
           return embedUrl
             ? [
@@ -2642,8 +2680,58 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
             : [];
         });
 
-        if (vidsrcServerData.length > 0) {
-          vidsrcEps = [{ server_name: 'VidSrc Engsub', server_data: vidsrcServerData }];
+        if (vidfastServerData.length > 0) {
+          vidfastEps = [{ server_name: 'VidFast Engsub', server_data: vidfastServerData }];
+        }
+
+        const vidupServerData = sortedEpisodes.flatMap(([episodeNumber, sourceEpisode]) => {
+          const embedUrl = buildVidupEmbedUrl({
+            tmdbId,
+            mediaType: 'tv',
+            season: vidsrcSeason,
+            episode: episodeNumber,
+            autoplay: autoPlayConfig,
+            theme: '23ade5',
+          });
+          return embedUrl
+            ? [
+                {
+                  name: sourceEpisode?.name || `Tập ${episodeNumber}`,
+                  slug: sourceEpisode?.slug || `tap-${episodeNumber}`,
+                  link_embed: embedUrl,
+                  link_m3u8: '',
+                },
+              ]
+            : [];
+        });
+
+        if (vidupServerData.length > 0) {
+          vidupEps = [{ server_name: 'VidUp Engsub', server_data: vidupServerData }];
+        }
+
+        const vaplayerServerData = sortedEpisodes.flatMap(([episodeNumber, sourceEpisode]) => {
+          const embedUrl = buildVaplayerEmbedUrl({
+            tmdbId,
+            mediaType: 'tv',
+            season: vidsrcSeason,
+            episode: episodeNumber,
+            autoplay: autoPlayConfig,
+            primaryColor: '23ade5',
+          });
+          return embedUrl
+            ? [
+                {
+                  name: sourceEpisode?.name || `Tập ${episodeNumber}`,
+                  slug: sourceEpisode?.slug || `tap-${episodeNumber}`,
+                  link_embed: embedUrl,
+                  link_m3u8: '',
+                },
+              ]
+            : [];
+        });
+
+        if (vaplayerServerData.length > 0) {
+          vaplayerEps = [{ server_name: 'VAPlayer Engsub', server_data: vaplayerServerData }];
         }
 
         const vidlinkServerData = sortedEpisodes.flatMap(([episodeNumber, sourceEpisode]) => {
@@ -2669,29 +2757,6 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
 
         if (vidlinkServerData.length > 0) {
           vidlinkEps = [{ server_name: 'VidLink Engsub', server_data: vidlinkServerData }];
-        }
-
-        const twoEmbedServerData = sortedEpisodes.flatMap(([episodeNumber, sourceEpisode]) => {
-          const embedUrl = buildTwoEmbedUrl({
-            tmdbId,
-            mediaType: 'tv',
-            season: vidsrcSeason,
-            episode: episodeNumber,
-          });
-          return embedUrl
-            ? [
-                {
-                  name: sourceEpisode?.name || `Tập ${episodeNumber}`,
-                  slug: sourceEpisode?.slug || `tap-${episodeNumber}`,
-                  link_embed: embedUrl,
-                  link_m3u8: '',
-                },
-              ]
-            : [];
-        });
-
-        if (twoEmbedServerData.length > 0) {
-          twoEmbedEps = [{ server_name: '2Embed Engsub', server_data: twoEmbedServerData }];
         }
 
         const vidcoreServerData = sortedEpisodes.flatMap(([episodeNumber, sourceEpisode]) => {
@@ -2792,9 +2857,10 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       ...tagSource(vsmovEps, 'vsmov'),
       ...tagSource(ophimEps, 'ophim'),
       ...tagSource(vicdnEps, 'vicdn'),
-      ...tagSource(vidsrcEps, 'vidsrc'),
+      ...tagSource(vidfastEps, 'vidfast'),
+      ...tagSource(vidupEps, 'vidup'),
+      ...tagSource(vaplayerEps, 'vaplayer'),
       ...tagSource(vidlinkEps, 'vidlink'),
-      ...tagSource(twoEmbedEps, '2embed'),
       ...tagSource(vidcoreEps, 'vidcore'),
     ];
 
@@ -3116,6 +3182,11 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
   ]);
 
   const createCurrentMovieParty = useCallback(async () => {
+    if (!user) {
+      toast('Vui lòng đăng nhập để tạo phòng xem chung.', 'warning');
+      useAuthModalStore.getState().openModal('login');
+      return null;
+    }
     const newRoomId = await createWatchPartyRoom({
       name: requestedRoomName || undefined,
       movieName: film?.name || film?.origin_name || 'Phim đang xem',
@@ -4031,6 +4102,11 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
               <button
                 onClick={() => {
                   if (!wp.roomId) {
+                    if (!user) {
+                      toast('Vui lòng đăng nhập để tạo phòng xem chung.', 'warning');
+                      useAuthModalStore.getState().openModal('login');
+                      return;
+                    }
                     setWatchPartyRequested(true);
                     setManualPartyCreateRequested(true);
                   } else {
@@ -4418,8 +4494,15 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                       allow="autoplay; fullscreen; picture-in-picture; encrypted-media; gyroscope; accelerometer"
                       referrerPolicy={
                         server?._source === 'vsmov' ||
+                        server?._source === 'vidfast' ||
+                        server?._source === 'vidup' ||
+                        server?._source === 'vaplayer' ||
                         iframeUrl.includes('streamvsmov.com') ||
-                        iframeUrl.includes('vsmov.com')
+                        iframeUrl.includes('vsmov.com') ||
+                        iframeUrl.includes('vidfast.vc') ||
+                        iframeUrl.includes('vidup.to') ||
+                        iframeUrl.includes('vaplayer.ru') ||
+                        iframeUrl.includes('nextgencloudfabric.com')
                           ? 'no-referrer'
                           : 'strict-origin-when-cross-origin'
                       }
@@ -4808,7 +4891,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                       id: 'engsub',
                       label: 'Engsub',
                       icon: Globe,
-                      sources: sourceSummary(engsubEps, 'VidSrc · VidLink · 2Embed · VidCore'),
+                      sources: sourceSummary(engsubEps, 'VidFast · VidUp · VAPlayer · VidLink · VidCore'),
                       count: engsubEps.length,
                       eps: engsubEps,
                     },

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Socket } from "socket.io-client";
 import { useAuthStore } from "@/store/authStore";
+import { useAuthModalStore } from "@/store/authModalStore";
 import { useToast } from "@/providers/ToastProvider";
 import {
   createWatchPartySocket,
@@ -183,6 +184,12 @@ export function useWatchParty(
   const createRoom = useCallback(
     (input: CreateWatchPartyInput = {}) =>
       new Promise<string | null>((resolve) => {
+        if (!user) {
+          toast("Vui lòng đăng nhập để tạo phòng xem chung.", "warning");
+          useAuthModalStore.getState().openModal("login");
+          resolve(null);
+          return;
+        }
         if (!socket?.connected) {
           toast("Chưa kết nối được máy chủ xem chung.", "error");
           resolve(null);
@@ -219,7 +226,7 @@ export function useWatchParty(
           },
         );
       }),
-    [episodeName, movieSlug, socket, toast],
+    [episodeName, movieSlug, socket, toast, user],
   );
 
   const joinRoom = useCallback(
@@ -291,6 +298,11 @@ export function useWatchParty(
 
   const sendMessage = useCallback(
     (text: string) => {
+      if (!user) {
+        toast("Vui lòng đăng nhập để tham gia trò chuyện.", "warning");
+        useAuthModalStore.getState().openModal("login");
+        return;
+      }
       if (!socket || !room?.id || !text.trim() || connectionState !== "online")
         return;
       socket.emit(
@@ -302,7 +314,7 @@ export function useWatchParty(
         },
       );
     },
-    [connectionState, room?.id, socket, toast],
+    [connectionState, room?.id, socket, toast, user],
   );
 
   const sendReaction = useCallback(

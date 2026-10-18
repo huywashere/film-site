@@ -80,6 +80,8 @@ export const en = {
     war: "War & Epic History",
     comedy: "Comedy & Family Laughs",
     romance: "Romance & Love Stories",
+    healing: "Healing & Feel-Good Movies",
+    koreanRomance: "Korean Romance Movies",
     topicCogu: "Epic Historical Dramas",
     topicCoguDesc: "Explore breathtaking oriental costume dramas and mythical legends.",
     topicWeekend: "Weekend Binge Watch",

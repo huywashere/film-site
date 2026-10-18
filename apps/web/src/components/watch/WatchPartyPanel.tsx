@@ -19,6 +19,8 @@ import type {
   WatchPartyConnectionState,
 } from "@/hooks/useWatchParty";
 import { useToast } from "@/providers/ToastProvider";
+import { useAuthStore } from "@/store/authStore";
+import { useAuthModalStore } from "@/store/authModalStore";
 import { cardFont } from "@/lib/fonts";
 
 interface WatchPartyPanelProps {
@@ -61,6 +63,8 @@ export function WatchPartyPanel({
   const [copied, setCopied] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const user = useAuthStore((s) => s.user);
+  const openAuthModal = useAuthModalStore((s) => s.openModal);
   const online = connectionState === "online";
 
   useEffect(() => {
@@ -80,6 +84,11 @@ export function WatchPartyPanel({
 
   const handleSend = (event: React.FormEvent) => {
     event.preventDefault();
+    if (!user) {
+      toast("Vui lòng đăng nhập để tham gia trò chuyện.", "warning");
+      openAuthModal("login");
+      return;
+    }
     if (!inputText.trim() || !online) return;
     onSendMessage(inputText.trim());
     setInputText("");
@@ -260,13 +269,32 @@ export function WatchPartyPanel({
               value={inputText}
               maxLength={500}
               onChange={(event) => setInputText(event.target.value)}
+              onFocus={() => {
+                if (!user) {
+                  toast("Vui lòng đăng nhập để tham gia trò chuyện.", "warning");
+                  openAuthModal("login");
+                }
+              }}
               disabled={!online}
-              placeholder={online ? "Nhắn tin trong phòng" : "Đang kết nối lại"}
-              className="h-11 min-w-0 flex-1 rounded-xl border border-white/10 bg-white/[0.035] px-3.5 text-xs text-white outline-none transition-colors placeholder:text-neutral-600 focus:border-violet-300/40 focus:bg-white/[0.05] disabled:opacity-50"
+              placeholder={
+                !user
+                  ? "Đăng nhập để tham gia trò chuyện..."
+                  : online
+                    ? "Nhắn tin trong phòng"
+                    : "Đang kết nối lại"
+              }
+              className="h-11 min-w-0 flex-1 rounded-xl border border-white/10 bg-white/[0.035] px-3.5 text-xs text-white outline-none transition-colors placeholder:text-neutral-500 focus:border-violet-300/40 focus:bg-white/[0.05] disabled:opacity-50"
             />
             <button
-              disabled={!online || !inputText.trim()}
-              className="grid h-11 w-11 place-items-center rounded-xl bg-white text-black transition-[background-color,transform] hover:bg-neutral-200 active:scale-95 disabled:cursor-not-allowed disabled:opacity-35"
+              disabled={!online || (Boolean(user) && !inputText.trim())}
+              onClick={(e) => {
+                if (!user) {
+                  e.preventDefault();
+                  toast("Vui lòng đăng nhập để tham gia trò chuyện.", "warning");
+                  openAuthModal("login");
+                }
+              }}
+              className="grid h-11 w-11 place-items-center rounded-xl bg-white text-black transition-[background-color,transform] hover:bg-neutral-200 active:scale-95 disabled:cursor-not-allowed disabled:opacity-35 cursor-pointer"
               aria-label="Gửi tin nhắn"
             >
               <Send size={15} />

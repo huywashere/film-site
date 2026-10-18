@@ -23,6 +23,8 @@ import {
 import { movieApi } from "@/lib/api";
 import { type FilmItem, resolveImageUrl } from "@/components/film/FilmCard";
 import { useToast } from "@/providers/ToastProvider";
+import { useAuthStore } from "@/store/authStore";
+import { useAuthModalStore } from "@/store/authModalStore";
 import {
   createWatchPartySocket,
   type SocketAck,
@@ -174,13 +176,26 @@ export default function WatchPartyListPage() {
     }
   };
 
+  const user = useAuthStore((s) => s.user);
+  const openAuthModal = useAuthModalStore((s) => s.openModal);
+
   const openCreateModal = (movie?: FilmItem) => {
+    if (!user) {
+      toast("Vui lòng đăng nhập để tạo phòng xem chung.", "warning");
+      openAuthModal("login");
+      return;
+    }
     setSelectedMovie(movie || defaultMovies[0] || null);
     setShowCreateModal(true);
     setSearchQuery("");
   };
 
   const handleCreateRoom = () => {
+    if (!user) {
+      toast("Vui lòng đăng nhập để tạo phòng xem chung.", "warning");
+      openAuthModal("login");
+      return;
+    }
     if (!selectedMovie) return toast("Hãy chọn một bộ phim.", "error");
     const params = new URLSearchParams({ party: "create" });
     if (customRoomName.trim()) params.set("roomName", customRoomName.trim());

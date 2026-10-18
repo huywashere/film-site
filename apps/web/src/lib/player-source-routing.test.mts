@@ -2,10 +2,13 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   buildTwoEmbedUrl,
+  buildVaplayerEmbedUrl,
   buildVicdnEmbedUrl,
   buildVidcoreEmbedUrl,
+  buildVidfastEmbedUrl,
   buildVidlinkEmbedUrl,
   buildVidsrcEmbedUrl,
+  buildVidupEmbedUrl,
   canonicalEpisodeKey,
   canUseUnsandboxedEmbed,
   deriveVsmovM3u8,
@@ -229,6 +232,9 @@ test("formats provider abbreviations correctly", () => {
   assert.equal(getSourceAbbr("vsmov"), "VS");
   assert.equal(getSourceAbbr("ophim"), "OP");
   assert.equal(getSourceAbbr("vicdn"), "ViCDN");
+  assert.equal(getSourceAbbr("vidfast"), "VidFast");
+  assert.equal(getSourceAbbr("vidup"), "VidUp");
+  assert.equal(getSourceAbbr("vaplayer"), "VAPlayer");
   assert.equal(getSourceAbbr("vidsrc"), "VidSrc");
   assert.equal(getSourceAbbr("vidlink"), "VidLink");
   assert.equal(getSourceAbbr("2embed"), "2Embed");
@@ -236,14 +242,17 @@ test("formats provider abbreviations correctly", () => {
   assert.equal(getSourceAbbr(undefined), "KP");
 });
 
-test("keeps ViCDN, VidSrc, VidLink, 2Embed, VidCore in dedicated language groups and defaults VN providers to vietsub", () => {
+test("keeps ViCDN, VidFast, VidUp, VAPlayer, VidLink, VidCore in dedicated language groups and defaults VN providers to vietsub", () => {
   assert.equal(resolveServerType("vicdn", "Server 1"), "song-ngu");
   assert.equal(resolveServerType("xink", "Server 1"), "song-ngu");
   assert.equal(resolveServerType("vodphim", "Thuyết Minh"), "song-ngu");
-  assert.equal(resolveServerType("vidsrc", "Server 1"), "engsub");
-  assert.equal(resolveServerType("vidlink", "Server 2"), "engsub");
-  assert.equal(resolveServerType("2embed", "Server 3"), "engsub");
-  assert.equal(resolveServerType("vidcore", "Server 4"), "engsub");
+  assert.equal(resolveServerType("vidfast", "Server 1"), "engsub");
+  assert.equal(resolveServerType("vidup", "Server 2"), "engsub");
+  assert.equal(resolveServerType("vaplayer", "Server 3"), "engsub");
+  assert.equal(resolveServerType("vidsrc", "Server 4"), "engsub");
+  assert.equal(resolveServerType("vidlink", "Server 5"), "engsub");
+  assert.equal(resolveServerType("2embed", "Server 6"), "engsub");
+  assert.equal(resolveServerType("vidcore", "Server 7"), "engsub");
   assert.equal(resolveServerType("kkphim", "Vietsub"), "vietsub");
   assert.equal(resolveServerType("kkphim", "Server #1"), "vietsub");
   assert.equal(resolveServerType("nguonc", "Server #1"), "vietsub");
@@ -252,6 +261,9 @@ test("keeps ViCDN, VidSrc, VidLink, 2Embed, VidCore in dedicated language groups
   assert.equal(getSourceLabel("kkphim"), "KKPhim");
   assert.equal(getSourceLabel("vodphim"), "VodPhim");
   assert.equal(getSourceLabel("xink"), "VodPhim");
+  assert.equal(getSourceLabel("vidfast"), "VidFast");
+  assert.equal(getSourceLabel("vidup"), "VidUp");
+  assert.equal(getSourceLabel("vaplayer"), "VAPlayer");
   assert.equal(getSourceLabel("vidsrc"), "VidSrc");
   assert.equal(getSourceLabel("vidlink"), "VidLink");
   assert.equal(getSourceLabel("2embed"), "2Embed");
@@ -345,6 +357,100 @@ test("builds documented vidcore.org movie and TV embed URLs", () => {
     canUseUnsandboxedEmbed("vidcore", "https://vidcore.org/embed/movie/533535"),
     true,
   );
+});
+
+test("builds documented vidfast.vc movie and TV embed URLs", () => {
+  assert.equal(
+    buildVidfastEmbedUrl({ tmdbId: 533535, mediaType: "movie", autoplay: true }),
+    "https://vidfast.vc/movie/533535?autoPlay=true&theme=23ade5",
+  );
+  assert.equal(
+    buildVidfastEmbedUrl({
+      tmdbId: "1399",
+      mediaType: "tv",
+      season: 2,
+      episode: 5,
+      autoplay: true,
+      theme: "23ade5",
+    }),
+    "https://vidfast.vc/tv/1399/2/5?autoPlay=true&nextButton=true&autoNext=true&theme=23ade5",
+  );
+  assert.equal(
+    buildVidfastEmbedUrl({
+      tmdbId: "invalid",
+      mediaType: "movie",
+    }),
+    null,
+  );
+  assert.equal(
+    canUseUnsandboxedEmbed("vidfast", "https://vidfast.vc/movie/533535"),
+    true,
+  );
+  assert.equal(isAutomaticPlaybackSource("vidfast"), false);
+});
+
+test("builds documented vidup.to movie and TV embed URLs", () => {
+  assert.equal(
+    buildVidupEmbedUrl({ tmdbId: 533535, mediaType: "movie", autoplay: true }),
+    "https://vidup.to/movie/533535?autoPlay=true&theme=23ade5",
+  );
+  assert.equal(
+    buildVidupEmbedUrl({
+      tmdbId: "1399",
+      mediaType: "tv",
+      season: 1,
+      episode: 1,
+      autoplay: true,
+      theme: "23ade5",
+    }),
+    "https://vidup.to/tv/1399/1/1?autoPlay=true&nextButton=true&autoNext=true&theme=23ade5",
+  );
+  assert.equal(
+    buildVidupEmbedUrl({
+      tmdbId: "invalid",
+      mediaType: "movie",
+    }),
+    null,
+  );
+  assert.equal(
+    canUseUnsandboxedEmbed("vidup", "https://vidup.to/movie/533535"),
+    true,
+  );
+  assert.equal(isAutomaticPlaybackSource("vidup"), false);
+});
+
+test("builds documented vaplayer.ru movie and TV embed URLs", () => {
+  assert.equal(
+    buildVaplayerEmbedUrl({ tmdbId: 533535, mediaType: "movie", autoplay: true }),
+    "https://vaplayer.ru/embed/movie/533535?autoplay=true&primaryColor=23ade5",
+  );
+  assert.equal(
+    buildVaplayerEmbedUrl({
+      tmdbId: "1399",
+      mediaType: "tv",
+      season: 3,
+      episode: 4,
+      autoplay: true,
+      primaryColor: "23ade5",
+    }),
+    "https://vaplayer.ru/embed/tv/1399/3/4?autoplay=true&primaryColor=23ade5",
+  );
+  assert.equal(
+    buildVaplayerEmbedUrl({
+      tmdbId: "invalid",
+      mediaType: "movie",
+    }),
+    null,
+  );
+  assert.equal(
+    canUseUnsandboxedEmbed("vaplayer", "https://vaplayer.ru/embed/movie/533535"),
+    true,
+  );
+  assert.equal(
+    canUseUnsandboxedEmbed("vaplayer", "https://nextgencloudfabric.com/embed/movie/533535"),
+    true,
+  );
+  assert.equal(isAutomaticPlaybackSource("vaplayer"), false);
 });
 
 test("derives native HLS stream master.m3u8 from VSMov embed URLs", () => {

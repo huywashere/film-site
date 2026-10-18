@@ -123,6 +123,9 @@ export function getSourceAbbr(source?: string): string {
   if (s.includes("vsmov") || s === "vs") return "VS";
   if (s.includes("ophim") || s === "op") return "OP";
   if (s.includes("vicdn") || s === "vicdn") return "ViCDN";
+  if (s.includes("vidfast")) return "VidFast";
+  if (s.includes("vidup")) return "VidUp";
+  if (s.includes("vaplayer") || s === "vap") return "VAPlayer";
   if (s.includes("vidsrc")) return "VidSrc";
   if (s.includes("vidlink")) return "VidLink";
   if (s.includes("2embed") || s === "2e") return "2Embed";
@@ -139,6 +142,9 @@ export function getSourceLabel(source?: string): string {
   if (value.includes("vsmov") || value === "vs") return "VSMov";
   if (value.includes("ophim") || value === "op") return "OPhim";
   if (value.includes("vicdn")) return "ViCDN";
+  if (value.includes("vidfast")) return "VidFast";
+  if (value.includes("vidup")) return "VidUp";
+  if (value.includes("vaplayer")) return "VAPlayer";
   if (value.includes("vidsrc")) return "VidSrc";
   if (value.includes("vidlink")) return "VidLink";
   if (value.includes("2embed")) return "2Embed";
@@ -158,15 +164,21 @@ const PROVIDER_PRIORITY: Record<string, number> = {
   vsmov: 30,
   ophim: 25,
   vicdn: 20,
+  vidfast: 10,
+  vidup: 9,
+  vaplayer: 8,
+  vidlink: 7,
+  vidcore: 6,
   vidsrc: 5,
-  vidlink: 4,
   "2embed": 3,
-  vidcore: 2,
 };
 
 const UNSANDBOXED_EMBED_HOST_SUFFIXES: Record<string, string[]> = {
   xink: ["playembed.vip", "xink.pro", "vodphim.com"],
   vodphim: ["playembed.vip", "xink.pro", "vodphim.com"],
+  vidfast: ["vidfast.vc"],
+  vidup: ["vidup.to"],
+  vaplayer: ["vaplayer.ru", "nextgencloudfabric.com"],
   vidsrc: ["vidsrc.sbs"],
   vidlink: ["vidlink.pro"],
   "2embed": ["2embed.cc", "2embed.skin"],
@@ -395,6 +407,143 @@ export function buildVidcoreEmbedUrl({
   return url.toString();
 }
 
+const VIDFAST_EMBED_ORIGIN = "https://vidfast.vc";
+
+export type VidfastEmbedOptions = {
+  tmdbId: unknown;
+  mediaType: "movie" | "tv";
+  season?: unknown;
+  episode?: unknown;
+  autoplay?: boolean;
+  theme?: string;
+};
+
+/** Build documented vidfast.vc TMDB embed URLs:
+ * Movie: https://vidfast.vc/movie/{tmdbId}?autoPlay=true&theme=23ade5
+ * TV: https://vidfast.vc/tv/{tmdbId}/{season}/{episode}?autoPlay=true&nextButton=true&autoNext=true&theme=23ade5
+ */
+export function buildVidfastEmbedUrl({
+  tmdbId,
+  mediaType,
+  season,
+  episode,
+  autoplay,
+  theme = "23ade5",
+}: VidfastEmbedOptions): string | null {
+  const safeTmdbId = positiveInteger(tmdbId);
+  if (!safeTmdbId) return null;
+
+  let path = `/movie/${safeTmdbId}`;
+  if (mediaType === "tv") {
+    const safeSeason = positiveInteger(season) || 1;
+    const safeEpisode = positiveInteger(episode) || 1;
+    path = `/tv/${safeTmdbId}/${safeSeason}/${safeEpisode}`;
+  }
+
+  const url = new URL(path, VIDFAST_EMBED_ORIGIN);
+  if (autoplay !== undefined) {
+    url.searchParams.set("autoPlay", autoplay ? "true" : "false");
+  }
+  if (mediaType === "tv") {
+    url.searchParams.set("nextButton", "true");
+    url.searchParams.set("autoNext", "true");
+  }
+  if (theme && /^[0-9a-f]{6}$/i.test(theme.replace(/^#/, ""))) {
+    url.searchParams.set("theme", theme.replace(/^#/, "").toLowerCase());
+  }
+  return url.toString();
+}
+
+const VIDUP_EMBED_ORIGIN = "https://vidup.to";
+
+export type VidupEmbedOptions = {
+  tmdbId: unknown;
+  mediaType: "movie" | "tv";
+  season?: unknown;
+  episode?: unknown;
+  autoplay?: boolean;
+  theme?: string;
+};
+
+/** Build documented vidup.to TMDB embed URLs:
+ * Movie: https://vidup.to/movie/{tmdbId}?autoPlay=true&theme=23ade5
+ * TV: https://vidup.to/tv/{tmdbId}/{season}/{episode}?autoPlay=true&nextButton=true&autoNext=true&theme=23ade5
+ */
+export function buildVidupEmbedUrl({
+  tmdbId,
+  mediaType,
+  season,
+  episode,
+  autoplay,
+  theme = "23ade5",
+}: VidupEmbedOptions): string | null {
+  const safeTmdbId = positiveInteger(tmdbId);
+  if (!safeTmdbId) return null;
+
+  let path = `/movie/${safeTmdbId}`;
+  if (mediaType === "tv") {
+    const safeSeason = positiveInteger(season) || 1;
+    const safeEpisode = positiveInteger(episode) || 1;
+    path = `/tv/${safeTmdbId}/${safeSeason}/${safeEpisode}`;
+  }
+
+  const url = new URL(path, VIDUP_EMBED_ORIGIN);
+  if (autoplay !== undefined) {
+    url.searchParams.set("autoPlay", autoplay ? "true" : "false");
+  }
+  if (mediaType === "tv") {
+    url.searchParams.set("nextButton", "true");
+    url.searchParams.set("autoNext", "true");
+  }
+  if (theme && /^[0-9a-f]{6}$/i.test(theme.replace(/^#/, ""))) {
+    url.searchParams.set("theme", theme.replace(/^#/, "").toLowerCase());
+  }
+  return url.toString();
+}
+
+const VAPLAYER_EMBED_ORIGIN = "https://vaplayer.ru";
+
+export type VaplayerEmbedOptions = {
+  tmdbId: unknown;
+  mediaType: "movie" | "tv";
+  season?: unknown;
+  episode?: unknown;
+  autoplay?: boolean;
+  primaryColor?: string;
+};
+
+/** Build documented vaplayer.ru TMDB embed URLs:
+ * Movie: https://vaplayer.ru/embed/movie/{tmdbId}?primaryColor=23ade5
+ * TV: https://vaplayer.ru/embed/tv/{tmdbId}/{season}/{episode}?primaryColor=23ade5
+ */
+export function buildVaplayerEmbedUrl({
+  tmdbId,
+  mediaType,
+  season,
+  episode,
+  autoplay,
+  primaryColor = "23ade5",
+}: VaplayerEmbedOptions): string | null {
+  const safeTmdbId = positiveInteger(tmdbId);
+  if (!safeTmdbId) return null;
+
+  let path = `/embed/movie/${safeTmdbId}`;
+  if (mediaType === "tv") {
+    const safeSeason = positiveInteger(season) || 1;
+    const safeEpisode = positiveInteger(episode) || 1;
+    path = `/embed/tv/${safeTmdbId}/${safeSeason}/${safeEpisode}`;
+  }
+
+  const url = new URL(path, VAPLAYER_EMBED_ORIGIN);
+  if (autoplay !== undefined) {
+    url.searchParams.set("autoplay", autoplay ? "true" : "false");
+  }
+  if (primaryColor && /^[0-9a-f]{6}$/i.test(primaryColor.replace(/^#/, ""))) {
+    url.searchParams.set("primaryColor", primaryColor.replace(/^#/, "").toLowerCase());
+  }
+  return url.toString();
+}
+
 export function episodeNumberFromLabel(value?: string): number | null {
   const key = canonicalEpisodeKey(value);
   return positiveInteger(key);
@@ -439,6 +588,9 @@ export function resolveSeasonNumber(...values: Array<string | number | null | un
 export function isAutomaticPlaybackSource(source: string | undefined) {
   return Boolean(
     source &&
+      source !== "vidfast" &&
+      source !== "vidup" &&
+      source !== "vaplayer" &&
       source !== "vidsrc" &&
       source !== "vidlink" &&
       source !== "2embed" &&
@@ -532,6 +684,9 @@ export function resolveServerType(
     return "song-ngu";
   }
   if (
+    normalizedSource === "vidfast" ||
+    normalizedSource === "vidup" ||
+    normalizedSource === "vaplayer" ||
     normalizedSource === "vidsrc" ||
     normalizedSource === "vidlink" ||
     normalizedSource === "2embed" ||

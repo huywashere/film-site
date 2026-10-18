@@ -235,7 +235,7 @@ export default function SchedulePage() {
                   <span
                     className={cn(
                       "ml-1.5 text-[10px] font-semibold",
-                      isSelected ? "text-neutral-500" : "text-sky-400",
+                      isSelected ? "text-neutral-500" : "text-purple-400",
                     )}
                   >
                     (Hôm nay)

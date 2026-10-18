@@ -302,6 +302,12 @@ export function AdvancedCommentSection({
     commentId: string,
     reactionType: "like" | "dislike",
   ) => {
+    if (!currentUser) {
+      toast("Vui lòng đăng nhập để tương tác bình luận", "warning");
+      openAuthModal("login");
+      return;
+    }
+
     const updateCommentList = (list: CommentItem[]): CommentItem[] => {
       return list.map((c) => {
         if (c.id === commentId) {

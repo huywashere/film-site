@@ -7,6 +7,10 @@ import {
   type CuratedHeroMovie,
 } from "@/lib/curated-hero-pool";
 import { localImageProxyUrl } from "@/lib/image-cdn";
+import {
+  preferTmdbBackdropSize,
+  preferTmdbPosterSize,
+} from "@/lib/hero-image";
 import { getMovieTmdbServer } from "@/lib/server/movie-tmdb-server";
 import { getMoviePageData } from "@/lib/server/movie-page-data";
 
@@ -216,12 +220,12 @@ export default async function HomePage() {
   const initialHeroFilms = await resolveInitialHeroFilms(initialPublicConfig?.heroMovieSlugs);
   const initialHero = initialHeroFilms[0];
   const initialDesktopBackdrop = initialHero?.heroBackdrop
-    ? localImageProxyUrl(initialHero.heroBackdrop, { strict: true })
+    ? localImageProxyUrl(preferTmdbBackdropSize(initialHero.heroBackdrop), { strict: true })
     : null;
   const rawMobile = initialHero?.poster_url || initialHero?.thumb_url || initialHero?.heroBackdrop;
   const initialMobileBackdrop = rawMobile
     ? localImageProxyUrl(
-        rawMobile.replace("/t/p/w1280/", "/t/p/w780/").replace("/t/p/w500/", "/t/p/w780/"),
+        preferTmdbPosterSize(rawMobile, "w780"),
         { strict: true },
       )
     : null;

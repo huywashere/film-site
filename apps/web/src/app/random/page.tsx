@@ -306,7 +306,7 @@ export default function RandomMoviePage() {
         <div className="flex flex-col sm:flex-row sm:items-end justify-between pb-3 sm:pb-4 border-b border-white/[0.08] gap-1.5 sm:gap-2">
           <div>
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-white flex items-center gap-2.5">
-              <Shuffle size={24} className="text-sky-400" />
+              <Shuffle size={24} className="text-purple-400" />
               Phim Ngẫu Nhiên
             </h1>
           </div>
@@ -342,7 +342,7 @@ export default function RandomMoviePage() {
                   <span
                     className={cn(
                       "ml-1 text-[10px] font-semibold",
-                      isSelected ? "text-neutral-500" : "text-sky-400",
+                      isSelected ? "text-neutral-500" : "text-purple-400",
                     )}
                   >
                     (Ưu tiên)
@@ -381,7 +381,7 @@ export default function RandomMoviePage() {
               type="button"
               disabled={isRolling || isLoading}
               onClick={handleRoll}
-              className="px-4 py-1.5 sm:py-2 rounded-xl text-xs font-bold whitespace-nowrap bg-sky-500 hover:bg-sky-400 text-black transition-all flex items-center gap-2 shrink-0 shadow-sm cursor-pointer active:scale-95 disabled:opacity-50"
+              className="px-4 py-1.5 sm:py-2 rounded-xl text-xs font-bold whitespace-nowrap bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white transition-all flex items-center gap-2 shrink-0 shadow-md shadow-purple-900/25 cursor-pointer active:scale-95 disabled:opacity-50"
             >
               <Shuffle size={14} className={cn(isRolling && "animate-spin")} />
               <span>{isRolling ? "Đang Bốc..." : "Bốc Phim Ngay"}</span>
@@ -411,7 +411,7 @@ export default function RandomMoviePage() {
                     className="object-cover group-hover:scale-105 transition-transform duration-300"
                     unoptimized
                   />
-                  <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-sky-500 text-black text-[9px] font-black uppercase">
+                  <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-black/85 border border-white/15 text-white text-[9px] font-black uppercase shadow-md">
                     {spotlightFilm.quality || "HD"}
                   </div>
                   <div className="absolute bottom-2 right-2 flex items-center gap-1 px-1.5 py-0.5 rounded bg-black/80 text-amber-400 text-[10px] font-bold">
@@ -473,9 +473,9 @@ export default function RandomMoviePage() {
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5 pt-2">
                   <Link
                     href={`/watch/${spotlightFilm.slug}`}
-                    className="px-5 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-black font-bold text-xs sm:text-sm flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+                    className="px-5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs sm:text-sm flex items-center gap-1.5 transition-all shadow-md shadow-purple-900/25 active:scale-95"
                   >
-                    <Play size={14} className="fill-black" />
+                    <Play size={14} className="fill-white" />
                     <span>Xem Phim Ngay</span>
                   </Link>
 
@@ -531,7 +531,7 @@ export default function RandomMoviePage() {
         <section className="space-y-3 pt-2">
           <div className="flex items-center justify-between pb-1">
             <h3 className="text-sm font-bold text-neutral-200 flex items-center gap-2">
-              <Film size={16} className="text-sky-400" />
+              <Film size={16} className="text-purple-400" />
               Kho Phim Đề Xuất Phù Hợp ({candidates.length})
             </h3>
             <span className="text-xs text-neutral-400">

@@ -22,10 +22,13 @@ const SOURCE_PRIORITY: MovieSource[] = [
   "vsmov",
   "ophim",
   "vicdn",
-  "vidsrc",
+  "vidfast",
+  "vidup",
+  "vaplayer",
   "vidlink",
-  "2embed",
   "vidcore",
+  "vidsrc",
+  "2embed",
 ];
 
 function isRecord(value: unknown): value is Record<string, unknown> {

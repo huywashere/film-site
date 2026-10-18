@@ -13,10 +13,20 @@ function isTmdbImage(url: string): boolean {
   }
 }
 
-function preferTmdbBackdropSize(url: string): string {
+export function preferTmdbBackdropSize(url: string): string {
   return url.replace(
     /\/t\/p\/(?:original|w300|w500|w780|w1280)\//i,
     "/t/p/w1280/",
+  );
+}
+
+export function preferTmdbPosterSize(
+  url: string,
+  size: "w342" | "w500" | "w780" = "w780",
+): string {
+  return url.replace(
+    /\/t\/p\/(?:original|w92|w154|w185|w300|w342|w500|w780|w1280)\//i,
+    `/t/p/${size}/`,
   );
 }
 
@@ -175,6 +185,91 @@ export function buildHeroImageCandidates(input: {
 }
 
 /**
+ * Build deterministic fallback chain for mobile hero banner.
+ * On mobile devices, authentic vertical 2:3 poster artwork (TMDB w780) is strictly
+ * prioritized over horizontal landscape backdrops.
+ */
+export function buildHeroMobilePosterCandidates(input: {
+  posterUrl?: string;
+  thumbUrl?: string;
+  heroBackdrop?: string;
+}): string[] {
+  const candidates: string[] = [];
+  const add = (candidate: string | null | undefined) => {
+    if (candidate && !candidates.includes(candidate)) {
+      candidates.push(candidate);
+    }
+  };
+
+  const poster = input.posterUrl?.trim();
+  const thumb = input.thumbUrl?.trim();
+  const backdrop = input.heroBackdrop?.trim();
+
+  // Primary: Authentic vertical poster artwork
+  if (poster) {
+    const normalized = normalizeMovieImage(poster);
+    if (normalized) {
+      const proxiedRaw = rawProxyUrl(normalized);
+      if (proxiedRaw && isTmdbImage(proxiedRaw)) {
+        const sized = preferTmdbPosterSize(proxiedRaw, "w780");
+        const wsrv = wsrvImageUrl(sized, "poster");
+        add(`${IMAGE_PROXY_PATH}?url=${encodeURIComponent(sized)}&strict=1`);
+        add(sized);
+        add(proxiedRaw);
+        if (wsrv) add(wsrv);
+        add(strictProxyUrl(normalized));
+      } else if (isTmdbImage(normalized)) {
+        const sized = preferTmdbPosterSize(normalized, "w780");
+        const wsrv = wsrvImageUrl(sized, "poster");
+        add(`${IMAGE_PROXY_PATH}?url=${encodeURIComponent(sized)}&strict=1`);
+        add(sized);
+        add(normalized);
+        if (wsrv) add(wsrv);
+      } else {
+        add(normalized);
+        if (normalized.includes("/uploads/movies/")) {
+          add(normalized.replace("/uploads/movies/", "/upload/vod/"));
+        } else if (normalized.includes("/upload/vod/")) {
+          add(normalized.replace("/upload/vod/", "/uploads/movies/"));
+        }
+        const wsrv = wsrvImageUrl(normalized, "poster");
+        if (wsrv) add(wsrv);
+        add(`${IMAGE_PROXY_PATH}?url=${encodeURIComponent(normalized)}&strict=1`);
+      }
+    }
+  }
+
+  // Fallbacks: thumb or backdrop if poster missing or all poster candidates failed
+  const fallbacks = [thumb, backdrop].filter(
+    (v): v is string => Boolean(v && v !== poster),
+  );
+
+  for (const value of fallbacks) {
+    const normalized = normalizeMovieImage(value);
+    if (!normalized) continue;
+    const proxiedRaw = rawProxyUrl(normalized);
+    if (proxiedRaw && isTmdbImage(proxiedRaw)) {
+      const sized = preferTmdbBackdropSize(proxiedRaw);
+      const wsrv = wsrvImageUrl(sized, "backdrop");
+      add(`${IMAGE_PROXY_PATH}?url=${encodeURIComponent(sized)}&strict=1`);
+      add(sized);
+      if (wsrv) add(wsrv);
+    } else if (isTmdbImage(normalized)) {
+      const sized = preferTmdbBackdropSize(normalized);
+      const wsrv = wsrvImageUrl(sized, "backdrop");
+      add(`${IMAGE_PROXY_PATH}?url=${encodeURIComponent(sized)}&strict=1`);
+      add(sized);
+      if (wsrv) add(wsrv);
+    } else {
+      add(normalized);
+      add(`${IMAGE_PROXY_PATH}?url=${encodeURIComponent(normalized)}&strict=1`);
+    }
+  }
+
+  return candidates;
+}
+
+/**
  * Build lightweight image candidates for the small cards inside the hero.
  * Direct sources are exhausted before slower relay services, preventing one
  * broken poster from delaying a valid thumb/backdrop by several round trips.
@@ -198,16 +293,24 @@ export function buildHeroCardImageCandidates(
   };
 
   // For 16:9 landscape thumbnails, prefer 16:9 widescreen backdrops first.
-  // For vertical 2:3 posters, prefer vertical poster artwork first.
-  const baseOrdered =
-    variant === "poster"
-      ? [input.posterUrl, input.thumbUrl, input.heroBackdrop]
-      : [input.heroBackdrop, input.thumbUrl, input.posterUrl];
-
-  // Prioritize TMDB artwork over low-res provider crops
-  const tmdbOrdered = baseOrdered.filter((v): v is string => Boolean(v && isTmdbImage(v)));
-  const otherOrdered = baseOrdered.filter((v): v is string => Boolean(v && !isTmdbImage(v)));
-  const ordered = [...tmdbOrdered, ...otherOrdered];
+  // For vertical 2:3 posters, strictly keep vertical poster artwork first.
+  let ordered: (string | undefined)[];
+  if (variant === "poster" && input.posterUrl) {
+    const remaining = [input.thumbUrl, input.heroBackdrop].filter(
+      (v): v is string => Boolean(v && v !== input.posterUrl),
+    );
+    const tmdbRemaining = remaining.filter((v) => isTmdbImage(rawProxyUrl(v) || v));
+    const otherRemaining = remaining.filter((v) => !isTmdbImage(rawProxyUrl(v) || v));
+    ordered = [input.posterUrl, ...tmdbRemaining, ...otherRemaining];
+  } else {
+    const baseOrdered =
+      variant === "poster"
+        ? [input.posterUrl, input.thumbUrl, input.heroBackdrop]
+        : [input.heroBackdrop, input.thumbUrl, input.posterUrl];
+    const tmdbOrdered = baseOrdered.filter((v): v is string => Boolean(v && isTmdbImage(rawProxyUrl(v) || v)));
+    const otherOrdered = baseOrdered.filter((v): v is string => Boolean(v && !isTmdbImage(rawProxyUrl(v) || v)));
+    ordered = [...tmdbOrdered, ...otherOrdered];
+  }
 
   for (const value of ordered) {
     addDirect(value);

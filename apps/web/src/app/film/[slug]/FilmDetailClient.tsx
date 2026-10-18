@@ -1250,6 +1250,8 @@ export default function FilmDetailPage({
   const [inWatchlist, setInWatchlist] = useState(false);
   const [watchlistPending, setWatchlistPending] = useState(false);
   const [myRating, setMyRating] = useState(0);
+  const [hoverRatingScore, setHoverRatingScore] = useState<number>(0);
+  const lastRatingPromptRef = useRef(0);
   const [shareCopied, setShareCopied] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -1749,9 +1751,23 @@ export default function FilmDetailPage({
     }
   };
 
+  const handleStarHoverAuth = (star: number) => {
+    if (!user) {
+      const now = Date.now();
+      if (now - lastRatingPromptRef.current > 2500) {
+        lastRatingPromptRef.current = now;
+        toast('Vui lòng đăng nhập để đánh giá phim.', 'warning');
+        useAuthModalStore.getState().openModal('login');
+      }
+      return;
+    }
+    setHoverRatingScore(star);
+  };
+
   const handleRate = async (score: number) => {
     if (!user) {
-      toast('Bạn cần đăng nhập để đánh giá', 'error');
+      toast('Vui lòng đăng nhập để đánh giá phim.', 'warning');
+      useAuthModalStore.getState().openModal('login');
       return;
     }
     try {
@@ -2197,10 +2213,48 @@ export default function FilmDetailPage({
                   </span>
                 </div>
 
-                <div className="flex flex-col items-center gap-1 group">
+                <div className="relative flex flex-col items-center gap-1 group/rate">
+                  {/* Floating Star Selector Popover on Hover */}
+                  <div
+                    className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 pointer-events-none group-hover/rate:opacity-100 group-hover/rate:pointer-events-auto transition-all duration-200 z-30"
+                    onMouseEnter={() => {
+                      if (!user) {
+                        handleStarHoverAuth(5);
+                      }
+                    }}
+                  >
+                    <div className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#181b22]/95 border border-white/15 backdrop-blur-md shadow-2xl">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onMouseEnter={() => handleStarHoverAuth(star)}
+                          onMouseLeave={() => setHoverRatingScore(0)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRate(star);
+                          }}
+                          className="p-1 transition-transform hover:scale-125 cursor-pointer active:scale-95"
+                          title={`Chấm ${star} sao`}
+                        >
+                          <Star
+                            size={16}
+                            className={cn(
+                              'transition-colors',
+                              (hoverRatingScore || myRating) >= star
+                                ? 'fill-amber-400 text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.6)]'
+                                : 'text-neutral-500 hover:text-neutral-300',
+                            )}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   <button
-                    onClick={() => handleRate(5)}
+                    onClick={() => handleRate(myRating || 5)}
                     className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center bg-[#181b22] hover:bg-[#222731] hover:border-white/20 transition-all text-neutral-200 hover:text-white cursor-pointer active:scale-95 shadow-sm"
+                    title={myRating ? `Đã đánh giá ${myRating} sao` : 'Đánh giá phim'}
                   >
                     <MorphIcon
                       icon={LucideStar}
@@ -2208,12 +2262,12 @@ export default function FilmDetailPage({
                       spring="snappy"
                       color={myRating ? '#fbbf24' : undefined}
                       className={cn(
-                        myRating ? 'text-amber-400' : 'text-neutral-200 group-hover:text-white',
+                        myRating ? 'text-amber-400 fill-amber-400' : 'text-neutral-200 group-hover/rate:text-white',
                       )}
                     />
                   </button>
-                  <span className="text-[10px] font-semibold text-neutral-300 uppercase tracking-wider group-hover:text-white transition-colors">
-                    {t('watch.rate', 'Đánh giá')}
+                  <span className="text-[10px] font-semibold text-neutral-300 uppercase tracking-wider group-hover/rate:text-white transition-colors">
+                    {myRating ? `${myRating} sao` : t('watch.rate', 'Đánh giá')}
                   </span>
                 </div>
 

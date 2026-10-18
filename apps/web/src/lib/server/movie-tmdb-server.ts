@@ -137,16 +137,16 @@ export const getMovieTmdbServer = cache(async (movie: any): Promise<ServerTmdbRe
 
     if (!resolvedId) return null;
 
-    // 3. Fetch images for the resolved ID (excluding Chinese languages)
+    // 3. Fetch images for the resolved ID
     let imagesUrl = appendAuth(
-      `${TMDB_HOST}/${resolvedType}/${resolvedId}/images?include_image_language=vi,en,null,ja,ko`,
+      `${TMDB_HOST}/${resolvedType}/${resolvedId}/images?include_image_language=vi,en,null,ja,ko,zh`,
     );
     let res = await fetch(imagesUrl, { headers, signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
     if (!res.ok && res.status === 404) {
       // Flip type and retry once (e.g. anime movie vs anime series)
       const altType = resolvedType === "tv" ? "movie" : "tv";
       imagesUrl = appendAuth(
-        `${TMDB_HOST}/${altType}/${resolvedId}/images?include_image_language=vi,en,null,ja,ko`,
+        `${TMDB_HOST}/${altType}/${resolvedId}/images?include_image_language=vi,en,null,ja,ko,zh`,
       );
       const altRes = await fetch(imagesUrl, { headers, signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
       if (altRes.ok) {

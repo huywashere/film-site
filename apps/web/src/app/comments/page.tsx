@@ -249,7 +249,7 @@ export function CommentCard({
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-xs sm:text-sm font-bold text-white group-hover:text-cyan-400 transition-colors truncate max-w-[130px] sm:max-w-[160px]">
+                <span className="text-xs sm:text-sm font-bold text-white group-hover:text-purple-400 transition-colors truncate max-w-[130px] sm:max-w-[160px]">
                   {effectiveName}
                 </span>
                 {/* Biểu tượng vô cực đồng bộ chuẩn thiết kế */}
@@ -280,7 +280,7 @@ export function CommentCard({
             <Link
               href={`/watch/${comment.movieSlug}`}
               title={`Xem phim: ${effectiveMovieTitle}`}
-              className="relative shrink-0 w-10 h-14 sm:w-11 sm:h-15 rounded-lg overflow-hidden border border-white/20 shadow-md group/poster hover:scale-105 hover:border-cyan-400 transition-all cursor-pointer block"
+              className="relative shrink-0 w-10 h-14 sm:w-11 sm:h-15 rounded-lg overflow-hidden border border-white/20 shadow-md group/poster hover:scale-105 hover:border-purple-400 transition-all cursor-pointer block"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -333,14 +333,14 @@ export function CommentCard({
               onClick={() => onToggleLike(comment.id, comment.likes)}
               className={cn(
                 "flex items-center gap-1 transition-colors cursor-pointer group/up",
-                isLiked ? "text-cyan-400 font-bold" : "hover:text-white",
+                isLiked ? "text-purple-400 font-bold" : "hover:text-white",
               )}
               title="Thích bình luận này"
             >
               <svg
                 className={cn(
                   "w-4 h-4 transition-transform group-hover/up:scale-110",
-                  isLiked ? "fill-cyan-400 text-cyan-400" : "fill-none stroke-current",
+                  isLiked ? "fill-purple-400 text-purple-400" : "fill-none stroke-current",
                 )}
                 viewBox="0 0 24 24"
                 strokeWidth="2"
@@ -381,7 +381,7 @@ export function CommentCard({
               className="flex items-center gap-1 hover:text-white transition-colors cursor-pointer group/chat"
               title="Xem thảo luận trên trang xem phim"
             >
-              <MessageSquare size={13} className="group-hover/chat:text-cyan-400 transition-colors" />
+              <MessageSquare size={13} className="group-hover/chat:text-purple-400 transition-colors" />
               <span className="text-[11px]">{comment.replyCount || 0}</span>
             </Link>
           </div>
@@ -703,6 +703,12 @@ export default function CommentsPage() {
 
   // Xử lý Thích (Upvote)
   const handleToggleLike = async (commentId: string, initialLikes: number) => {
+    if (!user) {
+      toast("Vui lòng đăng nhập để tương tác bình luận", "warning");
+      openModal("login");
+      return;
+    }
+
     const isLiked = !userLikes[commentId];
     const newLikesMap = { ...userLikes, [commentId]: isLiked };
     setUserLikes(newLikesMap);
@@ -726,6 +732,12 @@ export default function CommentsPage() {
 
   // Xử lý Không thích (Downvote)
   const handleToggleDislike = (commentId: string, initialDislikes: number) => {
+    if (!user) {
+      toast("Vui lòng đăng nhập để tương tác bình luận", "warning");
+      openModal("login");
+      return;
+    }
+
     const isDisliked = !userDislikes[commentId];
     const newDislikesMap = { ...userDislikes, [commentId]: isDisliked };
     setUserDislikes(newDislikesMap);
@@ -842,7 +854,7 @@ export default function CommentsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 sm:pb-4 border-b border-white/[0.08] gap-3">
           <div>
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-white flex items-center gap-2.5">
-              <MessageSquare size={24} className="text-cyan-400" />
+              <MessageSquare size={24} className="text-purple-400" />
               Bình Luận Phim
             </h1>
             <p className="text-[11px] sm:text-xs text-neutral-400 font-medium mt-1">
@@ -858,7 +870,7 @@ export default function CommentsPage() {
               title="Làm mới dữ liệu bình luận"
               className="p-2 sm:px-3 sm:py-2 rounded-xl text-xs font-semibold text-neutral-400 hover:text-white bg-[#12141c] border border-white/[0.08] hover:bg-white/[0.06] transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
             >
-              <RefreshCw size={13} className={cn("transition-transform", loading && "animate-spin text-cyan-400")} />
+              <RefreshCw size={13} className={cn("transition-transform", loading && "animate-spin text-purple-400")} />
               <span className="hidden sm:inline">Làm mới</span>
             </button>
 
@@ -871,7 +883,7 @@ export default function CommentsPage() {
                   setShowComposer(!showComposer);
                 }
               }}
-              className="px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 shadow-md shadow-cyan-900/20 flex items-center gap-1.5 shrink-0 transition-all cursor-pointer"
+              className="px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-md shadow-purple-900/25 flex items-center gap-1.5 shrink-0 transition-all cursor-pointer"
             >
               <Plus size={14} />
               <span>Viết Bình Luận</span>
@@ -1017,7 +1029,7 @@ export default function CommentsPage() {
           >
             <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
               <span className="text-xs font-bold text-white flex items-center gap-2">
-                <Send size={14} className="text-cyan-400" />
+                <Send size={14} className="text-purple-400" />
                 Viết đánh giá & cảm nhận của bạn
               </span>
               <div className="flex items-center gap-1">
@@ -1055,7 +1067,7 @@ export default function CommentsPage() {
                     className={cn(
                       "px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer",
                       newMovieSlug === item.slug
-                        ? "bg-cyan-500/20 text-cyan-300 border-cyan-500/40"
+                        ? "bg-purple-500/20 text-purple-300 border-purple-500/40"
                         : "bg-white/[0.03] text-neutral-400 border-white/[0.06] hover:text-white hover:bg-white/[0.06]",
                     )}
                   >
@@ -1085,7 +1097,7 @@ export default function CommentsPage() {
                         .replace(/^-|-$/g, ""),
                     );
                   }}
-                  className="w-full bg-[#181a24] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500/50"
+                  className="w-full bg-[#181a24] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500/50"
                   placeholder="Ví dụ: Oppenheimer"
                 />
               </div>
@@ -1096,7 +1108,7 @@ export default function CommentsPage() {
                     type="checkbox"
                     checked={hasSpoiler}
                     onChange={(e) => setHasSpoiler(e.target.checked)}
-                    className="rounded border-white/20 bg-neutral-800 text-cyan-500 focus:ring-0"
+                    className="rounded border-white/20 bg-neutral-800 text-purple-500 focus:ring-0"
                   />
                   <span>Chứa nội dung tiết lộ (Spoiler)</span>
                 </label>
@@ -1108,7 +1120,7 @@ export default function CommentsPage() {
               value={newContent}
               onChange={(e) => setNewContent(e.target.value)}
               placeholder="Chia sẻ cảm xúc, phân tích nhân vật hoặc góc nhìn của bạn về bộ phim này..."
-              className="w-full bg-[#181a24] border border-white/[0.08] rounded-xl p-3 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-cyan-500/50 resize-none"
+              className="w-full bg-[#181a24] border border-white/[0.08] rounded-xl p-3 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-purple-500/50 resize-none"
             />
 
             <div className="flex justify-end gap-2">
@@ -1122,7 +1134,7 @@ export default function CommentsPage() {
               <button
                 type="submit"
                 disabled={submitting || !newContent.trim()}
-                className="px-4 py-1.5 rounded-xl text-xs font-bold bg-cyan-500 hover:bg-cyan-400 text-black flex items-center gap-1.5 disabled:opacity-50 transition-colors cursor-pointer"
+                className="px-4 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white flex items-center gap-1.5 disabled:opacity-50 transition-colors cursor-pointer shadow-md shadow-purple-900/25"
               >
                 <Send size={12} />
                 <span>{submitting ? "Đang gửi..." : "Đăng bình luận"}</span>

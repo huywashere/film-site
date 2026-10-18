@@ -1,5 +1,9 @@
 "use client";
-import { useState } from "react";
+
+import { useState, useRef } from "react";
+import { useAuthStore } from "@/store/authStore";
+import { useAuthModalStore } from "@/store/authModalStore";
+import { useToast } from "@/providers/ToastProvider";
 
 interface StarRatingProps {
   value?: number; // 0.5 - 5.0
@@ -17,6 +21,23 @@ export function StarRating({
   showValue = false,
 }: StarRatingProps) {
   const [hovered, setHovered] = useState<number | null>(null);
+  const user = useAuthStore((s) => s.user);
+  const openAuthModal = useAuthModalStore((s) => s.openModal);
+  const { toast } = useToast();
+  const lastPromptRef = useRef(0);
+
+  const requireAuth = () => {
+    if (!user && !readonly) {
+      const now = Date.now();
+      if (now - lastPromptRef.current > 2500) {
+        lastPromptRef.current = now;
+        toast("Vui lòng đăng nhập để đánh giá phim.", "warning");
+        openAuthModal("login");
+      }
+      return true;
+    }
+    return false;
+  };
 
   const displayValue = hovered !== null ? hovered : value;
   const stars = [1, 2, 3, 4, 5];
@@ -50,8 +71,18 @@ export function StarRating({
             <button
               key={star}
               disabled={readonly}
-              onClick={() => !readonly && onChange?.(star)}
-              onMouseEnter={() => !readonly && setHovered(star)}
+              onClick={() => {
+                if (!readonly) {
+                  if (requireAuth()) return;
+                  onChange?.(star);
+                }
+              }}
+              onMouseEnter={() => {
+                if (!readonly) {
+                  if (requireAuth()) return;
+                  setHovered(star);
+                }
+              }}
               onMouseLeave={() => !readonly && setHovered(null)}
               className={!readonly ? "star-rating-btn" : ""}
               style={{

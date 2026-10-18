@@ -243,7 +243,18 @@ function ResilientGenreHeroBackdrop({
   isPlayingVideo: boolean;
   ytKey: string | null;
 }) {
-  const candidates = useMemo(() => {
+  const mobileCandidates = useMemo(() => {
+    const directList = [item.poster_url, item.thumb_url, item.heroBackdrop].filter(Boolean) as string[];
+    const all: string[] = [];
+    for (const url of directList) {
+      for (const cand of buildAsianHeroImageCandidates(url)) {
+        if (!all.includes(cand)) all.push(cand);
+      }
+    }
+    return all;
+  }, [item.poster_url, item.thumb_url, item.heroBackdrop]);
+
+  const desktopCandidates = useMemo(() => {
     const directList = [item.heroBackdrop, item.thumb_url, item.poster_url].filter(Boolean) as string[];
     const all: string[] = [];
     for (const url of directList) {
@@ -254,36 +265,46 @@ function ResilientGenreHeroBackdrop({
     return all;
   }, [item.heroBackdrop, item.thumb_url, item.poster_url]);
 
-  const [candidateIdx, setCandidateIdx] = useState(0);
+  const [desktopIdx, setDesktopIdx] = useState(0);
+  const [mobileIdx, setMobileIdx] = useState(0);
 
   useEffect(() => {
-    setCandidateIdx(0);
+    setDesktopIdx(0);
+    setMobileIdx(0);
   }, [item.slug, item.heroBackdrop, item.thumb_url, item.poster_url]);
 
-  const currentSrc = candidates[candidateIdx] || item.heroBackdrop || item.thumb_url || "";
+  const mobileSrc = mobileCandidates[mobileIdx] || item.poster_url || item.thumb_url || item.heroBackdrop || "";
+  const desktopSrc = desktopCandidates[desktopIdx] || item.heroBackdrop || item.thumb_url || "";
 
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      key={`${item.slug}-backdrop-${candidateIdx}`}
-      src={currentSrc}
-      alt={item.name}
-      referrerPolicy="no-referrer"
-      loading="eager"
-      decoding="async"
-      fetchPriority="high"
-      onError={() => {
-        if (candidateIdx < candidates.length - 1) {
-          setCandidateIdx((prev) => prev + 1);
-        }
-      }}
-      className={cn(
-        "w-full h-full object-cover object-center transition-opacity duration-1000",
-        isPlayingVideo && ytKey
-          ? "opacity-0"
-          : "opacity-100 brightness-[0.82] contrast-[1.06]",
-      )}
-    />
+    <picture className="w-full h-full block">
+      <source media="(max-width: 767px)" srcSet={mobileSrc} />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        key={`${item.slug}-backdrop-${desktopIdx}-${mobileIdx}`}
+        src={desktopSrc}
+        alt={item.name}
+        referrerPolicy="no-referrer"
+        loading="eager"
+        decoding="async"
+        fetchPriority="high"
+        onError={() => {
+          if (typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches) {
+            if (mobileIdx < mobileCandidates.length - 1) {
+              setMobileIdx((prev) => prev + 1);
+            }
+          } else if (desktopIdx < desktopCandidates.length - 1) {
+            setDesktopIdx((prev) => prev + 1);
+          }
+        }}
+        className={cn(
+          "w-full h-full object-cover object-top sm:object-center transition-opacity duration-1000",
+          isPlayingVideo && ytKey
+            ? "opacity-0"
+            : "opacity-100 brightness-[0.82] contrast-[1.06]",
+        )}
+      />
+    </picture>
   );
 }
 

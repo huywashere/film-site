@@ -91,6 +91,380 @@ const CURATED_VFX_FILM_ITEMS: FilmItem[] = CURATED_VFX_HERO_POOL.map((item) => (
   tmdb: item.tmdb,
 }));
 
+const CURATED_KOREAN_ROMANCE_FILM_ITEMS: FilmItem[] = [
+  {
+    _id: "ha-canh-noi-anh",
+    slug: "ha-canh-noi-anh",
+    name: "Hạ Cánh Nơi Anh",
+    origin_name: "Crash Landing on You",
+    poster_url: "https://phimimg.com/upload/vod/20240312-1/05197bbc8d624a3e0ae6c9fcdb7c6ee8.jpg",
+    thumb_url: "https://phimimg.com/upload/vod/20240312-1/730bba171e170e0b0d20e70ce51d45c4.jpg",
+    quality: "FHD",
+    lang: "Vietsub",
+    year: 2019,
+    type: "series",
+    vote_average: 8.9,
+    rating: 8.9,
+    category: [{ name: "Tình Cảm", slug: "tinh-cam" }],
+    country: [{ name: "Hàn Quốc", slug: "han-quoc" }],
+  },
+  {
+    _id: "nu-hoang-nuoc-mat",
+    slug: "nu-hoang-nuoc-mat",
+    name: "Nữ Hoàng Nước Mắt",
+    origin_name: "Queen Of Tears",
+    poster_url: "https://phimimg.com/uploads/movies/20260723/nu-hoang-nuoc-mat-poster.webp",
+    thumb_url: "https://phimimg.com/uploads/movies/20260723/nu-hoang-nuoc-mat-thumb.webp",
+    quality: "FHD",
+    lang: "Vietsub + Thuyết Minh",
+    year: 2024,
+    type: "series",
+    vote_average: 8.6,
+    rating: 8.6,
+    category: [{ name: "Tình Cảm", slug: "tinh-cam" }],
+    country: [{ name: "Hàn Quốc", slug: "han-quoc" }],
+  },
+  {
+    _id: "hen-ho-chon-cong-so",
+    slug: "hen-ho-chon-cong-so",
+    name: "Hẹn Hò Chốn Công Sở",
+    origin_name: "Business Proposal",
+    poster_url: "https://phimimg.com/upload/vod/20240319-1/99d76187b7a370f64238e9cb5cffbb4a.jpg",
+    thumb_url: "https://phimimg.com/upload/vod/20240319-1/300fa4392411a44d497d6c00e66de13a.jpg",
+    quality: "FHD",
+    lang: "Vietsub",
+    year: 2022,
+    type: "series",
+    vote_average: 8.4,
+    rating: 8.4,
+    category: [{ name: "Tình Cảm", slug: "tinh-cam" }],
+    country: [{ name: "Hàn Quốc", slug: "han-quoc" }],
+  },
+  {
+    _id: "hau-due-mat-troi",
+    slug: "hau-due-mat-troi",
+    name: "Hậu Duệ Mặt Trời",
+    origin_name: "Descendants Of The Sun",
+    poster_url: "https://phimimg.com/upload/vod/20240814-1/babd321c8a7bedc86b09fead89459ed8.jpg",
+    thumb_url: "https://phimimg.com/upload/vod/20240814-1/7bb4992625e35a10b3d5cef173fe2509.jpg",
+    quality: "FHD",
+    lang: "Vietsub",
+    year: 2016,
+    type: "series",
+    vote_average: 8.7,
+    rating: 8.7,
+    category: [{ name: "Tình Cảm", slug: "tinh-cam" }],
+    country: [{ name: "Hàn Quốc", slug: "han-quoc" }],
+  },
+  {
+    _id: "thu-ky-kim-sao-the",
+    slug: "thu-ky-kim-sao-the",
+    name: "Thư Ký Kim Sao Thế?",
+    origin_name: "What's Wrong with Secretary Kim",
+    poster_url: "https://phimimg.com/upload/vod/20240729-1/1ae80cef1d1876d74e994cb53b16d5bd.jpg",
+    thumb_url: "https://phimimg.com/upload/vod/20240729-1/3076a178e12a412decd75b3afa18bc04.jpg",
+    quality: "FHD",
+    lang: "Vietsub",
+    year: 2018,
+    type: "series",
+    vote_average: 8.3,
+    rating: 8.3,
+    category: [{ name: "Tình Cảm", slug: "tinh-cam" }],
+    country: [{ name: "Hàn Quốc", slug: "han-quoc" }],
+  },
+  {
+    _id: "khach-san-vuong-gia",
+    slug: "khach-san-vuong-gia",
+    name: "Khách Sạn Vương Giả",
+    origin_name: "King The Land",
+    poster_url: "https://phimimg.com/upload/vod/20240314-1/8364cf0c68c66c767b15e12e3aeb5259.jpg",
+    thumb_url: "https://phimimg.com/upload/vod/20240314-1/6ba0418a61ce955e172ab21d73d62c4c.jpg",
+    quality: "FHD",
+    lang: "Vietsub",
+    year: 2023,
+    type: "series",
+    vote_average: 8.1,
+    rating: 8.1,
+    category: [{ name: "Tình Cảm", slug: "tinh-cam" }],
+    country: [{ name: "Hàn Quốc", slug: "han-quoc" }],
+  },
+  {
+    _id: "dien-thi-co-sao",
+    slug: "dien-thi-co-sao",
+    name: "Điên Thì Có Sao",
+    origin_name: "It's Okay to Not Be Okay",
+    poster_url: "https://phimimg.com/upload/vod/20241120-1/2e0f59c2a8f554d7930da4bc0c82d770.jpg",
+    thumb_url: "https://phimimg.com/upload/vod/20241120-1/e7a74bf78521aac4099c3ca7a5e2b21f.jpg",
+    quality: "FHD",
+    lang: "Vietsub",
+    year: 2020,
+    type: "series",
+    vote_average: 8.6,
+    rating: 8.6,
+    category: [{ name: "Tình Cảm", slug: "tinh-cam" }],
+    country: [{ name: "Hàn Quốc", slug: "han-quoc" }],
+  },
+  {
+    _id: "vi-sao-dua-anh-toi",
+    slug: "vi-sao-dua-anh-toi",
+    name: "Vì Sao Đưa Anh Tới",
+    origin_name: "My Love From The Star",
+    poster_url: "https://phimimg.com/upload/vod/20240118-1/b5a11f84b1974d47dbd52b77d604cb66.jpg",
+    thumb_url: "https://phimimg.com/upload/vod/20240118-1/ca6b29b4326b5b347a081d83317e3a10.jpg",
+    quality: "HD",
+    lang: "Vietsub",
+    year: 2013,
+    type: "series",
+    vote_average: 8.5,
+    rating: 8.5,
+    category: [{ name: "Tình Cảm", slug: "tinh-cam" }],
+    country: [{ name: "Hàn Quốc", slug: "han-quoc" }],
+  },
+  {
+    _id: "co-nang-cu-ta-kim-bok-joo",
+    slug: "co-nang-cu-ta-kim-bok-joo",
+    name: "Cô Nàng Cử Tạ Kim Bok Joo",
+    origin_name: "Weightlifting Fairy Kim Bok-joo",
+    poster_url: "https://phimimg.com/upload/vod/20240729-1/6591a51e040124b41e87f4c21394d364.jpg",
+    thumb_url: "https://phimimg.com/upload/vod/20240729-1/11ad813cf34331ce3512d48818365704.jpg",
+    quality: "FHD",
+    lang: "Vietsub",
+    year: 2016,
+    type: "series",
+    vote_average: 8.4,
+    rating: 8.4,
+    category: [{ name: "Tình Cảm", slug: "tinh-cam" }],
+    country: [{ name: "Hàn Quốc", slug: "han-quoc" }],
+  },
+  {
+    _id: "co-nang-manh-me-do-bong-soon",
+    slug: "co-nang-manh-me-do-bong-soon",
+    name: "Cô Nàng Mạnh Mẽ Do Bong Soon",
+    origin_name: "Strong Woman Do Bong-Soon",
+    poster_url: "https://phimimg.com/uploads/movies/20260810/co-nang-manh-me-do-bong-soon-poster.webp",
+    thumb_url: "https://phimimg.com/uploads/movies/20260810/co-nang-manh-me-do-bong-soon-thumb.webp",
+    quality: "FHD",
+    lang: "Vietsub",
+    year: 2017,
+    type: "series",
+    vote_average: 8.4,
+    rating: 8.4,
+    category: [{ name: "Tình Cảm", slug: "tinh-cam" }],
+    country: [{ name: "Hàn Quốc", slug: "han-quoc" }],
+  },
+  {
+    _id: "nguoi-tinh-anh-trang",
+    slug: "nguoi-tinh-anh-trang",
+    name: "Người Tình Ánh Trăng",
+    origin_name: "Scarlet Heart: Ryeo (Moon Lovers)",
+    poster_url: "https://phimimg.com/upload/vod/20250907-1/d0395e8cd4b62b13d60dd939ab043890.jpg",
+    thumb_url: "https://phimimg.com/upload/vod/20250907-1/4338e288f9272c710bed96421319e02f.jpg",
+    quality: "FHD",
+    lang: "Vietsub + Lồng Tiếng",
+    year: 2016,
+    type: "series",
+    vote_average: 8.8,
+    rating: 8.8,
+    category: [{ name: "Tình Cảm", slug: "tinh-cam" }],
+    country: [{ name: "Hàn Quốc", slug: "han-quoc" }],
+  },
+];
+
+const CURATED_HEALING_FILM_ITEMS: FilmItem[] = [
+  {
+    _id: "loi-hoi-dap-1988",
+    slug: "loi-hoi-dap-1988",
+    name: "Lời Hồi Đáp 1988",
+    origin_name: "Reply 1988",
+    poster_url: "https://phimimg.com/upload/vod/20240410-1/a0209c13b28b70ba5ba837b0d774a3b1.jpg",
+    thumb_url: "https://phimimg.com/upload/vod/20240410-1/2a08871409d577caeb2be3f7384aa37a.jpg",
+    quality: "FHD",
+    lang: "Vietsub + Thuyết Minh",
+    year: 2015,
+    type: "series",
+    vote_average: 9.2,
+    rating: 9.2,
+    category: [{ name: "Chữa Lành", slug: "tam-ly" }, { name: "Gia Đình", slug: "gia-dinh" }],
+    country: [{ name: "Hàn Quốc", slug: "han-quoc" }],
+  },
+  {
+    _id: "di-den-noi-co-gio",
+    slug: "di-den-noi-co-gio",
+    name: "Đi Đến Nơi Có Gió",
+    origin_name: "Meet Yourself",
+    poster_url: "https://phimimg.com/upload/vod/20251108-1/17eb0f07b5aec4c9b54e6493cee341ff.jpg",
+    thumb_url: "https://phimimg.com/upload/vod/20251108-1/69debe7ddfece3fa0d021cdf68f5ee2f.jpg",
+    quality: "FHD",
+    lang: "Vietsub + Thuyết Minh + Lồng Tiếng",
+    year: 2023,
+    type: "series",
+    vote_average: 8.8,
+    rating: 8.8,
+    category: [{ name: "Chữa Lành", slug: "tam-ly" }, { name: "Tình Cảm", slug: "tinh-cam" }],
+    country: [{ name: "Trung Quốc", slug: "trung-quoc" }],
+  },
+  {
+    _id: "khu-rung-nho",
+    slug: "khu-rung-nho",
+    name: "Khu Rừng Nhỏ",
+    origin_name: "Little Forest",
+    poster_url: "https://phimimg.com/upload/vod/20231114-1/125e2a43fe6b19f72d082ae94a098bb3.jpg",
+    thumb_url: "https://phimimg.com/upload/vod/20231114-1/cf0dac74af19f1b4a0d4547b74576829.jpg",
+    quality: "HD",
+    lang: "Vietsub",
+    year: 2018,
+    type: "single",
+    vote_average: 8.2,
+    rating: 8.2,
+    category: [{ name: "Chữa Lành", slug: "tam-ly" }],
+    country: [{ name: "Hàn Quốc", slug: "han-quoc" }],
+  },
+  {
+    _id: "dieu-ky-dieu",
+    slug: "dieu-ky-dieu",
+    name: "Điều Kỳ Diệu",
+    origin_name: "Wonder",
+    poster_url: "https://phimimg.com/upload/vod/20231024-1/e8aa04e0e2f2ac542a11b5834ab99455.jpg",
+    thumb_url: "https://phimimg.com/upload/vod/20231024-1/af906c86adaf4c8c4a4d6cdb775ae7fa.jpg",
+    quality: "HD",
+    lang: "Vietsub",
+    year: 2017,
+    type: "single",
+    vote_average: 8.0,
+    rating: 8.0,
+    category: [{ name: "Chữa Lành", slug: "tam-ly" }, { name: "Gia Đình", slug: "gia-dinh" }],
+    country: [{ name: "Âu Mỹ", slug: "au-my" }],
+  },
+  {
+    _id: "hang-xom-cua-toi-la-totoro",
+    slug: "hang-xom-cua-toi-la-totoro",
+    name: "Hàng Xóm Của Tôi Là Totoro",
+    origin_name: "My Neighbor Totoro",
+    poster_url: "https://phimimg.com/upload/vod/20250716-1/955eea6529face73697d1a49494fee79.jpg",
+    thumb_url: "https://phimimg.com/upload/vod/20250716-1/0106ac6b04c1c11d8a83991fbf87714d.jpg",
+    quality: "FHD",
+    lang: "Vietsub + Lồng Tiếng",
+    year: 1988,
+    type: "hoathinh",
+    vote_average: 8.4,
+    rating: 8.4,
+    category: [{ name: "Chữa Lành", slug: "tam-ly" }, { name: "Hoạt Hình", slug: "hoat-hinh" }],
+    country: [{ name: "Nhật Bản", slug: "nhat-ban" }],
+  },
+  {
+    _id: "vung-dat-linh-hon",
+    slug: "vung-dat-linh-hon",
+    name: "Vùng Đất Linh Hồn",
+    origin_name: "Spirited Away",
+    poster_url: "https://phimimg.com/upload/vod/20250716-1/cdd1c3fa96086f48519393cc1ad98f7e.jpg",
+    thumb_url: "https://phimimg.com/upload/vod/20250716-1/3be680dcb8b627540ea2703730db511f.jpg",
+    quality: "FHD",
+    lang: "Vietsub + Lồng Tiếng",
+    year: 2001,
+    type: "hoathinh",
+    vote_average: 8.6,
+    rating: 8.6,
+    category: [{ name: "Chữa Lành", slug: "tam-ly" }, { name: "Hoạt Hình", slug: "hoat-hinh" }],
+    country: [{ name: "Nhật Bản", slug: "nhat-ban" }],
+  },
+  {
+    _id: "nhat-ky-tu-do-cua-toi",
+    slug: "nhat-ky-tu-do-cua-toi",
+    name: "Nhật Ký Tự Do Của Tôi",
+    origin_name: "My Liberation Notes",
+    poster_url: "https://phimimg.com/upload/vod/20240520-1/e4cc7f7f999f6f0ebb5ef60886dba374.jpg",
+    thumb_url: "https://phimimg.com/upload/vod/20240520-1/59fecfad85f554218346fa2e6e387292.jpg",
+    quality: "HD",
+    lang: "Vietsub",
+    year: 2022,
+    type: "series",
+    vote_average: 8.3,
+    rating: 8.3,
+    category: [{ name: "Chữa Lành", slug: "tam-ly" }],
+    country: [{ name: "Hàn Quốc", slug: "han-quoc" }],
+  },
+  {
+    _id: "khi-hoa-tra-no",
+    slug: "khi-hoa-tra-no",
+    name: "Khi Hoa Trà Nở",
+    origin_name: "When the Camellia Blooms",
+    poster_url: "https://phimimg.com/upload/vod/20241222-1/7a2a69c47f76995441bc5efa56ad5406.jpg",
+    thumb_url: "https://phimimg.com/upload/vod/20241222-1/740332ada3d5b99aa3d326d69b3205ff.jpg",
+    quality: "FHD",
+    lang: "Vietsub",
+    year: 2019,
+    type: "series",
+    vote_average: 8.2,
+    rating: 8.2,
+    category: [{ name: "Chữa Lành", slug: "tam-ly" }, { name: "Tình Cảm", slug: "tinh-cam" }],
+    country: [{ name: "Hàn Quốc", slug: "han-quoc" }],
+  },
+  {
+    _id: "nguoi-thay-y-duc-phan-1",
+    slug: "nguoi-thay-y-duc-phan-1",
+    name: "Người Thầy Y Đức (Phần 1)",
+    origin_name: "Dr. Romantic (Season 1)",
+    poster_url: "https://phimimg.com/upload/vod/20231004-1/aedaed06dd0202136691549aa2bb08ae.jpg",
+    thumb_url: "https://phimimg.com/upload/vod/20231004-1/a7bfcabb5e14f09d071737b4f7f3d892.jpg",
+    quality: "FHD",
+    lang: "Vietsub + Thuyết Minh",
+    year: 2016,
+    type: "series",
+    vote_average: 8.4,
+    rating: 8.4,
+    category: [{ name: "Chữa Lành", slug: "tam-ly" }],
+    country: [{ name: "Hàn Quốc", slug: "han-quoc" }],
+  },
+  {
+    _id: "tiem-ca-phe-chua-lanh",
+    slug: "tiem-ca-phe-chua-lanh",
+    name: "Tiệm Cà Phê Chữa Lành",
+    origin_name: "Finland Papa",
+    poster_url: "https://phimimg.com/upload/vod/20240309-1/267fe3cf3eef63946ae6331ed68dd2ef.jpg",
+    thumb_url: "https://phimimg.com/upload/vod/20240309-1/734e423aa8972c59e2608140d9fa46e8.jpg",
+    quality: "HD",
+    lang: "Vietsub",
+    year: 2023,
+    type: "series",
+    vote_average: 8.0,
+    rating: 8.0,
+    category: [{ name: "Chữa Lành", slug: "tam-ly" }],
+    country: [{ name: "Hàn Quốc", slug: "han-quoc" }],
+  },
+  {
+    _id: "nha-tro-waikiki",
+    slug: "nha-tro-waikiki",
+    name: "Nhà Trọ Waikiki",
+    origin_name: "Welcome to Waikiki",
+    poster_url: "https://phimimg.com/upload/vod/20250116-1/3f24a722ca1743f14205a0fffcb3d4a7.jpg",
+    thumb_url: "https://phimimg.com/upload/vod/20250116-1/9554a4009e48897518965672ad56ea97.jpg",
+    quality: "FHD",
+    lang: "Vietsub",
+    year: 2018,
+    type: "series",
+    vote_average: 8.3,
+    rating: 8.3,
+    category: [{ name: "Chữa Lành", slug: "tam-ly" }, { name: "Hài Hước", slug: "hai-huoc" }],
+    country: [{ name: "Hàn Quốc", slug: "han-quoc" }],
+  },
+  {
+    _id: "nguoi-tinh-chua-lanh",
+    slug: "nguoi-tinh-chua-lanh",
+    name: "Người Tình Chữa Lành",
+    origin_name: "Love Is Panacea",
+    poster_url: "https://phimimg.com/upload/vod/20250218-1/36a7a22a7c06b0ccfd53f799cc8d0c22.jpg",
+    thumb_url: "https://phimimg.com/upload/vod/20250218-1/c30a64ee0ecb0d019b2c78f4d99bca79.jpg",
+    quality: "FHD",
+    lang: "Vietsub",
+    year: 2023,
+    type: "series",
+    vote_average: 8.1,
+    rating: 8.1,
+    category: [{ name: "Chữa Lành", slug: "tam-ly" }],
+    country: [{ name: "Trung Quốc", slug: "trung-quoc" }],
+  },
+];
+
 const CURATED_ADVENTURE_FILM_ITEMS: FilmItem[] = [
   {
     _id: "tho-san-co-vat",
@@ -614,6 +988,8 @@ const SECTION_TITLE_TONES: Record<string, string> = {
     "from-stone-300 via-neutral-400 to-slate-300",
   "Phim Hài": "from-yellow-300 via-lime-300 to-emerald-300",
   "Phim Tình Cảm": "from-fuchsia-400 via-pink-400 to-rose-300",
+  "Phim Chữa Lành": "from-teal-300 via-emerald-400 to-green-300",
+  "Phim Tình Cảm Hàn Quốc": "from-rose-400 via-pink-400 to-purple-300",
 };
 
 function sectionTitleTone(title: string) {
@@ -1131,6 +1507,70 @@ export default function HomePageClient({
   const scifiData = vfxGenreData;
   const scifiLoading = secondaryCatalogReady && homeFeedLoading;
 
+  // Phim Tình Cảm Hàn Quốc (K-Drama Romance)
+  const { data: remoteKoreanRomanceData, isLoading: koreanRomanceQueryLoading } = useQuery({
+    queryKey: ["home-section-korean-romance-v1"],
+    queryFn: async () => {
+      try {
+        const [res1, res2] = await Promise.all([
+          movieApi.getFiltered({ country: "han-quoc", category: "tinh-cam", page: 1, limit: 24 }),
+          movieApi.getFiltered({ country: "han-quoc", category: "tinh-cam", page: 2, limit: 24 }),
+        ]);
+        const list1 = extractFilmItems(res1.data);
+        const list2 = extractFilmItems(res2.data);
+        return [...list1, ...list2] as unknown as FilmItem[];
+      } catch {
+        return [];
+      }
+    },
+    staleTime: 10 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    retry: false,
+    refetchOnWindowFocus: false,
+    enabled: catalogReady,
+  });
+
+  const koreanRomanceFilms = useMemo(() => {
+    const remote = (remoteKoreanRomanceData || []) as FilmItem[];
+    return deduplicate([
+      ...CURATED_KOREAN_ROMANCE_FILM_ITEMS,
+      ...remote,
+    ]);
+  }, [remoteKoreanRomanceData]);
+  const koreanRomanceLoading = catalogReady && homeFeedLoading && koreanRomanceQueryLoading && !koreanRomanceFilms.length;
+
+  // Phim Chữa Lành (Healing & Wholesome Life Drama)
+  const { data: remoteHealingData, isLoading: healingQueryLoading } = useQuery({
+    queryKey: ["home-section-healing-v1"],
+    queryFn: async () => {
+      try {
+        const [res1, res2] = await Promise.all([
+          movieApi.getFiltered({ category: "tam-ly", page: 1, limit: 24 }),
+          movieApi.getFiltered({ category: "gia-dinh", page: 1, limit: 24 }),
+        ]);
+        const list1 = extractFilmItems(res1.data);
+        const list2 = extractFilmItems(res2.data);
+        return [...list1, ...list2] as unknown as FilmItem[];
+      } catch {
+        return [];
+      }
+    },
+    staleTime: 10 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    retry: false,
+    refetchOnWindowFocus: false,
+    enabled: catalogReady,
+  });
+
+  const healingFilms = useMemo(() => {
+    const remote = (remoteHealingData || []) as FilmItem[];
+    return deduplicate([
+      ...CURATED_HEALING_FILM_ITEMS,
+      ...remote,
+    ]);
+  }, [remoteHealingData]);
+  const healingLoading = catalogReady && homeFeedLoading && healingQueryLoading && !healingFilms.length;
+
   // 5-7. Các hàng danh mục chính được trả chung trong home-feed để trình
   // duyệt không phải tạo thêm request khi người dùng cuộn trang chủ.
   const { data: horrorFallbackData, isLoading: horrorFallbackLoading } =
@@ -1598,6 +2038,8 @@ export default function HomePageClient({
     warRowList,
     comedyRowList,
     romanceRowList,
+    koreanRomanceRowList,
+    healingRowList,
   } = useMemo(() => {
     const buildRow = (rawFilms: FilmItem[], targetCount = 14): FilmItem[] => {
       return deduplicate(rawFilms).slice(0, targetCount);
@@ -1609,6 +2051,8 @@ export default function HomePageClient({
     const vfxRowList = buildRow(vfxFilms, 14);
     const usUkSeriesRowList = buildRow(usUkSeriesFilms, 30);
     const actionRowList = buildRow(actionFilms, 14);
+    const koreanRomanceRowList = buildRow(koreanRomanceFilms, 14);
+    const healingRowList = buildRow(healingFilms, 14);
     const scifiRowList = buildRow(scifiFilms, 14);
     const horrorRowList = buildRow(horrorFilms, 14);
     const historicalRowList = buildRow(historicalFilms, 14);
@@ -1633,6 +2077,8 @@ export default function HomePageClient({
         ...vfxRowList,
         ...usUkSeriesRowList,
         ...actionRowList,
+        ...koreanRomanceRowList,
+        ...healingRowList,
         ...scifiRowList,
         ...horrorRowList,
         ...historicalRowList,
@@ -1657,6 +2103,8 @@ export default function HomePageClient({
       ...latestFilms,
       ...usUkSeriesFilms,
       ...actionFilms,
+      ...koreanRomanceFilms,
+      ...healingFilms,
       ...vfxFilms,
       ...scifiFilms,
       ...horrorFilms,
@@ -1686,6 +2134,8 @@ export default function HomePageClient({
       vfxRowList,
       usUkSeriesRowList,
       actionRowList,
+      koreanRomanceRowList,
+      healingRowList,
       scifiRowList,
       horrorRowList,
       historicalRowList,
@@ -1708,6 +2158,8 @@ export default function HomePageClient({
     vfxFilms,
     usUkSeriesFilms,
     actionFilms,
+    koreanRomanceFilms,
+    healingFilms,
     scifiFilms,
     horrorFilms,
     historicalFilms,
@@ -1754,6 +2206,8 @@ export default function HomePageClient({
       ...vfxFilms,
       ...usUkSeriesFilms,
       ...actionFilms,
+      ...koreanRomanceFilms,
+      ...healingFilms,
       ...scifiFilms,
       ...horrorFilms,
       ...historicalFilms,
@@ -1795,8 +2249,10 @@ export default function HomePageClient({
   }, [
     actionFilms,
     animeFilms,
+    healingFilms,
     historicalFilms,
     horrorFilms,
+    koreanRomanceFilms,
     latestFilms,
     publicConfig?.homeFeaturedRows,
     scifiFilms,
@@ -1893,6 +2349,26 @@ export default function HomePageClient({
         />
       </LazySection>
     ),
+    "korean-romance": (
+      <LazySection>
+        <FilmSection
+          title={t("sections.koreanRomance", "Phim Tình Cảm Hàn Quốc")}
+          films={koreanRomanceRowList}
+          isLoading={koreanRomanceLoading}
+          href="/films?country=han-quoc&genre=tinh-cam"
+        />
+      </LazySection>
+    ),
+    healing: (
+      <LazySection>
+        <FilmSection
+          title={t("sections.healing", "Phim Chữa Lành")}
+          films={healingRowList}
+          isLoading={healingLoading}
+          href="/films?genre=tam-ly"
+        />
+      </LazySection>
+    ),
     scifi: (
       <LazySection>
         <div className="hidden md:block">
@@ -1964,6 +2440,8 @@ export default function HomePageClient({
     "vfx",
     "usuk-series",
     "action",
+    "korean-romance",
+    "healing",
     "scifi",
     "horror",
     "historical",

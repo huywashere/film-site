@@ -308,12 +308,12 @@ export const tmdbApi = {
   // ── Hình ảnh ──
   getMovieImages: (tmdbId: number) =>
     fetchTmdb<TmdbImages>(`movie/${tmdbId}/images`, {
-      include_image_language: "vi,en,null,ja,ko",
+      include_image_language: "vi,en,null,ja,ko,zh",
     }),
 
   getTvImages: (tmdbId: number) =>
     fetchTmdb<TmdbImages>(`tv/${tmdbId}/images`, {
-      include_image_language: "vi,en,null,ja,ko",
+      include_image_language: "vi,en,null,ja,ko,zh",
     }),
 
   // ── TV Season & Episode Details & Stills ──
@@ -338,7 +338,7 @@ export const tmdbApi = {
 
   getTvSeasonImages: (tvId: number, seasonNumber = 1) =>
     fetchTmdb<TmdbImages>(`tv/${tvId}/season/${seasonNumber}/images`, {
-      include_image_language: "vi,en,null,ja,ko",
+      include_image_language: "vi,en,null,ja,ko,zh",
     }),
 
   getImages: (type: "movie" | "tv", tmdbId: number | string) =>
