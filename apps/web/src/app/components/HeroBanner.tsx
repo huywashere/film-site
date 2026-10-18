@@ -829,12 +829,11 @@ const preferredHeroBackdrops = new Map<
   { portrait?: string; landscape?: string }
 >();
 function getMobileHeroBackdrop(src: string) {
-  return src.includes("image.tmdb.org/t/p/")
-    ? src.replace(
-        /\/t\/p\/(?:original|w300|w342|w500|w780|w1280)\//i,
-        "/t/p/w1280/",
-      )
-    : src;
+  if (!src.includes("image.tmdb.org/t/p/")) return src;
+  return src.replace(
+    /\/t\/p\/(?:original|w92|w154|w185|w300|w342|w500|w780|w1280)\//i,
+    "/t/p/w780/",
+  );
 }
 
 function addHeroEdgeFallback(candidates: string[]): string[] {
@@ -966,7 +965,7 @@ function HeroBackdropImage({
             thumbUrl: film.thumb_url,
             posterUrl: film.poster_url,
           },
-          "thumbnail",
+          "poster",
         ).map(getMobileHeroBackdrop),
       ),
     );
@@ -2192,7 +2191,7 @@ export default function HeroBanner({
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       onTouchCancel={handleTouchCancel}
-      className="font-cinema relative mt-0 h-[65svh] min-h-[460px] max-h-[560px] sm:h-auto sm:min-h-[680px] sm:max-h-[940px] md:h-[94vh] md:min-h-[720px] lg:h-[96vh] lg:min-h-[760px] lg:max-h-[1050px] xl:h-[100dvh] w-full overflow-hidden bg-[#0c0d14] transform-gpu contain-paint select-none touch-pan-y"
+      className="font-cinema relative mt-0 h-[72svh] min-h-[520px] max-h-[640px] sm:h-auto sm:min-h-[680px] sm:max-h-[940px] md:h-[94vh] md:min-h-[720px] lg:h-[96vh] lg:min-h-[760px] lg:max-h-[1050px] xl:h-[100dvh] w-full overflow-hidden bg-[#0c0d14] transform-gpu contain-paint select-none touch-pan-y"
     >
       <TrailerModal
         film={trailerModalFilm}
@@ -2265,8 +2264,8 @@ export default function HeroBanner({
         style={{
           background: `
             radial-gradient(circle at center, transparent 25%, rgba(10, 12, 16, 0.45) 70%, rgba(10, 12, 16, 0.92) 100%),
-            linear-gradient(to top, #0c0d14 0%, rgba(12, 13, 20, 0.9) 30%, rgba(12, 13, 20, 0.45) 55%, transparent 78%),
-            linear-gradient(to bottom, rgba(10, 12, 16, 0.85) 0%, rgba(10, 12, 16, 0.3) 16%, transparent 32%)
+            linear-gradient(to top, #0c0d14 0%, rgba(12, 13, 20, 0.95) 24%, rgba(12, 13, 20, 0.5) 45%, transparent 68%),
+            linear-gradient(to bottom, rgba(10, 12, 16, 0.85) 0%, rgba(10, 12, 16, 0.25) 15%, transparent 28%)
           `,
         }}
       />
@@ -2360,27 +2359,7 @@ export default function HeroBanner({
         </div>
       </div>
 
-      {/* Side Navigation Arrow Buttons (Mobile Only - Hidden on Desktop) */}
-      {featured.length > 1 && (
-        <>
-          <button
-            type="button"
-            onClick={prevSlide}
-            aria-label="Banner trước"
-            className="flex sm:hidden absolute left-2 top-1/2 -translate-y-1/2 z-30 h-10 w-10 items-center justify-center rounded-full bg-[#7c3aed]/85 active:bg-[#6d28d9] text-white backdrop-blur-md border border-white/20 transition-all duration-200 active:scale-90 cursor-pointer shadow-xl group pointer-events-auto"
-          >
-            <ChevronLeft size={20} className="transition-transform group-hover:-translate-x-0.5" />
-          </button>
-          <button
-            type="button"
-            onClick={nextSlide}
-            aria-label="Banner tiếp theo"
-            className="flex sm:hidden absolute right-2 top-1/2 -translate-y-1/2 z-30 h-10 w-10 items-center justify-center rounded-full bg-[#7c3aed]/85 active:bg-[#6d28d9] text-white backdrop-blur-md border border-white/20 transition-all duration-200 active:scale-90 cursor-pointer shadow-xl group pointer-events-auto"
-          >
-            <ChevronRight size={20} className="transition-transform group-hover:translate-x-0.5" />
-          </button>
-        </>
-      )}
+
 
       {/* Main Content Area (Fluid Responsive Spacing with Safe Area Bottom Clearance) */}
       <div className="absolute inset-0 z-20 flex flex-col items-center justify-end px-4 sm:px-6 md:px-8 pb-4 sm:pb-16 md:pb-20 lg:pb-22 text-center pointer-events-none">
@@ -2550,24 +2529,44 @@ export default function HeroBanner({
             </div>
           </div>
 
-          {/* ── 5. Mobile Slider Pagination Dots ── */}
+          {/* ── 5. Mobile Slider Pagination Dots & Quick Chevrons ── */}
           {featured.length > 1 && (
-            <div className="flex sm:hidden items-center justify-center gap-1.5 pt-2 select-none z-30">
-              {featured.map((_, i) => (
-                <button
-                  key={`mobile-hero-dot-${i}`}
-                  type="button"
-                  onClick={() => void activateSlide(i)}
-                  aria-label={`Chuyển đến banner ${i + 1}`}
-                  aria-current={i === current ? "true" : undefined}
-                  className={cn(
-                    "rounded-full transition-all duration-300 cursor-pointer",
-                    i === current
-                      ? "w-5 h-1.5 bg-[#7c3aed]"
-                      : "w-1.5 h-1.5 bg-white/40 hover:bg-white/80",
-                  )}
-                />
-              ))}
+            <div className="flex sm:hidden items-center justify-center gap-2.5 pt-2.5 select-none z-30">
+              <button
+                type="button"
+                onClick={prevSlide}
+                aria-label="Banner trước"
+                className="h-7 w-7 flex items-center justify-center rounded-full bg-white/10 active:bg-white/25 border border-white/15 text-white/90 backdrop-blur-md transition-all active:scale-90 cursor-pointer shadow-sm"
+              >
+                <ChevronLeft size={14} />
+              </button>
+
+              <div className="flex items-center gap-1.5 px-1">
+                {featured.map((_, i) => (
+                  <button
+                    key={`mobile-hero-dot-${i}`}
+                    type="button"
+                    onClick={() => void activateSlide(i)}
+                    aria-label={`Chuyển đến banner ${i + 1}`}
+                    aria-current={i === current ? "true" : undefined}
+                    className={cn(
+                      "rounded-full transition-all duration-300 cursor-pointer",
+                      i === current
+                        ? "w-5 h-1.5 bg-[#7c3aed]"
+                        : "w-1.5 h-1.5 bg-white/40 hover:bg-white/80",
+                    )}
+                  />
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={nextSlide}
+                aria-label="Banner tiếp theo"
+                className="h-7 w-7 flex items-center justify-center rounded-full bg-white/10 active:bg-white/25 border border-white/15 text-white/90 backdrop-blur-md transition-all active:scale-90 cursor-pointer shadow-sm"
+              >
+                <ChevronRight size={14} />
+              </button>
             </div>
           )}
         </div>

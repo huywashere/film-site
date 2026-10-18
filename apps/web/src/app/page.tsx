@@ -218,10 +218,10 @@ export default async function HomePage() {
   const initialDesktopBackdrop = initialHero?.heroBackdrop
     ? localImageProxyUrl(initialHero.heroBackdrop, { strict: true })
     : null;
-  const rawMobile = initialHero?.heroBackdrop || initialHero?.poster_url;
+  const rawMobile = initialHero?.poster_url || initialHero?.thumb_url || initialHero?.heroBackdrop;
   const initialMobileBackdrop = rawMobile
     ? localImageProxyUrl(
-        rawMobile.replace("/t/p/w1280/", "/t/p/w1280/"),
+        rawMobile.replace("/t/p/w1280/", "/t/p/w780/").replace("/t/p/w500/", "/t/p/w780/"),
         { strict: true },
       )
     : null;
