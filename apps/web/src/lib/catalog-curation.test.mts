@@ -237,3 +237,15 @@ test('themed homepage collections collapse to standard card rails on mobile', ()
   );
   assert.match(homepage, /className="hidden md:block"[\s\S]*<WeeklyCuratedShowcase/);
 });
+
+test('FilmCard renders bilingual badge with Languages icon and lavender gradient for song-ngu items', () => {
+  const filmCardSource = readFileSync('src/components/film/FilmCard.tsx', 'utf8');
+
+  assert.match(filmCardSource, /import\s*\{[^}]*Languages[^}]*\}\s*from\s*['"]lucide-react['"]/);
+  assert.match(filmCardSource, /const hasBilingual =/);
+  assert.match(filmCardSource, /vicdn/);
+  assert.match(filmCardSource, /xink/);
+  assert.match(filmCardSource, /bilingualBadge\s*\?/);
+  assert.match(filmCardSource, /from-\[#e9d5ff\] via-\[#d8b4fe\] to-\[#c084fc\]/);
+  assert.match(filmCardSource, /<Languages/);
+});

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { memo, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Play } from 'lucide-react';
+import { Play, Languages } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { MovieSource } from '@/lib/movie-normalizer';
 import { cardFont } from '@/lib/fonts';
@@ -106,7 +106,15 @@ function FilmCardComponent({
   const hasVoiceOver = /thuyết minh|thuyet minh|t\.minh|\btm\b/.test(rawLang);
   const hasDub = /lồng tiếng|long tieng|l\.tiếng|\blt\b/.test(rawLang);
   const hasExplicitVietsub = /vietsub|phụ đề|phu de|\bpd\b/.test(rawLang);
-  const hasBilingual = /song ngữ|song ngu|\bsn\b/.test(rawLang);
+  const hasBilingual =
+    /song ngữ|song ngu|bilingual|\bsn\b/i.test(rawLang) ||
+    film._source === 'vicdn' ||
+    film._source === 'xink' ||
+    Boolean(film._sources?.some((s) => s === 'vicdn' || s === 'xink')) ||
+    Boolean(
+      Array.isArray(film.category) &&
+        film.category.some((c) => /song-ngu|song ngu|bilingual/i.test(c?.slug || c?.name || '')),
+    );
   // Default to Vietsub if neither voiceover nor dub is exclusive, or if explicitly noted
   const hasVietsub = hasExplicitVietsub || (!hasVoiceOver && !hasDub);
 
@@ -241,6 +249,8 @@ function FilmCardComponent({
     }
     return null;
   })();
+
+  const bilingualBadge = hasBilingual ? { label: 'Song Ngữ' } : null;
 
   // ── Pill Badges for 'poster-pill' variant (e.g. historical / period dramas) ──
   const pillEpisodeText = (() => {
@@ -433,8 +443,15 @@ function FilmCardComponent({
                   </div>
                 )}
 
-                {/* ── Bottom-right: Dub / Voiceover badge if has both Subtitle and Voiceover with IMDb at top ── */}
-                {bottomRightBadge && (
+                {/* ── Bottom-right: Song Ngữ badge OR Dub / Voiceover badge ── */}
+                {bilingualBadge ? (
+                  <div className="pointer-events-none absolute bottom-1.5 right-1.5 z-20 sm:bottom-2 sm:right-2">
+                    <span className="inline-flex items-center gap-1 rounded-[4px] border border-purple-300/40 bg-gradient-to-r from-[#e9d5ff] via-[#d8b4fe] to-[#c084fc] px-1.5 py-[2px] text-[8px] font-black leading-none text-[#2e1065] shadow-[0_2px_8px_rgba(0,0,0,0.35)] sm:px-2 sm:py-[2.5px] sm:text-[9px]">
+                      <Languages size={10} className="h-2.5 w-2.5 sm:h-[11px] sm:w-[11px] stroke-[2.5] shrink-0 text-[#2e1065]" />
+                      <span>{bilingualBadge.label}</span>
+                    </span>
+                  </div>
+                ) : bottomRightBadge ? (
                   <div className="pointer-events-none absolute bottom-1.5 right-1.5 z-20 sm:bottom-2 sm:right-2">
                     <span
                       className={cn(
@@ -447,7 +464,7 @@ function FilmCardComponent({
                       {bottomRightBadge.text}
                     </span>
                   </div>
-                )}
+                ) : null}
               </>
             )}
 
