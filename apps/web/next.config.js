@@ -81,6 +81,16 @@ const nextConfig = {
       // NguonC
       { protocol: "https", hostname: "phim.nguonc.com" },
       { protocol: "https", hostname: "**.nguonc.com" },
+      // Xink / VodPhim / OnflixCDN
+      { protocol: "https", hostname: "**.onflixcdn.com" },
+      { protocol: "https", hostname: "onflixcdn.com" },
+      { protocol: "https", hostname: "**.xink.pro" },
+      { protocol: "https", hostname: "xink.pro" },
+      { protocol: "https", hostname: "**.vodphim.com" },
+      { protocol: "https", hostname: "vodphim.com" },
+      // ViCDN
+      { protocol: "https", hostname: "vicdn.cc" },
+      { protocol: "https", hostname: "**.vicdn.cc" },
       // Misc & Social Avatars
       { protocol: "https", hostname: "ui-avatars.com" },
       { protocol: "https", hostname: "lh3.googleusercontent.com" },

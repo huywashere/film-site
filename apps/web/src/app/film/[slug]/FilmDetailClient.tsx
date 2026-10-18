@@ -2379,86 +2379,72 @@ export default function FilmDetailPage({
         <div className="mt-8 space-y-8">
           <section
             aria-label={t('home.details', 'Thông tin phim')}
-            className="grid grid-cols-2 overflow-hidden rounded-[14px] border border-white/10 bg-[#0d0f12]/65 shadow-[0_14px_50px_rgba(0,0,0,0.18)] backdrop-blur-xl sm:grid-cols-3 sm:divide-x sm:divide-white/10"
+            className="rounded-xl border border-white/10 bg-[#0d0f12]/60 px-3.5 py-2.5 sm:px-4 sm:py-3 shadow-lg backdrop-blur-xl"
           >
-            <div className="border-b border-r border-white/10 px-3.5 py-3 sm:border-b-0 sm:border-r-0">
-              <div className="mb-2 flex items-center justify-between">
-                <h2 className="text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-500">
-                  {t('film.genres', 'Thể loại')}
-                </h2>
-                <span className="text-[10px] font-semibold text-neutral-600">{genres.length}</span>
-              </div>
-              <div className="flex min-h-6 flex-wrap items-center gap-1.5">
-                {genres.length > 0 ? (
-                  genres.map((genre: any) => (
-                    <Link
-                      key={genre.slug || genre.name}
-                      href={genre.slug ? `/genre/${genre.slug}` : '#'}
-                      className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-[10px] font-medium text-neutral-300 transition-colors hover:border-white/20 hover:text-white"
-                    >
-                      {t(`genres_list.${genre.slug}`, genre.name)}
-                    </Link>
-                  ))
-                ) : (
-                  <span className="text-xs text-neutral-500">
-                    {t('common.noData', 'Đang cập nhật')}
+            <div className="flex flex-col gap-2.5">
+              {/* Row 1: Thể loại & Quốc gia */}
+              <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+                <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+                  <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-neutral-400 shrink-0 mr-0.5">
+                    {t('film.genres', 'Thể loại')}:
                   </span>
+                  {genres.length > 0 ? (
+                    genres.map((genre: any) => (
+                      <Link
+                        key={genre.slug || genre.name}
+                        href={genre.slug ? `/genre/${genre.slug}` : '#'}
+                        className="rounded-md border border-white/10 bg-white/[0.04] hover:bg-[#7c3aed]/20 px-2 py-0.5 text-[10px] sm:text-[11px] font-medium text-neutral-300 hover:border-[#7c3aed]/40 hover:text-white transition-colors"
+                      >
+                        {t(`genres_list.${genre.slug}`, genre.name)}
+                      </Link>
+                    ))
+                  ) : (
+                    <span className="text-[11px] text-neutral-500">
+                      {t('common.noData', 'Đang cập nhật')}
+                    </span>
+                  )}
+                </div>
+
+                {countries.length > 0 && (
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-neutral-400 shrink-0">
+                      {t('film.country', 'Quốc gia')}:
+                    </span>
+                    {countries.map((country: any) => (
+                      <Link
+                        key={country.slug || country.name}
+                        href={country.slug ? `/country/${country.slug}` : '#'}
+                        className="rounded-md border border-white/10 bg-white/[0.04] hover:bg-[#7c3aed]/20 px-2 py-0.5 text-[10px] sm:text-[11px] font-medium text-neutral-300 hover:border-[#7c3aed]/40 hover:text-white transition-colors"
+                      >
+                        {t(`countries_list.${country.slug}`, country.name)}
+                      </Link>
+                    ))}
+                  </div>
                 )}
               </div>
-            </div>
 
-            <div className="border-b border-white/10 px-3.5 py-3 sm:border-b-0">
-              <div className="mb-2 flex items-center justify-between">
-                <h2 className="text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-500">
-                  {t('film.country', 'Quốc gia')}
-                </h2>
-                <span className="text-[10px] font-semibold text-neutral-600">
-                  {countries.length}
-                </span>
-              </div>
-              <div className="flex min-h-6 flex-wrap items-center gap-1.5">
-                {countries.length > 0 ? (
-                  countries.map((country: any) => (
-                    <Link
-                      key={country.slug || country.name}
-                      href={country.slug ? `/country/${country.slug}` : '#'}
-                      className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-[10px] font-medium text-neutral-300 transition-colors hover:border-white/20 hover:text-white"
-                    >
-                      {t(`countries_list.${country.slug}`, country.name)}
-                    </Link>
-                  ))
-                ) : (
-                  <span className="text-xs text-neutral-500">
-                    {t('common.noData', 'Đang cập nhật')}
-                  </span>
-                )}
-              </div>
-            </div>
+              {/* Row 2: Thời lượng · Số tập · Trạng thái */}
+              <div className="flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-white/5 text-[11px]">
+                <div className="flex items-center gap-3 sm:gap-4 text-neutral-400">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-neutral-500">{t('film.duration', 'Thời lượng')}:</span>
+                    <span className="font-semibold text-neutral-200">
+                      {film.time || t('film.defaultDuration', '22 phút/tập')}
+                    </span>
+                  </div>
+                  <span className="text-neutral-700">·</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-neutral-500">{t('film.episodes', 'Số tập')}:</span>
+                    <span className="font-semibold text-neutral-200">
+                      {film.episode_current || (episodeCount ? t('film.episodeCount', `Tập ${episodeCount}`) : 'Full')}
+                    </span>
+                  </div>
+                </div>
 
-            <div className="col-span-2 px-3.5 py-3 sm:col-span-1">
-              <div className="mb-2 flex items-center justify-between gap-2">
-                <h2 className="text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-500">
-                  {t('home.details', 'Thông tin')}
-                </h2>
-                <span className="max-w-[55%] truncate rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[9px] font-semibold text-neutral-400">
+                <span className="rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-0.5 text-[10px] font-semibold text-neutral-300">
                   {statusLabel}
                 </span>
               </div>
-              <dl className="space-y-1 text-[11px]">
-                <div className="flex justify-between gap-4">
-                  <dt className="text-neutral-500">{t('film.duration', 'Thời lượng')}</dt>
-                  <dd className="truncate font-semibold text-neutral-200">
-                    {film.time || t('film.defaultDuration', '22 phút/tập')}
-                  </dd>
-                </div>
-                <div className="flex justify-between gap-4">
-                  <dt className="text-neutral-500">{t('film.episodes', 'Tập hiện tại')}</dt>
-                  <dd className="truncate font-semibold text-neutral-200">
-                    {film.episode_current ||
-                      (episodeCount ? t('film.episodeCount', `Tập ${episodeCount}`) : 'Full')}
-                  </dd>
-                </div>
-              </dl>
             </div>
           </section>
 

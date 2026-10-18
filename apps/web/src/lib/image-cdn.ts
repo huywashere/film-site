@@ -228,7 +228,7 @@ export function isPreOptimizedImageUrl(value?: string | null): boolean {
     value.startsWith(`${LOCAL_IMAGE_PROXY_PATH}?`) ||
     isWsrvImageUrl(value) ||
     isTmdbImageUrl(value) ||
-    /^(https?:)?\/\/(img\.phimapi\.com|phimimg\.com|img\.ophim\.live|ophim1\.com|images\.nguonc\.com|phim\.nguonc\.com|image\.tmdb\.org|tmdb\.org)\//i.test(
+    /^(https?:)?\/\/(img\.phimapi\.com|phimimg\.com|img\.ophim\.live|ophim1\.com|images\.nguonc\.com|phim\.nguonc\.com|img\.nguonc\.com|image\.tmdb\.org|tmdb\.org|.*\.onflixcdn\.com|onflixcdn\.com|.*\.xink\.pro|xink\.pro|.*\.vicdn\.cc|vicdn\.cc|.*\.vodphim\.com|vodphim\.com)\//i.test(
       value,
     )
   );

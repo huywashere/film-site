@@ -30,13 +30,23 @@ const RELIABLE_DIRECT_IMAGE_HOSTS = new Set([
   "img.nguonc.com",
   "vsmov.com",
   "storage.vsmov.com",
+  "node-img-akm-cache.onflixcdn.com",
+  "onflixcdn.com",
+  "xink.pro",
+  "vicdn.cc",
 ]);
 
 function prioritizeCandidateUrls(urls: string[]): string[] {
   return [...urls].sort((left, right) => {
     const score = (value: string) => {
       try {
-        return RELIABLE_DIRECT_IMAGE_HOSTS.has(new URL(value).hostname) ? 0 : 1;
+        const host = new URL(value).hostname;
+        return RELIABLE_DIRECT_IMAGE_HOSTS.has(host) ||
+          host.endsWith(".onflixcdn.com") ||
+          host.endsWith(".xink.pro") ||
+          host.endsWith(".vicdn.cc")
+          ? 0
+          : 1;
       } catch {
         return 2;
       }
@@ -147,8 +157,9 @@ function generateCandidateUrls(rawUrl: string): string[] {
     ordered.push(imageUrl.replace("img.phimapi.com/", "phimimg.com/"));
   }
 
-  // If path doesn't have upload/vod, try adding common CDN path prefixes
-  if (!imageUrl.includes("upload/vod/") && !imageUrl.includes("uploads/")) {
+  // If path doesn't have upload/vod, try adding common CDN path prefixes (for KKPhim/PhimImg)
+  const isKkphimHost = !/^https?:\/\//i.test(imageUrl) || /phimimg\.com|phimapi\.com|kkphim\.vip/i.test(imageUrl);
+  if (isKkphimHost && !imageUrl.includes("upload/vod/") && !imageUrl.includes("uploads/")) {
     const urlObj = new URL(imageUrl);
     const cleanPath = urlObj.pathname.replace(/^\/+/, "");
     ordered.push(`https://phimimg.com/upload/vod/${cleanPath}`);

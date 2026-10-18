@@ -33,6 +33,10 @@ function normalizeFilmItem(film: XinkRecord): XinkRecord {
         },
   );
 
+  const rawTmdbId = film.tmdb_id || film.tmdbId || film.tmdb?.id;
+  const tmdbNum = rawTmdbId && Number.isFinite(Number(rawTmdbId)) ? Number(rawTmdbId) : undefined;
+  const filmType = film.type === "tv" || film.type === "series" ? "series" : "single";
+
   return {
     ...film,
     name: film.name || film.title || "",
@@ -41,6 +45,9 @@ function normalizeFilmItem(film: XinkRecord): XinkRecord {
     thumb_url: film.thumb_url || "",
     poster_url: film.poster_url || "",
     lang: film.lang || film.language || "",
+    type: filmType,
+    tmdbId: tmdbNum,
+    tmdb: tmdbNum ? { id: tmdbNum, type: filmType === "series" ? "tv" : "movie" } : film.tmdb,
     category,
     country,
     _source: "xink",

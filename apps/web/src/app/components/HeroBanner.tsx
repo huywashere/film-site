@@ -1277,11 +1277,49 @@ export default function HeroBanner({
   initialConfig,
   randomizeCuratedPool = false,
 }: HeroBannerProps) {
-  const pinnedSlugs = (initialConfig?.heroMovieSlugs || [])
+  const LAST_HERO_SLUGS_KEY = "flexphim.last-hero-slugs.v1";
+  let activePinnedSlugs = (initialConfig?.heroMovieSlugs || [])
     .map((slug) => slug.trim())
     .filter(Boolean);
+  if (activePinnedSlugs.length === 0 && typeof window !== "undefined") {
+    try {
+      const stored = JSON.parse(
+        window.localStorage.getItem(LAST_HERO_SLUGS_KEY) || "[]",
+      );
+      if (Array.isArray(stored) && stored.length > 0) {
+        activePinnedSlugs = stored.map(String).filter(Boolean);
+      }
+    } catch {}
+  }
+  const pinnedSlugs = activePinnedSlugs;
   const pinnedSlugsKey = pinnedSlugs.join(",");
   const prevPinnedSlugsKeyRef = useRef(pinnedSlugsKey);
+
+  // Clear stale cached playlist if it doesn't match active pinned slugs (e.g. from previous default)
+  if (
+    pinnedSlugs.length > 0 &&
+    cachedHeroPlaylist &&
+    !pinnedSlugs.includes(cachedHeroPlaylist[0]?.slug)
+  ) {
+    cachedHeroPlaylist = null;
+    cachedHeroIndex = 0;
+  }
+
+  // Persist pinned slugs to localStorage so subsequent cold visits hydrate correctly
+  useEffect(() => {
+    if (
+      initialConfig?.heroMovieSlugs &&
+      initialConfig.heroMovieSlugs.length > 0 &&
+      typeof window !== "undefined"
+    ) {
+      try {
+        window.localStorage.setItem(
+          LAST_HERO_SLUGS_KEY,
+          JSON.stringify(initialConfig.heroMovieSlugs),
+        );
+      } catch {}
+    }
+  }, [initialConfig?.heroMovieSlugs]);
 
   const [current, setCurrent] = useState(() => {
     if (pinnedSlugs.length > 0) return 0;
@@ -1441,9 +1479,7 @@ export default function HeroBanner({
       let playlist: HeroFilm[] = [];
       let restoredIndex = 0;
 
-      const requestedSlugs = (initialConfig?.heroMovieSlugs || [])
-        .map((slug) => slug.trim())
-        .filter(Boolean);
+      const requestedSlugs = pinnedSlugs;
 
       if (requestedSlugs.length) {
         restoredIndex = 0;
@@ -2324,24 +2360,24 @@ export default function HeroBanner({
         </div>
       </div>
 
-      {/* Side Navigation Arrow Buttons (Desktop & Tablet) */}
+      {/* Side Navigation Arrow Buttons (Mobile Only - Hidden on Desktop) */}
       {featured.length > 1 && (
         <>
           <button
             type="button"
             onClick={prevSlide}
             aria-label="Banner trước"
-            className="hidden sm:flex absolute left-3 sm:left-6 md:left-8 top-1/2 -translate-y-1/2 z-30 h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-black/50 hover:bg-[#7c3aed] text-white/80 hover:text-white backdrop-blur-md border border-white/15 transition-all duration-200 active:scale-90 cursor-pointer shadow-xl group pointer-events-auto"
+            className="flex sm:hidden absolute left-2 top-1/2 -translate-y-1/2 z-30 h-10 w-10 items-center justify-center rounded-full bg-[#7c3aed]/85 active:bg-[#6d28d9] text-white backdrop-blur-md border border-white/20 transition-all duration-200 active:scale-90 cursor-pointer shadow-xl group pointer-events-auto"
           >
-            <ChevronLeft size={22} className="transition-transform group-hover:-translate-x-0.5" />
+            <ChevronLeft size={20} className="transition-transform group-hover:-translate-x-0.5" />
           </button>
           <button
             type="button"
             onClick={nextSlide}
             aria-label="Banner tiếp theo"
-            className="hidden sm:flex absolute right-3 sm:right-6 md:right-8 top-1/2 -translate-y-1/2 z-30 h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-black/50 hover:bg-[#7c3aed] text-white/80 hover:text-white backdrop-blur-md border border-white/15 transition-all duration-200 active:scale-90 cursor-pointer shadow-xl group pointer-events-auto"
+            className="flex sm:hidden absolute right-2 top-1/2 -translate-y-1/2 z-30 h-10 w-10 items-center justify-center rounded-full bg-[#7c3aed]/85 active:bg-[#6d28d9] text-white backdrop-blur-md border border-white/20 transition-all duration-200 active:scale-90 cursor-pointer shadow-xl group pointer-events-auto"
           >
-            <ChevronRight size={22} className="transition-transform group-hover:translate-x-0.5" />
+            <ChevronRight size={20} className="transition-transform group-hover:translate-x-0.5" />
           </button>
         </>
       )}

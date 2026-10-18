@@ -269,6 +269,9 @@ export function SongNguClient({
       const anyItem = item as any;
       const pUrl = String(item.poster_url || item.thumb_url || "");
       const tUrl = String(item.thumb_url || item.poster_url || "");
+      const rawTmdbId = item.tmdbId || anyItem.tmdb_id || anyItem.tmdb?.id;
+      const tmdbId = rawTmdbId && Number.isFinite(Number(rawTmdbId)) ? Number(rawTmdbId) : undefined;
+      const filmType = item.type || (anyItem.type === "tv" ? "series" : "single");
       return {
         _id: String(item._id || anyItem.id || item.slug || ""),
         name: String(item.name || anyItem.title || ""),
@@ -277,6 +280,9 @@ export function SongNguClient({
         poster_url: resolveImageUrl(pUrl, tUrl) || pUrl,
         thumb_url: resolveImageUrl(tUrl, pUrl) || tUrl,
         year: Number(item.year) || 2026,
+        type: filmType,
+        tmdbId,
+        tmdb: item.tmdb || (tmdbId ? { id: tmdbId, type: filmType === "series" ? "tv" : "movie" } : undefined),
         episode_current: String(item.episode_current || "FHD"),
         quality: String(item.quality || "FHD"),
         lang: "Song Ngữ",

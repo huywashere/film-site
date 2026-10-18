@@ -35,6 +35,13 @@ const ALLOWED_IMAGE_HOSTS = [
   // ViCDN
   "vicdn.cc",
   "*.vicdn.cc",
+  // Xink / VodPhim / OnflixCDN
+  "onflixcdn.com",
+  "*.onflixcdn.com",
+  "xink.pro",
+  "*.xink.pro",
+  "vodphim.com",
+  "*.vodphim.com",
   // TMDB
   "image.tmdb.org",
   "*.tmdb.org",
