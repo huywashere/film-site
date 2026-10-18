@@ -172,6 +172,88 @@ async function fetchTmdbFallback(
   return null;
 }
 
+// In-memory cache for RT scores
+const rtCache = new Map<string, { critics: string | null; audience: string | null; expiresAt: number }>();
+
+async function fetchRottenTomatoesScores(
+  title: string,
+  year?: string | null,
+  type?: string | null,
+): Promise<{ critics: string | null; audience: string | null }> {
+  try {
+    const isTv = type === "series" || type === "tv";
+    const cleanTitle = title
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, "")
+      .trim()
+      .replace(/\s+/g, "_");
+
+    if (!cleanTitle) return { critics: null, audience: null };
+
+    const cleanYear = (year || "").match(/\d{4}/)?.[0] || "";
+
+    const cacheKey = `${cleanTitle}_${cleanYear}_${isTv ? "tv" : "m"}`;
+    const cached = rtCache.get(cacheKey);
+    if (cached && Date.now() < cached.expiresAt) {
+      return { critics: cached.critics, audience: cached.audience };
+    }
+
+    const candidates = [
+      cleanYear ? `${cleanTitle}_${cleanYear}` : null,
+      cleanTitle,
+      isTv ? `${cleanTitle}_season_1` : null,
+    ].filter(Boolean) as string[];
+
+    const prefix = isTv ? "tv" : "m";
+
+    for (const slug of candidates) {
+      try {
+        const url = `https://www.rottentomatoes.com/${prefix}/${slug}`;
+        const res = await fetch(url, {
+          headers: {
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          },
+          signal: AbortSignal.timeout(3500),
+          next: { revalidate: 86400 },
+        });
+        if (res.ok) {
+          const html = await res.text();
+          const criticsObj = html.match(/"criticsScore":\s*(\{[^}]+\})/i);
+          const audienceObj = html.match(/"audienceScore":\s*(\{[^}]+\})/i);
+          let critics: string | null = null;
+          let audience: string | null = null;
+          if (criticsObj) {
+            try {
+              const parsed = JSON.parse(criticsObj[1]);
+              critics = parsed.scorePercent || (parsed.score ? `${parsed.score}%` : null);
+            } catch {}
+          }
+          if (!critics) {
+            const direct = html.match(/"criticsScore"[^}]*?"score":\s*"(\d+)"/i)?.[1];
+            if (direct) critics = `${direct}%`;
+          }
+          if (audienceObj) {
+            try {
+              const parsed = JSON.parse(audienceObj[1]);
+              audience = parsed.scorePercent || (parsed.score ? `${parsed.score}%` : null);
+            } catch {}
+          }
+          if (!audience) {
+            const direct = html.match(/"audienceScore"[^}]*?"score":\s*"(\d+)"/i)?.[1];
+            if (direct) audience = `${direct}%`;
+          }
+          if (critics || audience) {
+            rtCache.set(cacheKey, { critics, audience, expiresAt: Date.now() + CACHE_TTL_MS });
+            return { critics, audience };
+          }
+        }
+      } catch {}
+    }
+  } catch {}
+  return { critics: null, audience: null };
+}
+
 /**
  * GET /api/omdb?imdbId=tt1234567
  * GET /api/omdb?title=Inception&year=2010&type=movie
@@ -269,77 +351,6 @@ export async function GET(request: NextRequest) {
       boxOffice = `$${Number(tmdbFallbackData.revenue).toLocaleString("en-US")}`;
     }
 
-// In-memory cache for RT scores
-const rtCache = new Map<string, { critics: string | null; audience: string | null; expiresAt: number }>();
-
-async function fetchRottenTomatoesScores(
-  title: string,
-  year?: string | null,
-  type?: string | null,
-): Promise<{ critics: string | null; audience: string | null }> {
-  try {
-    const isTv = type === "series" || type === "tv";
-    const cleanTitle = title
-      .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, "")
-      .trim()
-      .replace(/\s+/g, "_");
-
-    if (!cleanTitle) return { critics: null, audience: null };
-
-    const cacheKey = `${cleanTitle}_${year || ""}_${isTv ? "tv" : "m"}`;
-    const cached = rtCache.get(cacheKey);
-    if (cached && Date.now() < cached.expiresAt) {
-      return { critics: cached.critics, audience: cached.audience };
-    }
-
-    const candidates = [
-      year ? `${cleanTitle}_${year}` : null,
-      cleanTitle,
-    ].filter(Boolean) as string[];
-
-    const prefix = isTv ? "tv" : "m";
-
-    for (const slug of candidates) {
-      try {
-        const url = `https://www.rottentomatoes.com/${prefix}/${slug}`;
-        const res = await fetch(url, {
-          headers: {
-            "User-Agent":
-              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-          },
-          signal: AbortSignal.timeout(3000),
-          next: { revalidate: 86400 },
-        });
-        if (res.ok) {
-          const html = await res.text();
-          const criticsObj = html.match(/"criticsScore":\s*(\{[^}]+\})/i);
-          const audienceObj = html.match(/"audienceScore":\s*(\{[^}]+\})/i);
-          let critics: string | null = null;
-          let audience: string | null = null;
-          if (criticsObj) {
-            try {
-              const parsed = JSON.parse(criticsObj[1]);
-              critics = parsed.scorePercent || (parsed.score ? `${parsed.score}%` : null);
-            } catch {}
-          }
-          if (audienceObj) {
-            try {
-              const parsed = JSON.parse(audienceObj[1]);
-              audience = parsed.scorePercent || (parsed.score ? `${parsed.score}%` : null);
-            } catch {}
-          }
-          if (critics || audience) {
-            rtCache.set(cacheKey, { critics, audience, expiresAt: Date.now() + CACHE_TTL_MS });
-            return { critics, audience };
-          }
-        }
-      } catch {}
-    }
-  } catch {}
-  return { critics: null, audience: null };
-}
-
     let rtAudience: string | null = null;
     let rtCritics: string | null = rottenTomatoes;
     const lookupTitle = data.Title || title;
@@ -420,6 +431,28 @@ async function fetchRottenTomatoesScores(
         .filter(Boolean)
         .join(", ") || null;
 
+    let rtCritics: string | null = null;
+    let rtAudience: string | null = null;
+    const lookupTitle =
+      tmdbFallbackData.original_title ||
+      tmdbFallbackData.title ||
+      tmdbFallbackData.original_name ||
+      tmdbFallbackData.name ||
+      title;
+    if (lookupTitle) {
+      const rtYear = (tmdbFallbackData.release_date || tmdbFallbackData.first_air_date)?.slice(0, 4) || year;
+      const rtType = tmdbFallbackData.name ? "series" : "movie";
+      const rtResult = await fetchRottenTomatoesScores(lookupTitle, rtYear, rtType);
+      if (rtResult.critics) rtCritics = rtResult.critics;
+      if (rtResult.audience) rtAudience = rtResult.audience;
+    }
+    if (rtCritics && !rtAudience && tmdbRating) {
+      const tmdbNum = parseFloat(tmdbRating);
+      if (tmdbNum > 0) {
+        rtAudience = `${Math.min(99, Math.round(tmdbNum * 10))}%`;
+      }
+    }
+
     const result = {
       imdbId: resolvedImdbId,
       title: tmdbFallbackData.title || tmdbFallbackData.name || title || null,
@@ -431,8 +464,8 @@ async function fetchRottenTomatoesScores(
       runtime,
       imdbRating: tmdbRating,
       imdbVotes: tmdbVotes,
-      rottenTomatoes: null,
-      rottenTomatoesAudience: null,
+      rottenTomatoes: rtCritics,
+      rottenTomatoesAudience: rtAudience,
       tmdbRating: tmdbRating ? `${Math.round(Number(tmdbRating) * 10)}%` : null,
       metacritic: null,
       awards: null,

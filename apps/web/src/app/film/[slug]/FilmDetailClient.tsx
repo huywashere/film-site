@@ -2047,7 +2047,10 @@ export default function FilmDetailPage({
                           {displayFilm.time}
                         </span>
                       )}
-                      {/* Bảng điểm đánh giá chuẩn logo chính hãng (TMDB, IMDb, Cà chua Tomatometer, Bỏng ngô Popcornmeter) */}
+                    </div>
+
+                    {/* Bảng điểm đánh giá 4 logo chuẩn (TMDB, IMDb, 🍅 Tomatometer, 🍿 Popcornmeter) */}
+                    <div className="pt-2 sm:pt-2.5 pb-0.5 w-full flex items-center justify-center sm:justify-start">
                       <MovieRatingBadges
                         size="sm"
                         tmdbScore={effectiveOmdb?.tmdbRating || displayTmdbScore}
@@ -2056,7 +2059,7 @@ export default function FilmDetailPage({
                         popcornScore={effectiveOmdb?.rottenTomatoesAudience}
                         imdbId={effectiveOmdb?.imdbId}
                         tmdbId={displayFilm?.tmdb?.id || (displayFilm as any)?.tmdbId}
-                        className="inline-flex py-0 ml-1.5 gap-x-3.5 sm:gap-x-4 items-center"
+                        className="gap-x-4 sm:gap-x-5"
                       />
                     </div>
                   </div>
@@ -2544,7 +2547,7 @@ export default function FilmDetailPage({
             )}
 
             {/* Bảng điểm đánh giá uy tín (TMDB, IMDb, Cà chua Tomatometer, Bỏng ngô Popcornmeter) */}
-            <div className="pt-2">
+            <div className="pt-3 pb-1">
               <MovieRatingBadges
                 tmdbScore={effectiveOmdb?.tmdbRating || displayTmdbScore}
                 imdbScore={effectiveOmdb?.imdbRating || displayImdbScore}
@@ -2552,6 +2555,7 @@ export default function FilmDetailPage({
                 popcornScore={effectiveOmdb?.rottenTomatoesAudience}
                 imdbId={effectiveOmdb?.imdbId}
                 tmdbId={film?.tmdb?.id || (film as any)?.tmdbId}
+                className="gap-x-5 sm:gap-x-6"
               />
             </div>
           </section>

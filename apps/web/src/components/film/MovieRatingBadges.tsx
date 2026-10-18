@@ -95,10 +95,10 @@ export function ImdbLogoIcon({ className }: { className?: string }) {
  * Rotten Tomatoes Tomatometer Icon (Fresh Tomato >= 60% or Rotten Splat < 60%)
  */
 export function RottenTomatoesIcon({
-  score,
+  score = 100,
   className,
 }: {
-  score: number;
+  score?: number;
   className?: string;
 }) {
   const isFresh = score >= 60;
@@ -170,10 +170,10 @@ export function RottenTomatoesIcon({
  * Rotten Tomatoes Popcorn Icon (Popcorn bucket >= 60% or Spilled bucket < 60%)
  */
 export function PopcornIcon({
-  score,
+  score = 100,
   className,
 }: {
-  score: number;
+  score?: number;
   className?: string;
 }) {
   const isFresh = score >= 60;
