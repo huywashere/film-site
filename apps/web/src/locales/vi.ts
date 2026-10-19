@@ -82,6 +82,8 @@ export const vi = {
     romance: "Phim Lãng Mạn & Tình Cảm",
     healing: "Phim Chữa Lành",
     koreanRomance: "Phim Tình Cảm Hàn Quốc",
+    workplace: "Phim Đề Tài Công Sở",
+    acclaimed: "Phim Hay Được Đón Nhận",
     topicCogu: "Tuyệt Phẩm Cổ Trang",
     topicCoguDesc: "Khám phá những siêu phẩm cổ trang lôi cuốn đầy kịch tính.",
     topicWeekend: "Cày Phim Cuối Tuần",

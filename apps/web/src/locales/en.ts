@@ -82,6 +82,8 @@ export const en = {
     romance: "Romance & Love Stories",
     healing: "Healing & Feel-Good Movies",
     koreanRomance: "Korean Romance Movies",
+    workplace: "Workplace & Office Dramas",
+    acclaimed: "Critically Acclaimed & Popular",
     topicCogu: "Epic Historical Dramas",
     topicCoguDesc: "Explore breathtaking oriental costume dramas and mythical legends.",
     topicWeekend: "Weekend Binge Watch",

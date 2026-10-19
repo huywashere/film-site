@@ -2,7 +2,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { ChevronRight, ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -72,6 +72,7 @@ import {
   CURATED_ACTION_HERO_POOL,
   CURATED_VFX_HERO_POOL,
 } from "@/lib/curated-genre-pools";
+import { CURATED_HERO_FRANCHISE_POOL } from "@/lib/curated-hero-pool";
 
 const CURATED_VFX_FILM_ITEMS: FilmItem[] = CURATED_VFX_HERO_POOL.map((item) => ({
   _id: item._id,
@@ -276,6 +277,157 @@ const CURATED_KOREAN_ROMANCE_FILM_ITEMS: FilmItem[] = [
     country: [{ name: "Hàn Quốc", slug: "han-quoc" }],
   },
 ];
+
+const CURATED_WORKPLACE_FILM_ITEMS: FilmItem[] = [
+  {
+    _id: "hen-ho-chon-cong-so",
+    slug: "hen-ho-chon-cong-so",
+    name: "Hẹn Hò Chốn Công Sở",
+    origin_name: "Business Proposal",
+    poster_url: "https://phimimg.com/upload/vod/20240319-1/99d76187b7a370f64238e9cb5cffbb4a.jpg",
+    thumb_url: "https://phimimg.com/upload/vod/20240319-1/300fa4392411a44d497d6c00e66de13a.jpg",
+    quality: "FHD",
+    lang: "Vietsub",
+    year: 2022,
+    type: "series",
+    vote_average: 8.4,
+    rating: 8.4,
+    category: [{ name: "Tình Cảm", slug: "tinh-cam" }, { name: "Công Sở", slug: "cong-so" }],
+    country: [{ name: "Hàn Quốc", slug: "han-quoc" }],
+  },
+  {
+    _id: "thu-ky-kim-sao-the",
+    slug: "thu-ky-kim-sao-the",
+    name: "Thư Ký Kim Sao Thế?",
+    origin_name: "What's Wrong with Secretary Kim",
+    poster_url: "https://phimimg.com/upload/vod/20240729-1/1ae80cef1d1876d74e994cb53b16d5bd.jpg",
+    thumb_url: "https://phimimg.com/upload/vod/20240729-1/3076a178e12a412decd75b3afa18bc04.jpg",
+    quality: "FHD",
+    lang: "Vietsub",
+    year: 2018,
+    type: "series",
+    vote_average: 8.3,
+    rating: 8.3,
+    category: [{ name: "Tình Cảm", slug: "tinh-cam" }],
+    country: [{ name: "Hàn Quốc", slug: "han-quoc" }],
+  },
+  {
+    _id: "khach-san-vuong-gia",
+    slug: "khach-san-vuong-gia",
+    name: "Khách Sạn Vương Giả",
+    origin_name: "King The Land",
+    poster_url: "https://phimimg.com/upload/vod/20240314-1/8364cf0c68c66c767b15e12e3aeb5259.jpg",
+    thumb_url: "https://phimimg.com/upload/vod/20240314-1/6ba0418a61ce955e172ab21d73d62c4c.jpg",
+    quality: "FHD",
+    lang: "Vietsub",
+    year: 2023,
+    type: "series",
+    vote_average: 8.1,
+    rating: 8.1,
+    category: [{ name: "Tình Cảm", slug: "tinh-cam" }],
+    country: [{ name: "Hàn Quốc", slug: "han-quoc" }],
+  },
+  {
+    _id: "soi-gia-pho-wall",
+    slug: "soi-gia-pho-wall",
+    name: "Sói Già Phố Wall",
+    origin_name: "The Wolf of Wall Street",
+    poster_url: "https://image.tmdb.org/t/p/w500/kW9LmvYHAaS9iA0tHmZVq8hQYoq.jpg",
+    thumb_url: "https://image.tmdb.org/t/p/w1280/7Nwnmyzrtd0FkcRyPqmdzTPppQa.jpg",
+    quality: "FHD",
+    lang: "Vietsub + Thuyết Minh",
+    year: 2013,
+    type: "single",
+    vote_average: 8.2,
+    rating: 8.2,
+    category: [{ name: "Chính Kịch", slug: "chinh-kich" }],
+    country: [{ name: "Âu Mỹ", slug: "au-my" }],
+  },
+  {
+    _id: "khoi-nghiep",
+    slug: "khoi-nghiep",
+    name: "Khởi Nghiệp",
+    origin_name: "Start-Up",
+    poster_url: "https://phimimg.com/upload/vod/20240118-1/b5a11f84b1974d47dbd52b77d604cb66.jpg",
+    thumb_url: "https://phimimg.com/upload/vod/20240118-1/ca6b29b4326b5b347a081d83317e3a10.jpg",
+    quality: "FHD",
+    lang: "Vietsub",
+    year: 2020,
+    type: "series",
+    vote_average: 8.2,
+    rating: 8.2,
+    category: [{ name: "Tình Cảm", slug: "tinh-cam" }, { name: "Chính Kịch", slug: "chinh-kich" }],
+    country: [{ name: "Hàn Quốc", slug: "han-quoc" }],
+  },
+  {
+    _id: "nu-hoang-nuoc-mat",
+    slug: "nu-hoang-nuoc-mat",
+    name: "Nữ Hoàng Nước Mắt",
+    origin_name: "Queen Of Tears",
+    poster_url: "https://phimimg.com/uploads/movies/20260723/nu-hoang-nuoc-mat-poster.webp",
+    thumb_url: "https://phimimg.com/uploads/movies/20260723/nu-hoang-nuoc-mat-thumb.webp",
+    quality: "FHD",
+    lang: "Vietsub + Thuyết Minh",
+    year: 2024,
+    type: "series",
+    vote_average: 8.6,
+    rating: 8.6,
+    category: [{ name: "Tình Cảm", slug: "tinh-cam" }],
+    country: [{ name: "Hàn Quốc", slug: "han-quoc" }],
+  },
+  {
+    _id: "co-nang-cu-ta-kim-bok-joo",
+    slug: "co-nang-cu-ta-kim-bok-joo",
+    name: "Cô Nàng Cử Tạ Kim Bok Joo",
+    origin_name: "Weightlifting Fairy Kim Bok-joo",
+    poster_url: "https://phimimg.com/upload/vod/20240729-1/6591a51e040124b41e87f4c21394d364.jpg",
+    thumb_url: "https://phimimg.com/upload/vod/20240729-1/11ad813cf34331ce3512d48818365704.jpg",
+    quality: "FHD",
+    lang: "Vietsub",
+    year: 2016,
+    type: "series",
+    vote_average: 8.4,
+    rating: 8.4,
+    category: [{ name: "Tình Cảm", slug: "tinh-cam" }],
+    country: [{ name: "Hàn Quốc", slug: "han-quoc" }],
+  },
+  {
+    _id: "co-nang-manh-me-do-bong-soon",
+    slug: "co-nang-manh-me-do-bong-soon",
+    name: "Cô Nàng Mạnh Mẽ Do Bong Soon",
+    origin_name: "Strong Woman Do Bong-Soon",
+    poster_url: "https://phimimg.com/uploads/movies/20260810/co-nang-manh-me-do-bong-soon-poster.webp",
+    thumb_url: "https://phimimg.com/uploads/movies/20260810/co-nang-manh-me-do-bong-soon-thumb.webp",
+    quality: "FHD",
+    lang: "Vietsub",
+    year: 2017,
+    type: "series",
+    vote_average: 8.4,
+    rating: 8.4,
+    category: [{ name: "Tình Cảm", slug: "tinh-cam" }],
+    country: [{ name: "Hàn Quốc", slug: "han-quoc" }],
+  },
+];
+
+const CURATED_ACCLAIMED_FILM_ITEMS: FilmItem[] = CURATED_HERO_FRANCHISE_POOL
+  .filter((film) => (film.vote_average || 0) >= 8.2)
+  .slice(0, 16)
+  .map((film) => ({
+    _id: film._id,
+    slug: film.slug,
+    name: film.name,
+    origin_name: film.origin_name,
+    poster_url: film.poster_url,
+    thumb_url: film.thumb_url,
+    heroBackdrop: film.heroBackdrop,
+    quality: film.quality || "FHD",
+    lang: film.lang || "Vietsub + Thuyết Minh",
+    year: film.year,
+    type: film.type || "single",
+    vote_average: film.vote_average,
+    rating: film.rating || film.vote_average,
+    category: film.category || [{ name: "Tuyệt Tác", slug: "tuyet-tac" }],
+  }));
 
 const CURATED_HEALING_FILM_ITEMS: FilmItem[] = [
   {
@@ -1187,15 +1339,18 @@ function FilmSection({
   );
 }
 
-// Component Wrapper for Intersection Observer Lazy Load (No min-height gaps, GPU Accelerated)
+// Component Wrapper for Intersection Observer Lazy Load (No min-height gaps, GPU Accelerated, Progressive Scroll-Reveal)
 function LazySection({
   children,
   initiallyVisible = false,
+  onVisible,
 }: {
   children: React.ReactNode;
   initiallyVisible?: boolean;
+  onVisible?: () => void;
 }) {
   const [isVisible, setIsVisible] = useState(initiallyVisible);
+  const [hasEntered, setHasEntered] = useState(initiallyVisible);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -1204,10 +1359,14 @@ function LazySection({
       ([entry]) => {
         if (entry.isIntersecting) {
           setIsVisible(true);
+          onVisible?.();
           observer.disconnect();
+          requestAnimationFrame(() => {
+            setHasEntered(true);
+          });
         }
       },
-      { rootMargin: "350px 0px" },
+      { rootMargin: "300px 0px" },
     );
 
     if (containerRef.current) {
@@ -1215,17 +1374,22 @@ function LazySection({
     }
 
     return () => observer.disconnect();
-  }, [isVisible]);
+  }, [isVisible, onVisible]);
 
   return (
     <div
       ref={containerRef}
-      className="[content-visibility:auto] [contain-intrinsic-size:1px_400px] transform-gpu"
+      className={cn(
+        "[content-visibility:auto] [contain-intrinsic-size:1px_400px] transform-gpu transition-all duration-700 ease-out",
+        initiallyVisible || hasEntered
+          ? "opacity-100 translate-y-0"
+          : "opacity-0 translate-y-5 pointer-events-none",
+      )}
     >
       {isVisible ? (
         children
       ) : (
-        <div className="mb-8 h-[260px] w-full rounded-2xl bg-white/[0.01] motion-safe:animate-pulse motion-safe:[animation-iteration-count:3] sm:h-[340px] lg:h-[360px]" />
+        <div className="mb-8 h-[260px] w-full rounded-2xl bg-white/[0.015] motion-safe:animate-pulse motion-safe:[animation-iteration-count:3] sm:h-[340px] lg:h-[360px]" />
       )}
     </div>
   );
@@ -1241,8 +1405,18 @@ export default function HomePageClient({
   const { t } = useTranslation();
 
   const [showMoreSections, setShowMoreSections] = useState(false);
+  const [loadedSections, setLoadedSections] = useState<Record<string, boolean>>({});
   const [userHistoryFilms, setUserHistoryFilms] = useState<FilmItem[]>([]);
   const infiniteSentinelRef = useRef<HTMLDivElement>(null);
+
+  const markSectionLoaded = useCallback((sectionKey: string) => {
+    setLoadedSections((prev) => (prev[sectionKey] ? prev : { ...prev, [sectionKey]: true }));
+  }, []);
+
+  const isSectionActive = useCallback(
+    (key: string) => Boolean(showMoreSections || loadedSections[key]),
+    [showMoreSections, loadedSections],
+  );
 
   useEffect(() => {
     const revealSectionsForRestore = (event?: Event) => {
@@ -1667,13 +1841,55 @@ export default function HomePageClient({
   const theatricalLoading =
     (catalogReady && homeFeedLoading) || theatricalFallbackLoading;
 
-  // ── Lazy Loaded 10 Sections Data (Loaded after clicking Xem Thêm) ──
+  // ── Progressive On-Demand Section Queries (Triggered as User Scrolls to Each Row) ──
+
+  // Chủ đề công sở (Workplace & Office Dramas)
+  const { data: workplaceRemoteData, isLoading: workplaceQueryLoading } = useQuery({
+    queryKey: ["home-section-workplace-v1"],
+    queryFn: async () => {
+      try {
+        const [res1, res2] = await Promise.all([
+          movieApi.getFiltered({ category: "tinh-cam", page: 1, limit: 24 }),
+          movieApi.getFiltered({ category: "chinh-kich", page: 1, limit: 24 }),
+        ]);
+        const list1 = extractFilmItems(res1.data);
+        const list2 = extractFilmItems(res2.data);
+        return [...list1, ...list2] as unknown as FilmItem[];
+      } catch {
+        return [];
+      }
+    },
+    staleTime: 10 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    retry: false,
+    refetchOnWindowFocus: false,
+    enabled: isSectionActive("workplace"),
+  });
+
+  // Phim hay được đón nhận (Critically Acclaimed & Audience Favorites)
+  const { data: acclaimedRemoteData, isLoading: acclaimedQueryLoading } = useQuery({
+    queryKey: ["home-section-acclaimed-v1"],
+    queryFn: () =>
+      movieApi
+        .getFiltered({
+          sort_field: "view",
+          page: 1,
+          limit: 24,
+        })
+        .then((r) => r.data)
+        .catch(() => null),
+    staleTime: 10 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    retry: false,
+    refetchOnWindowFocus: false,
+    enabled: isSectionActive("acclaimed"),
+  });
 
   // 5. Xem gì tiếp theo (Hollywood Recommendations)
-  const { data: usUkBlockbustersData, isLoading: nextWatchLoading } = useQuery({
+  const { data: usUkBlockbustersData, isLoading: nextWatchQueryLoading } = useQuery({
     queryKey: ["us-uk-blockbusters-next"],
     queryFn: () => movieApi.getByCountry("au-my", 2).then((r) => r.data),
-    enabled: showMoreSections,
+    enabled: isSectionActive("nextWatch"),
   });
 
   // 6. Series quốc tế (International Series)
@@ -1684,7 +1900,6 @@ export default function HomePageClient({
         : undefined,
     [homeFeedSections?.series],
   );
-  const seriesLoading = showMoreSections && homeFeedLoading;
 
   // 7. Anime & Hoạt hình lồng tiếng (ONLY place for Anime/3D Animation)
   const animeData = useMemo(
@@ -1694,15 +1909,14 @@ export default function HomePageClient({
         : undefined,
     [homeFeedSections?.anime],
   );
-  const animeLoading = showMoreSections && homeFeedLoading;
-  const { data: animeGenreData } = useQuery({
+  const { data: animeGenreData, isLoading: animeGenreQueryLoading } = useQuery({
     queryKey: ["anime-genre", 1],
     queryFn: () => movieApi.getByGenre("hoat-hinh", 1).then((r) => r.data),
-    enabled: showMoreSections,
+    enabled: isSectionActive("anime"),
   });
 
   // 8. Phim phiêu lưu mạo hiểm (Hollywood & International Adventure Movies)
-  const { data: adventureUsUkData, isLoading: adventureLoading } = useQuery({
+  const { data: adventureUsUkData, isLoading: adventureUsUkLoading } = useQuery({
     queryKey: ["adventure-movies-us-uk-v2"],
     queryFn: () =>
       movieApi
@@ -1713,9 +1927,9 @@ export default function HomePageClient({
           limit: 24,
         })
         .then((r) => r.data),
-    enabled: showMoreSections,
+    enabled: isSectionActive("adventure"),
   });
-  const { data: adventureData } = useQuery({
+  const { data: adventureData, isLoading: adventureFeatureLoading } = useQuery({
     queryKey: ["adventure-movies-feature-films-v2"],
     queryFn: () =>
       movieApi
@@ -1726,8 +1940,9 @@ export default function HomePageClient({
           limit: 24,
         })
         .then((r) => r.data),
-    enabled: showMoreSections,
+    enabled: isSectionActive("adventure"),
   });
+  const adventureQueryLoading = adventureUsUkLoading || adventureFeatureLoading;
 
   // 9. Phim chất lượng cao Hollywood
   const singleData = useMemo(
@@ -1737,17 +1952,16 @@ export default function HomePageClient({
         : undefined,
     [homeFeedSections?.single],
   );
-  const singleLoading = showMoreSections && homeFeedLoading;
 
   // 10. Phim chính kịch chuyển thể từ sách (Book Adaptation Dramas)
-  const { data: dramaData, isLoading: dramaLoading } = useQuery({
+  const { data: dramaData, isLoading: dramaQueryLoading } = useQuery({
     queryKey: ["drama-movies"],
     queryFn: () => movieApi.getByGenre("chinh-kich", 1).then((r) => r.data),
-    enabled: showMoreSections,
+    enabled: isSectionActive("drama"),
   });
 
   // 11. Phim kịch tính về thảm họa chết chóc (Hollywood Thriller & Disaster)
-  const { data: disasterUsUkData, isLoading: disasterLoading } = useQuery({
+  const { data: disasterUsUkData, isLoading: disasterQueryLoading } = useQuery({
     queryKey: ["disaster-movies-us-uk"],
     queryFn: () =>
       movieApi
@@ -1758,28 +1972,28 @@ export default function HomePageClient({
           limit: 24,
         })
         .then((r) => r.data),
-    enabled: showMoreSections,
+    enabled: isSectionActive("disaster"),
   });
 
   // 12. Thể loại chiến tranh và gai góc (War Movies)
-  const { data: warData, isLoading: warLoading } = useQuery({
+  const { data: warData, isLoading: warQueryLoading } = useQuery({
     queryKey: ["war-movies"],
     queryFn: () => movieApi.getByGenre("chien-tranh", 1).then((r) => r.data),
-    enabled: showMoreSections,
+    enabled: isSectionActive("war"),
   });
 
   // 13. Phim hài (Comedy Movies)
-  const { data: comedyData, isLoading: comedyLoading } = useQuery({
+  const { data: comedyData, isLoading: comedyQueryLoading } = useQuery({
     queryKey: ["comedy-movies"],
     queryFn: () => movieApi.getByGenre("hai-huoc", 1).then((r) => r.data),
-    enabled: showMoreSections,
+    enabled: isSectionActive("comedy"),
   });
 
   // 14. Bộ phim giải trí hoàn hảo (Romance & Feel-Good Movies)
-  const { data: romanceData, isLoading: romanceLoading } = useQuery({
+  const { data: romanceData, isLoading: romanceQueryLoading } = useQuery({
     queryKey: ["romance-movies"],
     queryFn: () => movieApi.getByGenre("tinh-cam", 1).then((r) => r.data),
-    enabled: showMoreSections,
+    enabled: isSectionActive("romance"),
   });
 
   // Latest films query for Phim Mới Cập Nhật
@@ -2019,6 +2233,88 @@ export default function HomePageClient({
     return filterLiveActionOnly(deduplicate(list));
   }, [romanceData]);
 
+  const workplaceFilms = useMemo(() => {
+    const isWorkplaceFilm = (film: FilmItem) => {
+      if (!film?.name || !film?.slug) return false;
+      const combined = `${film.name} ${film.origin_name || ""} ${film.content || ""}`.toLowerCase();
+      return (
+        /công sở|văn phòng|thư ký|tổng tài|sếp|giám đốc|khởi nghiệp|kinh doanh|doanh nghiệp|đồng nghiệp|tài chính|thương trường|luật sư|bác sĩ|nghề nghiệp|hẹn hò chốn công sở|office|business|secretary|workplace|intern|corporate|boss/i.test(
+          combined,
+        ) ||
+        [
+          "hen-ho-chon-cong-so",
+          "thu-ky-kim-sao-the",
+          "khach-san-vuong-gia",
+          "soi-gia-pho-wall",
+          "nu-hoang-nuoc-mat",
+          "khoi-nghiep",
+          "co-di-ma-lay-chong-toi",
+          "co-nang-cu-ta-kim-bok-joo",
+          "co-nang-manh-me-do-bong-soon",
+        ].includes(film.slug)
+      );
+    };
+
+    const remote = (workplaceRemoteData || []).filter(isWorkplaceFilm);
+    const poolMatches = homeFeedPool.filter(isWorkplaceFilm);
+
+    return deduplicate([
+      ...CURATED_WORKPLACE_FILM_ITEMS,
+      ...filterLiveActionOnly([...remote, ...poolMatches]),
+    ]);
+  }, [workplaceRemoteData, homeFeedPool]);
+
+  const acclaimedFilms = useMemo(() => {
+    const list = acclaimedRemoteData?.data?.items || acclaimedRemoteData?.items || [];
+    const highRatedPool = homeFeedPool.filter(
+      (film) => (film.vote_average || film.rating || 0) >= 8.0,
+    );
+    return deduplicate([
+      ...CURATED_ACCLAIMED_FILM_ITEMS,
+      ...rankHotCatalogFilms(
+        filterLiveActionOnly([...list, ...highRatedPool]),
+        trendingFilms,
+      ),
+    ]);
+  }, [acclaimedRemoteData, homeFeedPool, trendingFilms]);
+
+  const workplaceLoading =
+    isSectionActive("workplace") &&
+    workplaceQueryLoading &&
+    !workplaceFilms.length;
+  const acclaimedLoading =
+    isSectionActive("acclaimed") &&
+    acclaimedQueryLoading &&
+    !acclaimedFilms.length;
+  const nextWatchLoading =
+    isSectionActive("nextWatch") &&
+    nextWatchQueryLoading &&
+    !nextWatchFilms.length;
+  const seriesLoading =
+    isSectionActive("series") && homeFeedLoading && !seriesFilms.length;
+  const animeLoading =
+    isSectionActive("anime") &&
+    (homeFeedLoading || animeGenreQueryLoading) &&
+    !animeFilms.length;
+  const adventureLoading =
+    isSectionActive("adventure") &&
+    adventureQueryLoading &&
+    !adventureFilms.length;
+  const singleLoading =
+    isSectionActive("single") && homeFeedLoading && !singleFilms.length;
+  const dramaLoading =
+    isSectionActive("drama") && dramaQueryLoading && !dramaFilms.length;
+  const disasterLoading =
+    isSectionActive("disaster") &&
+    disasterQueryLoading &&
+    !disasterFilms.length;
+  const warLoading =
+    isSectionActive("war") && warQueryLoading && !warFilms.length;
+  const comedyLoading =
+    isSectionActive("comedy") && comedyQueryLoading && !comedyFilms.length;
+  const romanceLoading =
+    isSectionActive("romance") && romanceQueryLoading && !romanceFilms.length;
+
   const latestFilms = useMemo(
     () => deduplicate(latestData?.items || latestData?.data?.items || []),
     [latestData],
@@ -2035,6 +2331,8 @@ export default function HomePageClient({
     horrorRowList,
     historicalRowList,
     theatricalRowList,
+    acclaimedRowList,
+    workplaceRowList,
     nextWatchRowList,
     seriesRowList,
     animeRowList,
@@ -2064,6 +2362,8 @@ export default function HomePageClient({
     const horrorRowList = buildRow(horrorFilms, 14);
     const historicalRowList = buildRow(historicalFilms, 14);
     const theatricalRowList = buildRow(theatricalFilms, 14);
+    const acclaimedRowList = buildRow(acclaimedFilms, 14);
+    const workplaceRowList = buildRow(workplaceFilms, 14);
 
     // Lazy 10 Sections
     const nextWatchRowList = buildRow(nextWatchFilms, 14);
@@ -2090,6 +2390,8 @@ export default function HomePageClient({
         ...horrorRowList,
         ...historicalRowList,
         ...theatricalRowList,
+        ...acclaimedRowList,
+        ...workplaceRowList,
         ...nextWatchRowList,
         ...seriesRowList,
         ...animeRowList,
@@ -2117,6 +2419,8 @@ export default function HomePageClient({
       ...horrorFilms,
       ...historicalFilms,
       ...theatricalFilms,
+      ...acclaimedFilms,
+      ...workplaceFilms,
       ...REAL_TRENDING_TOP10_POOL,
     ]);
 
@@ -2147,6 +2451,8 @@ export default function HomePageClient({
       horrorRowList,
       historicalRowList,
       theatricalRowList,
+      acclaimedRowList,
+      workplaceRowList,
       nextWatchRowList,
       seriesRowList,
       animeRowList,
@@ -2171,6 +2477,8 @@ export default function HomePageClient({
     horrorFilms,
     historicalFilms,
     theatricalFilms,
+    acclaimedFilms,
+    workplaceFilms,
     nextWatchFilms,
     seriesFilms,
     animeFilms,
@@ -2316,7 +2624,7 @@ export default function HomePageClient({
       </LazySection>
     ),
     vfx: (
-      <LazySection>
+      <LazySection onVisible={() => markSectionLoaded("vfx")}>
         <FilmSection
           title={t("sections.vfx", "Phim Viễn Tưởng")}
           films={vfxRowList}
@@ -2326,7 +2634,7 @@ export default function HomePageClient({
       </LazySection>
     ),
     "usuk-series": (
-      <LazySection>
+      <LazySection onVisible={() => markSectionLoaded("usuk-series")}>
         <div className="hidden md:block">
           <HeroShowcaseSection
             title={t("sections.usUkSeries", "Series Âu-Mỹ Đỉnh Cao")}
@@ -2346,7 +2654,7 @@ export default function HomePageClient({
       </LazySection>
     ),
     action: (
-      <LazySection>
+      <LazySection onVisible={() => markSectionLoaded("action")}>
         <FilmSection
           title={t("sections.action", "Phim Hành Động Kịch Tính")}
           films={actionRowList}
@@ -2356,7 +2664,7 @@ export default function HomePageClient({
       </LazySection>
     ),
     "korean-romance": (
-      <LazySection>
+      <LazySection onVisible={() => markSectionLoaded("koreanRomance")}>
         <FilmSection
           title={t("sections.koreanRomance", "Phim Tình Cảm Hàn Quốc")}
           films={koreanRomanceRowList}
@@ -2366,7 +2674,7 @@ export default function HomePageClient({
       </LazySection>
     ),
     healing: (
-      <LazySection>
+      <LazySection onVisible={() => markSectionLoaded("healing")}>
         <FilmSection
           title={t("sections.healing", "Phim Chữa Lành")}
           films={healingRowList}
@@ -2376,7 +2684,7 @@ export default function HomePageClient({
       </LazySection>
     ),
     scifi: (
-      <LazySection>
+      <LazySection onVisible={() => markSectionLoaded("scifi")}>
         <div className="hidden md:block">
           <CuratedSpotlightSection
             title={t("sections.scifi", "Tuyệt Tác Khoa Học Viễn Tưởng")}
@@ -2396,7 +2704,7 @@ export default function HomePageClient({
       </LazySection>
     ),
     horror: (
-      <LazySection>
+      <LazySection onVisible={() => markSectionLoaded("horror")}>
         <FilmSection
           title={t("sections.horror", "Phim Kinh Dị")}
           films={horrorRowList}
@@ -2406,7 +2714,7 @@ export default function HomePageClient({
       </LazySection>
     ),
     historical: (
-      <LazySection>
+      <LazySection onVisible={() => markSectionLoaded("historical")}>
         <div data-mobile-simple-section="historical" className="md:hidden">
           <FilmSection
             title={t("sections.historical", "Phim Cổ Trang")}
@@ -2427,12 +2735,32 @@ export default function HomePageClient({
       </LazySection>
     ),
     theatrical: (
-      <LazySection>
+      <LazySection onVisible={() => markSectionLoaded("theatrical")}>
         <FilmSection
           title={t("sections.theatrical", "Phim Chiếu Rạp")}
           films={theatricalRowList}
           isLoading={theatricalLoading}
           href="/films/chieu-rap"
+        />
+      </LazySection>
+    ),
+    acclaimed: (
+      <LazySection onVisible={() => markSectionLoaded("acclaimed")}>
+        <FilmSection
+          title={t("sections.acclaimed", "Phim Hay Được Đón Nhận")}
+          films={acclaimedRowList}
+          isLoading={acclaimedLoading}
+          href="/films?sort=view"
+        />
+      </LazySection>
+    ),
+    workplace: (
+      <LazySection onVisible={() => markSectionLoaded("workplace")}>
+        <FilmSection
+          title={t("sections.workplace", "Phim Đề Tài Công Sở")}
+          films={workplaceRowList}
+          isLoading={workplaceLoading}
+          href="/films?genre=tinh-cam"
         />
       </LazySection>
     ),
@@ -2452,6 +2780,8 @@ export default function HomePageClient({
     "horror",
     "historical",
     "theatrical",
+    "acclaimed",
+    "workplace",
   ];
   const savedSectionOrder = (publicConfig?.homeSectionOrder?.length
     ? publicConfig.homeSectionOrder
@@ -2502,114 +2832,114 @@ export default function HomePageClient({
 
         <div className="space-y-2">
           {/* ── 10 Progressively Loaded Sections as User Scrolls ── */}
-          <LazySection>
+          <LazySection onVisible={() => markSectionLoaded("nextWatch")}>
             <FilmSection
               title={t("sections.nextWatch", "Gợi Ý Phim Tiếp Theo")}
-                films={nextWatchRowList}
-                isLoading={nextWatchLoading}
-                href="/country/au-my"
-              />
-            </LazySection>
+              films={nextWatchRowList}
+              isLoading={nextWatchLoading}
+              href="/country/au-my"
+            />
+          </LazySection>
 
-            <LazySection>
+          <LazySection onVisible={() => markSectionLoaded("series")}>
+            <FilmSection
+              title={t("sections.series", "Phim Bộ Đặc Sắc")}
+              films={seriesRowList}
+              isLoading={seriesLoading}
+              href="/films/series"
+            />
+          </LazySection>
+
+          <LazySection onVisible={() => markSectionLoaded("anime")}>
+            <FilmSection
+              title={t("sections.anime", "Thế Giới Anime & Hoạt Hình")}
+              films={animeRowList}
+              isLoading={animeLoading}
+              href="/films/anime"
+            />
+          </LazySection>
+
+          <LazySection onVisible={() => markSectionLoaded("adventure")}>
+            <FilmSection
+              title={t("sections.adventure", "Phim Phiêu Lưu & Khám Phá")}
+              films={adventureRowList}
+              isLoading={adventureLoading}
+              href="/genre/phieu-luu"
+            />
+          </LazySection>
+
+          <LazySection onVisible={() => markSectionLoaded("single")}>
+            <FilmSection
+              title={t("sections.single", "Phim Lẻ Tuyển Chọn")}
+              films={singleRowList}
+              isLoading={singleLoading}
+              href="/films/single"
+            />
+          </LazySection>
+
+          <LazySection onVisible={() => markSectionLoaded("drama")}>
+            <FilmSection
+              title={t("sections.drama", "Phim Tâm Lý & Xã Hội")}
+              films={dramaRowList}
+              isLoading={dramaLoading}
+              href="/genre/chinh-kich"
+            />
+          </LazySection>
+
+          <LazySection onVisible={() => markSectionLoaded("disaster")}>
+            <FilmSection
+              title={t("sections.disaster", "Phim Thảm Họa & Sinh Tồn")}
+              films={disasterRowList}
+              isLoading={disasterLoading}
+              href="/genre/kinh-di"
+            />
+          </LazySection>
+
+          <LazySection onVisible={() => markSectionLoaded("war")}>
+            <FilmSection
+              title={t("sections.war", "Phim Chiến Tranh & Lịch Sử")}
+              films={warRowList}
+              isLoading={warLoading}
+              href="/genre/chien-tranh"
+            />
+          </LazySection>
+
+          <LazySection onVisible={() => markSectionLoaded("comedy")}>
+            <FilmSection
+              title={t("sections.comedy", "Phim Hài Hước & Gia Đình")}
+              films={comedyRowList}
+              isLoading={comedyLoading}
+              href="/genre/hai-huoc"
+            />
+          </LazySection>
+
+          <LazySection onVisible={() => markSectionLoaded("romance")}>
+            <FilmSection
+              title={t("sections.romance", "Phim Lãng Mạn & Tình Cảm")}
+              films={romanceRowList}
+              isLoading={romanceLoading}
+              href="/genre/tinh-cam"
+            />
+          </LazySection>
+
+          <LazySection onVisible={() => markSectionLoaded("weekly")}>
+            <div data-mobile-simple-section="weekly" className="md:hidden">
               <FilmSection
-                title={t("sections.series", "Phim Bộ Đặc Sắc")}
-                films={seriesRowList}
-                isLoading={seriesLoading}
-                href="/films/series"
+                title="Phim Bộ & Phim Lẻ Tuần Này"
+                films={weeklyMobileRowList}
+                isLoading={seriesLoading || singleLoading}
+                href="/films"
               />
-            </LazySection>
-
-            <LazySection>
-              <FilmSection
-                title={t("sections.anime", "Thế Giới Anime & Hoạt Hình")}
-                films={animeRowList}
-                isLoading={animeLoading}
-                href="/films/anime"
+            </div>
+            <div className="hidden md:block">
+              <WeeklyCuratedShowcase
+                seriesFilms={seriesRowList}
+                singleFilms={singleRowList}
+                isLoading={seriesLoading || singleLoading}
               />
-            </LazySection>
-
-            <LazySection>
-              <FilmSection
-                title={t("sections.adventure", "Phim Phiêu Lưu & Khám Phá")}
-                films={adventureRowList}
-                isLoading={adventureLoading}
-                href="/genre/phieu-luu"
-              />
-            </LazySection>
-
-            <LazySection>
-              <FilmSection
-                title={t("sections.single", "Phim Lẻ Tuyển Chọn")}
-                films={singleRowList}
-                isLoading={singleLoading}
-                href="/films/single"
-              />
-            </LazySection>
-
-            <LazySection>
-              <FilmSection
-                title={t("sections.drama", "Phim Tâm Lý & Xã Hội")}
-                films={dramaRowList}
-                isLoading={dramaLoading}
-                href="/genre/chinh-kich"
-              />
-            </LazySection>
-
-            <LazySection>
-              <FilmSection
-                title={t("sections.disaster", "Phim Thảm Họa & Sinh Tồn")}
-                films={disasterRowList}
-                isLoading={disasterLoading}
-                href="/genre/kinh-di"
-              />
-            </LazySection>
-
-            <LazySection>
-              <FilmSection
-                title={t("sections.war", "Phim Chiến Tranh & Lịch Sử")}
-                films={warRowList}
-                isLoading={warLoading}
-                href="/genre/chien-tranh"
-              />
-            </LazySection>
-
-            <LazySection>
-              <FilmSection
-                title={t("sections.comedy", "Phim Hài Hước & Gia Đình")}
-                films={comedyRowList}
-                isLoading={comedyLoading}
-                href="/genre/hai-huoc"
-              />
-            </LazySection>
-
-            <LazySection>
-              <FilmSection
-                title={t("sections.romance", "Phim Lãng Mạn & Tình Cảm")}
-                films={romanceRowList}
-                isLoading={romanceLoading}
-                href="/genre/tinh-cam"
-              />
-            </LazySection>
-
-            <LazySection>
-              <div data-mobile-simple-section="weekly" className="md:hidden">
-                <FilmSection
-                  title="Phim Bộ & Phim Lẻ Tuần Này"
-                  films={weeklyMobileRowList}
-                  isLoading={seriesLoading || singleLoading}
-                  href="/films"
-                />
-              </div>
-              <div className="hidden md:block">
-                <WeeklyCuratedShowcase
-                  seriesFilms={seriesRowList}
-                  singleFilms={singleRowList}
-                  isLoading={seriesLoading || singleLoading}
-                />
-              </div>
-            </LazySection>
-          </div>
+            </div>
+          </LazySection>
+        </div>
       </div>
     </div>
   );
