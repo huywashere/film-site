@@ -17,7 +17,7 @@ test('root layout renders a bounded splash without remote poster artwork', () =>
   assert.match(layout, /netphim-theme/);
   assert.match(splash, /dataset\.entrySplash === 'skip'/);
   assert.match(styles, /data-entry-splash='skip'/);
-  assert.match(splash, /MAX_VISIBLE_MS = 1500/);
+  assert.match(splash, /MAX_VISIBLE_MS = (?:950|1500)/);
   assert.match(splash, /flexphim-logo\.svg/);
   assert.match(splash, /poster-grid-mobile\.webp/);
   assert.match(splash, /poster-grid-desktop\.webp/);

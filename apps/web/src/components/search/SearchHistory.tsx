@@ -120,7 +120,9 @@ export function SearchHistory({ onSelectQuery }: SearchHistoryProps) {
               >
                 <span>{item}</span>
                 <button
+                  type="button"
                   onClick={(e) => handleRemove(e, item)}
+                  aria-label={`Xóa ${item} khỏi lịch sử`}
                   className="text-neutral-500 hover:text-white p-0.5 rounded-full hover:bg-white/10 transition-colors"
                 >
                   <X size={12} />

@@ -289,6 +289,7 @@ export function HeroShowcaseSection({ title, films, isLoading, href }: HeroShowc
                         : 'opacity-65 shadow-[0_10px_24px_rgba(0,0,0,0.45)] hover:opacity-100 hover:scale-[1.02]'
                     }`}
                     title={film.name}
+                    aria-label={`Chọn phim ${film.name}`}
                   >
                     <TmdbArtwork
                       film={film}

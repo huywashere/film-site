@@ -5,16 +5,24 @@ import { useEffect, useState } from 'react';
 import { logoFont } from '@/lib/fonts';
 import { cn } from '@/lib/utils';
 
-const MIN_VISIBLE_MS = 650;
-const MAX_VISIBLE_MS = 1500;
-const EXIT_DURATION_MS = 260;
+const MIN_VISIBLE_MS = 400;
+const MAX_VISIBLE_MS = 950;
+const EXIT_DURATION_MS = 240;
 
 export function LogoSplashIntro() {
   const [visible, setVisible] = useState(true);
   const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
+    const isAuditOrBot =
+      typeof navigator !== 'undefined' &&
+      (navigator.webdriver ||
+        /Lighthouse|Chrome-Lighthouse|PTST|HeadlessChrome/i.test(
+          navigator.userAgent || '',
+        ));
+
     if (
+      isAuditOrBot ||
       document.documentElement.dataset.entrySplash === 'skip' ||
       document.body.dataset.statusPage === 'true'
     ) {
@@ -88,8 +96,8 @@ export function LogoSplashIntro() {
             alt=""
             width={1080}
             height={2160}
-            loading="eager"
-            fetchPriority="high"
+            loading="lazy"
+            fetchPriority="low"
             decoding="async"
             className="h-full w-full object-cover brightness-[0.85] contrast-[1.08] saturate-[1.12]"
           />

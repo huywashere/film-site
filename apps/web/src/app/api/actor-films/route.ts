@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const { headers, appendKey } = getTmdbAuth();
-    const TMDB_HOST = "https://api.themoviedb.org/3";
+    const TMDB_HOST = "https://api.tmdb.org/3";
 
     // 2. Lấy thông tin diễn viên và credits từ TMDB (có tiếng Việt)
     const [personRes, creditsRes] = await Promise.all([

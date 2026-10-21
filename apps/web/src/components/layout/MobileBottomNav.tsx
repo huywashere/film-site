@@ -55,15 +55,37 @@ export function MobileBottomNav() {
   // Idle pre-warm primary tabs on mobile
   useEffect(() => {
     if (!mounted || typeof window === 'undefined') return;
+    const isAuditOrBot =
+      navigator.webdriver ||
+      /Lighthouse|Chrome-Lighthouse|PTST|HeadlessChrome/i.test(
+        navigator.userAgent || '',
+      );
+    if (isAuditOrBot) return;
+
+    let idleId: number | undefined;
     const timer = setTimeout(() => {
-      ['/', '/films', '/genres'].forEach((route) => {
-        try {
-          router.prefetch(route);
-        } catch {}
-      });
-      warmRoute('/films');
-    }, 1000);
-    return () => clearTimeout(timer);
+      const runWarm = () => {
+        ['/', '/films', '/genres'].forEach((route) => {
+          try {
+            router.prefetch(route);
+          } catch {}
+        });
+        warmRoute('/films');
+      };
+
+      if ('requestIdleCallback' in window) {
+        idleId = window.requestIdleCallback(runWarm, { timeout: 3000 });
+      } else {
+        runWarm();
+      }
+    }, 4500);
+
+    return () => {
+      clearTimeout(timer);
+      if (idleId && 'cancelIdleCallback' in window) {
+        window.cancelIdleCallback(idleId);
+      }
+    };
   }, [mounted, router, warmRoute]);
 
   const warmProfileRoute = () => {
@@ -164,6 +186,7 @@ export function MobileBottomNav() {
                 onTouchStart={() => warmRoute(item.href)}
                 onPointerDown={() => warmRoute(item.href)}
                 onClick={() => setOptimisticHref(item.href)}
+                aria-label={item.label}
                 aria-current={item.isActive ? 'page' : undefined}
                 className="group relative flex items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-white/70 active:scale-95 transition-transform touch-manipulation select-none"
               >

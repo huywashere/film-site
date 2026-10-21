@@ -162,6 +162,7 @@ export function AppleDepthShowcaseSection({
                 kind="backdrop"
                 allowTitleLookup
                 preferOriginal
+                preferTmdb
                 className="h-full w-full object-cover object-center opacity-40 blur-[2px] scale-105"
                 alt=""
               />

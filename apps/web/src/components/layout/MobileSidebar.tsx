@@ -273,6 +273,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
             <button
               type="button"
               onClick={() => setLang("vi")}
+              aria-label="Chọn Tiếng Việt"
               className={cn(
                 "h-[1.35rem] rounded-full px-2.5 transition-all cursor-pointer",
                 lang === "vi"
@@ -285,6 +286,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
             <button
               type="button"
               onClick={() => setLang("en")}
+              aria-label="Select English"
               className={cn(
                 "h-[1.35rem] rounded-full px-2.5 transition-all cursor-pointer",
                 lang === "en"

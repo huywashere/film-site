@@ -251,6 +251,7 @@ export function TrailerModal({
               type="button"
               onClick={() => setIsFloating(false)}
               title="Phóng to toàn màn hình"
+              aria-label="Phóng to toàn màn hình"
               className="p-1 rounded-full text-neutral-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
             >
               <Maximize2 size={13} />
@@ -259,6 +260,7 @@ export function TrailerModal({
               type="button"
               onClick={onClose}
               title="Đóng trailer"
+              aria-label="Đóng trailer"
               className="p-1 rounded-full text-neutral-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
             >
               <X size={13} />
@@ -320,6 +322,7 @@ export function TrailerModal({
               type="button"
               onClick={() => setIsFloating(true)}
               title="Thu nhỏ nổi góc màn hình để vừa xem vừa lướt web"
+              aria-label="Thu nhỏ nổi góc màn hình để vừa xem vừa lướt web"
               className="flex h-7 items-center gap-1.5 rounded-full px-2.5 text-[10px] font-semibold text-neutral-300 bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 transition-all cursor-pointer hover:scale-105 active:scale-95"
             >
               <Minimize2 size={12} className="text-[#23ade5]" />

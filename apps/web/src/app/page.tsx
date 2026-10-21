@@ -14,8 +14,7 @@ import {
 import { getMovieTmdbServer } from "@/lib/server/movie-tmdb-server";
 import { getMoviePageData } from "@/lib/server/movie-page-data";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 60;
 
 const heroDetailServerCache = new Map<
   string,
@@ -106,7 +105,7 @@ async function resolveInitialHeroFilms(heroSlugs?: string[]): Promise<CuratedHer
         };
         heroDetailServerCache.set(mappedSlug, {
           film,
-          expiresAt: Date.now() + 60_000,
+          expiresAt: Date.now() + 300_000,
         });
         return film;
       } catch {
@@ -129,7 +128,7 @@ async function fetchConfigFromEndpoint(
     const clean = baseUrl.replace(/\/$/, "");
     const res = await fetch(`${clean}/config/public`, {
       cache: "no-store",
-      signal: AbortSignal.timeout(1800),
+      signal: AbortSignal.timeout(600),
     });
     if (!res.ok) return null;
     return (await res.json()) as PublicSiteConfiguration;
@@ -140,7 +139,7 @@ async function fetchConfigFromEndpoint(
 
 async function getInitialPublicConfiguration(): Promise<PublicSiteConfiguration | null> {
   const now = Date.now();
-  if (cachedPublicConfig && now - lastConfigFetch < 2_500) {
+  if (cachedPublicConfig && now - lastConfigFetch < 60_000) {
     return cachedPublicConfig;
   }
 
@@ -212,6 +211,7 @@ async function getInitialPublicConfiguration(): Promise<PublicSiteConfiguration 
     }
   }
 
+  lastConfigFetch = now;
   return cachedPublicConfig;
 }
 

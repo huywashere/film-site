@@ -160,10 +160,12 @@ export function TmdbArtwork({
     ? localImageProxyUrl(providerPrimary, { fallback: providerFallback })
     : null;
 
+  const effectivePreferTmdb = preferTmdb || kind === 'backdrop';
+
   const needsTmdbArtwork =
     enabled &&
     nearViewport &&
-    ((preferTmdb && !providerIsTmdb) ||
+    ((effectivePreferTmdb && !providerIsTmdb) ||
       (preferOriginal && kind === 'backdrop' && (!providerIsTmdb || !film.thumb_url)) ||
       ((!providerIsTmdb || autoRecovery) &&
         (!providerPrimary || allowTitleLookup || autoRecovery)));
@@ -173,7 +175,7 @@ export function TmdbArtwork({
     needsTmdbArtwork,
   );
   const { backdropUrl, posterUrl } = artworkQuery;
-  const tmdbUrl = kind === 'backdrop' ? backdropUrl || posterUrl : posterUrl || backdropUrl;
+  const tmdbUrl = kind === 'backdrop' ? backdropUrl : posterUrl || backdropUrl;
 
   const candidates = useMemo(() => {
     const list: string[] = [];
@@ -191,7 +193,7 @@ export function TmdbArtwork({
       // first; a third-party resize hop can hang even while TMDB is healthy.
       const sizedTmdbUrl =
         kind === 'backdrop'
-          ? artworkQuery.backdropW1280 || tmdbUrl
+          ? (preferOriginal && artworkQuery.backdropOriginal) || artworkQuery.backdropW1280 || tmdbUrl
           : artworkQuery.posterW500 || tmdbUrl;
       add(sizedTmdbUrl);
 
@@ -202,20 +204,24 @@ export function TmdbArtwork({
       const wsrv = wsrvImageUrl(sizedTmdbUrl, preset);
       if (wsrv) add(wsrv);
       if (kind === 'backdrop' && preferOriginal) add(artworkQuery.backdropOriginal);
+      if (kind === 'backdrop' && artworkQuery.backdropW780) add(artworkQuery.backdropW780);
       add(tmdbUrl);
     };
 
     // High-visibility showcases can explicitly request TMDB first. Keep this
     // opt-in so ordinary shelves retain the faster provider-first path.
     if (preferTmdb) addTmdbCandidates();
+    if (kind === 'backdrop' && !preferTmdb) addTmdbCandidates();
 
     // Direct provider artwork. Go keeps alternatives from every merged
     // provider, so a dead CDN can fail over without another metadata request.
     // Movie-provider CDNs are fastest when reachable. Keep the same-origin
     // relay immediately behind them so a blocked CDN cannot leave a shelf blank.
     if (providerPrimary && !isTmdbImageUrl(providerPrimary)) {
-      add(providerPrimary);
-      add(providerProxy);
+      if ((!preferTmdb && kind !== 'backdrop') || (artworkQuery.isFetched && !tmdbUrl)) {
+        add(providerPrimary);
+        add(providerProxy);
+      }
     }
     if (providerPrimary && isTmdbImageUrl(providerPrimary)) {
       const sizedProvider =
@@ -257,6 +263,12 @@ export function TmdbArtwork({
     }
     if (!preferTmdb) addTmdbCandidates();
 
+    // Final fallback for preferTmdb if provider was skipped earlier
+    if ((preferTmdb || kind === 'backdrop') && providerPrimary && !isTmdbImageUrl(providerPrimary)) {
+      add(providerPrimary);
+      add(providerProxy);
+    }
+
     // Cross-fallback: if backdrop is needed and only poster was passed (or vice versa).
     const rawSecondaryUrl =
       kind === 'backdrop'
@@ -268,7 +280,8 @@ export function TmdbArtwork({
     if (
       secondaryUrl &&
       secondaryUrl !== providerPrimary &&
-      secondaryUrl !== providerFallback
+      secondaryUrl !== providerFallback &&
+      (kind !== 'backdrop' || isTmdbImageUrl(secondaryUrl))
     ) {
       add(isTmdbImageUrl(secondaryUrl) ? secondaryUrl : localImageProxyUrl(secondaryUrl));
     }
@@ -290,11 +303,15 @@ export function TmdbArtwork({
     providerCandidates,
     artworkQuery.backdropW1280,
     artworkQuery.backdropOriginal,
+    artworkQuery.backdropW780,
     artworkQuery.posterW500,
+    artworkQuery.posterW780,
+    artworkQuery.isFetched,
     preferredProviderTmdbW1280,
     preferredProviderTmdbOriginal,
     preferOriginal,
     preferTmdb,
+    effectivePreferTmdb,
     autoRecovery,
   ]);
 
@@ -386,6 +403,15 @@ export function TmdbArtwork({
     setFailedSrc(null);
     setAutoRecovery(false);
   }, [film.slug, kind]);
+
+  const prevTmdbUrlRef = useRef(tmdbUrl);
+  useEffect(() => {
+    if (tmdbUrl && tmdbUrl !== prevTmdbUrlRef.current) {
+      prevTmdbUrlRef.current = tmdbUrl;
+      setCandidateIndex(0);
+      setFailedSrc(null);
+    }
+  }, [tmdbUrl]);
 
   // Sync loaded state when src changes or when image is already cached/decoded in DOM
   useEffect(() => {

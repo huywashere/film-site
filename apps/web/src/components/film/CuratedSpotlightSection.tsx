@@ -154,6 +154,7 @@ export function CuratedSpotlightSection({
                 alt={activeFilm.name}
                 allowTitleLookup
                 preferOriginal
+                preferTmdb
                 sizes="(max-width: 1024px) 100vw, 75vw"
                 imageClassName="object-[center_25%]"
                 className="h-full w-full"

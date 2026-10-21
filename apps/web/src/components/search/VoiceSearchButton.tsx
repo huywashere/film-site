@@ -93,6 +93,9 @@ export function VoiceSearchButton({
       title={
         isListening ? "Đang lắng nghe giọng nói..." : "Tìm kiếm bằng giọng nói"
       }
+      aria-label={
+        isListening ? "Đang lắng nghe giọng nói..." : "Tìm kiếm bằng giọng nói"
+      }
     >
       {isListening ? (
         <Loader2 size={16} className="animate-spin text-white" />

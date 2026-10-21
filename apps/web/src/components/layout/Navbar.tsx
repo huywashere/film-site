@@ -812,6 +812,7 @@ export function Navbar() {
   return (
     <>
       <header
+        aria-label="Thanh điều hướng chính"
         data-site-header="true"
         data-scrolled={scrolled ? "true" : "false"}
         className="fixed top-0 left-0 right-0 z-50 h-[68px] sm:h-[72px] md:h-16 flex items-center [font-family:var(--font-manrope)] transform-gpu pt-[env(safe-area-inset-top,0px)]"
@@ -838,9 +839,9 @@ export function Navbar() {
             <AnimatedNavbarLogo onPrefetch={() => prefetchNav("/")} />
           </div>
 
-          <nav className="absolute left-1/2 z-10 hidden -translate-x-1/2 items-center justify-center whitespace-nowrap text-sm font-semibold text-neutral-200 xl:flex xl:space-x-0.5 min-[1700px]:space-x-2">
+          <nav aria-label="Điều hướng chính" className="absolute left-1/2 z-10 hidden -translate-x-1/2 items-center justify-center whitespace-nowrap text-sm font-semibold text-neutral-200 xl:flex xl:space-x-0.5 min-[1700px]:space-x-2">
             <div className="relative group py-5">
-              <button className="flex items-center space-x-1 whitespace-nowrap px-2.5 py-1.5 text-sm font-semibold text-neutral-300 transition-colors hover:text-white focus:outline-none min-[1700px]:px-3">
+              <button aria-label={t("nav.genres")} aria-haspopup="true" className="flex items-center space-x-1 whitespace-nowrap px-2.5 py-1.5 text-sm font-semibold text-neutral-300 transition-colors hover:text-white focus:outline-none min-[1700px]:px-3">
                 <span>{t("nav.genres")}</span>
                 <ChevronDown
                   size={14}
@@ -864,7 +865,7 @@ export function Navbar() {
             </div>
 
             <div className="relative group py-5">
-              <button className="flex items-center space-x-1 whitespace-nowrap px-2.5 py-1.5 text-sm font-semibold text-neutral-300 transition-colors hover:text-white focus:outline-none min-[1700px]:px-3">
+              <button aria-label={t("nav.country")} aria-haspopup="true" className="flex items-center space-x-1 whitespace-nowrap px-2.5 py-1.5 text-sm font-semibold text-neutral-300 transition-colors hover:text-white focus:outline-none min-[1700px]:px-3">
                 <span>{t("nav.country")}</span>
                 <ChevronDown
                   size={14}
@@ -913,6 +914,8 @@ export function Navbar() {
             {/* Thêm Dropdown Menu */}
             <div className="relative group py-5">
               <button
+                aria-label={t("nav.more", "Thêm")}
+                aria-haspopup="true"
                 className={cn(
                   "relative flex items-center space-x-1 whitespace-nowrap px-2.5 py-1.5 text-sm font-semibold transition-all duration-150 select-none min-[1700px]:px-3.5 rounded-full",
                   isMoreActive
@@ -1277,7 +1280,10 @@ export function Navbar() {
                 return (
                   <div className="hidden lg:block">
                     <DropdownMenu modal={false}>
-                      <DropdownMenuTrigger className="flex items-center space-x-1.5 focus:outline-none cursor-pointer group">
+                      <DropdownMenuTrigger
+                        aria-label={`Tài khoản của ${user.displayName || user.username}`}
+                        className="flex items-center space-x-1.5 focus:outline-none cursor-pointer group"
+                      >
                         {renderNavAvatar("w-8 h-8", 64)}
                         <ChevronDown
                           size={13}

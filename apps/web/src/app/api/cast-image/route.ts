@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
   try {
     if (TMDB_API_KEY) {
       const tmdbRes = await fetch(
-        `https://api.themoviedb.org/3/search/person?query=${encodeURIComponent(name)}&api_key=${TMDB_API_KEY}&include_adult=false`,
+        `https://api.tmdb.org/3/search/person?query=${encodeURIComponent(name)}&api_key=${TMDB_API_KEY}&include_adult=false`,
         { next: { revalidate: 86400 } },
       );
       if (tmdbRes.ok) {

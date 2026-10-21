@@ -130,6 +130,7 @@ export function BentoGridShowcaseSection({
                 kind="backdrop"
                 allowTitleLookup
                 preferOriginal
+                preferTmdb
                 className="h-full w-full object-cover object-center scale-105 group-hover/hero:scale-110 transition-transform duration-1000"
                 alt={heroFilm.name}
               />

@@ -156,7 +156,7 @@ export function ScrollProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     const routeKey = currentRouteKey();
     const navigationKind = navigationRef.current;
     const shouldRestore =
@@ -172,11 +172,13 @@ export function ScrollProvider({ children }: { children: React.ReactNode }) {
     const saved = shouldRestore ? readSavedPosition(routeKey) : null;
     if (!saved) {
       restoringRef.current = false;
-      window.scrollTo({
-        top: 0,
-        left: 0,
-        behavior: "instant" as ScrollBehavior,
-      });
+      if (window.scrollY !== 0 || window.scrollX !== 0) {
+        window.scrollTo({
+          top: 0,
+          left: 0,
+          behavior: "instant" as ScrollBehavior,
+        });
+      }
       return;
     }
 

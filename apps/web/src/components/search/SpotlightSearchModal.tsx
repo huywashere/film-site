@@ -579,6 +579,7 @@ export function SpotlightSearchModal({
                   }}
                   className="rounded-lg p-1 text-white/40 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
                   title="Xóa tìm kiếm"
+                  aria-label="Xóa tìm kiếm"
                 >
                   <X size={14} />
                 </button>
@@ -590,6 +591,7 @@ export function SpotlightSearchModal({
                 onClick={() => setViewMode("expanded")}
                 className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.04] text-neutral-300 hover:bg-white/[0.1] hover:text-white transition-all cursor-pointer"
                 title="Mở rộng giao diện tìm kiếm"
+                aria-label="Mở rộng giao diện tìm kiếm"
               >
                 <Maximize2 size={13} />
               </button>
@@ -772,7 +774,9 @@ export function SpotlightSearchModal({
                           <Clock size={10} className="text-neutral-500" />
                           <span>{term}</span>
                           <button
+                            type="button"
                             onClick={(e) => handleRemoveHistory(e, term)}
+                            aria-label={`Xóa ${term} khỏi lịch sử`}
                             className="text-neutral-500 hover:text-white transition-colors"
                           >
                             <X size={10} />
@@ -871,6 +875,7 @@ export function SpotlightSearchModal({
                 }}
                 className="rounded-lg p-1 text-white/40 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
                 title="Xóa tìm kiếm"
+                aria-label="Xóa tìm kiếm"
               >
                 <X size={14} />
               </button>
@@ -882,6 +887,7 @@ export function SpotlightSearchModal({
               onClick={() => setViewMode("compact")}
               className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04] text-neutral-300 hover:bg-white/[0.1] hover:text-white transition-all cursor-pointer"
               title="Thu nhỏ giao diện tìm kiếm"
+              aria-label="Thu nhỏ giao diện tìm kiếm"
             >
               <Minimize2 size={14} />
             </button>
@@ -1225,7 +1231,9 @@ export function SpotlightSearchModal({
                         <Clock size={11} className="text-white/30" />
                         <span>{term}</span>
                         <button
+                          type="button"
                           onClick={(e) => handleRemoveHistory(e, term)}
+                          aria-label={`Xóa ${term} khỏi lịch sử`}
                           className="ml-0.5 opacity-40 transition-opacity hover:text-white group-hover:opacity-100 cursor-pointer"
                         >
                           <X size={11} />

@@ -2457,6 +2457,7 @@ export default function HeroBanner({
             <button
               type="button"
               onClick={() => setTrailerModalFilm(film)}
+              aria-label={`${t("home.trailer", "Trailer")}: ${film.name}`}
               className={`${cardFont.className} flex items-center gap-1.5 sm:gap-2 rounded-full border border-white/15 bg-white/10 hover:bg-white/15 backdrop-blur-md px-4 py-2.5 sm:px-6 sm:py-3 text-xs font-extrabold uppercase tracking-wider text-white shadow-xl transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer`}
             >
               <Film size={14} className="text-white/90" />
@@ -2521,12 +2522,12 @@ export default function HeroBanner({
                 type="button"
                 onClick={prevSlide}
                 aria-label="Banner trước"
-                className="h-7 w-7 flex items-center justify-center rounded-full bg-white/10 active:bg-white/25 border border-white/15 text-white/90 backdrop-blur-md transition-all active:scale-90 cursor-pointer shadow-sm"
+                className="h-8 w-8 min-h-[32px] min-w-[32px] flex items-center justify-center rounded-full bg-white/10 active:bg-white/25 border border-white/15 text-white/90 backdrop-blur-md transition-all active:scale-90 cursor-pointer shadow-sm"
               >
-                <ChevronLeft size={14} />
+                <ChevronLeft size={16} />
               </button>
 
-              <div className="flex items-center gap-1.5 px-1">
+              <div className="flex items-center gap-1 px-1">
                 {featured.map((_, i) => (
                   <button
                     key={`mobile-hero-dot-${i}`}
@@ -2534,13 +2535,17 @@ export default function HeroBanner({
                     onClick={() => void activateSlide(i)}
                     aria-label={`Chuyển đến banner ${i + 1}`}
                     aria-current={i === current ? "true" : undefined}
-                    className={cn(
-                      "rounded-full transition-all duration-300 cursor-pointer",
-                      i === current
-                        ? "w-5 h-1.5 bg-[#7c3aed]"
-                        : "w-1.5 h-1.5 bg-white/40 hover:bg-white/80",
-                    )}
-                  />
+                    className="p-2 min-w-[28px] min-h-[28px] flex items-center justify-center cursor-pointer"
+                  >
+                    <span
+                      className={cn(
+                        "block rounded-full transition-all duration-300",
+                        i === current
+                          ? "w-5 h-1.5 bg-[#7c3aed]"
+                          : "w-1.5 h-1.5 bg-white/40 hover:bg-white/80",
+                      )}
+                    />
+                  </button>
                 ))}
               </div>
 
@@ -2548,17 +2553,18 @@ export default function HeroBanner({
                 type="button"
                 onClick={nextSlide}
                 aria-label="Banner tiếp theo"
-                className="h-7 w-7 flex items-center justify-center rounded-full bg-white/10 active:bg-white/25 border border-white/15 text-white/90 backdrop-blur-md transition-all active:scale-90 cursor-pointer shadow-sm"
+                className="h-8 w-8 min-h-[32px] min-w-[32px] flex items-center justify-center rounded-full bg-white/10 active:bg-white/25 border border-white/15 text-white/90 backdrop-blur-md transition-all active:scale-90 cursor-pointer shadow-sm"
               >
-                <ChevronRight size={14} />
+                <ChevronRight size={16} />
               </button>
             </div>
           )}
         </div>
       </div>
 
-      {/* Mouse Scroll Indicator */}
       <div
+        role="button"
+        tabIndex={0}
         onClick={() => {
           if (typeof window !== "undefined") {
             window.scrollTo({
@@ -2567,8 +2573,16 @@ export default function HeroBanner({
             });
           }
         }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            if (typeof window !== "undefined") {
+              window.scrollTo({ top: window.innerHeight - 70, behavior: "smooth" });
+            }
+          }
+        }}
         className="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 hidden md:flex flex-col items-center gap-1 opacity-60 hover:opacity-100 transition-opacity cursor-pointer select-none group"
         title="Cuộn xuống"
+        aria-label="Cuộn xuống để xem thêm"
       >
         <div className="w-5 h-8 rounded-full border border-white/40 group-hover:border-white flex items-start justify-center p-1 backdrop-blur-xs transition-colors">
           <motion.div

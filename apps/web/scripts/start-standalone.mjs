@@ -10,6 +10,13 @@ if (!existsSync(serverFile)) {
   throw new Error('Standalone build is missing. Run `pnpm build` before starting it.');
 }
 
+if (typeof process.loadEnvFile === 'function') {
+  const localEnv = path.join(appRoot, '.env.local');
+  if (existsSync(localEnv)) process.loadEnvFile(localEnv);
+  const rootEnv = path.join(appRoot, '..', '..', '.env');
+  if (existsSync(rootEnv)) process.loadEnvFile(rootEnv);
+}
+
 const copyIfPresent = (source, destination) => {
   if (existsSync(source)) {
     cpSync(source, destination, { recursive: true, force: true });
@@ -21,6 +28,8 @@ copyIfPresent(
   path.join(appRoot, '.next', 'static'),
   path.join(standaloneRoot, '.next', 'static'),
 );
+copyIfPresent(path.join(appRoot, '.env.local'), path.join(standaloneRoot, '.env.local'));
+copyIfPresent(path.join(appRoot, '..', '..', '.env'), path.join(standaloneRoot, '.env'));
 
 const child = spawn(process.execPath, [serverFile], {
   cwd: standaloneRoot,

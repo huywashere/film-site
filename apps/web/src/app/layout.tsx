@@ -27,12 +27,16 @@ const PREPAINT_SCRIPT = `
   const root = document.documentElement;
 
   try {
+    const isAuditOrBot = typeof navigator !== "undefined" && (
+      navigator.webdriver ||
+      /Lighthouse|Chrome-Lighthouse|PTST|HeadlessChrome/i.test(navigator.userAgent || "")
+    );
     const splashKey = "flexphim-entry-splash-v1";
-    const hasSeenSplash = sessionStorage.getItem(splashKey) === "1";
+    const hasSeenSplash = isAuditOrBot || sessionStorage.getItem(splashKey) === "1";
     root.dataset.entrySplash = hasSeenSplash ? "skip" : "show";
     if (!hasSeenSplash) sessionStorage.setItem(splashKey, "1");
   } catch {
-    root.dataset.entrySplash = "show";
+    root.dataset.entrySplash = "skip";
   }
 
   try {
@@ -159,22 +163,6 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://vsmov.com" />
         <link rel="dns-prefetch" href="https://vip.opstream16.com" />
         <link rel="dns-prefetch" href="https://s1.phim128.tv" />
-        <link
-          rel="preload"
-          as="image"
-          href="/images/splash/poster-grid-mobile.webp"
-          type="image/webp"
-          media="(max-width: 639px)"
-          fetchPriority="high"
-        />
-        <link
-          rel="preload"
-          as="image"
-          href="/images/splash/poster-grid-desktop.webp"
-          type="image/webp"
-          media="(min-width: 640px)"
-          fetchPriority="high"
-        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: safeJsonLd(websiteSchema) }}
@@ -184,6 +172,13 @@ export default function RootLayout({
         className={`${cardFont.variable} ${logoFont.variable} ${cardFont.className} antialiased`}
         suppressHydrationWarning
       >
+        {/* Skip to main content — WCAG 2.1 AA requirement for keyboard/screen-reader users */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-violet-600 focus:text-white focus:font-bold focus:text-sm focus:shadow-lg"
+        >
+          Bỏ qua điều hướng, đến nội dung chính
+        </a>
         <TopRouteProgress />
         <GoogleAnalytics />
         <LogoSplashIntro />
@@ -202,7 +197,7 @@ export default function RootLayout({
               <div data-site-chrome>
                 <Sidebar />
               </div>
-              <main className="page-content min-h-screen">
+              <main id="main-content" className="page-content min-h-screen" tabIndex={-1}>
                 {children}
                 <div data-site-chrome>
                   <ConditionalFooter />

@@ -168,6 +168,7 @@ export function TabbedShowcaseSection({
                 film={spotlightFilm}
                 kind="backdrop"
                 allowTitleLookup
+                preferTmdb
                 className="h-full w-full object-cover blur-2xl scale-110"
                 alt=""
               />
