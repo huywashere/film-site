@@ -48,3 +48,6 @@ ssl/
 *$py.class
 services/recommendation-engine/.venv/
 services/recommendation-engine/__pycache__/
+
+# Scratch directory
+scratch/

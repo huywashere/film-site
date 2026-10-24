@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from "react";
+import Link from "next/link";
+import { motion } from "framer-motion";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import {
   Search,
@@ -8,6 +10,8 @@ import {
   Film,
   X,
   ChevronDown,
+  Play,
+  Info,
 } from "lucide-react";
 import {
   FilmCard,
@@ -19,6 +23,163 @@ import { Pagination } from "@/components/film/Pagination";
 import { vicdnApi, vodphimApi, movieApi } from "@/lib/api";
 import { cardFont } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
+
+const CDN_BASE = process.env.NEXT_PUBLIC_CDN_ASSETS_URL?.replace(/\/$/, "") || "";
+const TUOC_COT_BG_PATH =
+  "/Folder-Background/China/tuoc-cot/tuoc-cot-bg.png";
+const TUOC_COT_CHARS_PATH =
+  "/Folder-Background/China/tuoc-cot/tuoc-cot-couple-chars.png";
+const TUOC_COT_LOGO_PATH =
+  "/Folder-Background/China/tuoc-cot/tuoc-cot-logo.png";
+
+function SongNguTuocCotHeroBanner() {
+  const [bgSrc, setBgSrc] = useState(TUOC_COT_BG_PATH);
+  const [charsSrc, setCharsSrc] = useState(TUOC_COT_CHARS_PATH);
+  const [logoSrc, setLogoSrc] = useState(TUOC_COT_LOGO_PATH);
+  const [logoFailed, setLogoFailed] = useState(false);
+
+  return (
+    <section
+      data-hero-banner="true"
+      className="relative h-[78svh] min-h-[580px] w-full select-none overflow-hidden bg-[#0a0b10] sm:h-[88vh] sm:min-h-[680px] lg:h-[95vh] lg:min-h-[780px]"
+    >
+      {/* ── Layer 1: Background Scenic Image (Imperial Red Chamber with Mountain Wall) ── */}
+      <div className="absolute inset-0 w-full h-full overflow-hidden">
+        <img
+          src={bgSrc}
+          alt="Tước Cốt - Bối cảnh cung điện đỏ son"
+          onError={() => {
+            if (CDN_BASE && bgSrc !== `${CDN_BASE}${TUOC_COT_BG_PATH}`) {
+              setBgSrc(`${CDN_BASE}${TUOC_COT_BG_PATH}`);
+            }
+          }}
+          className="w-full h-full object-cover object-center scale-100 filter brightness-[0.98] contrast-[1.04]"
+          loading="eager"
+        />
+      </div>
+
+      {/* ── Layer 2: Soft Cinematic Blending (hiển thị trọn vẹn cảnh nền đỏ son, không đánh đen) ── */}
+      <div
+        className="absolute inset-0 z-10 pointer-events-none"
+        style={{
+          background: `
+            linear-gradient(to right, rgba(10,11,16,0.72) 0%, rgba(10,11,16,0.32) 44%, rgba(10,11,16,0.02) 75%, transparent 100%),
+            linear-gradient(to top, #0a0b10 0%, rgba(10,11,16,0.35) 8%, transparent 22%)
+          `,
+        }}
+      />
+
+      {/* ── Layer 3: Two Characters Cutout with Gentle Slide-in & Smooth Hover Effect ── */}
+      <div className="absolute right-0 bottom-0 top-0 h-full w-full max-w-2xl sm:max-w-3xl md:max-w-4xl lg:max-w-5xl flex items-end justify-end pointer-events-none z-10 overflow-hidden pr-3 sm:pr-8 md:pr-14 lg:pr-20 xl:pr-28 pb-8 sm:pb-12 md:pb-16 lg:pb-20">
+        <motion.div
+          initial={{ opacity: 0, x: 70 }}
+          animate={{ opacity: 1, x: 0 }}
+          whileHover={{
+            scale: 1.025,
+            y: -6,
+            transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] },
+          }}
+          transition={{ duration: 1.15, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+          className="relative h-full flex items-end justify-end pointer-events-auto cursor-pointer group/chars"
+        >
+          <img
+            src={charsSrc}
+            alt="Tước Cốt - Đinh Vũ Hề & Chu Khiết Quỳnh"
+            onError={() => {
+              if (CDN_BASE && charsSrc !== `${CDN_BASE}${TUOC_COT_CHARS_PATH}`) {
+                setCharsSrc(`${CDN_BASE}${TUOC_COT_CHARS_PATH}`);
+              }
+            }}
+            className="h-[68%] sm:h-[78%] md:h-[84%] lg:h-[90%] max-h-[640px] w-auto max-w-full object-contain object-bottom select-none filter contrast-[1.03] brightness-[1.02] drop-shadow-[0_20px_45px_rgba(0,0,0,0.75)] transition-all duration-500 group-hover/chars:drop-shadow-[0_25px_60px_rgba(255,255,255,0.22)] group-hover/chars:brightness-[1.06]"
+            loading="eager"
+          />
+        </motion.div>
+      </div>
+
+      {/* ── Layer 4: Typography, Logo Banner & Actions ── */}
+      <div className="absolute inset-0 z-20 flex flex-col justify-start pt-48 sm:pt-52 md:pt-60 lg:pt-64 xl:pt-72 px-4 sm:px-10 md:px-16 lg:px-24 pointer-events-none">
+        <motion.div
+          initial={{ opacity: 0, y: 22 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1], delay: 0.15 }}
+          className="max-w-xl sm:max-w-2xl space-y-2.5 sm:space-y-4 pt-2 sm:pt-4 pointer-events-auto"
+        >
+          {/* Title Group with Official Calligraphic Logobanner */}
+          <div className="space-y-2">
+            {!logoFailed ? (
+              <div className="h-12 sm:h-16 md:h-20 lg:h-24 max-w-[280px] sm:max-w-[420px] md:max-w-[500px]">
+                <img
+                  src={logoSrc}
+                  alt="Tước Cốt (Que Gu)"
+                  onError={() => {
+                    if (CDN_BASE && logoSrc !== `${CDN_BASE}${TUOC_COT_LOGO_PATH}`) {
+                      setLogoSrc(`${CDN_BASE}${TUOC_COT_LOGO_PATH}`);
+                    } else {
+                      setLogoFailed(true);
+                    }
+                  }}
+                  className="h-full w-auto object-contain object-left drop-shadow-[0_8px_25px_rgba(0,0,0,0.95)]"
+                  loading="eager"
+                />
+              </div>
+            ) : (
+              <div className="flex items-center gap-3">
+                <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight drop-shadow-[0_4px_22px_rgba(0,0,0,0.95)] flex items-center gap-3">
+                  <span>TƯỚC CỐT</span>
+                  <span className="text-xs sm:text-sm font-normal px-2.5 py-0.5 rounded-full bg-white/15 text-neutral-200 border border-white/20 tracking-widest uppercase">
+                    雀骨
+                  </span>
+                </h1>
+              </div>
+            )}
+
+            {/* Subtitle — Chuẩn không màu */}
+            <p className="text-base sm:text-xl font-serif italic text-neutral-200/90 font-medium drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)]">
+              Que Gu (The Bone&apos;s Grace)
+            </p>
+          </div>
+
+          {/* Genre Pills */}
+          <div className="flex flex-wrap items-center gap-2 pt-0.5">
+            {["Cổ Trang", "Tình Cảm", "Cung Đấu", "Kỳ Ảo"].map((genre) => (
+              <span
+                key={genre}
+                className="px-3 py-1 rounded-full bg-white/[0.12] hover:bg-white/[0.2] text-xs font-semibold text-neutral-100 border border-white/[0.15] backdrop-blur-md transition-colors shadow-sm"
+              >
+                {genre}
+              </span>
+            ))}
+          </div>
+
+          {/* Description */}
+          <p className="text-xs sm:text-sm text-neutral-200/95 font-medium leading-relaxed max-w-lg line-clamp-3 sm:line-clamp-none drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)]">
+            Mối tình hoàng gia định mệnh giữa vị vương gia uy dũng mang trong mình bí mật gia tộc
+            và nàng mỹ nhân thông tuệ giữa chốn thâm cung hiểm ác với phụ đề song ngữ Anh - Việt chuẩn xác.
+          </p>
+
+          {/* CTA Buttons */}
+          <div className="flex items-center gap-3 pt-2 sm:pt-3">
+            <Link
+              href="/watch/tuoc-cot"
+              className="inline-flex items-center gap-2.5 px-6 sm:px-7 py-2.5 sm:py-3 rounded-full bg-white hover:bg-neutral-100 text-neutral-950 font-black text-xs sm:text-sm shadow-xl shadow-black/40 transition-all hover:scale-105 active:scale-95"
+            >
+              <Play className="w-4 h-4 fill-current text-neutral-950" />
+              <span>Xem Ngay</span>
+            </Link>
+
+            <Link
+              href="/film/tuoc-cot"
+              className="inline-flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-white/15 hover:bg-white/25 border border-white/20 text-white font-bold text-xs sm:text-sm backdrop-blur-md transition-all hover:scale-105 active:scale-95"
+            >
+              <Info className="w-4 h-4" />
+              <span>Chi Tiết</span>
+            </Link>
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
 
 // ── Định nghĩa các tùy chọn bộ lọc chuẩn phong cách Duyệt Tìm (/films) ──
 
@@ -347,229 +508,24 @@ export function SongNguClient({
       data-eager-hydration="true"
       className={cn(
         cardFont.className,
-        "relative min-h-[100dvh] bg-[#0a0b10] text-white pb-24 sm:pb-28 pt-16 sm:pt-20 select-none",
+        "relative min-h-[100dvh] bg-[#0a0b10] text-white -mt-20 sm:-mt-24 pb-24 sm:pb-28 select-none",
       )}
     >
+      {/* ── Top Hero Banner (Tước Cốt - Phim Song Ngữ Chọn Lọc) ── */}
+      <SongNguTuocCotHeroBanner />
+
       {/* ── Ambient Studio Lighting (Đồng bộ chuẩn 100% với Trang Chủ và Duyệt Tìm) ── */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden z-0">
         <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[1200px] h-[500px] bg-gradient-to-b from-white/[0.025] to-transparent blur-[140px] rounded-full" />
       </div>
 
-      <div className="relative z-10 mx-auto w-full max-w-[1720px] px-3.5 sm:px-6 md:pl-20 md:pr-6 lg:pl-24 lg:pr-10 xl:pl-28 xl:pr-12 space-y-5 sm:space-y-6">
-        {/* ── Header Tiêu Đề Tối Giản & Sang Trọng ── */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between pb-3 sm:pb-4 border-b border-white/[0.08] gap-1.5 sm:gap-2">
-          <div>
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-white">
-              Phim Song Ngữ
-            </h1>
-          </div>
-          <p className="text-[11px] sm:text-xs text-neutral-400 font-medium">
-            Kho phim điện ảnh và phim bộ với phụ đề kép Anh - Việt chọn lọc
-          </p>
-        </div>
-
-        {/* ── Hàng 1: Quick Format Pills & Ô Tìm Kiếm Nhanh ── */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-          {/* Quick Format Pills */}
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth py-0.5 -mx-3.5 px-3.5 sm:mx-0 sm:px-0">
-            {QUICK_FORMATS.map((item) => {
-              const isActive = format === item.value;
-              const pillStyle = isActive
-                ? "bg-white text-black shadow-sm font-black border-white"
-                : "bg-[#12141c] text-neutral-400 hover:text-white hover:bg-white/[0.06] border border-white/[0.08]";
-
-              return (
-                <button
-                  key={item.value}
-                  type="button"
-                  onClick={() => {
-                    setFormat(item.value);
-                    setPage(1);
-                  }}
-                  className={cn(
-                    "px-3 py-1.5 rounded-xl text-xs whitespace-nowrap transition-all duration-200 cursor-pointer select-none shrink-0",
-                    pillStyle,
-                  )}
-                >
-                  {item.label}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Ô tìm kiếm nhanh nhỏ gọn */}
-          <div className="relative w-full md:w-72 shrink-0">
-            <Search
-              size={14}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
-            />
-            <input
-              type="text"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Tìm phim song ngữ..."
-              className="w-full bg-[#12141c] border border-white/10 hover:border-white/20 focus:border-cyan-400/60 rounded-xl pl-9 pr-8 py-1.5 text-xs text-white placeholder:text-neutral-500 focus:outline-none transition-colors"
-            />
-            {searchInput && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchInput("");
-                  setSearchQuery("");
-                }}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-neutral-400 hover:text-white rounded-full transition-colors"
-              >
-                <X size={12} />
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* ── Hàng 2: Bộ Lọc Tinh Gọn Dạng Select Pills ── */}
-        <div className="flex flex-wrap items-center justify-between gap-2.5 pt-1">
-          <div className="flex flex-wrap items-center gap-2">
-            {/* 1. Thể Loại */}
-            <div className="relative">
-              <select
-                value={selectedGenre}
-                onChange={(e) => {
-                  setSelectedGenre(e.target.value);
-                  setPage(1);
-                }}
-                className={cn(
-                  "appearance-none bg-[#12141c] border rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold focus:outline-none focus:border-cyan-400/60 cursor-pointer transition-colors",
-                  selectedGenre
-                    ? "border-cyan-400/60 text-cyan-300"
-                    : "border-white/10 text-neutral-300 hover:border-white/20",
-                )}
-              >
-                {BILINGUAL_GENRES.map((g) => (
-                  <option
-                    key={g.slug}
-                    value={g.slug}
-                    className="bg-[#12141c] text-white"
-                  >
-                    {g.label}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown
-                size={12}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
-              />
-            </div>
-
-            {/* 2. Năm Phát Hành */}
-            <div className="relative">
-              <select
-                value={selectedYear}
-                onChange={(e) => {
-                  setSelectedYear(e.target.value);
-                  setPage(1);
-                }}
-                className={cn(
-                  "appearance-none bg-[#12141c] border rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold focus:outline-none focus:border-cyan-400/60 cursor-pointer transition-colors",
-                  selectedYear
-                    ? "border-cyan-400/60 text-cyan-300"
-                    : "border-white/10 text-neutral-300 hover:border-white/20",
-                )}
-              >
-                <option value="">Năm</option>
-                {YEARS.map((y) => (
-                  <option
-                    key={y}
-                    value={y}
-                    className="bg-[#12141c] text-white"
-                  >
-                    {y}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown
-                size={12}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
-              />
-            </div>
-
-            {/* 3. Chất Lượng */}
-            <div className="relative">
-              <select
-                value={selectedQuality}
-                onChange={(e) => {
-                  setSelectedQuality(e.target.value);
-                  setPage(1);
-                }}
-                className={cn(
-                  "appearance-none bg-[#12141c] border rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold focus:outline-none focus:border-cyan-400/60 cursor-pointer transition-colors",
-                  selectedQuality !== "all"
-                    ? "border-cyan-400/60 text-cyan-300"
-                    : "border-white/10 text-neutral-300 hover:border-white/20",
-                )}
-              >
-                {QUALITIES.map((q) => (
-                  <option
-                    key={q.value}
-                    value={q.value}
-                    className="bg-[#12141c] text-white"
-                  >
-                    {q.label}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown
-                size={12}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
-              />
-            </div>
-
-            {/* 4. Sắp Xếp */}
-            <div className="relative">
-              <select
-                value={selectedSort}
-                onChange={(e) => {
-                  setSelectedSort(e.target.value);
-                  setPage(1);
-                }}
-                className="appearance-none bg-[#12141c] border border-white/10 hover:border-white/20 rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold text-neutral-300 focus:outline-none focus:border-cyan-400/60 cursor-pointer transition-colors"
-              >
-                {SORTS.map((s) => (
-                  <option
-                    key={s.value}
-                    value={s.value}
-                    className="bg-[#12141c] text-white"
-                  >
-                    {s.label}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown
-                size={12}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
-              />
-            </div>
-
-            {/* Nút Xóa Bộ Lọc Nhanh */}
-            {isFiltered && (
-              <button
-                type="button"
-                onClick={handleResetAll}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-red-400/90 hover:text-red-300 bg-red-500/10 hover:bg-red-500/15 border border-red-500/20 rounded-xl transition-colors cursor-pointer"
-              >
-                <RotateCcw size={12} />
-                <span>Đặt lại</span>
-              </button>
-            )}
-          </div>
-
-          {/* Số lượng phim */}
-          <span className="text-[11px] sm:text-xs text-neutral-400 font-medium self-center">
-            {films.length} phim
-          </span>
-        </div>
-
+      <div
+        id="song-ngu-catalog"
+        className="relative z-20 w-full px-2.5 sm:px-10 lg:px-24 pb-20 -mt-8 sm:-mt-12 md:-mt-16 lg:-mt-20"
+      >
         {/* ── Lưới Thẻ Phim Chuẩn 7 Cột Phong Cách Trang Chủ (2xl:grid-cols-7) ── */}
         {isLoading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2.5 sm:gap-3.5 lg:gap-4 pt-2">
+          <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-y-3.5 sm:gap-y-8">
             {Array.from({ length: 14 }).map((_, i) => (
               <FilmCardSkeleton key={i} />
             ))}
@@ -583,20 +539,11 @@ export function SongNguClient({
               Không tìm thấy bộ phim song ngữ phù hợp
             </h3>
             <p className="text-xs text-neutral-400 leading-relaxed">
-              Hãy thử nới lỏng các tiêu chí lọc hoặc tìm bằng từ khóa khác.
+              Danh sách phim đang được cập nhật thêm.
             </p>
-            {isFiltered && (
-              <button
-                type="button"
-                onClick={handleResetAll}
-                className="px-4 py-2 bg-white text-black font-extrabold text-xs rounded-xl hover:bg-neutral-200 transition-colors cursor-pointer"
-              >
-                Bỏ chọn bộ lọc
-              </button>
-            )}
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2.5 sm:gap-3.5 lg:gap-4 pt-2 cv-grid-auto">
+          <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-y-3.5 sm:gap-y-8 cv-grid-auto">
             {films.map((film, idx) => (
               <FilmCard
                 key={`${film.slug || film._id || idx}-${idx}`}

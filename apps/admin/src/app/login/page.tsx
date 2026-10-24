@@ -8,6 +8,7 @@ import {
   IconShieldCheck,
 } from "@tabler/icons-react";
 import flexphimLogo from "../../../../web/public/flexphim-logo.png";
+import { beginAdminSession, endAdminSession } from "@/lib/admin-session-client";
 
 export default function AdminLoginPage() {
   const [code, setCode] = useState("");
@@ -21,6 +22,7 @@ export default function AdminLoginPage() {
     const githubError = params.get("github_error");
     const sessionExpired = params.get("session_expired") === "1";
     if (sessionExpired) {
+      endAdminSession();
       setError("Phiên làm việc quản trị đã hết hạn sau 24h (Session Timeout). Vui lòng đăng nhập lại để tiếp tục.");
     } else if (githubError) {
       const messages: Record<string, string> = {
@@ -49,10 +51,14 @@ export default function AdminLoginPage() {
       const payload = await response.json().catch(() => ({}));
       if (!response.ok)
         throw new Error(payload.message || "Xác minh GitHub 2FA thất bại");
+      beginAdminSession();
       const next = new URLSearchParams(window.location.search).get("next");
-      window.location.assign(
+      const destination = new URL(
         next?.startsWith("/") && !next.startsWith("//") ? next : "/",
+        window.location.origin,
       );
+      destination.searchParams.set("admin_session", "renewed");
+      window.location.assign(destination.toString());
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Đăng nhập thất bại");
     } finally {

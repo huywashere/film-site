@@ -52,6 +52,7 @@ import { adminFetch } from "@/lib/admin-api";
 import { AdminDevToolsGuard } from "@/components/security/AdminDevToolsGuard";
 import { AdminAntiScreenshot } from "@/components/security/AdminAntiScreenshot";
 import { AdminSessionSync } from "@/components/security/AdminSessionSync";
+import { endAdminSession } from "@/lib/admin-session-client";
 
 import { IBM_Plex_Sans, Plus_Jakarta_Sans } from "next/font/google";
 
@@ -1041,6 +1042,7 @@ export default function AdminRootLayout({
                           <button
                             type="button"
                             onClick={async () => {
+                              endAdminSession();
                               await fetch("/api/auth/logout", { method: "POST" }).catch(() => undefined);
                               window.location.assign("/login");
                             }}

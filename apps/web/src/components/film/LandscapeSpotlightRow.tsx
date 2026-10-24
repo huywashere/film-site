@@ -81,7 +81,7 @@ export function LandscapeSpotlightRow({
     };
   }, [cleanList.length]);
 
-  if (isLoading) {
+  if (isLoading || cleanList.length === 0) {
     return (
       <section className={`${cardFont.className} mb-8 w-full sm:mb-12`} aria-hidden="true">
         <div className="mb-4 h-8 w-56 animate-pulse rounded-md bg-white/[0.06]" />
@@ -99,8 +99,6 @@ export function LandscapeSpotlightRow({
       </section>
     );
   }
-
-  if (cleanList.length === 0) return null;
 
   return (
     <section

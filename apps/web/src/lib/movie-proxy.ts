@@ -72,6 +72,7 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
     recoveryTimeoutMs: 30_000,
   });
   const memoryCache = new Map<string, CacheEntry>();
+  const inflightRequests = new Map<string, Promise<unknown>>();
   const redisUrl =
     config.redisUrl || process.env.REDIS_URL || "redis://localhost:6379";
   const memoryTtlMs = config.memoryTtlMs ?? 10 * 60 * 1000;
@@ -258,43 +259,51 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
     }
 
     try {
-      const data = await breaker.execute(async () => {
-        // Thử baseUrl trước, nếu lỗi thì thử fallbackUrls
-        const allUrls = [
-          `${config.baseUrl}/${path}${searchParams ? `?${searchParams}` : ""}`,
-          ...(config.fallbackUrls || []).map(
-            (fb) => `${fb}/${path}${searchParams ? `?${searchParams}` : ""}`,
-          ),
-        ];
+      let pending = inflightRequests.get(cacheKey);
+      if (!pending) {
+        pending = breaker.execute(async () => {
+          // Thử baseUrl trước, nếu lỗi thì thử fallbackUrls
+          const allUrls = [
+            `${config.baseUrl}/${path}${searchParams ? `?${searchParams}` : ""}`,
+            ...(config.fallbackUrls || []).map(
+              (fb) => `${fb}/${path}${searchParams ? `?${searchParams}` : ""}`,
+            ),
+          ];
 
-        let lastError: Error | null = null;
-        for (const url of allUrls) {
-          try {
-            const response = await fetch(url, {
-              headers: config.headers || { "Content-Type": "application/json" },
-              signal: AbortSignal.timeout(timeoutMs),
-            });
+          let lastError: Error | null = null;
+          for (const url of allUrls) {
+            try {
+              const response = await fetch(url, {
+                headers: config.headers || { "Content-Type": "application/json" },
+                signal: AbortSignal.timeout(timeoutMs),
+              });
 
-            if (!response.ok) {
-              lastError = new Error(
-                `Upstream ${url} returned ${response.status}`,
-              );
-              continue; // thử URL tiếp theo
+              if (!response.ok) {
+                lastError = new Error(
+                  `Upstream ${url} returned ${response.status}`,
+                );
+                continue; // thử URL tiếp theo
+              }
+
+              const rawData = await response.json();
+              const transformed = config.transform
+                ? config.transform(rawData, path)
+                : rawData;
+              return transformed;
+            } catch (e) {
+              lastError = e instanceof Error ? e : new Error(String(e));
+              // Tiếp tục thử URL tiếp theo
             }
-
-            const rawData = await response.json();
-            const transformed = config.transform
-              ? config.transform(rawData, path)
-              : rawData;
-            return transformed;
-          } catch (e) {
-            lastError = e instanceof Error ? e : new Error(String(e));
-            // Tiếp tục thử URL tiếp theo
           }
-        }
 
-        throw lastError || new Error("All upstream URLs failed");
-      });
+          throw lastError || new Error("All upstream URLs failed");
+        }).finally(() => {
+          inflightRequests.delete(cacheKey);
+        });
+        inflightRequests.set(cacheKey, pending);
+      }
+
+      const data = await pending;
 
       if (client && client.status === "ready") {
         client

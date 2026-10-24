@@ -108,7 +108,9 @@ export async function GET(request: NextRequest) {
     return response;
   }
   const origin = adminPublicOrigin(request);
-  const response = NextResponse.redirect(new URL(next, origin));
+  const destination = new URL(next, origin);
+  destination.searchParams.set("admin_session", "renewed");
+  const response = NextResponse.redirect(destination);
   response.cookies.set(ADMIN_SESSION_COOKIE, payload.token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",

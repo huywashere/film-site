@@ -90,13 +90,24 @@ export function HeroShowcaseSection({ title, films, isLoading, href }: HeroShowc
     }, 90);
   };
 
-  if (isLoading) {
+  if (isLoading || !activeFilm) {
     return (
-      <div className="mb-14 h-[520px] w-full animate-pulse rounded-[28px] border border-white/10 bg-white/[0.03]" />
+      <div className={`${cardFont.className} mb-14 w-full select-none animate-pulse`} aria-busy="true">
+        <div className="mb-4 flex items-center justify-between px-1">
+          <h2 className="text-xl font-extrabold tracking-[-0.025em] text-white/90 sm:text-2xl">
+            {title}
+          </h2>
+          <div className="h-4 w-16 rounded bg-white/[0.05]" />
+        </div>
+        <div className="h-[380px] sm:h-[480px] lg:h-[520px] w-full rounded-[24px] sm:rounded-[28px] border border-white/10 bg-gradient-to-r from-white/[0.04] via-white/[0.02] to-transparent flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <div className="h-7 w-48 rounded bg-white/[0.08]" />
+            <div className="h-4 w-32 rounded bg-white/[0.05]" />
+          </div>
+        </div>
+      </div>
     );
   }
-
-  if (!activeFilm) return null;
 
   const categories = (activeFilm.category || [])
     .map((c) => c.name)

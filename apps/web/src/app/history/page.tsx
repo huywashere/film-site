@@ -26,6 +26,7 @@ import { watchProgressStorage } from '@/lib/watch-progress';
 import { cardFont } from '@/lib/fonts';
 import { formatEpisodeLabel } from '@/lib/player-source-routing';
 import { useReliableNavigation } from '@/hooks/useReliableNavigation';
+import { VerticalTabsHeroBanner } from '@/components/layout/VerticalTabsHeroBanner';
 import {
   Dialog,
   DialogClose,
@@ -146,9 +147,34 @@ export default function HistoryPage() {
         : []
     : guestHistory;
 
-  const historyItems = rawHistoryItems.filter((item) => !removedIds.includes(item.id));
-  const total = historyItems.length;
+  const [filterMode, setFilterMode] = useState<'all' | 'in_progress' | 'completed'>('all');
+
+  const historyItems = useMemo(() => {
+    const unremoved = rawHistoryItems.filter((item) => !removedIds.includes(item.id));
+    if (filterMode === 'all') return unremoved;
+    return unremoved.filter((item) => {
+      const percent = item.duration > 0 ? (item.progress / item.duration) * 100 : 0;
+      if (filterMode === 'completed') return percent >= 90;
+      return percent < 90;
+    });
+  }, [rawHistoryItems, removedIds, filterMode]);
+
+  const total = rawHistoryItems.filter((item) => !removedIds.includes(item.id)).length;
   const totalPages = user ? historyData?.totalPages || 1 : 1;
+
+  const handleBack = () => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+    } else {
+      router.push("/");
+    }
+  };
+
+  const HISTORY_TABS = [
+    { id: 'all' as const, label: `Tất Cả (${total})` },
+    { id: 'in_progress' as const, label: 'Đang Xem Dở' },
+    { id: 'completed' as const, label: 'Đã Xem Xong' },
+  ];
 
   const handleDelete = (id: string) => {
     // ⚡ INSTANT OPTIMISTIC UI REMOVAL (0ms delay)
@@ -220,54 +246,62 @@ export default function HistoryPage() {
   };
 
   return (
-    <div className={`${cardFont.className} min-h-screen bg-background pb-16 pt-16 lg:ml-20`}>
-      {/* Header */}
-      <div className="relative z-10 border-b border-white/10 bg-background">
-        <div className="relative mx-auto max-w-[1600px] px-4 py-4 md:px-8 md:py-5">
-          {/* Back Button */}
-          <div className="mb-2 sm:mb-0 sm:absolute sm:left-4 md:left-8 sm:top-1/2 sm:-translate-y-1/2 z-20">
+    <div className={cn(cardFont.className, "min-h-screen bg-[#0a0b10] text-white pb-20 -mt-20 sm:-mt-24 select-none")}>
+      {/* ── Top Hero Banner (Fury Movie with Full Face Visibility & Integrated Controls) ── */}
+      <VerticalTabsHeroBanner
+        title="Lịch Sử Xem Phim"
+        description={
+          total > 0
+            ? `${total} bộ phim đã xem ${user ? 'trong tài khoản FlexPhim' : 'trên thiết bị này'} • Tự động ghi nhớ từng giây và từng tập`
+            : "Theo dõi và tiếp tục thưởng thức các bộ phim bạn đã xem gần đây."
+        }
+        imageSrc="/img-backtop/tab-history.webp"
+        objectPosition="center 4%"
+        onBack={handleBack}
+        backText="Quay lại"
+        contentClassName="pb-16 sm:pb-20 md:pb-24"
+      >
+        {/* Filter Tabs matching reference UI & Clear Button */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-1">
+            {HISTORY_TABS.map((tab) => {
+              const isActive = filterMode === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setFilterMode(tab.id)}
+                  className={cn(
+                    'relative px-3.5 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-bold transition-all whitespace-nowrap cursor-pointer select-none active:scale-95',
+                    isActive
+                      ? 'text-white bg-white/[0.16] border border-white/25 shadow-sm font-extrabold'
+                      : 'text-neutral-400 hover:text-white hover:bg-white/[0.06] border border-transparent',
+                  )}
+                >
+                  <span>{tab.label}</span>
+                  {isActive && (
+                    <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-0.5 bg-white rounded-full shadow-[0_0_8px_rgba(255,255,255,0.6)]" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {total > 0 && (
             <button
-              type="button"
-              onClick={() => {
-                if (typeof window !== "undefined" && window.history.length > 1) {
-                  router.back();
-                } else {
-                  router.push("/");
-                }
-              }}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-neutral-300 hover:text-white transition-all hover:bg-white/[0.08] hover:border-white/20 cursor-pointer select-none active:scale-95 group"
+              onClick={() => setShowClearConfirm(true)}
+              disabled={clearAllMutation.isPending}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/30 text-xs font-bold transition-all active:scale-95 cursor-pointer disabled:opacity-50"
             >
-              <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
-              <span>Quay lại</span>
+              <Trash2 size={13} />
+              <span>Xóa tất cả lịch sử</span>
             </button>
-          </div>
-
-          {/* Header (Centered) */}
-          <div className="flex flex-col items-center justify-center text-center max-w-2xl mx-auto py-1 gap-2.5">
-            <h1 className="text-2xl font-extrabold tracking-tight text-white md:text-3xl">
-              Lịch Sử Xem
-            </h1>
-            <p className="text-sm text-neutral-400 normal-case font-normal tracking-normal">
-              {total} phim đã xem {user ? 'trong tài khoản' : 'trên thiết bị này'}
-            </p>
-
-            {/* Clear All Button */}
-            {historyItems.length > 0 && (
-              <button
-                onClick={() => setShowClearConfirm(true)}
-                disabled={clearAllMutation.isPending}
-                className="mt-0.5 flex items-center space-x-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl font-semibold text-xs transition-colors border border-red-500/20 disabled:opacity-50"
-              >
-                <Trash2 size={14} />
-                <span>Xóa tất cả lịch sử</span>
-              </button>
-            )}
-          </div>
+          )}
         </div>
-      </div>
+      </VerticalTabsHeroBanner>
 
       {/* Content */}
-      <div className="relative z-0 mx-auto max-w-[1600px] px-4 py-6 md:px-8 md:py-8">
+      <div className="relative z-20 w-full px-3.5 sm:px-6 md:pl-20 lg:pl-24 pr-3.5 sm:pr-6 md:pr-10 pt-6 sm:pt-8">
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 size={40} className="animate-spin text-blue-500" />

@@ -1,9 +1,14 @@
 "use client";
 
 import { useEffect } from "react";
+import {
+  ADMIN_SESSION_EPOCH_KEY,
+  beginAdminSession,
+  currentAdminSessionEpoch,
+  endAdminSession,
+} from "@/lib/admin-session-client";
 
 const SESSION_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
-const SESSION_START_KEY = "netphim_admin_session_start";
 
 /**
  * Enterprise Admin Session Synchronizer & 24h Hard Timeout Guard
@@ -16,24 +21,34 @@ export function AdminSessionSync() {
     if (typeof window === "undefined") return;
     if (window.location.pathname === "/login") return;
 
-    // Initialize or read session epoch
-    const now = Date.now();
-    let sessionStart = Number(localStorage.getItem(SESSION_START_KEY));
-    if (!sessionStart || isNaN(sessionStart) || sessionStart > now) {
-      sessionStart = now;
-      localStorage.setItem(SESSION_START_KEY, String(now));
+    const search = new URLSearchParams(window.location.search);
+    if (search.get("admin_session") === "renewed") {
+      beginAdminSession();
+      search.delete("admin_session");
+      const nextUrl = `${window.location.pathname}${search.size ? `?${search}` : ""}${window.location.hash}`;
+      window.history.replaceState(null, "", nextUrl);
+    }
+
+    let sessionEpoch = currentAdminSessionEpoch() || beginAdminSession();
+    const initialStartedAt = Number(sessionEpoch.split(":", 1)[0]);
+    if (!Number.isFinite(initialStartedAt) || initialStartedAt > Date.now()) {
+      sessionEpoch = beginAdminSession();
     }
 
     const checkSessionExpiry = async () => {
       const current = Date.now();
-      const start = Number(localStorage.getItem(SESSION_START_KEY)) || sessionStart;
+      const activeEpoch = currentAdminSessionEpoch();
+      if (activeEpoch && activeEpoch !== sessionEpoch) sessionEpoch = activeEpoch;
+      const start = Number(sessionEpoch.split(":", 1)[0]);
       if (current - start >= SESSION_MAX_AGE_MS) {
-        // 24h exceeded -> Log out
+        if (currentAdminSessionEpoch() !== sessionEpoch) return;
         try {
-          localStorage.removeItem(SESSION_START_KEY);
+          endAdminSession();
           await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
         } finally {
-          window.location.assign("/login?session_expired=1");
+          if (!currentAdminSessionEpoch()) {
+            window.location.assign("/login?session_expired=1");
+          }
         }
       }
     };
@@ -48,7 +63,7 @@ export function AdminSessionSync() {
       }
     };
     const onStorage = (e: StorageEvent) => {
-      if (e.key === SESSION_START_KEY && !e.newValue) {
+      if (e.key === ADMIN_SESSION_EPOCH_KEY && !e.newValue) {
         // Another tab logged out
         window.location.assign("/login?session_expired=1");
       }

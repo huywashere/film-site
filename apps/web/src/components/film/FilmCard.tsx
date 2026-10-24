@@ -368,18 +368,18 @@ function FilmCardComponent({
             {!isPosterPill && topLeftBadge && (
               <div className="pointer-events-none absolute left-0 top-0 z-20">
                 {topLeftBadge.type === 'imdb' ? (
-                  <span className="inline-flex items-center gap-1 rounded-br-[4px] bg-[#f5c518] px-1.5 py-[2.5px] text-[8px] font-black leading-none text-black shadow-md sm:px-2 sm:py-[3px] sm:text-[9.5px]">
+                  <span className="inline-flex items-center gap-0.5 sm:gap-1 rounded-br-[3px] sm:rounded-br-[4px] bg-[#f5c518] px-1 py-[1.5px] sm:px-2 sm:py-[3px] text-[7px] sm:text-[9.5px] font-black leading-none text-black shadow-md">
                     <span>IMDb</span>
                     <span>{topLeftBadge.value}</span>
                   </span>
                 ) : topLeftBadge.type === 'sub' ? (
-                  <span className="inline-flex items-center rounded-br-[4px] bg-[#2563eb] px-1.5 py-[2.5px] text-[8px] font-black leading-none text-white shadow-md sm:px-2 sm:py-[3px] sm:text-[9px]">
+                  <span className="inline-flex items-center rounded-br-[3px] sm:rounded-br-[4px] bg-[#2563eb] px-1 py-[1.5px] sm:px-2 sm:py-[3px] text-[7px] sm:text-[9px] font-black leading-none text-white shadow-md">
                     {topLeftBadge.text}
                   </span>
                 ) : (
                   <span
                     className={cn(
-                      'inline-flex items-center rounded-br-[4px] px-1.5 py-[2.5px] text-[8px] font-black leading-none text-white shadow-md sm:px-2 sm:py-[3px] sm:text-[9px]',
+                      'inline-flex items-center rounded-br-[3px] sm:rounded-br-[4px] px-1 py-[1.5px] sm:px-2 sm:py-[3px] text-[7px] sm:text-[9px] font-black leading-none text-white shadow-md',
                       topLeftBadge.voiceType === 'dub' ? 'bg-[#9333ea]' : 'bg-[#16a34a]',
                     )}
                   >
@@ -392,7 +392,7 @@ function FilmCardComponent({
             {/* ── Top-right: Quality (FHD / HD - sát mép trên) ── */}
             {!isPosterPill && qualityBadge && (
               <div className="pointer-events-none absolute right-0 top-0 z-20">
-                <span className="inline-flex items-center rounded-bl-[4px] border-b border-l border-white/15 bg-black/85 px-1.5 py-[2.5px] text-[8px] font-extrabold uppercase leading-none tracking-wider text-white shadow-md sm:px-2 sm:py-[3px] sm:text-[9px]">
+                <span className="inline-flex items-center rounded-bl-[3px] sm:rounded-bl-[4px] border-b border-l border-white/15 bg-black/85 px-1 py-[1.5px] sm:px-2 sm:py-[3px] text-[7px] sm:text-[9px] font-extrabold uppercase leading-none tracking-wider text-white shadow-md">
                   {qualityBadge}
                 </span>
               </div>
@@ -400,10 +400,10 @@ function FilmCardComponent({
 
             {/* ── Inside Card Content: Poster Pill Bottom Title & White Monochrome Badges ── */}
             {isPosterPill ? (
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col items-center justify-end px-2.5 pb-2.5 pt-12 sm:px-3 sm:pb-3 sm:pt-14 bg-gradient-to-t from-black/90 via-black/40 to-transparent">
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col items-center justify-end px-1.5 pb-1.5 pt-8 sm:px-3 sm:pb-3 sm:pt-14 bg-gradient-to-t from-black/90 via-black/40 to-transparent">
                 {/* Title inside card */}
                 <h3
-                  className="line-clamp-2 w-full text-center text-[11px] sm:text-[12.5px] font-extrabold leading-[1.25] text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] max-w-[94%]"
+                  className="line-clamp-2 w-full text-center text-[9.5px] sm:text-[12.5px] font-extrabold leading-[1.25] text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] max-w-[96%]"
                   title={title}
                 >
                   {title}
@@ -411,11 +411,11 @@ function FilmCardComponent({
 
                 {/* White Monochrome Badges (Vietsub, Lồng tiếng / Thuyết minh, Tập / Chất lượng) */}
                 {posterPillBadges.length > 0 && (
-                  <div className="mt-1 flex flex-wrap items-center justify-center gap-1 sm:gap-1.5 max-w-[92%]">
+                  <div className="mt-0.5 sm:mt-1 flex flex-wrap items-center justify-center gap-0.5 sm:gap-1.5 max-w-[96%]">
                     {posterPillBadges.slice(0, 3).map((badge, bIdx) => (
                       <span
                         key={`${badge.text}-${bIdx}`}
-                        className="inline-flex items-center rounded-full border border-white/20 bg-black/80 px-1.5 py-[2px] text-[7.5px] sm:text-[8.5px] font-bold leading-none tracking-wide text-white/95 shadow-sm"
+                        className="inline-flex items-center rounded-full border border-white/20 bg-black/80 px-1 py-[1px] sm:px-1.5 sm:py-[2px] text-[6.5px] sm:text-[8.5px] font-bold leading-none tracking-wide text-white/95 shadow-sm"
                       >
                         {badge.text}
                       </span>
@@ -427,10 +427,10 @@ function FilmCardComponent({
               <>
                 {/* ── Bottom-left: Subtitle or Audio badge if not already at top ── */}
                 {bottomLeftBadge && (
-                  <div className="pointer-events-none absolute bottom-1.5 left-1.5 z-20 sm:bottom-2 sm:left-2">
+                  <div className="pointer-events-none absolute bottom-1 left-1 z-20 sm:bottom-2 sm:left-2">
                     <span
                       className={cn(
-                        'inline-flex items-center rounded-[4px] border px-1.5 py-[2px] text-[8px] font-black leading-none text-white shadow-[0_2px_8px_rgba(0,0,0,0.4)] sm:px-2 sm:py-[2.5px] sm:text-[9px]',
+                        'inline-flex items-center rounded-[3px] sm:rounded-[4px] border px-1 py-[1.5px] sm:px-2 sm:py-[2.5px] text-[6.5px] sm:text-[9px] font-black leading-none text-white shadow-[0_2px_8px_rgba(0,0,0,0.4)]',
                         bottomLeftBadge.type === 'sub'
                           ? 'border-blue-400/30 bg-[#2563eb]'
                           : bottomLeftBadge.voiceType === 'dub'
@@ -445,17 +445,17 @@ function FilmCardComponent({
 
                 {/* ── Bottom-right: Song Ngữ badge OR Dub / Voiceover badge ── */}
                 {bilingualBadge ? (
-                  <div className="pointer-events-none absolute bottom-1.5 right-1.5 z-20 sm:bottom-2 sm:right-2">
-                    <span className="inline-flex items-center gap-1 rounded-[4px] border border-purple-300/40 bg-gradient-to-r from-[#e9d5ff] via-[#d8b4fe] to-[#c084fc] px-1.5 py-[2px] text-[8px] font-black leading-none text-[#2e1065] shadow-[0_2px_8px_rgba(0,0,0,0.35)] sm:px-2 sm:py-[2.5px] sm:text-[9px]">
-                      <Languages size={10} className="h-2.5 w-2.5 sm:h-[11px] sm:w-[11px] stroke-[2.5] shrink-0 text-[#2e1065]" />
+                  <div className="pointer-events-none absolute bottom-1 right-1 z-20 sm:bottom-2 sm:right-2">
+                    <span className="inline-flex items-center gap-0.5 sm:gap-1 rounded-[3px] sm:rounded-[4px] border border-purple-300/40 bg-gradient-to-r from-[#e9d5ff] via-[#d8b4fe] to-[#c084fc] px-1 py-[1.5px] sm:px-2 sm:py-[2.5px] text-[6.5px] sm:text-[9px] font-black leading-none text-[#2e1065] shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
+                      <Languages size={8} className="h-2 w-2 sm:h-[11px] sm:w-[11px] stroke-[2.5] shrink-0 text-[#2e1065]" />
                       <span>{bilingualBadge.label}</span>
                     </span>
                   </div>
                 ) : bottomRightBadge ? (
-                  <div className="pointer-events-none absolute bottom-1.5 right-1.5 z-20 sm:bottom-2 sm:right-2">
+                  <div className="pointer-events-none absolute bottom-1 right-1 z-20 sm:bottom-2 sm:right-2">
                     <span
                       className={cn(
-                        'inline-flex items-center rounded-[4px] border px-1.5 py-[2px] text-[8px] font-black leading-none text-white shadow-[0_2px_8px_rgba(0,0,0,0.4)] sm:px-2 sm:py-[2.5px] sm:text-[9px]',
+                        'inline-flex items-center rounded-[3px] sm:rounded-[4px] border px-1 py-[1.5px] sm:px-2 sm:py-[2.5px] text-[6.5px] sm:text-[9px] font-black leading-none text-white shadow-[0_2px_8px_rgba(0,0,0,0.4)]',
                         bottomRightBadge.voiceType === 'dub'
                           ? 'border-purple-400/30 bg-[#9333ea]'
                           : 'border-emerald-400/30 bg-[#16a34a]',
@@ -476,10 +476,11 @@ function FilmCardComponent({
               <div className={cn(
                 "flex scale-90 items-center justify-center rounded-full shadow-[0_10px_28px_rgba(0,0,0,0.6)] transition-transform duration-300 motion-safe:group-hover/card:scale-100",
                 isPosterPill
-                  ? "h-12 w-12 border border-white/70 bg-black/80 text-white"
-                  : "h-10 w-10 border border-white/50 bg-black/75 text-white"
+                  ? "h-9 w-9 sm:h-12 sm:w-12 border border-white/70 bg-black/80 text-white"
+                  : "h-7 w-7 sm:h-10 sm:w-10 border border-white/50 bg-black/75 text-white"
               )}>
-                <Play size={isPosterPill ? 18 : 16} fill="currentColor" className="ml-0.5" />
+                <Play size={isPosterPill ? 14 : 12} fill="currentColor" className="ml-0.5 sm:hidden" />
+                <Play size={isPosterPill ? 18 : 16} fill="currentColor" className="ml-0.5 hidden sm:block" />
               </div>
             </div>
           </div>
@@ -488,7 +489,7 @@ function FilmCardComponent({
 
       {/* Details Footer below Card */}
       {!hideDetails && !isPosterPill && (
-        <div className="mt-2 flex flex-col px-0.5">
+        <div className="mt-1.5 sm:mt-2 flex flex-col px-0.5">
           <Link
             href={`/film/${slug}`}
             prefetch={false}
@@ -498,13 +499,13 @@ function FilmCardComponent({
             onTouchStart={handlePrefetch}
             onPointerDown={handlePrefetch}
             data-film-title="true"
-            className="block truncate whitespace-nowrap text-[11px] font-extrabold leading-[1.3] tracking-[-0.015em] text-[#f2f2f3] transition-colors hover:text-white sm:text-[13px]"
+            className="block truncate whitespace-nowrap text-[10px] sm:text-[13px] font-extrabold leading-[1.3] tracking-[-0.015em] text-[#f2f2f3] transition-colors hover:text-white"
           >
             {title}
           </Link>
 
           <div data-film-meta="true"
-            className="mt-[2px] flex items-center justify-between text-[9.5px] font-medium leading-tight text-[#777981] sm:text-[11px]">
+            className="mt-[1px] sm:mt-[2px] flex items-center justify-between text-[8px] sm:text-[11px] font-medium leading-tight text-[#777981]">
             <span className="truncate transition-colors group-hover/card:text-neutral-400">
               {film.origin_name || `Năm ${film.year || 2026}`}
             </span>
@@ -543,7 +544,7 @@ export function FilmCardSkeleton({
         )}
       >
         <div className="absolute inset-0 bg-gradient-to-tr from-white/[0.02] via-white/[0.05] to-transparent" />
-        <div className="absolute top-2 right-2 h-4 w-7 rounded bg-white/[0.08]" />
+        <div className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 h-3 sm:h-4 w-5 sm:w-7 rounded bg-white/[0.08]" />
         {isPosterPill && (
           <div className="absolute inset-x-0 bottom-2.5 flex flex-col items-center gap-1.5 px-3 sm:bottom-3">
             <div className="h-3 w-4/5 rounded bg-white/[0.12]" />
@@ -555,9 +556,9 @@ export function FilmCardSkeleton({
         )}
       </div>
       {!hideDetails && !isPosterPill && (
-        <div className="mt-2 px-0.5 space-y-1.5">
-          <div className="h-3.5 w-[78%] rounded bg-white/[0.09]" />
-          <div className="h-2.5 w-[48%] rounded bg-white/[0.05]" />
+        <div className="mt-1.5 sm:mt-2 px-0.5 space-y-1 sm:space-y-1.5">
+          <div className="h-2.5 sm:h-3.5 w-[78%] rounded bg-white/[0.09]" />
+          <div className="h-2 sm:h-2.5 w-[48%] rounded bg-white/[0.05]" />
         </div>
       )}
     </div>

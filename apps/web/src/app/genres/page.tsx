@@ -8,90 +8,93 @@ import { cardFont } from '@/lib/fonts';
 import { cn } from '@/lib/utils';
 import { buildAsianHeroImageCandidates } from '@/lib/curated-asian-hero';
 import { movieApi } from '@/lib/api';
+import { VerticalTabsHeroBanner } from '@/components/layout/VerticalTabsHeroBanner';
 
 interface HubCard {
   slug: string;
   title: string;
   href: string;
   image: string;
-  showFullBanner?: boolean;
+  objectPosition?: string;
 }
 
-const HUBS: HubCard[] = [
+const CDN_BASE = process.env.NEXT_PUBLIC_CDN_ASSETS_URL?.replace(/\/$/, '') || '';
+
+export const HUBS: HubCard[] = [
+  // ── 9 Chủ đề gốc đã có sẵn ảnh chuẩn ──
   {
     slug: 'phim-han-quoc',
     title: 'Phim Hàn Quốc',
     href: '/country/han-quoc',
-    image: 'https://image.tmdb.org/t/p/w1280/wcP3FsRLog4GNEs9PFrDKKQdcof.jpg',
-    showFullBanner: true,
+    image: '/Folder-Background/chu-de/cong so.png',
   },
   {
     slug: 'phim-trung-quoc',
     title: 'Phim Trung Quốc',
     href: '/country/trung-quoc',
-    image: 'https://image.tmdb.org/t/p/w1280/5fhS6Bh4VnF0SOZyZnhNpc0XHDb.jpg',
-    showFullBanner: true,
+    image: '/Folder-Background/China/xương chó/pjakooca_1920x1080-chohoangvaxuong-01_1920_1080.png',
   },
   {
     slug: 'anime-hoat-hinh',
     title: 'Anime & Hoạt Hình',
     href: '/films/anime',
-    image: 'https://image.tmdb.org/t/p/w1280/3GQKYh6Trm8pxd2AypovoYQf4Ay.jpg',
+    image: '/Folder-Background/chu-de/naruto-team-7-black-3840x2160-25019 (1).png',
   },
   {
     slug: 'doraemon',
     title: 'Doraemon Movie',
     href: '/universe/doraemon',
-    image: 'https://image.tmdb.org/t/p/w1280/Z3mSxuPRNiFYxf1LBoGz3YrJzC.jpg',
+    image: '/Folder-Background/chu-de/thumb-1920-1401041.png',
   },
   {
     slug: 'conan',
     title: 'Thám Tử Lừng Danh Conan',
     href: '/universe/conan',
-    image: 'https://image.tmdb.org/t/p/w1280/4TMkOnI6rCYxqD059aeeQSBv5mc.jpg',
+    image: '/Folder-Background/chu-de/conan.png',
   },
   {
     slug: 'khoa-hoc-vien-tuong',
     title: 'Khoa Học Viễn Tưởng',
     href: '/genre/vien-tuong',
-    image: 'https://image.tmdb.org/t/p/w1280/eZ239CUp1d6OryZEBPnO2n87gMG.jpg',
+    image: '/Folder-Background/chu-de/matrix.png',
   },
   {
     slug: 'chien-tranh',
     title: 'Chiến Tranh & Lịch Sử',
     href: '/genre/chien-tranh',
-    image: 'https://image.tmdb.org/t/p/w1280/neeNHeXjMF5fXoCJRsOmkNGC7q.jpg',
-  },
-  {
-    slug: 'thuyet-minh-song-ngu-ai',
-    title: 'Thuyết Minh Song Ngữ AI',
-    href: '/films/thuyet-minh-ai',
-    image: 'https://image.tmdb.org/t/p/w1280/gNdLJU9TxrpGx4dkZidjys3fyy0.jpg',
+    image: '/Folder-Background/chu-de/fury.png',
+    objectPosition: 'center 18%',
   },
   {
     slug: 'marvel',
     title: 'Vũ Trụ Marvel',
     href: '/universe/marvel',
-    image: 'https://image.tmdb.org/t/p/w1280/7RyHsO4yDXtBv1zUU3mTpHeQ0d5.jpg',
+    image: '/Folder-Background/chu-de/marvel.png',
   },
   {
     slug: 'dc',
     title: 'Vũ Trụ DC',
     href: '/universe/dc',
-    image: 'https://image.tmdb.org/t/p/w1280/dqK9Hag1054tghRQSqLSfrkvQnA.jpg',
+    image: '/Folder-Background/DC/thumb-1920-457955.png',
   },
 ];
 
 function ResilientHubCardImage({
   src,
   isPriority,
-  showFullBanner = false,
+  objectPosition = 'center',
 }: {
   src: string;
   isPriority?: boolean;
-  showFullBanner?: boolean;
+  objectPosition?: string;
 }) {
   const candidates = useMemo(() => {
+    if (!src) return [];
+    if (src.startsWith('/Folder-Background/')) {
+      const encodedSrc = encodeURI(src);
+      const cdnUrl = CDN_BASE ? `${CDN_BASE}${encodedSrc}` : '';
+      return cdnUrl ? [encodedSrc, cdnUrl] : [encodedSrc];
+    }
     if (src.includes('image.tmdb.org')) {
       return [
         `/api/image-proxy?url=${encodeURIComponent(src)}&strict=1`,
@@ -112,39 +115,88 @@ function ResilientHubCardImage({
 
   const currentSrc = candidates[candidateIdx] || src;
 
-  if (failed) {
+  if (failed || !currentSrc) {
     return (
-      <div className="h-full w-full bg-[radial-gradient(circle_at_70%_22%,rgba(124,58,237,0.28),transparent_42%),linear-gradient(135deg,#171923,#090a10)]" />
+      <div className="h-full w-full bg-[radial-gradient(circle_at_70%_22%,rgba(255,255,255,0.06),transparent_42%),linear-gradient(135deg,#171923,#090a10)]" />
     );
   }
 
   return (
     <Image
-      key={currentSrc}
       src={currentSrc}
       alt=""
-      aria-hidden="true"
       fill
-      unoptimized
-      sizes="(max-width: 639px) calc(100vw - 28px), (max-width: 1279px) 50vw, 25vw"
+      priority={isPriority}
       loading={isPriority ? 'eager' : 'lazy'}
       decoding="async"
-      fetchPriority={isPriority ? 'high' : 'auto'}
-      referrerPolicy="no-referrer"
+      unoptimized
+      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1536px) 25vw, 18vw"
       onError={() => {
-        if (candidateIdx < candidates.length - 1) {
-          setCandidateIdx((prev: number) => prev + 1);
+        if (candidateIdx + 1 < candidates.length) {
+          setCandidateIdx((prev) => prev + 1);
         } else {
           setFailed(true);
         }
       }}
-      className={cn(
-        'brightness-[0.92] saturate-[1.04] transition-[transform,filter] duration-500 ease-out group-hover:brightness-100',
-        showFullBanner
-          ? 'object-contain object-top group-hover:scale-[1.012]'
-          : 'object-cover object-center group-hover:scale-[1.025]',
-      )}
+      className="object-cover transition-transform duration-500 will-change-transform group-hover:scale-105"
+      style={{ objectPosition }}
     />
+  );
+}
+
+function HubCardItem({
+  hub,
+  idx,
+  onPrefetch,
+}: {
+  hub: HubCard;
+  idx: number;
+  onPrefetch: (hub: HubCard) => void;
+}) {
+  const hasImage = Boolean(hub.image);
+
+  return (
+    <Link
+      key={hub.slug}
+      href={hub.href}
+      prefetch
+      onMouseEnter={() => onPrefetch(hub)}
+      onFocus={() => onPrefetch(hub)}
+      onTouchStart={() => onPrefetch(hub)}
+      onPointerDown={() => onPrefetch(hub)}
+      className="group relative isolate aspect-[16/9] cursor-pointer select-none overflow-hidden rounded-xl sm:rounded-2xl border border-white/[0.08] bg-[#0e1017] shadow-[0_8px_20px_rgba(0,0,0,0.25)] transition-all duration-300 hover:-translate-y-1 hover:border-white/[0.22] hover:shadow-[0_12px_28px_rgba(0,0,0,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+    >
+      {/* Artwork with rich contrast protection */}
+      <div
+        className="pointer-events-none absolute inset-0 overflow-hidden"
+        aria-hidden="true"
+      >
+        {hasImage ? (
+          <>
+            <ResilientHubCardImage
+              src={hub.image}
+              isPriority={idx < 6}
+              objectPosition={hub.objectPosition}
+            />
+            {/* Consistent dark tint without sudden brightness flashes on hover */}
+            <div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-colors duration-300" />
+            <div className="absolute inset-x-0 bottom-0 h-[65%] bg-gradient-to-t from-[#07080d] via-[#07080d]/85 via-45% to-transparent" />
+          </>
+        ) : (
+          <div className="h-full w-full bg-gradient-to-br from-[#161822] via-[#0e1017] to-[#07080d] flex items-center justify-center p-4">
+            {/* Subtle atmospheric ambient glow for cards waiting for user image */}
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(35,173,229,0.08),transparent_70%)] group-hover:scale-110 transition-transform duration-500" />
+            <div className="absolute inset-x-0 bottom-0 h-[65%] bg-gradient-to-t from-[#07080d] via-[#07080d]/80 to-transparent" />
+          </div>
+        )}
+      </div>
+
+      <div className="absolute inset-x-0 bottom-0 z-20 p-2.5 sm:p-3.5">
+        <h3 className="line-clamp-1 text-xs sm:text-[13px] md:text-sm font-extrabold leading-snug tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)] group-hover:text-white transition-colors">
+          {hub.title}
+        </h3>
+      </div>
+    </Link>
   );
 }
 
@@ -153,61 +205,8 @@ export default function GenresPage() {
 
   const handlePrefetchHub = useCallback(
     (hub: HubCard) => {
-      if (hub.slug === 'marvel') {
-        void queryClient.prefetchQuery({
-          queryKey: ['films-universe', 'marvel', 1],
-          queryFn: async () => {
-            const { getUniverseFilms } = await import('@/lib/universe-catalog');
-            return getUniverseFilms('marvel');
-          },
-          staleTime: 30 * 60 * 1000,
-        });
-      } else if (hub.slug === 'dc') {
-        void queryClient.prefetchQuery({
-          queryKey: ['films-universe', 'dc', 1],
-          queryFn: async () => {
-            const { getUniverseFilms } = await import('@/lib/universe-catalog');
-            return getUniverseFilms('dc');
-          },
-          staleTime: 30 * 60 * 1000,
-        });
-      } else if (hub.slug === 'doraemon') {
-        void queryClient.prefetchQuery({
-          queryKey: ['films-universe', 'doraemon', 1],
-          queryFn: async () => {
-            const { getUniverseFilms } = await import('@/lib/universe-catalog');
-            return getUniverseFilms('doraemon');
-          },
-          staleTime: 30 * 60 * 1000,
-        });
-      } else if (hub.slug === 'conan') {
-        void queryClient.prefetchQuery({
-          queryKey: ['films-universe', 'conan', 1],
-          queryFn: async () => {
-            const { getUniverseFilms } = await import('@/lib/universe-catalog');
-            return getUniverseFilms('conan');
-          },
-          staleTime: 30 * 60 * 1000,
-        });
-      } else if (hub.slug === 'khoa-hoc-vien-tuong') {
-        void queryClient.prefetchQuery({
-          queryKey: ['genre', 'vien-tuong', 1],
-          queryFn: () => movieApi.getByGenre('vien-tuong', 1).then((r) => r.data),
-          staleTime: 30 * 60 * 1000,
-        });
-      } else if (hub.slug === 'chien-tranh') {
-        void queryClient.prefetchQuery({
-          queryKey: ['genre', 'chien-tranh', 1],
-          queryFn: () => movieApi.getByGenre('chien-tranh', 1).then((r) => r.data),
-          staleTime: 30 * 60 * 1000,
-        });
-      } else if (hub.slug === 'anime-hoat-hinh') {
-        void queryClient.prefetchQuery({
-          queryKey: ['films-type', 'anime', 1],
-          queryFn: () => movieApi.getByCountryFast('nhat-ban', 1).then((r) => r.data),
-          staleTime: 30 * 60 * 1000,
-        });
-      } else if (hub.slug === 'phim-han-quoc') {
+      // ── Prefetch các chủ đề gốc ──
+      if (hub.slug === 'phim-han-quoc') {
         void queryClient.prefetchQuery({
           queryKey: ['country-fast', 'han-quoc', 1, ''],
           queryFn: () => movieApi.getByCountryFast('han-quoc', 1).then((r) => r.data),
@@ -219,10 +218,36 @@ export default function GenresPage() {
           queryFn: () => movieApi.getByCountryFast('trung-quoc', 1).then((r) => r.data),
           staleTime: 30 * 60 * 1000,
         });
-      } else if (hub.slug === 'thuyet-minh-song-ngu-ai') {
+      } else if (hub.slug === 'anime-hoat-hinh') {
         void queryClient.prefetchQuery({
-          queryKey: ['films-type', 'thuyet-minh-ai', 1],
-          queryFn: () => movieApi.getThuyetMinh(1).then((r) => r.data),
+          queryKey: ['films-type', 'anime', 1],
+          queryFn: () => movieApi.getByCountryFast('nhat-ban', 1).then((r) => r.data),
+          staleTime: 30 * 60 * 1000,
+        });
+      } else if (
+        hub.slug === 'doraemon' ||
+        hub.slug === 'conan' ||
+        hub.slug === 'marvel' ||
+        hub.slug === 'dc'
+      ) {
+        void queryClient.prefetchQuery({
+          queryKey: ['films-universe', hub.slug, 1],
+          queryFn: async () => {
+            const { getUniverseFilms } = await import('@/lib/universe-catalog');
+            return getUniverseFilms(hub.slug as any);
+          },
+          staleTime: 30 * 60 * 1000,
+        });
+      } else if (hub.slug === 'chien-tranh') {
+        void queryClient.prefetchQuery({
+          queryKey: ['genre', 'chien-tranh', 1],
+          queryFn: () => movieApi.getByGenre('chien-tranh', 1).then((r) => r.data),
+          staleTime: 30 * 60 * 1000,
+        });
+      } else if (hub.slug === 'khoa-hoc-vien-tuong') {
+        void queryClient.prefetchQuery({
+          queryKey: ['genre', 'vien-tuong', 1],
+          queryFn: () => movieApi.getByGenre('vien-tuong', 1).then((r) => r.data),
           staleTime: 30 * 60 * 1000,
         });
       }
@@ -240,8 +265,13 @@ export default function GenresPage() {
         staleTime: 30 * 60 * 1000,
       });
       void queryClient.prefetchQuery({
-        queryKey: ['country-fast', 'trung-quoc', 1, ''],
-        queryFn: () => movieApi.getByCountryFast('trung-quoc', 1).then((r) => r.data),
+        queryKey: ['genre', 'vien-tuong', 1],
+        queryFn: () => movieApi.getByGenre('vien-tuong', 1).then((r) => r.data),
+        staleTime: 30 * 60 * 1000,
+      });
+      void queryClient.prefetchQuery({
+        queryKey: ['films-type', 'tv-shows', 1],
+        queryFn: () => movieApi.getTvShows(1).then((r) => r.data),
         staleTime: 30 * 60 * 1000,
       });
     }, 1500);
@@ -252,64 +282,34 @@ export default function GenresPage() {
     <main
       className={cn(
         cardFont.className,
-        'relative min-h-[100dvh] bg-[#0a0b10] text-white pb-24 sm:pb-28 pt-16 sm:pt-20',
+        'relative min-h-[100dvh] bg-[#0a0b10] text-white pb-20 sm:pb-28 -mt-20 sm:-mt-24 select-none',
       )}
     >
-      <div className="relative z-10 mx-auto w-full max-w-[1720px] px-3.5 sm:px-6 md:pl-20 md:pr-6 lg:pl-24 lg:pr-10 xl:pl-28 xl:pr-12 space-y-8 sm:space-y-10">
-        <section aria-label="Danh sách chủ đề điện ảnh" className="space-y-4">
-          <h1 className="text-xl font-black tracking-tight text-white sm:text-2xl lg:text-3xl">
-            Chủ Đề
-          </h1>
+      {/* ── Top Hero Banner (Tilted 3D Movie Posters Wallpaper with Full Face Visibility) ── */}
+      <VerticalTabsHeroBanner
+        title="Chủ Đề"
+        highlightText="& Tuyển Tập"
+        highlightClassName="text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.95)]"
+        description="Khám phá các vũ trụ điện ảnh và tuyển tập phim đặc sắc nhất được tuyển chọn riêng cho bạn."
+        imageSrc="/img-backtop/tab-genres.webp"
+        objectPosition="center 18%"
+        contentClassName="pb-16 sm:pb-20 md:pb-24 lg:pb-28"
+      />
 
-          {/* Image-first cinematic grid: 2 columns on mobile, 2 on tablet, 4 on desktop */}
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4 cv-section-auto">
-            {HUBS.map((hub, idx) => {
-              return (
-                <Link
-                  key={hub.slug}
-                  href={hub.href}
-                  prefetch
-                  onMouseEnter={() => handlePrefetchHub(hub)}
-                  onFocus={() => handlePrefetchHub(hub)}
-                  onTouchStart={() => handlePrefetchHub(hub)}
-                  onPointerDown={() => handlePrefetchHub(hub)}
-                  className="group relative isolate aspect-[4/3] sm:aspect-[16/10] min-h-[170px] sm:min-h-[210px] cursor-pointer select-none overflow-hidden rounded-xl sm:rounded-2xl border border-white/[0.10] bg-[#0e1017] shadow-[0_16px_42px_rgba(0,0,0,0.20)] transition-[transform,border-color,box-shadow] duration-300 hover:-translate-y-0.5 hover:border-white/25 hover:shadow-[0_20px_52px_rgba(0,0,0,0.34)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#08090d]"
-                >
-                  {/* Artwork with rich contrast protection */}
-                  <div
-                    className="pointer-events-none absolute inset-0 overflow-hidden"
-                    aria-hidden="true"
-                  >
-                    <ResilientHubCardImage
-                      src={hub.image}
-                      isPriority={idx < 4}
-                      showFullBanner={hub.showFullBanner}
-                    />
-                    {/* Overall dark tint so bright artwork doesn't overpower text */}
-                    <div
-                      className={cn(
-                        'absolute inset-0 transition-opacity duration-300',
-                        hub.showFullBanner
-                          ? 'bg-black/15 group-hover:bg-black/10'
-                          : 'bg-black/35 group-hover:bg-black/25',
-                      )}
-                    />
-                    <div
-                      className={cn(
-                        'absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#07080d] via-[#07080d]/95 via-50% to-transparent',
-                        hub.showFullBanner ? 'h-[45%]' : 'h-[55%]',
-                      )}
-                    />
-                  </div>
+      <div className="relative z-20 w-full px-3.5 sm:px-6 md:pl-20 lg:pl-24 pr-3.5 sm:pr-6 md:pr-10 space-y-8 sm:space-y-12 -mt-10 sm:-mt-14 md:-mt-18 lg:-mt-22 pb-16 sm:pb-24">
+        {/* ── Danh Mục Chủ Đề Điện Ảnh (Full Layout Edge-to-Edge) ── */}
+        <section aria-label="Danh sách chủ đề điện ảnh" className="w-full">
+          <h2 className="sr-only">Danh Mục Chủ Đề & Thể Loại</h2>
 
-                  <div className="absolute inset-x-0 bottom-0 z-10 p-3 sm:p-4 sm:p-[18px]">
-                    <h3 className="line-clamp-1 text-xs sm:text-base lg:text-[17px] font-black leading-tight tracking-[-0.02em] text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
-                      {hub.title}
-                    </h3>
-                  </div>
-                </Link>
-              );
-            })}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 sm:gap-4 md:gap-4.5 lg:gap-5 gap-y-4 sm:gap-y-5 cv-section-auto">
+            {HUBS.map((hub, idx) => (
+              <HubCardItem
+                key={hub.slug}
+                hub={hub}
+                idx={idx}
+                onPrefetch={handlePrefetchHub}
+              />
+            ))}
           </div>
         </section>
       </div>

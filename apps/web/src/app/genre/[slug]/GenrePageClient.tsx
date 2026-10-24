@@ -65,6 +65,8 @@ const GENRE_NAMES: Record<string, string> = {
   "the-thao": "Thể Thao",
   "tai-lieu": "Tài Liệu",
   "chinh-kich": "Chính Kịch",
+  "tre-em": "Trẻ Em (Kids)",
+  "gia-tuong": "Phim Giả Tưởng",
 };
 
 // ── TABS CONFIGURATION (CLEAN TEXT - NO EMOJIS) ──
@@ -359,6 +361,373 @@ function ResilientGenreHeroLogo({
         className="max-h-full max-w-full object-contain object-left drop-shadow-[0_12px_32px_rgba(0,0,0,0.95)]"
       />
     </div>
+  );
+}
+
+// ── SCI-FI TRANSFORMERS CINEMATIC HERO BANNER COMPONENT ──
+const CDN_BASE = process.env.NEXT_PUBLIC_CDN_ASSETS_URL?.replace(/\/$/, "") || "";
+const TF_BG_PATH = "/Folder-Background/transformers/transformers-bg.png";
+const TF_LOGO_PATH = "/Folder-Background/transformers/tf-logo.png";
+
+interface TransformersSlide {
+  id: string;
+  name: string;
+  origin_name: string;
+  subtitle: string;
+  badge: string;
+  year: number;
+  quality: string;
+  rating: string;
+  genres: string[];
+  overview: string;
+  charImage: string;
+  charAlt: string;
+  slug: string;
+  trailer_url: string;
+  charHeightClass?: string;
+}
+
+const TRANSFORMERS_SLIDES: TransformersSlide[] = [
+  {
+    id: "the-last-knight",
+    name: "Transformers: Chiến Binh Cuối Cùng",
+    origin_name: "Transformers: The Last Knight",
+    subtitle: "Nemesis Prime, Megatron & Bumblebee • Trận Chiến Cybertron",
+    badge: "👑 TOP 1 VIỄN TƯỞNG",
+    year: 2017,
+    quality: "FHD • Thuyết Minh",
+    rating: "IMDb 7.2",
+    genres: ["Robot Biến Hình", "Kỹ Xảo Đỉnh Cao", "Khoa Học Viễn Tưởng", "Hành Động"],
+    overview:
+      "Optimus Prime bị tẩy não biến thành Nemesis Prime đối đầu với người đồng đội trung thành Bumblebee và Megatron trong trận chiến định đoạt số phận Trái Đất và hành tinh mẹ Cybertron.",
+    charImage: "/Folder-Background/transformers/tf-char-trio.png",
+    charAlt: "Nemesis Prime, Megatron và Bumblebee",
+    slug: "transformers-quai-thu-troi-day",
+    trailer_url: "https://www.youtube.com/watch?v=6Vtf0MszgHE",
+    charHeightClass: "h-[74%] sm:h-[82%] md:h-[88%] lg:h-[94%] max-h-[700px]",
+  },
+  {
+    id: "age-of-extinction",
+    name: "Transformers: Kỷ Nguyên Tuyệt Chủng",
+    origin_name: "Transformers: Age of Extinction",
+    subtitle: "Optimus Prime & Bạo Long Grimlock • Thức Tỉnh Dinobot",
+    badge: "🦖 SIÊU PHẨM DINOBOT",
+    year: 2014,
+    quality: "FHD • Thuyết Minh",
+    rating: "IMDb 7.4",
+    genres: ["Robot Biến Hình", "Quái Thú Cơ Khí", "Khoa Học Viễn Tưởng", "Chiến Tranh"],
+    overview:
+      "Khi loài người quay lưng săn lùng các Autobots, Optimus Prime giải phóng các chiến binh Dinobot huyền thoại dẫn đầu bởi T-Rex Grimlock để đẩy lùi hiểm họa diệt vong.",
+    charImage: "/Folder-Background/transformers/tf-char-grimlock.png",
+    charAlt: "Optimus Prime cưỡi bạo long Grimlock",
+    slug: "transformers-quai-thu-troi-day",
+    trailer_url: "https://www.youtube.com/watch?v=dYDGqmxMZFI",
+    charHeightClass: "h-[72%] sm:h-[80%] md:h-[86%] lg:h-[92%] max-h-[680px]",
+  },
+  {
+    id: "dark-of-the-moon",
+    name: "Transformers: Vùng Tối Của Mặt Trăng",
+    origin_name: "Transformers: Dark of the Moon",
+    subtitle: "Thủ Lĩnh Tiền Nhiệm Sentinel Prime • Trụ Không Gian Cybertron",
+    badge: "⚡ ĐỈNH CAO KỸ XẢO",
+    year: 2011,
+    quality: "FHD • Thuyết Minh",
+    rating: "IMDb 7.6",
+    genres: ["Robot Biến Hình", "Khoa Học Viễn Tưởng", "Du Hành Vũ Trụ", "Hành Động"],
+    overview:
+      "Cuộc chạy đua không gian bí mật đưa con người đến phi thuyền Cybertron rơi trên vùng tối Mặt Trăng, đánh thức Sentinel Prime cùng công nghệ Trụ Không Gian hủy diệt.",
+    charImage: "/Folder-Background/transformers/tf-char-sentinel.png",
+    charAlt: "Thủ lĩnh tiền nhiệm Sentinel Prime",
+    slug: "transformers-quai-thu-troi-day",
+    trailer_url: "https://www.youtube.com/watch?v=kHRf01Gjosk",
+    charHeightClass: "h-[74%] sm:h-[82%] md:h-[88%] lg:h-[94%] max-h-[690px]",
+  },
+  {
+    id: "rise-of-the-beasts",
+    name: "Transformers: Quái Thú Trỗi Dậy",
+    origin_name: "Transformers: Rise of the Beasts",
+    subtitle: "Thống Soái Terrorcon Scourge • Kẻ Phụng Sự Unicron",
+    badge: "🔥 CHIẾN BINH TERRORCON",
+    year: 2023,
+    quality: "FHD • Thuyết Minh",
+    rating: "IMDb 7.3",
+    genres: ["Robot Biến Hình", "Maximals", "Khoa Học Viễn Tưởng", "Hành Động"],
+    overview:
+      "Thủ lĩnh Terrorcon tàn bạo Scourge săn lùng chìa khóa Transwarp mở cổng thời không cho Unicron, buộc Autobots và Maximals phải hợp nhất sức mạnh chống lại kẻ thù diệt thế.",
+    charImage: "/Folder-Background/transformers/tf-char-scourge.png",
+    charAlt: "Thủ lĩnh Terrorcon Scourge",
+    slug: "transformers-quai-thu-troi-day",
+    trailer_url: "https://www.youtube.com/watch?v=itnqEauWQZM",
+    charHeightClass: "h-[74%] sm:h-[82%] md:h-[88%] lg:h-[94%] max-h-[690px]",
+  },
+  {
+    id: "bounty-hunter",
+    name: "Transformers: Thợ Săn Tiền Thưởng",
+    origin_name: "Transformers: Lockdown Bounty Hunter",
+    subtitle: "Sát Thủ Vô Cảm Lockdown • Mệnh Lệnh Đấng Sáng Tạo",
+    badge: "💀 SÁT THỦ NGÂN HÀ",
+    year: 2014,
+    quality: "FHD • Thuyết Minh",
+    rating: "IMDb 7.5",
+    genres: ["Robot Biến Hình", "Vũ Khí Tối Thượng", "Khoa Học Viễn Tưởng", "Săn Đuổi"],
+    overview:
+      "Mang theo phi thuyền khổng lồ và khẩu đại pháo biến hình từ khuôn mặt, Lockdown lùng sục khắp dải ngân hà để bắt sống Optimus Prime trao trả cho Đấng Sáng Tạo.",
+    charImage: "/Folder-Background/transformers/tf-char-lockdown.png",
+    charAlt: "Thợ săn tiền thưởng Cybertron Lockdown",
+    slug: "transformers-quai-thu-troi-day",
+    trailer_url: "https://www.youtube.com/watch?v=dYDGqmxMZFI",
+    charHeightClass: "h-[72%] sm:h-[80%] md:h-[86%] lg:h-[92%] max-h-[670px]",
+  },
+];
+
+function SciFiTransformersHeroBanner({
+  onOpenTrailer,
+}: {
+  onOpenTrailer: (name: string, url?: string) => void;
+}) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [direction, setDirection] = useState(1);
+  const [isPaused, setIsPaused] = useState(false);
+  const [bgSrc, setBgSrc] = useState(TF_BG_PATH);
+  const [logoSrc, setLogoSrc] = useState(TF_LOGO_PATH);
+
+  const currentSlide = TRANSFORMERS_SLIDES[currentIndex];
+
+  useEffect(() => {
+    if (isPaused) return;
+    const timer = setInterval(() => {
+      setDirection(1);
+      setCurrentIndex((prev) => (prev + 1) % TRANSFORMERS_SLIDES.length);
+    }, 8500);
+    return () => clearInterval(timer);
+  }, [isPaused]);
+
+  const handleNext = () => {
+    setDirection(1);
+    setCurrentIndex((prev) => (prev + 1) % TRANSFORMERS_SLIDES.length);
+  };
+
+  const handlePrev = () => {
+    setDirection(-1);
+    setCurrentIndex((prev) => (prev - 1 + TRANSFORMERS_SLIDES.length) % TRANSFORMERS_SLIDES.length);
+  };
+
+  return (
+    <section
+      data-hero-banner="true"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      className="relative h-[68svh] min-h-[520px] max-h-[640px] w-full select-none overflow-hidden bg-[#0a0b10] sm:h-[95vh] sm:min-h-[740px] sm:max-h-[1000px] lg:h-[100vh] lg:min-h-[860px]"
+    >
+      {/* ── Layer 1: Background Scenic Image (Desolate Glacial Cybertron Ring) ── */}
+      <div className="absolute inset-0 w-full h-full overflow-hidden">
+        <img
+          src={bgSrc}
+          alt="Transformers - Bối cảnh Cybertron và vòng đai băng giá"
+          onError={() => {
+            if (CDN_BASE && bgSrc !== `${CDN_BASE}${TF_BG_PATH}`) {
+              setBgSrc(`${CDN_BASE}${TF_BG_PATH}`);
+            }
+          }}
+          className="w-full h-full object-cover object-[center_28%] scale-[1.01] filter brightness-[0.95] contrast-[1.05]"
+          loading="eager"
+        />
+      </div>
+
+      {/* ── Layer 2: Soft Cinematic Blending (hiển thị trọn vẹn cảnh nền Cybertron, không đánh đen) ── */}
+      <div
+        className="absolute inset-0 z-10 pointer-events-none"
+        style={{
+          background: `
+            linear-gradient(to right, rgba(10,11,16,0.68) 0%, rgba(10,11,16,0.4) 38%, rgba(10,11,16,0.12) 68%, transparent 100%),
+            linear-gradient(to top, #0a0b10 0%, rgba(10,11,16,0.7) 12%, rgba(10,11,16,0.2) 28%, transparent 48%),
+            linear-gradient(to bottom, rgba(10,11,16,0.65) 0%, rgba(10,11,16,0.15) 14%, transparent 26%)
+          `,
+        }}
+      />
+
+      {/* ── Layer 3: Character Cutout with Smooth Slide Effect from Left/Right & Gentle Hover ── */}
+      <div className="absolute right-0 bottom-0 top-0 h-full w-full max-w-2xl sm:max-w-3xl md:max-w-4xl lg:max-w-5xl flex items-end justify-end pointer-events-none z-10 overflow-hidden pr-3 sm:pr-8 md:pr-14 lg:pr-20 xl:pr-28">
+        <AnimatePresence initial={false} custom={direction}>
+          <motion.div
+            key={currentSlide.id}
+            custom={direction}
+            initial={{ opacity: 0, x: direction > 0 ? 100 : -100 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: direction > 0 ? -100 : 100 }}
+            whileHover={{
+              scale: 1.025,
+              y: -6,
+              transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] },
+            }}
+            transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute right-0 bottom-0 h-full flex items-end justify-end pointer-events-auto cursor-pointer group/tf-char"
+          >
+            <img
+              src={currentSlide.charImage}
+              alt={currentSlide.charAlt}
+              className={cn(
+                currentSlide.charHeightClass || "h-[74%] sm:h-[82%] md:h-[88%] lg:h-[94%] max-h-[700px]",
+                "w-auto max-w-full object-contain object-bottom select-none filter contrast-[1.03] brightness-[1.02] drop-shadow-[0_20px_45px_rgba(0,0,0,0.8)] transition-all duration-500 group-hover/tf-char:drop-shadow-[0_25px_65px_rgba(56,189,248,0.45)] group-hover/tf-char:brightness-[1.06]",
+              )}
+              loading="eager"
+            />
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      {/* ── Layer 4: Typography, 3D Chrome Logo & Actions ── */}
+      <div className="absolute inset-0 z-20 pointer-events-none">
+        <AnimatePresence initial={false} custom={direction}>
+          <motion.div
+            key={`meta-${currentSlide.id}`}
+            custom={direction}
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute left-5 sm:left-12 md:left-16 lg:left-24 top-28 sm:top-36 md:top-40 lg:top-44 max-w-xl sm:max-w-2xl space-y-3 sm:space-y-4 pointer-events-auto"
+          >
+            {/* Top Badges (Monochrome Neutral Glass - Không màu) */}
+            <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold">
+              <span className="px-2.5 py-1 rounded-full bg-white/15 text-neutral-100 border border-white/20 font-bold uppercase tracking-wider backdrop-blur-sm">
+                {currentSlide.badge}
+              </span>
+              <span className="px-2 py-0.5 rounded bg-white/15 text-neutral-100 border border-white/15 backdrop-blur-sm">
+                {currentSlide.year}
+              </span>
+              <span className="px-2 py-0.5 rounded bg-white/15 text-neutral-100 border border-white/15 backdrop-blur-sm">
+                Khoa Học Viễn Tưởng
+              </span>
+              <span className="px-2 py-0.5 rounded bg-white/15 text-neutral-100 border border-white/15 backdrop-blur-sm">
+                {currentSlide.quality}
+              </span>
+              <span className="px-2 py-0.5 rounded bg-white/15 text-neutral-100 border border-white/15 backdrop-blur-sm">
+                ★ {currentSlide.rating}
+              </span>
+            </div>
+
+            {/* Official 3D Chrome Logo & Title */}
+            <div className="space-y-2">
+              <div className="h-10 sm:h-14 md:h-16 lg:h-20 max-w-[280px] sm:max-w-[440px] md:max-w-[520px]">
+                <img
+                  src={logoSrc}
+                  alt="Transformers"
+                  onError={() => {
+                    if (CDN_BASE && logoSrc !== `${CDN_BASE}${TF_LOGO_PATH}`) {
+                      setLogoSrc(`${CDN_BASE}${TF_LOGO_PATH}`);
+                    }
+                  }}
+                  className="h-full w-auto object-contain object-left drop-shadow-[0_8px_25px_rgba(0,0,0,0.95)]"
+                  loading="eager"
+                />
+              </div>
+
+              {/* Subtitle with character highlight */}
+              <p className="text-sm sm:text-lg font-semibold text-neutral-200/95 font-mono tracking-wide drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)]">
+                {currentSlide.subtitle}
+              </p>
+            </div>
+
+            {/* Genre Pills */}
+            <div className="flex flex-wrap items-center gap-2 pt-0.5">
+              {currentSlide.genres.map((genre) => (
+                <span
+                  key={genre}
+                  className="px-3 py-1 rounded-full bg-white/[0.12] hover:bg-white/[0.2] text-xs font-semibold text-neutral-100 border border-white/[0.15] backdrop-blur-md transition-colors shadow-sm"
+                >
+                  {genre}
+                </span>
+              ))}
+            </div>
+
+            {/* Description */}
+            <p className="text-xs sm:text-sm text-neutral-200/95 font-medium leading-relaxed max-w-lg line-clamp-3 sm:line-clamp-none drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)]">
+              {currentSlide.overview}
+            </p>
+
+            {/* CTA Buttons */}
+            <div className="flex items-center gap-3 pt-2 sm:pt-3">
+              <Link
+                href={`/watch/${currentSlide.slug}`}
+                className="inline-flex items-center gap-2.5 px-6 sm:px-7 py-2.5 sm:py-3 rounded-full bg-white hover:bg-neutral-100 text-neutral-950 font-black text-xs sm:text-sm shadow-xl shadow-black/40 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+              >
+                <Play className="w-4 h-4 fill-current text-neutral-950" />
+                <span>Xem Ngay</span>
+              </Link>
+
+              {currentSlide.trailer_url && (
+                <button
+                  type="button"
+                  onClick={() => onOpenTrailer(currentSlide.name, currentSlide.trailer_url)}
+                  className="inline-flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-xs sm:text-sm backdrop-blur-md transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                >
+                  <Clapperboard className="w-4 h-4 text-white" />
+                  <span>Trailer</span>
+                </button>
+              )}
+
+              <Link
+                href={`/film/${currentSlide.slug}`}
+                className="inline-flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-white/15 hover:bg-white/25 border border-white/20 text-white font-bold text-xs sm:text-sm backdrop-blur-md transition-all hover:scale-105 active:scale-95 cursor-pointer"
+              >
+                <Info className="w-4 h-4" />
+                <span>Chi Tiết</span>
+              </Link>
+            </div>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      {/* ── Slide Navigation Controls (Prev / Next & Dots) ── */}
+      <div className="absolute right-4 sm:right-8 md:right-12 bottom-20 sm:bottom-32 md:bottom-40 lg:bottom-48 xl:bottom-56 z-30 flex items-center gap-2 sm:gap-3 select-none pointer-events-auto">
+        {/* Indicators */}
+        <div className="hidden sm:flex items-center gap-1.5 mr-2">
+          {TRANSFORMERS_SLIDES.map((slide, idx) => (
+            <button
+              key={slide.id}
+              type="button"
+              onClick={() => {
+                setDirection(idx > currentIndex ? 1 : -1);
+                setCurrentIndex(idx);
+              }}
+              className={cn(
+                "h-1.5 rounded-full transition-all duration-300 cursor-pointer",
+                idx === currentIndex
+                  ? "w-7 bg-cyan-400 shadow-sm shadow-cyan-400/50"
+                  : "w-2 bg-white/30 hover:bg-white/60",
+              )}
+              title={slide.name}
+            />
+          ))}
+        </div>
+
+        {/* Counter */}
+        <span className="text-xs font-mono font-bold text-neutral-300 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 shadow-lg">
+          {currentIndex + 1} / {TRANSFORMERS_SLIDES.length}
+        </span>
+
+        {/* Arrow Buttons */}
+        <div className="flex items-center gap-1 bg-black/60 backdrop-blur-md px-1.5 py-1 rounded-full border border-white/20 shadow-lg">
+          <button
+            type="button"
+            onClick={handlePrev}
+            aria-label="Previous Transformers character"
+            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full hover:bg-white/20 text-white flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={handleNext}
+            aria-label="Next Transformers character"
+            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full hover:bg-white/20 text-white flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -1181,14 +1550,18 @@ export default function GenrePageClient({
       {isShowcasePage ? (
         <>
           {/* Netflix-Grade Cinematic Hero Banner */}
-          <GenreCuratedHeroBanner
-            pool={heroPool}
-            genreLabel={label}
-            onOpenTrailer={handleOpenTrailer}
-          />
+          {isSciFiPage ? (
+            <SciFiTransformersHeroBanner onOpenTrailer={handleOpenTrailer} />
+          ) : (
+            <GenreCuratedHeroBanner
+              pool={heroPool}
+              genreLabel={label}
+              onOpenTrailer={handleOpenTrailer}
+            />
+          )}
 
           {/* ── CURATED MULTI-CATEGORY SWIPER ROWS (OVERLAPPING HERO BANNER & VIDEO) ── */}
-          <div className="relative z-20 pl-4 sm:pl-12 md:pl-20 lg:pl-24 pr-2 sm:pr-4 md:pr-6 pb-16 space-y-6 -mt-6 sm:-mt-24 md:-mt-32 lg:-mt-40">
+          <div className="relative z-20 pl-4 sm:pl-12 md:pl-20 lg:pl-24 pr-2 sm:pr-4 md:pr-6 pb-16 space-y-6 -mt-12 sm:-mt-24 md:-mt-32 lg:-mt-44 xl:-mt-52">
             {/* Row 1 */}
             <GenreCategoryRow
               title={
@@ -1307,13 +1680,13 @@ export default function GenrePageClient({
 
             {/* Full Catalog Grid */}
             {isLoading ? (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 lg:grid-cols-7">
+              <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 lg:grid-cols-7 gap-y-3.5 sm:gap-y-6">
                 {Array.from({ length: 14 }).map((_, i) => (
                   <FilmCardSkeleton key={i} />
                 ))}
               </div>
             ) : filteredCatalogFilms.length > 0 ? (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 lg:grid-cols-7 cv-grid-auto">
+              <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 lg:grid-cols-7 gap-y-3.5 sm:gap-y-6 cv-grid-auto">
                 {filteredCatalogFilms.map((f, idx) => (
                   <FilmCard
                     key={`${f.slug || f._id || idx}-${idx}`}
@@ -1358,13 +1731,13 @@ export default function GenrePageClient({
           </div>
 
           {isLoading ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-y-6 sm:gap-y-8">
+            <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-y-3.5 sm:gap-y-8">
               {Array.from({ length: 21 }).map((_, i) => (
                 <FilmCardSkeleton key={i} />
               ))}
             </div>
           ) : rawFilms.length > 0 ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-y-6 sm:gap-y-8 cv-grid-auto">
+            <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-y-3.5 sm:gap-y-8 cv-grid-auto">
               {rawFilms.map((f, idx) => (
                 <FilmCard
                   key={`${f.slug || f._id || (f as any).id}-${idx}`}

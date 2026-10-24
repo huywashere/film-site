@@ -244,20 +244,21 @@ export default function WatchPartyListPage() {
         <div className="isolate relative rounded-2xl sm:rounded-3xl overflow-hidden border border-white/15 shadow-[0_20px_60px_rgba(0,0,0,0.8)] bg-[#0b0c10] p-6 sm:p-10 md:p-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 min-h-[260px] sm:min-h-[300px] md:min-h-[320px] group">
           <div className="absolute inset-0 -z-10 overflow-hidden">
             <Image
-              src="/images/cinema-hall-with-red-seat-wide-white-screen.webp"
+              src="/img-backtop/tab-watch-party.webp"
               alt="Phòng Xem Chung FlexPhim"
               fill
               priority
+              unoptimized
               placeholder="blur"
-              blurDataURL="data:image/webp;base64,UklGRnQAAABXRUJQVlA4IGgAAABQBACdASogABUAPyl8tFOuJ6Uit/qoAcAlCUAYyAPSFKiNKKjydGO6FkeAAP7un2x/P8JAkG3L2Jr9uOgUCoBNczgMfRFcvVztfeDLCn7R7pUdyq9kCPlBcyiccX8GCz4lG1Zf8EKAAA=="
+              blurDataURL="data:image/webp;base64,UklGRn4AAABXRUJQVlA4IHIAAADQBACdASogABIAPzmIvFavKKYjsBgIAeAnCWMAAI9AyVWwdcX8rz8+XoNxsUWygAD+7UTcT3Esw3GL02YjG+iu8ovjZJlMKjawD0pWUxjKJrC+60jdUY5jV+9RYiB0jXxrjV5fqMalEcKh6cxkZTemAAA="
               sizes="(max-width: 768px) 100vw, (max-width: 1280px) 1200px, 1280px"
-              quality={85}
-              className="object-cover object-[center_65%] sm:object-[center_60%] scale-110 sm:scale-120 group-hover:scale-125 transition-transform duration-1000 ease-out brightness-[1.05] contrast-[1.08] saturate-[1.2] pointer-events-none"
+              quality={90}
+              className="object-cover object-[center_28%] sm:object-[center_24%] scale-100 group-hover:scale-105 transition-transform duration-1000 ease-out brightness-[0.98] contrast-[1.05] saturate-[1.1] pointer-events-none"
             />
-            {/* Directional gradient: deep contrast on left for crisp readability, open on right for cinematic red seats */}
+            {/* Directional gradient: deep contrast on left for crisp readability, open on right for cinematic poster collage */}
             <div className="absolute inset-0 bg-gradient-to-r from-[#07080b]/95 via-[#07080b]/75 via-45% to-black/20" />
             <div className="absolute inset-0 bg-gradient-to-t from-[#07080b]/90 via-transparent to-black/40" />
-            <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-red-600/10 to-transparent pointer-events-none" />
+            <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-violet-600/10 to-transparent pointer-events-none" />
           </div>
 
           <div className="space-y-2.5 max-w-xl relative z-10">

@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { Bookmark, Loader2, ArrowLeft } from "lucide-react";
+import { Bookmark, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { watchlistApi } from "@/lib/api";
 import { FilmCard } from "@/components/film/FilmCard";
@@ -12,6 +12,8 @@ import type { WatchlistItem } from "@/types/movie";
 import { guestDataStorage, type GuestWatchlistItem } from "@/lib/user-data";
 import { cardFont } from "@/lib/fonts";
 import { useReliableNavigation } from "@/hooks/useReliableNavigation";
+import { VerticalTabsHeroBanner } from "@/components/layout/VerticalTabsHeroBanner";
+import { cn } from "@/lib/utils";
 
 export default function WatchlistPage() {
   const router = useReliableNavigation();
@@ -79,59 +81,53 @@ export default function WatchlistPage() {
         : []
     : guestItems;
 
-  const watchlistItems = rawWatchlistItems.filter(
+  const watchlistItems = useMemo(() => {
+    return rawWatchlistItems.filter(
+      (item) => !removedSlugs.includes(item.movieId),
+    );
+  }, [rawWatchlistItems, removedSlugs]);
+
+  const total = rawWatchlistItems.filter(
     (item) => !removedSlugs.includes(item.movieId),
-  );
-  const total = watchlistItems.length;
+  ).length;
   const totalPages = user ? watchlistData?.totalPages || 1 : 1;
+
+  const handleBack = () => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+    } else {
+      router.push("/");
+    }
+  };
 
   return (
     <div
-      className={`${cardFont.className} min-h-screen bg-background pb-16 pt-16 lg:ml-20`}
+      className={cn(cardFont.className, "min-h-screen bg-[#0a0b10] text-white pb-20 -mt-20 sm:-mt-24 select-none")}
     >
-      {/* Header */}
-      <div className="relative z-10 border-b border-white/10 bg-background">
-        <div className="relative mx-auto max-w-[1600px] px-4 py-4 md:px-8 md:py-5">
-          {/* Back Button */}
-          <div className="mb-2 sm:mb-0 sm:absolute sm:left-4 md:left-8 sm:top-1/2 sm:-translate-y-1/2 z-20">
-            <button
-              type="button"
-              onClick={() => {
-                if (typeof window !== "undefined" && window.history.length > 1) {
-                  router.back();
-                } else {
-                  router.push("/");
-                }
-              }}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-neutral-300 hover:text-white transition-all hover:bg-white/[0.08] hover:border-white/20 cursor-pointer select-none active:scale-95 group"
-            >
-              <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
-              <span>Quay lại</span>
-            </button>
-          </div>
-
-          {/* Centered Title */}
-          <div className="flex flex-col items-center justify-center text-center max-w-2xl mx-auto py-1">
-            <h1 className="text-2xl font-extrabold tracking-tight text-white md:text-3xl">
-              Xem Sau
-            </h1>
-            <p className="text-sm text-neutral-400 mt-1.5 normal-case font-normal tracking-normal">
-              {total} phim đã lưu{" "}
-              {user ? "trong tài khoản" : "trên thiết bị này"}
-            </p>
-          </div>
-        </div>
-      </div>
+      {/* ── Top Hero Banner (Supergirl with Full Face Visibility & Integrated Controls) ── */}
+      <VerticalTabsHeroBanner
+        title="Xem Sau & Bộ Sưu Tập"
+        description={
+          total > 0
+            ? `${total} bộ phim đã lưu ${user ? 'trong tài khoản FlexPhim' : 'trên thiết bị này'} • Tự động ghi nhớ tiến trình phát`
+            : "Lưu lại các bộ phim yêu thích để thưởng thức trọn vẹn bất cứ lúc nào."
+        }
+        imageSrc="/img-backtop/tab-watchlist.webp"
+        objectPosition="center 4%"
+        onBack={handleBack}
+        backText="Quay lại"
+        contentClassName="pb-16 sm:pb-20 md:pb-24"
+      />
 
       {/* Content */}
-      <div className="relative z-0 mx-auto max-w-[1600px] px-4 py-6 md:px-8 md:py-8">
+      <div className="relative z-20 w-full px-3.5 sm:px-6 md:pl-20 lg:pl-24 pr-3.5 sm:pr-6 md:pr-10 pt-6 sm:pt-8">
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 size={40} className="animate-spin text-blue-500" />
+            <Loader2 size={40} className="animate-spin text-sky-400" />
           </div>
         ) : watchlistItems.length > 0 ? (
           <>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 cv-grid-auto">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-4 md:gap-5 cv-grid-auto">
               {watchlistItems.map((item) => {
                 const movie = "movie" in item ? item.movie : undefined;
                 return (

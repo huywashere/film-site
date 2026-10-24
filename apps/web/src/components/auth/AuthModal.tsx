@@ -130,9 +130,14 @@ export function AuthModal({
 
   const isOpen = isPage ? true : modalStore.isOpen;
 
-  // Keep the server and first client render identical. Random selection here
-  // caused hydration replacement and could interrupt the login submission.
-  const [currentArtwork] = useState<AuthArtwork>(LOGIN_COVER_ARTWORKS[0]);
+  // Server render always uses index 0 to avoid hydration mismatch.
+  // After hydration, randomly pick one of the 2 login artworks so users
+  // see a different background each visit (or page refresh).
+  const [currentArtwork, setCurrentArtwork] = useState<AuthArtwork>(LOGIN_COVER_ARTWORKS[0]);
+  useEffect(() => {
+    const randomIndex = Math.floor(Math.random() * LOGIN_COVER_ARTWORKS.length);
+    setCurrentArtwork(LOGIN_COVER_ARTWORKS[randomIndex]);
+  }, []);
 
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const turnstileEnabled = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);

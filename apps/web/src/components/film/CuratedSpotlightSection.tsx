@@ -93,13 +93,24 @@ export function CuratedSpotlightSection({
     }, 90);
   };
 
-  if (isLoading) {
+  if (isLoading || !activeFilm) {
     return (
-      <div className="mb-5 h-[560px] w-full animate-pulse rounded-[28px] border border-white/10 bg-white/[0.03] sm:mb-10 lg:mb-14" />
+      <div className={`${cardFont.className} mb-8 sm:mb-12 lg:mb-14 w-full select-none animate-pulse`} aria-busy="true">
+        <div className="mb-4 flex items-center justify-between px-1">
+          <h2 className="text-xl font-extrabold tracking-[-0.025em] text-white/90 sm:text-2xl">
+            {title}
+          </h2>
+          <div className="h-4 w-16 rounded bg-white/[0.05]" />
+        </div>
+        <div className="h-[420px] sm:h-[500px] lg:h-[560px] w-full rounded-[24px] sm:rounded-[28px] border border-white/10 bg-gradient-to-r from-white/[0.04] via-white/[0.02] to-transparent flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <div className="h-7 w-48 rounded bg-white/[0.08]" />
+            <div className="h-4 w-32 rounded bg-white/[0.05]" />
+          </div>
+        </div>
+      </div>
     );
   }
-
-  if (!activeFilm) return null;
 
   const rating = Number(activeFilm.vote_average || activeFilm.rating || 0);
   const categories = (activeFilm.category || [])

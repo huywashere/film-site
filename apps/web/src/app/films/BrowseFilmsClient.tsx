@@ -9,6 +9,7 @@ import {
   Film,
   X,
   ChevronDown,
+  SlidersHorizontal,
 } from "lucide-react";
 import {
   FilmCard,
@@ -23,6 +24,7 @@ import { cn } from "@/lib/utils";
 import { cardFont } from "@/lib/fonts";
 import { BrowseFilmsSkeleton } from "@/components/loading/CatalogPageSkeletons";
 import { useReliableNavigation } from "@/hooks/useReliableNavigation";
+import { VerticalTabsHeroBanner } from "@/components/layout/VerticalTabsHeroBanner";
 
 // ── Định nghĩa các tùy chọn bộ lọc ──────────────────────────────────────────
 
@@ -402,26 +404,24 @@ function BrowseFilmsContent({
       data-eager-hydration="true"
       className={cn(
         cardFont.className,
-        "relative min-h-[100dvh] bg-[#0a0b10] text-white pb-24 sm:pb-28 pt-16 sm:pt-20 select-none",
+        "relative min-h-[100dvh] bg-[#0a0b10] text-white pb-24 sm:pb-28 -mt-20 sm:-mt-24 select-none",
       )}
     >
+      {/* ── Top Hero Banner (Avengers Endgame with Full Face Visibility & Integrated Typography) ── */}
+      <VerticalTabsHeroBanner
+        title="Duyệt Tìm & Khám Phá"
+        description="Khám phá kho phim điện ảnh, phim bộ và hoạt hình chọn lọc với hệ thống lọc đa tầng chuyên sâu."
+        imageSrc="/img-backtop/tab-films.webp"
+        objectPosition="center 10%"
+        contentClassName="pb-24 sm:pb-32 md:pb-40 lg:pb-48"
+      />
+
       {/* ── Ambient Studio Lighting (Đồng bộ trang chủ) ── */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden z-0">
         <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[1200px] h-[500px] bg-gradient-to-b from-white/[0.025] to-transparent blur-[140px] rounded-full" />
       </div>
 
-      <div className="relative z-10 mx-auto w-full max-w-[1720px] px-3.5 sm:px-6 md:pl-20 md:pr-6 lg:pl-24 lg:pr-10 xl:pl-28 xl:pr-12 space-y-5 sm:space-y-6">
-        {/* ── Header Tiêu Đề Đơn Giản & Thanh Thoát ── */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between pb-3 sm:pb-4 border-b border-white/[0.08] gap-1.5 sm:gap-2">
-          <div>
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-white">
-              Duyệt Tìm Phim
-            </h1>
-          </div>
-          <p className="text-[11px] sm:text-xs text-neutral-400 font-medium">
-            Khám phá kho phim điện ảnh, phim bộ và hoạt hình chọn lọc
-          </p>
-        </div>
+      <div className="relative z-20 w-full px-3.5 sm:px-6 md:pl-20 lg:pl-24 pr-3.5 sm:pr-6 md:pr-10 space-y-5 sm:space-y-6 -mt-14 sm:-mt-20 md:-mt-28 lg:-mt-36">
 
         {/* ── Hàng 1: Thanh Tìm Kiếm & Quick Format Pills ── */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
@@ -464,7 +464,7 @@ function BrowseFilmsContent({
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Tìm tên phim, diễn viên..."
-                  className="w-full bg-[#12141c] border border-white/10 hover:border-white/20 focus:border-cyan-400/60 rounded-xl pl-9 pr-8 py-1.5 text-xs text-white placeholder:text-neutral-500 focus:outline-none transition-colors"
+                  className="w-full bg-[#12141c] border border-white/10 hover:border-white/20 focus:border-white/40 rounded-xl pl-9 pr-8 py-1.5 text-xs text-white placeholder:text-neutral-500 focus:outline-none transition-colors"
                 />
                 {search && (
                   <button
@@ -490,9 +490,9 @@ function BrowseFilmsContent({
                       setPage(1);
                     }}
                     className={cn(
-                      "appearance-none bg-[#12141c] border rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold focus:outline-none focus:border-cyan-400/60 cursor-pointer transition-colors",
+                      "appearance-none bg-[#12141c] border rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold focus:outline-none focus:border-white/40 cursor-pointer transition-colors",
                       selectedGenre
-                        ? "border-cyan-400/60 text-cyan-300"
+                        ? "border-white/40 text-white bg-white/10"
                         : "border-white/10 text-neutral-300 hover:border-white/20",
                     )}
                   >
@@ -522,9 +522,9 @@ function BrowseFilmsContent({
                       setPage(1);
                     }}
                     className={cn(
-                      "appearance-none bg-[#12141c] border rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold focus:outline-none focus:border-cyan-400/60 cursor-pointer transition-colors",
+                      "appearance-none bg-[#12141c] border rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold focus:outline-none focus:border-white/40 cursor-pointer transition-colors",
                       selectedCountry
-                        ? "border-cyan-400/60 text-cyan-300"
+                        ? "border-white/40 text-white bg-white/10"
                         : "border-white/10 text-neutral-300 hover:border-white/20",
                     )}
                   >
@@ -554,9 +554,9 @@ function BrowseFilmsContent({
                       setPage(1);
                     }}
                     className={cn(
-                      "appearance-none bg-[#12141c] border rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold focus:outline-none focus:border-cyan-400/60 cursor-pointer transition-colors",
+                      "appearance-none bg-[#12141c] border rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold focus:outline-none focus:border-white/40 cursor-pointer transition-colors",
                       selectedYear
-                        ? "border-cyan-400/60 text-cyan-300"
+                        ? "border-white/40 text-white bg-white/10"
                         : "border-white/10 text-neutral-300 hover:border-white/20",
                     )}
                   >
@@ -586,9 +586,9 @@ function BrowseFilmsContent({
                       setPage(1);
                     }}
                     className={cn(
-                      "appearance-none bg-[#12141c] border rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold focus:outline-none focus:border-cyan-400/60 cursor-pointer transition-colors",
+                      "appearance-none bg-[#12141c] border rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold focus:outline-none focus:border-white/40 cursor-pointer transition-colors",
                       selectedQuality !== "all"
-                        ? "border-cyan-400/60 text-cyan-300"
+                        ? "border-white/40 text-white bg-white/10"
                         : "border-white/10 text-neutral-300 hover:border-white/20",
                     )}
                   >
@@ -617,9 +617,9 @@ function BrowseFilmsContent({
                       setPage(1);
                     }}
                     className={cn(
-                      "appearance-none bg-[#12141c] border rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold focus:outline-none focus:border-cyan-400/60 cursor-pointer transition-colors",
+                      "appearance-none bg-[#12141c] border rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold focus:outline-none focus:border-white/40 cursor-pointer transition-colors",
                       selectedAudio !== "all"
-                        ? "border-cyan-400/60 text-cyan-300"
+                        ? "border-white/40 text-white bg-white/10"
                         : "border-white/10 text-neutral-300 hover:border-white/20",
                     )}
                   >
@@ -647,7 +647,7 @@ function BrowseFilmsContent({
                       setSelectedSort(e.target.value);
                       setPage(1);
                     }}
-                    className="appearance-none bg-[#12141c] border border-white/10 hover:border-white/20 rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold text-neutral-300 focus:outline-none focus:border-cyan-400/60 cursor-pointer transition-colors"
+                    className="appearance-none bg-[#12141c] border border-white/10 hover:border-white/20 rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold text-neutral-300 focus:outline-none focus:border-white/40 cursor-pointer transition-colors"
                   >
                     {SORTS.map((s) => (
                       <option
@@ -687,7 +687,7 @@ function BrowseFilmsContent({
 
         {/* ── Lưới Thẻ Phim Chuẩn 7 Cột Phong Cách Trang Chủ (2xl:grid-cols-7) ── */}
         {isLoading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2.5 sm:gap-3.5 lg:gap-4 pt-2">
+          <div className="grid grid-cols-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-1.5 sm:gap-3.5 lg:gap-4 gap-y-3.5 sm:gap-y-6 pt-2">
             {Array.from({ length: 14 }).map((_, i) => (
               <FilmCardSkeleton key={i} />
             ))}
@@ -714,7 +714,7 @@ function BrowseFilmsContent({
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2.5 sm:gap-3.5 lg:gap-4 pt-2 cv-grid-auto">
+          <div className="grid grid-cols-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-1.5 sm:gap-3.5 lg:gap-4 gap-y-3.5 sm:gap-y-6 pt-2 cv-grid-auto">
             {films.map((film, idx) => (
               <FilmCard
                 key={`${film.slug || film._id || idx}-${idx}`}

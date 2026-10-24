@@ -126,9 +126,10 @@ async function fetchConfigFromEndpoint(
 ): Promise<PublicSiteConfiguration | null> {
   try {
     const clean = baseUrl.replace(/\/$/, "");
+    const timeoutMs = process.env.NODE_ENV === "development" ? 250 : 600;
     const res = await fetch(`${clean}/config/public`, {
       cache: "no-store",
-      signal: AbortSignal.timeout(600),
+      signal: AbortSignal.timeout(timeoutMs),
     });
     if (!res.ok) return null;
     return (await res.json()) as PublicSiteConfiguration;
@@ -192,22 +193,31 @@ async function getInitialPublicConfiguration(): Promise<PublicSiteConfiguration 
     }
   }
 
-  // 2. Try HTTP endpoints in sequence
+  // 2. Try HTTP endpoints concurrently
+  const isDev = process.env.NODE_ENV === "development";
   const candidates = [
     process.env.API_INTERNAL_URL,
-    "http://api:4000/api/v1",
+    ...(isDev ? [] : ["http://api:4000/api/v1"]),
     "http://127.0.0.1:4000/api/v1",
     "http://localhost:4000/api/v1",
     process.env.NEXT_PUBLIC_API_URL,
   ].filter((url): url is string => typeof url === "string" && /^https?:\/\//i.test(url));
 
   const dedupedCandidates = [...new Set(candidates)];
-  for (const candidate of dedupedCandidates) {
-    const fetched = await fetchConfigFromEndpoint(candidate);
-    if (fetched && Array.isArray(fetched.heroMovieSlugs)) {
-      cachedPublicConfig = fetched;
-      lastConfigFetch = now;
-      return cachedPublicConfig;
+  if (dedupedCandidates.length > 0) {
+    const results = await Promise.allSettled(
+      dedupedCandidates.map((candidate) => fetchConfigFromEndpoint(candidate)),
+    );
+    for (const res of results) {
+      if (
+        res.status === "fulfilled" &&
+        res.value &&
+        Array.isArray(res.value.heroMovieSlugs)
+      ) {
+        cachedPublicConfig = res.value;
+        lastConfigFetch = now;
+        return cachedPublicConfig;
+      }
     }
   }
 

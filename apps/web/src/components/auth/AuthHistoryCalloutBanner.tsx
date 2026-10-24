@@ -12,6 +12,11 @@ interface AuthHistoryCalloutBannerProps {
   className?: string;
 }
 
+const CDN_BASE = process.env.NEXT_PUBLIC_CDN_ASSETS_URL?.replace(/\/$/, '') || '';
+const MASCOT_IMG_PATH =
+  '/Folder-Background/form%20login/bzvn-review-phim-ga-kim-thoa-ban-chuyen-the-khong-khop-voi-tinh-than-cua-nguyen-tac-thumb.png';
+const MASCOT_IMG_SRC = `${CDN_BASE}${MASCOT_IMG_PATH}`;
+
 export function AuthHistoryCalloutBanner({ className }: AuthHistoryCalloutBannerProps) {
   const [mounted, setMounted] = useState(false);
   const { user } = useAuthStore();
@@ -96,25 +101,35 @@ export function AuthHistoryCalloutBanner({ className }: AuthHistoryCalloutBanner
           </div>
         </div>
 
-        {/* Right Column: Batman SVG Mascot (Desktop/Tablet) - Balanced Proportion */}
+        {/* Right Column: Costume Characters Mascot (Desktop/Tablet) - Balanced Proportion */}
         <div className="relative shrink-0 hidden sm:flex items-end justify-center self-end -mb-3.5 sm:-mb-4 md:-mb-4.5 -mr-3 sm:-mr-4 md:-mr-5">
           <img
-            src="/img-cut/krolestwo_nauki-batman-6302138.svg"
-            alt="Batman Mascot"
+            src={MASCOT_IMG_SRC}
+            alt="Mascot"
+            onError={(e) => {
+              if (e.currentTarget.src !== MASCOT_IMG_PATH) {
+                e.currentTarget.src = MASCOT_IMG_PATH;
+              }
+            }}
             className="h-36 sm:h-40 md:h-44 lg:h-48 w-auto object-contain object-bottom select-none pointer-events-none"
             loading="lazy"
           />
         </div>
 
-        {/* Mobile Top-Right Batman Mascot */}
+        {/* Mobile Top-Right Costume Characters Mascot */}
         <div
           aria-hidden="true"
-          className="sm:hidden absolute top-1 right-2 w-16 h-20 pointer-events-none flex items-start justify-end"
+          className="sm:hidden absolute top-1 right-2 w-20 h-20 pointer-events-none flex items-start justify-end"
         >
           <img
-            src="/img-cut/krolestwo_nauki-batman-6302138.svg"
+            src={MASCOT_IMG_SRC}
             alt=""
-            className="h-20 w-auto object-contain object-top"
+            onError={(e) => {
+              if (e.currentTarget.src !== MASCOT_IMG_PATH) {
+                e.currentTarget.src = MASCOT_IMG_PATH;
+              }
+            }}
+            className="h-20 w-auto object-contain object-right-top"
             loading="lazy"
           />
         </div>

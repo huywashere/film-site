@@ -1,7 +1,10 @@
 import { Injectable, NotFoundException, OnModuleInit } from "@nestjs/common";
 import {
+  BackupStatus,
+  IncidentStatus,
   IssuePriority,
   IssueStatus,
+  MediaUploadStatus,
   Prisma,
   Role,
   SyncJobStatus,
@@ -119,6 +122,16 @@ export class AdminService implements OnModuleInit {
       openReports,
       recentActivity,
       rangeViews,
+      visibleMovies,
+      hiddenMovies,
+      moviesWithoutPlayback,
+      activeSyncJobs,
+      failedSyncJobs,
+      queuedMediaUploads,
+      failedMediaUploads,
+      openIncidents,
+      latestBackup,
+      recentSyncJobs,
     ] = await Promise.all([
       this.prisma.user.count(),
       this.prisma.movie.count(),
@@ -138,6 +151,39 @@ export class AdminService implements OnModuleInit {
       this.auditService.getRecentLogs(8),
       this.prisma.viewLog.count({
         where: { viewedAt: { gte: selectedStart } },
+      }),
+      this.prisma.movie.count({ where: { isHidden: false } }),
+      this.prisma.movie.count({ where: { isHidden: true } }),
+      this.prisma.movie.count({ where: { playbackSources: { none: {} } } }),
+      this.prisma.syncJob.count({
+        where: { status: { in: [SyncJobStatus.QUEUED, SyncJobStatus.RUNNING] } },
+      }),
+      this.prisma.syncJob.count({ where: { status: SyncJobStatus.FAILED } }),
+      this.prisma.mediaUploadJob.count({
+        where: { status: { in: [MediaUploadStatus.QUEUED, MediaUploadStatus.PROCESSING] } },
+      }),
+      this.prisma.mediaUploadJob.count({
+        where: { status: MediaUploadStatus.FAILED },
+      }),
+      this.prisma.systemIncident.count({
+        where: { status: { in: [IncidentStatus.OPEN, IncidentStatus.ACKNOWLEDGED] } },
+      }),
+      this.prisma.databaseBackup.findFirst({
+        orderBy: { createdAt: "desc" },
+        select: { status: true, createdAt: true, finishedAt: true, errorMessage: true },
+      }),
+      this.prisma.syncJob.findMany({
+        take: 5,
+        orderBy: { updatedAt: "desc" },
+        select: {
+          id: true,
+          source: true,
+          status: true,
+          processedCount: true,
+          failedCount: true,
+          updatedAt: true,
+          errorMessage: true,
+        },
       }),
     ]);
     const activeWatchParties = this.watchParties.listRooms().length;
@@ -198,6 +244,20 @@ export class AdminService implements OnModuleInit {
       rangeViews,
       activeWatchParties,
       openReports,
+      catalog: {
+        visibleMovies,
+        hiddenMovies,
+        moviesWithoutPlayback,
+      },
+      operations: {
+        activeSyncJobs,
+        failedSyncJobs,
+        queuedMediaUploads,
+        failedMediaUploads,
+        openIncidents,
+        latestBackup,
+        recentSyncJobs,
+      },
       recentActivity,
       dailyChartData,
       topMovies,

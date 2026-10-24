@@ -275,6 +275,69 @@ function sectionTitleTone(title: string) {
   );
 }
 
+// Reusable Row Skeleton Component to prevent black void / layout shifts during scrolling or loading
+function SectionRowSkeleton({
+  title,
+  href,
+  cardVariant,
+}: {
+  title?: string;
+  href?: string;
+  cardVariant?: 'standard' | 'landscape' | 'poster-pill';
+}) {
+  const { t } = useTranslation();
+  const cardLayout = useSettingsStore((s) => s.cardLayout);
+  const isLandscape = cardLayout === "horizontal";
+  const effectiveCardVariant = cardVariant || (isLandscape ? "landscape" : "standard");
+  const isPosterPill = effectiveCardVariant === "poster-pill";
+
+  const itemWidthClass = isLandscape
+    ? "w-[72%] min-w-[220px] shrink-0 snap-start sm:w-[46%] md:w-[32%] lg:w-[calc((100%-4*1rem)/5)] xl:w-[calc((100%-4*1rem)/5)]"
+    : isPosterPill
+      ? "w-[36%] min-w-[130px] shrink-0 snap-start sm:w-[26%] md:w-[20%] lg:w-[calc((100%-5*1rem-2rem)/6)] xl:w-[calc((100%-5*1rem-2rem)/6)] 2xl:w-[calc((100%-5*1rem-2rem)/6)]"
+      : "w-[26%] min-w-[112px] shrink-0 snap-start sm:w-[22%] md:w-[18%] lg:w-[calc((100%-6*1rem)/7)] xl:w-[calc((100%-6*1rem)/7)]";
+
+  return (
+    <div
+      data-film-section-skeleton="true"
+      className={`${cardFont.className} mb-8 select-none`}
+      aria-busy="true"
+    >
+      <div className="mb-3 flex items-start justify-between gap-2 px-1 sm:items-center">
+        <div className="flex min-w-0 flex-1 items-start gap-2 sm:items-center">
+          {title ? (
+            <h2 className={`${cardFont.className} text-xl font-extrabold tracking-[-0.025em] text-white sm:text-2xl`}>
+              {title}
+            </h2>
+          ) : (
+            <div className="h-7 w-48 rounded bg-white/[0.08] motion-safe:animate-pulse motion-safe:[animation-iteration-count:3]" />
+          )}
+          {href && (
+            <span className="inline-flex shrink-0 items-center gap-0.5 text-xs sm:text-sm font-semibold text-white/40 ml-1.5">
+              <span>{t("home.viewAll", "Xem tất cả")}</span>
+              <ChevronRight size={14} className="stroke-[2.2] text-white/30" />
+            </span>
+          )}
+        </div>
+        <div className="hidden items-center gap-1.5 sm:flex" aria-hidden="true">
+          <div className="h-2 w-20 rounded bg-white/[0.07] motion-safe:animate-pulse motion-safe:[animation-iteration-count:3]" />
+        </div>
+      </div>
+      <div className="flex items-stretch gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="scrollbar-hide flex w-full snap-x snap-mandatory gap-2.5 overflow-x-hidden py-2.5 sm:gap-3.5 lg:gap-4">
+            {Array.from({ length: 8 }, (_, idx) => (
+              <div key={`skel-row-${idx}`} className={itemWidthClass}>
+                <FilmCardSkeleton variant={effectiveCardVariant} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Standard Film Carousel Section Component
 function FilmSection({
   title,
@@ -338,7 +401,8 @@ function FilmSection({
     });
   };
 
-  if (!isLoading && (!films || films.length === 0)) return null;
+  const hasFilms = Boolean(films && films.length > 0);
+  const showSkeleton = isLoading || !hasFilms;
 
   return (
     <div
@@ -370,8 +434,8 @@ function FilmSection({
         </div>
 
         {/* Right Side: Dynamic Dash Line Pagination Indicators (— - - - -) */}
-        {isLoading ? (
-          <div className="h-2 w-24 rounded bg-white/[0.07] motion-safe:animate-pulse" />
+        {showSkeleton ? (
+          <div className="h-2 w-24 rounded bg-white/[0.07] motion-safe:animate-pulse motion-safe:[animation-iteration-count:3]" />
         ) : (
           <div
             className="hidden items-center gap-1.5 sm:flex"
@@ -390,7 +454,7 @@ function FilmSection({
       </div>
 
       {/* Row Container with Navigation */}
-      <div className="flex items-stretch gap-3" aria-busy={isLoading}>
+      <div className="flex items-stretch gap-3" aria-busy={showSkeleton}>
         <div className="min-w-0 flex-1">
           <div
             ref={rowRef}
@@ -400,7 +464,7 @@ function FilmSection({
               isPosterPill && "py-3 sm:py-4 px-1 sm:px-2"
             )}
           >
-            {isLoading
+            {showSkeleton
               ? Array.from({ length: 14 }, (_, index) => (
                   <div
                     key={`film-skeleton-${index}`}
@@ -428,7 +492,7 @@ function FilmSection({
           </div>
         </div>
 
-        {!isLoading && (
+        {!showSkeleton && (
           <div className="my-auto hidden shrink-0 flex-col justify-center gap-3 px-1 sm:flex">
             <button
               type="button"
@@ -457,18 +521,25 @@ function FilmSection({
   );
 }
 
-// Component Wrapper for Intersection Observer Lazy Load (No min-height gaps, GPU Accelerated, Progressive Scroll-Reveal)
+// Component Wrapper for Intersection Observer Lazy Load (Smooth progressive load with realistic row skeleton to prevent black voids)
 function LazySection({
   children,
+  title,
+  href,
+  cardVariant,
+  skeleton,
   initiallyVisible = false,
   onVisible,
 }: {
   children: React.ReactNode;
+  title?: string;
+  href?: string;
+  cardVariant?: 'standard' | 'landscape' | 'poster-pill';
+  skeleton?: React.ReactNode;
   initiallyVisible?: boolean;
   onVisible?: () => void;
 }) {
   const [isVisible, setIsVisible] = useState(initiallyVisible);
-  const [hasEntered, setHasEntered] = useState(initiallyVisible);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -479,12 +550,9 @@ function LazySection({
           setIsVisible(true);
           onVisible?.();
           observer.disconnect();
-          requestAnimationFrame(() => {
-            setHasEntered(true);
-          });
         }
       },
-      { rootMargin: "300px 0px" },
+      { rootMargin: "1400px 0px" },
     );
 
     if (containerRef.current) {
@@ -495,19 +563,17 @@ function LazySection({
   }, [isVisible, onVisible]);
 
   return (
-    <div
-      ref={containerRef}
-      className={cn(
-        "[content-visibility:auto] [contain-intrinsic-size:1px_400px] transform-gpu transition-all duration-700 ease-out",
-        initiallyVisible || hasEntered
-          ? "opacity-100 translate-y-0"
-          : "opacity-0 translate-y-5 pointer-events-none",
-      )}
-    >
+    <div ref={containerRef} className="w-full">
       {isVisible ? (
         children
       ) : (
-        <div className="mb-8 h-[260px] w-full rounded-2xl bg-white/[0.015] motion-safe:animate-pulse motion-safe:[animation-iteration-count:3] sm:h-[340px] lg:h-[360px]" />
+        skeleton || (
+          <SectionRowSkeleton
+            title={title}
+            href={href}
+            cardVariant={cardVariant}
+          />
+        )
       )}
     </div>
   );
@@ -618,23 +684,28 @@ export default function HomePageClient({
           observer.disconnect();
         }
       },
-      { rootMargin: "650px 0px" },
+      { rootMargin: "1400px 0px" },
     );
 
     observer.observe(el);
-    return () => observer.disconnect();
+
+    const timer = window.setTimeout(() => {
+      setShowMoreSections(true);
+    }, 1200);
+
+    return () => {
+      observer.disconnect();
+      window.clearTimeout(timer);
+    };
   }, [showMoreSections]);
 
   const queryClient = useQueryClient();
-  const hasCachedFeed = Boolean(queryClient.getQueryData(["home-feed-v1", 24]));
-  const [catalogReady, setCatalogReady] = useState(hasCachedFeed);
-  const [secondaryCatalogReady, setSecondaryCatalogReady] = useState(false);
+  const [catalogReady] = useState(true);
+  const [secondaryCatalogReady] = useState(true);
   const { data: publicConfig } = useQuery({
     queryKey: ["public-site-configuration"],
     queryFn: () => siteConfigApi.getPublic().then((response) => response.data),
     initialData: initialPublicConfig || undefined,
-    // The first-party endpoint returns a safe default when the API is cold.
-    // Keep the browser query enabled so a missed SSR fetch can still recover.
     enabled: true,
     staleTime: 5_000,
     retry: false,
@@ -647,43 +718,6 @@ export default function HomePageClient({
     if (description && publicConfig?.seoDescription)
       description.content = publicConfig.seoDescription;
   }, [publicConfig?.seoDescription, publicConfig?.seoTitle]);
-
-  // The hero fills the first viewport. Load catalogue rows on the first sign
-  // of scroll/touch intent, with a conservative fallback for idle visitors.
-  // If returning to Home with cached feed data, catalogue rows are already active.
-  useEffect(() => {
-    if (hasCachedFeed) return;
-    const reveal = () => setCatalogReady(true);
-    const options: AddEventListenerOptions = { passive: true, once: true };
-    window.addEventListener("wheel", reveal, options);
-    window.addEventListener("touchstart", reveal, options);
-    window.addEventListener("keydown", reveal, { once: true });
-
-    // Do not leave catalogue rows as permanent skeletons when the visitor does
-    // not scroll. Start the critical rows during the first idle window, while
-    // still giving the hero the initial network/CPU budget.
-    let idleId: number | undefined;
-    let fallbackTimer: ReturnType<typeof setTimeout> | undefined;
-    if ("requestIdleCallback" in window) {
-      idleId = window.requestIdleCallback(reveal, { timeout: 900 });
-    } else {
-      fallbackTimer = globalThis.setTimeout(reveal, 650);
-    }
-
-    return () => {
-      window.removeEventListener("wheel", reveal);
-      window.removeEventListener("touchstart", reveal);
-      window.removeEventListener("keydown", reveal);
-      if (idleId !== undefined) window.cancelIdleCallback(idleId);
-      if (fallbackTimer !== undefined) window.clearTimeout(fallbackTimer);
-    };
-  }, [hasCachedFeed]);
-
-  useEffect(() => {
-    if (!catalogReady || secondaryCatalogReady) return;
-    const timer = window.setTimeout(() => setSecondaryCatalogReady(true), 400);
-    return () => window.clearTimeout(timer);
-  }, [catalogReady, secondaryCatalogReady]);
 
   const {
     data: homeFeedData,
@@ -1742,7 +1776,7 @@ export default function HomePageClient({
       </LazySection>
     ),
     vfx: (
-      <LazySection onVisible={() => markSectionLoaded("vfx")}>
+      <LazySection title={t("sections.vfx", "Phim Viễn Tưởng")} href="/genre/vien-tuong" onVisible={() => markSectionLoaded("vfx")}>
         <FilmSection
           title={t("sections.vfx", "Phim Viễn Tưởng")}
           films={vfxRowList}
@@ -1752,7 +1786,7 @@ export default function HomePageClient({
       </LazySection>
     ),
     "usuk-series": (
-      <LazySection onVisible={() => markSectionLoaded("usuk-series")}>
+      <LazySection title={t("sections.usUkSeries", "Series Âu-Mỹ Đỉnh Cao")} href="/search?type=series&country=au-my" onVisible={() => markSectionLoaded("usuk-series")}>
         <div className="hidden md:block">
           <HeroShowcaseSection
             title={t("sections.usUkSeries", "Series Âu-Mỹ Đỉnh Cao")}
@@ -1772,7 +1806,7 @@ export default function HomePageClient({
       </LazySection>
     ),
     action: (
-      <LazySection onVisible={() => markSectionLoaded("action")}>
+      <LazySection title={t("sections.action", "Phim Hành Động Kịch Tính")} href="/genre/hanh-dong" onVisible={() => markSectionLoaded("action")}>
         <FilmSection
           title={t("sections.action", "Phim Hành Động Kịch Tính")}
           films={actionRowList}
@@ -1782,7 +1816,7 @@ export default function HomePageClient({
       </LazySection>
     ),
     "korean-romance": (
-      <LazySection onVisible={() => markSectionLoaded("koreanRomance")}>
+      <LazySection title={t("sections.koreanRomance", "Phim Tình Cảm Hàn Quốc")} href="/films?country=han-quoc&genre=tinh-cam" onVisible={() => markSectionLoaded("koreanRomance")}>
         <FilmSection
           title={t("sections.koreanRomance", "Phim Tình Cảm Hàn Quốc")}
           films={koreanRomanceRowList}
@@ -1792,7 +1826,7 @@ export default function HomePageClient({
       </LazySection>
     ),
     healing: (
-      <LazySection onVisible={() => markSectionLoaded("healing")}>
+      <LazySection title={t("sections.healing", "Phim Chữa Lành")} href="/films?genre=tam-ly" onVisible={() => markSectionLoaded("healing")}>
         <FilmSection
           title={t("sections.healing", "Phim Chữa Lành")}
           films={healingRowList}
@@ -1802,7 +1836,7 @@ export default function HomePageClient({
       </LazySection>
     ),
     scifi: (
-      <LazySection onVisible={() => markSectionLoaded("scifi")}>
+      <LazySection title={t("sections.scifi", "Tuyệt Tác Khoa Học Viễn Tưởng")} href="/genre/vien-tuong" onVisible={() => markSectionLoaded("scifi")}>
         <div className="hidden md:block">
           <CuratedSpotlightSection
             title={t("sections.scifi", "Tuyệt Tác Khoa Học Viễn Tưởng")}
@@ -1822,7 +1856,7 @@ export default function HomePageClient({
       </LazySection>
     ),
     horror: (
-      <LazySection onVisible={() => markSectionLoaded("horror")}>
+      <LazySection title={t("sections.horror", "Phim Kinh Dị")} href="/genre/kinh-di" onVisible={() => markSectionLoaded("horror")}>
         <FilmSection
           title={t("sections.horror", "Phim Kinh Dị")}
           films={horrorRowList}
@@ -1832,7 +1866,7 @@ export default function HomePageClient({
       </LazySection>
     ),
     historical: (
-      <LazySection onVisible={() => markSectionLoaded("historical")}>
+      <LazySection title={t("sections.historical", "Phim Cổ Trang")} href="/genre/co-trang" cardVariant="poster-pill" onVisible={() => markSectionLoaded("historical")}>
         <div data-mobile-simple-section="historical" className="md:hidden">
           <FilmSection
             title={t("sections.historical", "Phim Cổ Trang")}
@@ -1853,7 +1887,7 @@ export default function HomePageClient({
       </LazySection>
     ),
     theatrical: (
-      <LazySection onVisible={() => markSectionLoaded("theatrical")}>
+      <LazySection title={t("sections.theatrical", "Phim Chiếu Rạp")} href="/films/chieu-rap" onVisible={() => markSectionLoaded("theatrical")}>
         <FilmSection
           title={t("sections.theatrical", "Phim Chiếu Rạp")}
           films={theatricalRowList}
@@ -1863,7 +1897,7 @@ export default function HomePageClient({
       </LazySection>
     ),
     acclaimed: (
-      <LazySection onVisible={() => markSectionLoaded("acclaimed")}>
+      <LazySection title={t("sections.acclaimed", "Phim Hay Được Đón Nhận")} href="/films?sort=view" onVisible={() => markSectionLoaded("acclaimed")}>
         <FilmSection
           title={t("sections.acclaimed", "Phim Hay Được Đón Nhận")}
           films={acclaimedRowList}
@@ -1873,7 +1907,7 @@ export default function HomePageClient({
       </LazySection>
     ),
     workplace: (
-      <LazySection onVisible={() => markSectionLoaded("workplace")}>
+      <LazySection title={t("sections.workplace", "Phim Đề Tài Công Sở")} href="/films?genre=tinh-cam" onVisible={() => markSectionLoaded("workplace")}>
         <FilmSection
           title={t("sections.workplace", "Phim Đề Tài Công Sở")}
           films={workplaceRowList}
@@ -1950,7 +1984,7 @@ export default function HomePageClient({
 
         <div className="space-y-2">
           {/* ── 10 Progressively Loaded Sections as User Scrolls ── */}
-          <LazySection onVisible={() => markSectionLoaded("nextWatch")}>
+          <LazySection title={t("sections.nextWatch", "Gợi Ý Phim Tiếp Theo")} href="/country/au-my" onVisible={() => markSectionLoaded("nextWatch")}>
             <FilmSection
               title={t("sections.nextWatch", "Gợi Ý Phim Tiếp Theo")}
               films={nextWatchRowList}
@@ -1959,7 +1993,7 @@ export default function HomePageClient({
             />
           </LazySection>
 
-          <LazySection onVisible={() => markSectionLoaded("series")}>
+          <LazySection title={t("sections.series", "Phim Bộ Đặc Sắc")} href="/films/series" onVisible={() => markSectionLoaded("series")}>
             <FilmSection
               title={t("sections.series", "Phim Bộ Đặc Sắc")}
               films={seriesRowList}
@@ -1968,7 +2002,7 @@ export default function HomePageClient({
             />
           </LazySection>
 
-          <LazySection onVisible={() => markSectionLoaded("anime")}>
+          <LazySection title={t("sections.anime", "Thế Giới Anime & Hoạt Hình")} href="/films/anime" onVisible={() => markSectionLoaded("anime")}>
             <FilmSection
               title={t("sections.anime", "Thế Giới Anime & Hoạt Hình")}
               films={animeRowList}
@@ -1977,7 +2011,7 @@ export default function HomePageClient({
             />
           </LazySection>
 
-          <LazySection onVisible={() => markSectionLoaded("adventure")}>
+          <LazySection title={t("sections.adventure", "Phim Phiêu Lưu & Khám Phá")} href="/genre/phieu-luu" onVisible={() => markSectionLoaded("adventure")}>
             <FilmSection
               title={t("sections.adventure", "Phim Phiêu Lưu & Khám Phá")}
               films={adventureRowList}
@@ -1986,7 +2020,7 @@ export default function HomePageClient({
             />
           </LazySection>
 
-          <LazySection onVisible={() => markSectionLoaded("single")}>
+          <LazySection title={t("sections.single", "Phim Lẻ Tuyển Chọn")} href="/films/single" onVisible={() => markSectionLoaded("single")}>
             <FilmSection
               title={t("sections.single", "Phim Lẻ Tuyển Chọn")}
               films={singleRowList}
@@ -1995,7 +2029,7 @@ export default function HomePageClient({
             />
           </LazySection>
 
-          <LazySection onVisible={() => markSectionLoaded("drama")}>
+          <LazySection title={t("sections.drama", "Phim Tâm Lý & Xã Hội")} href="/genre/chinh-kich" onVisible={() => markSectionLoaded("drama")}>
             <FilmSection
               title={t("sections.drama", "Phim Tâm Lý & Xã Hội")}
               films={dramaRowList}
@@ -2004,7 +2038,7 @@ export default function HomePageClient({
             />
           </LazySection>
 
-          <LazySection onVisible={() => markSectionLoaded("disaster")}>
+          <LazySection title={t("sections.disaster", "Phim Thảm Họa & Sinh Tồn")} href="/genre/kinh-di" onVisible={() => markSectionLoaded("disaster")}>
             <FilmSection
               title={t("sections.disaster", "Phim Thảm Họa & Sinh Tồn")}
               films={disasterRowList}
@@ -2013,7 +2047,7 @@ export default function HomePageClient({
             />
           </LazySection>
 
-          <LazySection onVisible={() => markSectionLoaded("war")}>
+          <LazySection title={t("sections.war", "Phim Chiến Tranh & Lịch Sử")} href="/genre/chien-tranh" onVisible={() => markSectionLoaded("war")}>
             <FilmSection
               title={t("sections.war", "Phim Chiến Tranh & Lịch Sử")}
               films={warRowList}
@@ -2022,7 +2056,7 @@ export default function HomePageClient({
             />
           </LazySection>
 
-          <LazySection onVisible={() => markSectionLoaded("comedy")}>
+          <LazySection title={t("sections.comedy", "Phim Hài Hước & Gia Đình")} href="/genre/hai-huoc" onVisible={() => markSectionLoaded("comedy")}>
             <FilmSection
               title={t("sections.comedy", "Phim Hài Hước & Gia Đình")}
               films={comedyRowList}
@@ -2031,7 +2065,7 @@ export default function HomePageClient({
             />
           </LazySection>
 
-          <LazySection onVisible={() => markSectionLoaded("romance")}>
+          <LazySection title={t("sections.romance", "Phim Lãng Mạn & Tình Cảm")} href="/genre/tinh-cam" onVisible={() => markSectionLoaded("romance")}>
             <FilmSection
               title={t("sections.romance", "Phim Lãng Mạn & Tình Cảm")}
               films={romanceRowList}
@@ -2040,7 +2074,7 @@ export default function HomePageClient({
             />
           </LazySection>
 
-          <LazySection onVisible={() => markSectionLoaded("weekly")}>
+          <LazySection title="Phim Bộ & Phim Lẻ Tuần Này" href="/films" onVisible={() => markSectionLoaded("weekly")}>
             <div data-mobile-simple-section="weekly" className="md:hidden">
               <FilmSection
                 title="Phim Bộ & Phim Lẻ Tuần Này"

@@ -1212,13 +1212,13 @@ function filmMatchesKeywords(f: FilmItem, keywords: string[]): boolean {
 
             {/* Full Catalog Grid */}
             {mainLoading ? (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 lg:grid-cols-7">
+              <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 lg:grid-cols-7 gap-y-3.5 sm:gap-y-6">
                 {Array.from({ length: 14 }).map((_, i) => (
                   <FilmCardSkeleton key={i} />
                 ))}
               </div>
             ) : films.length > 0 ? (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 lg:grid-cols-7 cv-grid-auto">
+              <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 lg:grid-cols-7 gap-y-3.5 sm:gap-y-6 cv-grid-auto">
                 {dedupeFilmsList(films).map((f, idx) => (
                   <FilmCard key={`${f.slug || f._id || idx}-${idx}`} film={f} />
                 ))}
@@ -1258,13 +1258,13 @@ function filmMatchesKeywords(f: FilmItem, keywords: string[]): boolean {
 
           {/* Movie Grid */}
           {mainLoading ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
+            <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-y-3.5 sm:gap-y-8">
               {Array.from({ length: 21 }).map((_, i) => (
                 <FilmCardSkeleton key={i} />
               ))}
             </div>
           ) : films.length > 0 ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 cv-grid-auto">
+            <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-y-3.5 sm:gap-y-8 cv-grid-auto">
               {dedupeFilmsList(films).map((f, idx) => (
                 <FilmCard
                   key={`${f.slug || f._id || idx}-${idx}`}

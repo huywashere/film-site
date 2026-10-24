@@ -287,6 +287,305 @@ function ResilientAnimeHeroLogo({
   );
 }
 
+const CDN_BASE = process.env.NEXT_PUBLIC_CDN_ASSETS_URL?.replace(/\/$/, "") || "";
+const CLOY_BG_PATH =
+  "/Folder-Background/Korea/ha-canh-noi-anh/Dr.Watermark_Gemini_1792687885412.jpg";
+const CLOY_CHARS_PATH =
+  "/Folder-Background/Korea/ha-canh-noi-anh/cloy-couple-chars.png";
+const CLOY_LOGO_PATH =
+  "/Folder-Background/Korea/ha-canh-noi-anh/cloy-logo-hd.png";
+
+function SeriesCrashLandingOnYouHeroBanner() {
+  const [bgSrc, setBgSrc] = useState(CLOY_BG_PATH);
+  const [charsSrc, setCharsSrc] = useState(CLOY_CHARS_PATH);
+  const [logoSrc, setLogoSrc] = useState(CLOY_LOGO_PATH);
+
+  return (
+    <section
+      data-hero-banner="true"
+      className="relative h-[78svh] min-h-[580px] w-full select-none overflow-hidden bg-[#0a0b10] sm:h-[88vh] sm:min-h-[680px] lg:h-[95vh] lg:min-h-[780px]"
+    >
+      {/* ── Layer 1: Background Scenic Image (Lake Brienz / Iseltwald, Switzerland) ── */}
+      <div className="absolute inset-0 w-full h-full overflow-hidden">
+        <img
+          src={bgSrc}
+          alt="Hạ Cánh Nơi Anh - Bối cảnh Thụy Sĩ"
+          onError={() => {
+            if (CDN_BASE && bgSrc !== `${CDN_BASE}${CLOY_BG_PATH}`) {
+              setBgSrc(`${CDN_BASE}${CLOY_BG_PATH}`);
+            }
+          }}
+          className="w-full h-full object-cover object-center scale-100 filter brightness-[0.98] contrast-[1.04]"
+          loading="eager"
+        />
+      </div>
+
+      {/* ── Layer 2: Soft Cinematic Blending (hiển thị trọn vẹn cảnh nền hồ núi, không đánh đen) ── */}
+      <div
+        className="absolute inset-0 z-10 pointer-events-none"
+        style={{
+          background: `
+            linear-gradient(to right, rgba(10,11,16,0.72) 0%, rgba(10,11,16,0.32) 44%, rgba(10,11,16,0.02) 75%, transparent 100%),
+            linear-gradient(to top, #0a0b10 0%, rgba(10,11,16,0.35) 8%, transparent 22%)
+          `,
+        }}
+      />
+
+      {/* ── Layer 3: Two Characters Cutout with Gentle Slide-in from Right ── */}
+      <div className="absolute right-0 bottom-0 top-0 h-full w-full max-w-2xl sm:max-w-3xl md:max-w-4xl lg:max-w-5xl flex items-end justify-end pointer-events-none z-10 overflow-hidden pr-3 sm:pr-8 md:pr-14 lg:pr-20 xl:pr-28 pb-8 sm:pb-12 md:pb-16 lg:pb-20">
+        <motion.div
+          initial={{ opacity: 0, x: 70 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 1.15, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+          className="relative h-full flex items-end justify-end"
+        >
+          <img
+            src={charsSrc}
+            alt="Hạ Cánh Nơi Anh - Son Ye-jin & Hyun Bin"
+            onError={() => {
+              if (CDN_BASE && charsSrc !== `${CDN_BASE}${CLOY_CHARS_PATH}`) {
+                setCharsSrc(`${CDN_BASE}${CLOY_CHARS_PATH}`);
+              }
+            }}
+            className="h-[68%] sm:h-[78%] md:h-[84%] lg:h-[90%] max-h-[640px] w-auto max-w-full object-contain object-bottom select-none filter contrast-[1.03] brightness-[1.01] drop-shadow-[0_20px_45px_rgba(0,0,0,0.7)]"
+            loading="eager"
+          />
+        </motion.div>
+      </div>
+
+      {/* ── Layer 4: Typography, Logo Banner & Actions ── */}
+      <div className="absolute inset-0 z-20 flex flex-col justify-start pt-48 sm:pt-52 md:pt-60 lg:pt-64 xl:pt-72 px-4 sm:px-10 md:px-16 lg:px-24 pointer-events-none">
+        <motion.div
+          initial={{ opacity: 0, y: 22 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1], delay: 0.15 }}
+          className="max-w-xl sm:max-w-2xl space-y-2.5 sm:space-y-4 pt-2 sm:pt-4 pointer-events-auto"
+        >
+          {/* Title Group with Logo Banner */}
+          <div className="space-y-2">
+            {/* Logobanner (Crash Landing on You official styled logo) */}
+            <div className="h-10 sm:h-14 md:h-16 lg:h-18 max-w-[280px] sm:max-w-[420px] md:max-w-[480px]">
+              <img
+                src={logoSrc}
+                alt="Crash Landing on You"
+                onError={() => {
+                  if (CDN_BASE && logoSrc !== `${CDN_BASE}${CLOY_LOGO_PATH}`) {
+                    setLogoSrc(`${CDN_BASE}${CLOY_LOGO_PATH}`);
+                  }
+                }}
+                className="h-full w-auto object-contain object-left drop-shadow-[0_6px_22px_rgba(0,0,0,0.9)]"
+                loading="eager"
+              />
+            </div>
+
+            {/* Subtitle — Chuẩn không màu */}
+            <p className="text-base sm:text-xl font-medium italic text-neutral-200/90 drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)]">
+              Hạ Cánh Nơi Anh (Crash Landing on You)
+            </p>
+          </div>
+
+          {/* Genre Pills */}
+          <div className="flex flex-wrap items-center gap-2 pt-0.5">
+            {["Lãng Mạn", "Kịch Tính", "Quân Đội", "Hài Hước"].map((genre) => (
+              <span
+                key={genre}
+                className="px-3 py-1 rounded-full bg-white/[0.12] hover:bg-white/[0.2] text-xs font-semibold text-neutral-100 border border-white/[0.15] backdrop-blur-md transition-colors shadow-sm"
+              >
+                {genre}
+              </span>
+            ))}
+          </div>
+
+          {/* Description */}
+          <p className="text-xs sm:text-sm text-neutral-200/95 font-medium leading-relaxed max-w-lg line-clamp-3 sm:line-clamp-none drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)]">
+            Mối tình vượt biên giới định mệnh giữa nữ thừa kế tài phiệt Nam Hàn Yoon
+            Se-ri và chàng đại úy Triều Tiên Ri Jung-hyuk giữa khung cảnh Thụy Sĩ thơ mộng.
+          </p>
+
+          {/* CTA Buttons */}
+          <div className="flex items-center gap-3 pt-2 sm:pt-3">
+            <Link
+              href="/watch/ha-canh-noi-anh"
+              className="inline-flex items-center gap-2.5 px-6 sm:px-7 py-2.5 sm:py-3 rounded-full bg-white hover:bg-neutral-100 text-neutral-950 font-black text-xs sm:text-sm shadow-xl shadow-black/40 transition-all hover:scale-105 active:scale-95"
+            >
+              <Play className="w-4 h-4 fill-current text-neutral-950" />
+              <span>Xem Ngay</span>
+            </Link>
+
+            <Link
+              href="/film/ha-canh-noi-anh"
+              className="inline-flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-white/15 hover:bg-white/25 border border-white/20 text-white font-bold text-xs sm:text-sm backdrop-blur-md transition-all hover:scale-105 active:scale-95"
+            >
+              <Info className="w-4 h-4" />
+              <span>Chi Tiết</span>
+            </Link>
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+const DOOM_BG_PATH =
+  "/Folder-Background/Marvel/dr-doom/avengers-glowing-mist-bg.png";
+const DOOM_BG_FALLBACK =
+  "/Folder-Background/Marvel/dr-doom/avengers-doomsday-2026-highly-anticipated-movie-kr-1920x1080.jpg";
+const DOOM_CHARS_PATH =
+  "/Folder-Background/Marvel/dr-doom/doom-char-clean.png";
+const DOOM_CHARS_FALLBACK =
+  "/Folder-Background/Marvel/dr-doom/doctor-doom-avengers-doomsday-4k-62-1920x1080.png";
+const DOOM_LOGO_PATH =
+  "/Folder-Background/Marvel/dr-doom/avengers-doomsday-logo.png";
+
+function SingleDoctorDoomHeroBanner() {
+  const [bgSrc, setBgSrc] = useState(DOOM_BG_PATH);
+  const [charsSrc, setCharsSrc] = useState(DOOM_CHARS_PATH);
+  const [logoSrc, setLogoSrc] = useState(DOOM_LOGO_PATH);
+  const [logoFailed, setLogoFailed] = useState(false);
+
+  return (
+    <section
+      data-hero-banner="true"
+      className="relative h-[78svh] min-h-[580px] w-full select-none overflow-hidden bg-[#0a0b10] sm:h-[88vh] sm:min-h-[680px] lg:h-[95vh] lg:min-h-[780px]"
+    >
+      {/* ── Layer 1: Background Scenic Image (Avengers Emblem Glowing in Mist) ── */}
+      <div className="absolute inset-0 w-full h-full overflow-hidden">
+        <img
+          src={bgSrc}
+          alt="Avengers: Doomsday - Bối cảnh sương mù điện ảnh"
+          onError={() => {
+            if (bgSrc !== DOOM_BG_FALLBACK) {
+              setBgSrc(DOOM_BG_FALLBACK);
+            } else if (CDN_BASE && bgSrc !== `${CDN_BASE}${DOOM_BG_PATH}`) {
+              setBgSrc(`${CDN_BASE}${DOOM_BG_PATH}`);
+            }
+          }}
+          className="w-full h-full object-cover object-center scale-100 filter brightness-[1.0] contrast-[1.04]"
+          loading="eager"
+        />
+      </div>
+
+      {/* ── Layer 2: Soft Cinematic Blending (hiển thị trọn vẹn cảnh nền, không đánh đen) ── */}
+      <div
+        className="absolute inset-0 z-10 pointer-events-none"
+        style={{
+          background: `
+            linear-gradient(to right, rgba(10,11,16,0.72) 0%, rgba(10,11,16,0.32) 44%, rgba(10,11,16,0.02) 75%, transparent 100%),
+            linear-gradient(to top, #0a0b10 0%, rgba(10,11,16,0.35) 8%, transparent 22%)
+          `,
+        }}
+      />
+
+      {/* ── Layer 3: Doctor Doom Character Cutout with Smooth Right-to-Left Slide Animation ── */}
+      <div className="absolute inset-0 h-full w-full flex items-end justify-end pointer-events-none z-10 overflow-hidden pr-0 sm:pr-4 md:pr-10 lg:pr-16 xl:pr-24 pb-8 sm:pb-12 md:pb-16 lg:pb-20">
+        <motion.div
+          initial={{ opacity: 0, x: 180, scale: 0.96 }}
+          animate={{ opacity: 1, x: 0, scale: 1 }}
+          whileHover={{
+            scale: 1.02,
+            y: -4,
+            transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] },
+          }}
+          transition={{ duration: 1.3, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+          className="relative h-full flex items-end justify-end pointer-events-auto cursor-pointer group/doom select-none translate-x-3 sm:translate-x-0"
+        >
+          <img
+            src={charsSrc}
+            alt="Doctor Doom - Robert Downey Jr."
+            onError={() => {
+              if (charsSrc !== DOOM_CHARS_FALLBACK) {
+                setCharsSrc(DOOM_CHARS_FALLBACK);
+              } else if (CDN_BASE && charsSrc !== `${CDN_BASE}${DOOM_CHARS_PATH}`) {
+                setCharsSrc(`${CDN_BASE}${DOOM_CHARS_PATH}`);
+              }
+            }}
+            className="h-[50%] sm:h-[62%] md:h-[70%] lg:h-[76%] max-h-[440px] sm:max-h-[560px] lg:max-h-[640px] w-auto max-w-none object-contain object-bottom select-none filter contrast-[1.05] brightness-[1.02] drop-shadow-[0_20px_50px_rgba(0,0,0,0.85)] transition-all duration-500 group-hover/doom:drop-shadow-[0_25px_65px_rgba(16,185,129,0.4)] group-hover/doom:brightness-[1.06]"
+            loading="eager"
+          />
+        </motion.div>
+      </div>
+
+      {/* ── Layer 4: Typography, Logo Banner & Actions ── */}
+      <div className="absolute inset-0 z-20 flex flex-col justify-start pt-56 sm:pt-60 md:pt-68 lg:pt-72 xl:pt-80 px-4 sm:px-10 md:px-16 lg:px-24 pointer-events-none">
+        <motion.div
+          initial={{ opacity: 0, y: 22 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1], delay: 0.15 }}
+          className="max-w-xl sm:max-w-2xl space-y-2.5 sm:space-y-4 pt-4 sm:pt-6 pointer-events-auto"
+        >
+          {/* Title Group with Official Avengers: Doomsday Logobanner */}
+          <div className="space-y-1.5 sm:space-y-2">
+            {!logoFailed ? (
+              <div className="h-9 sm:h-13 md:h-16 lg:h-20 max-w-[210px] sm:max-w-[360px] md:max-w-[440px]">
+                <img
+                  src={logoSrc}
+                  alt="Avengers: Doomsday"
+                  onError={() => {
+                    if (CDN_BASE && logoSrc !== `${CDN_BASE}${DOOM_LOGO_PATH}`) {
+                      setLogoSrc(`${CDN_BASE}${DOOM_LOGO_PATH}`);
+                    } else {
+                      setLogoFailed(true);
+                    }
+                  }}
+                  className="h-full w-auto object-contain object-left drop-shadow-[0_8px_25px_rgba(0,0,0,0.95)]"
+                  loading="eager"
+                />
+              </div>
+            ) : (
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-tight drop-shadow-[0_4px_22px_rgba(0,0,0,0.95)]">
+                  AVENGERS: DOOMSDAY
+                </h1>
+              </div>
+            )}
+
+            {/* Subtitle — Chuẩn không màu */}
+            <p className="text-xs sm:text-base md:text-lg lg:text-xl font-medium italic text-neutral-200/90 drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)]">
+              Avengers: Doomsday (Chiến Tranh Ngày Tận Thế)
+            </p>
+          </div>
+
+          {/* Genre Pills */}
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-0.5">
+            {["Hành Động", "Viễn Tưởng", "Siêu Anh Hùng", "Bom Tấn"].map((genre) => (
+              <span
+                key={genre}
+                className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-white/[0.12] hover:bg-white/[0.2] text-[10px] sm:text-xs font-semibold text-neutral-100 border border-white/[0.15] backdrop-blur-md transition-colors shadow-sm"
+              >
+                {genre}
+              </span>
+            ))}
+          </div>
+
+          {/* Description */}
+          <p className="text-[11px] sm:text-xs md:text-sm text-neutral-200/95 font-medium leading-relaxed max-w-[300px] sm:max-w-md md:max-w-lg line-clamp-2 sm:line-clamp-none drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)]">
+            Kỷ nguyên đa vũ trụ đối mặt nguy cơ sụp đổ hoàn toàn trước sự trỗi dậy của bạo chúa Doctor Doom (Robert Downey Jr.). Các siêu anh hùng vĩ đại nhất Trái Đất cùng hợp lực trong trận chiến định mệnh quyết định số phận thực tại.
+          </p>
+
+          {/* CTA Buttons */}
+          <div className="flex items-center gap-2.5 sm:gap-3 pt-1.5 sm:pt-3">
+            <Link
+              href="/watch/biet-doi-sieu-anh-hung-4-hoi-ket"
+              className="inline-flex items-center gap-2 px-4.5 sm:px-7 py-1.5 sm:py-2.5 rounded-full bg-white hover:bg-neutral-100 text-neutral-950 font-black text-xs sm:text-sm shadow-xl shadow-black/40 transition-all hover:scale-105 active:scale-95"
+            >
+              <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current text-neutral-950" />
+              <span>Xem Ngay</span>
+            </Link>
+
+            <Link
+              href="/film/biet-doi-sieu-anh-hung-4-hoi-ket"
+              className="inline-flex items-center gap-2 px-3.5 sm:px-6 py-1.5 sm:py-2.5 rounded-full bg-white/15 hover:bg-white/25 border border-white/20 text-white font-bold text-xs sm:text-sm backdrop-blur-md transition-all hover:scale-105 active:scale-95"
+            >
+              <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span>Chi Tiết</span>
+            </Link>
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
 function AnimeCuratedHeroBanner({
   pool,
   themeLabel = "Anime & Hoạt Hình",
@@ -447,7 +746,7 @@ function AnimeCuratedHeroBanner({
                 <span className="text-white font-bold">{currentItem.year}</span>
               )}
               <span className="text-neutral-400">|</span>
-              <span className="text-cyan-400 font-bold">{themeLabel}</span>
+              <span className="text-neutral-200 font-bold">{themeLabel}</span>
               {currentItem.totalEpisodesText && (
                 <>
                   <span className="text-neutral-400">|</span>
@@ -457,7 +756,7 @@ function AnimeCuratedHeroBanner({
               {currentItem.vote_average && (
                 <>
                   <span className="text-neutral-400">|</span>
-                  <span className="text-amber-400 font-bold">★ {currentItem.vote_average}</span>
+                  <span className="text-neutral-200 font-bold">★ {currentItem.vote_average}</span>
                 </>
               )}
             </div>
@@ -785,6 +1084,8 @@ export default function FilmsTypeClient({
     type === "thuyet-minh-ai" ||
     type === "thuyetminhai" ||
     type === "song-ngu-ai";
+  const isSeries = type === "series" || type === "phim-bo";
+  const isSingle = type === "single" || type === "phim-le";
   const label = TYPE_LABELS[type] || "Danh Sách Phim";
   const secondaryReady = useDeferredContent();
   const apiFn = useMemo(
@@ -1242,7 +1543,7 @@ function filmMatchesAnimeKeywords(f: FilmItem, keywords: string[]): boolean {
       className={cn(
         cardFont.className,
         "min-h-screen w-full bg-background text-foreground",
-        isAnime || isSongNguAI
+        isAnime || isSongNguAI || isSeries || isSingle
           ? "-mt-20 sm:-mt-24 bg-[#0a0b10]"
           : "pb-20 pl-4 pr-4 pt-20 sm:pt-24 md:pr-10 lg:pl-24",
       )}
@@ -1329,13 +1630,13 @@ function filmMatchesAnimeKeywords(f: FilmItem, keywords: string[]): boolean {
 
             {/* Full Catalog Grid */}
             {isLoading ? (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 lg:grid-cols-7">
+              <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 lg:grid-cols-7 gap-y-3.5 sm:gap-y-6">
                 {Array.from({ length: 14 }).map((_, i) => (
                   <FilmCardSkeleton key={i} />
                 ))}
               </div>
             ) : rawFilms.length > 0 ? (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 lg:grid-cols-7 cv-grid-auto">
+              <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 lg:grid-cols-7 gap-y-3.5 sm:gap-y-6 cv-grid-auto">
                 {dedupeFilmsList(rawFilms).map((f, idx) => (
                   <FilmCard
                     key={`${f.slug || f._id || idx}-${idx}`}
@@ -1449,13 +1750,13 @@ function filmMatchesAnimeKeywords(f: FilmItem, keywords: string[]): boolean {
 
             {/* Full Catalog Grid */}
             {isLoading ? (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 lg:grid-cols-7">
+              <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 lg:grid-cols-7 gap-y-3.5 sm:gap-y-6">
                 {Array.from({ length: 14 }).map((_, i) => (
                   <FilmCardSkeleton key={i} />
                 ))}
               </div>
             ) : films.length > 0 ? (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 lg:grid-cols-7 cv-grid-auto">
+              <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 lg:grid-cols-7 gap-y-3.5 sm:gap-y-6 cv-grid-auto">
                 {dedupeFilmsList(films).map((f, idx) => (
                   <FilmCard
                     key={`${f.slug || f._id || idx}-${idx}`}
@@ -1480,6 +1781,164 @@ function filmMatchesAnimeKeywords(f: FilmItem, keywords: string[]): boolean {
             />
           </div>
         </>
+      ) : isSeries ? (
+        /* ── CASE 4: SERIES (PHIM BỘ) WITH CRASH LANDING ON YOU HERO BANNER ── */
+        <div className="w-full">
+          {/* Top Hero Banner */}
+          <SeriesCrashLandingOnYouHeroBanner />
+
+          {/* Catalog Section (Overlapping Hero Banner) */}
+          <div className="relative z-20 w-full px-2.5 sm:px-10 lg:px-24 pb-20 -mt-8 sm:-mt-12 md:-mt-16 lg:-mt-20">
+            {/* Grid of cards */}
+            {isLoading ? (
+              <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-y-3.5 sm:gap-y-8">
+                {Array.from({ length: 21 }).map((_, i) => (
+                  <FilmCardSkeleton key={i} />
+                ))}
+              </div>
+            ) : isError && films.length === 0 ? (
+              <div
+                role="alert"
+                className="mx-auto flex max-w-xl flex-col items-center rounded-2xl border border-white/10 bg-white/[0.035] px-6 py-14 text-center"
+              >
+                <p className="text-base font-bold text-white">
+                  Chưa thể tải danh sách phim
+                </p>
+                <p className="mt-2 text-sm text-neutral-400">
+                  {error instanceof Error
+                    ? error.message
+                    : "Nguồn phim đang tạm thời gián đoạn."}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void refetch()}
+                  disabled={isFetching}
+                  className="mt-5 rounded-full bg-white px-5 py-2.5 text-sm font-extrabold text-black transition hover:bg-neutral-200 disabled:cursor-wait disabled:opacity-60"
+                >
+                  {isFetching ? "Đang thử lại..." : "Thử lại"}
+                </button>
+              </div>
+            ) : films.length > 0 ? (
+              <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-y-3.5 sm:gap-y-8 cv-grid-auto">
+                {films.map((film, idx) => (
+                  <FilmCard
+                    key={`${film.slug || film._id || (film as any).id}-${idx}`}
+                    film={film}
+                    priority={idx < 7}
+                    preferHighQuality={idx < 7}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="py-20 text-center text-neutral-500 font-semibold text-sm">
+                Không tìm thấy bộ phim nào trong danh mục này.
+              </div>
+            )}
+
+            {/* Pagination Controls */}
+            {isLoading && !data ? (
+              <div className="mt-12 flex items-center justify-center gap-2 animate-pulse">
+                <div className="h-9 w-20 rounded-lg bg-white/5 border border-white/10" />
+                <div className="flex gap-1.5">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div
+                      key={i}
+                      className="h-9 w-9 rounded-lg bg-white/5 border border-white/10"
+                    />
+                  ))}
+                </div>
+                <div className="h-9 w-20 rounded-lg bg-white/5 border border-white/10" />
+              </div>
+            ) : (
+              <Pagination
+                currentPage={page}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                onPageChange={handlePageChange}
+                onPrefetchPage={prefetchPage}
+              />
+            )}
+          </div>
+        </div>
+      ) : isSingle ? (
+        /* ── CASE 5: SINGLE (PHIM LẺ) WITH DOCTOR DOOM AVENGERS DOOMSDAY HERO BANNER ── */
+        <div className="w-full">
+          {/* Top Hero Banner */}
+          <SingleDoctorDoomHeroBanner />
+
+          {/* Catalog Section (Overlapping Hero Banner) */}
+          <div className="relative z-20 w-full px-2.5 sm:px-10 lg:px-24 pb-20 -mt-8 sm:-mt-12 md:-mt-16 lg:-mt-20">
+            {/* Grid of cards */}
+            {isLoading ? (
+              <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-y-3.5 sm:gap-y-8">
+                {Array.from({ length: 21 }).map((_, i) => (
+                  <FilmCardSkeleton key={i} />
+                ))}
+              </div>
+            ) : isError && films.length === 0 ? (
+              <div
+                role="alert"
+                className="mx-auto flex max-w-xl flex-col items-center rounded-2xl border border-white/10 bg-white/[0.035] px-6 py-14 text-center"
+              >
+                <p className="text-base font-bold text-white">
+                  Chưa thể tải danh sách phim
+                </p>
+                <p className="mt-2 text-sm text-neutral-400">
+                  {error instanceof Error
+                    ? error.message
+                    : "Nguồn phim đang tạm thời gián đoạn."}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void refetch()}
+                  disabled={isFetching}
+                  className="mt-5 rounded-full bg-white px-5 py-2.5 text-sm font-extrabold text-black transition hover:bg-neutral-200 disabled:cursor-wait disabled:opacity-60"
+                >
+                  {isFetching ? "Đang thử lại..." : "Thử lại"}
+                </button>
+              </div>
+            ) : films.length > 0 ? (
+              <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-y-3.5 sm:gap-y-8 cv-grid-auto">
+                {films.map((film, idx) => (
+                  <FilmCard
+                    key={`${film.slug || film._id || (film as any).id}-${idx}`}
+                    film={film}
+                    priority={idx < 7}
+                    preferHighQuality={idx < 7}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="py-20 text-center text-neutral-500 font-semibold text-sm">
+                Không tìm thấy bộ phim nào trong danh mục này.
+              </div>
+            )}
+
+            {/* Pagination Controls */}
+            {isLoading && !data ? (
+              <div className="mt-12 flex items-center justify-center gap-2 animate-pulse">
+                <div className="h-9 w-20 rounded-lg bg-white/5 border border-white/10" />
+                <div className="flex gap-1.5">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div
+                      key={i}
+                      className="h-9 w-9 rounded-lg bg-white/5 border border-white/10"
+                    />
+                  ))}
+                </div>
+                <div className="h-9 w-20 rounded-lg bg-white/5 border border-white/10" />
+              </div>
+            ) : (
+              <Pagination
+                currentPage={page}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                onPageChange={handlePageChange}
+                onPrefetchPage={prefetchPage}
+              />
+            )}
+          </div>
+        </div>
       ) : (
         /* ── CASE 2: ALL OTHER TYPES (Standard Centered Catalog View) ── */
         <div className="w-full">
@@ -1504,7 +1963,7 @@ function filmMatchesAnimeKeywords(f: FilmItem, keywords: string[]): boolean {
           </div>
 
           {isLoading ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-y-6 sm:gap-y-8">
+            <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-y-3.5 sm:gap-y-8">
               {Array.from({ length: 21 }).map((_, i) => (
                 <FilmCardSkeleton key={i} />
               ))}
@@ -1532,7 +1991,7 @@ function filmMatchesAnimeKeywords(f: FilmItem, keywords: string[]): boolean {
               </button>
             </div>
           ) : films.length > 0 ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-y-6 sm:gap-y-8 cv-grid-auto">
+            <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-y-3.5 sm:gap-y-8 cv-grid-auto">
               {films.map((film, idx) => (
                 <FilmCard
                   key={`${film.slug || film._id || (film as any).id}-${idx}`}

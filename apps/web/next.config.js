@@ -112,6 +112,9 @@ const nextConfig = {
       // Vietnamese news/media CDNs (ex-cdn.com)
       { protocol: "https", hostname: "**.ex-cdn.com" },
       { protocol: "https", hostname: "ex-cdn.com" },
+      // Cloudflare R2 CDN
+      { protocol: "https", hostname: "**.r2.dev" },
+      { protocol: "https", hostname: "pub-47e070c7a48e4c1091d1f838e4270a38.r2.dev" },
     ],
     localPatterns: [
       { pathname: "/api/image-proxy" },
@@ -120,9 +123,18 @@ const nextConfig = {
       { pathname: "/avatars/**" },
       { pathname: "/artplayer/**" },
       { pathname: "/brand/**" },
+      { pathname: "/img-backtop/**" },
+      { pathname: "/img-cut/**" },
+      { pathname: "/Folder-Background/**" },
+      { pathname: "/mascots/**" },
+      { pathname: "/og-img/**" },
       { pathname: "/*.png" },
       { pathname: "/*.jpg" },
+      { pathname: "/*.webp" },
+      { pathname: "/*.svg" },
+      { pathname: "/*.ico" },
       { pathname: "/flexphim-logo.png" },
+      { pathname: "/flexphim-logo.svg" },
     ],
     formats: ["image/avif", "image/webp"],
     qualities: [75, 85, 90],

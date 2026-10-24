@@ -1471,11 +1471,10 @@ const directApiBase = configuredApiBase
     : configuredApiBase
   : defaultApiBase;
 
-// Browser authentication must stay first-party. In production, the Next.js
-// route proxy forwards /api/v1 to the configured Nest API and relays its
-// HttpOnly cookies on the FlexPhim origin. This avoids third-party-cookie
-// blocking when Vercel and the API are hosted on different sites.
-const API_BASE = process.env.NODE_ENV === 'production' ? '/api/v1' : directApiBase;
+// Browser requests must stay first-party. The Next.js route proxy forwards
+// /api/v1 to the configured Nest API and relays its HttpOnly cookies on the
+// FlexPhim origin. In SSR/Node, directApiBase is retained for absolute URLs.
+const API_BASE = typeof window !== 'undefined' ? '/api/v1' : directApiBase;
 
 export const api = axios.create({
   baseURL: API_BASE,

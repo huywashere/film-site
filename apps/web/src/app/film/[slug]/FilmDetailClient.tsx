@@ -2607,19 +2607,6 @@ export default function FilmDetailPage({
                 ))}
               </div>
             )}
-
-            {/* Bảng điểm đánh giá uy tín (TMDB, IMDb, Cà chua Tomatometer, Bỏng ngô Popcornmeter) */}
-            <div className="pt-3 pb-1">
-              <MovieRatingBadges
-                tmdbScore={effectiveOmdb?.tmdbRating || displayTmdbScore}
-                imdbScore={effectiveOmdb?.imdbRating || displayImdbScore}
-                tomatoScore={effectiveOmdb?.rottenTomatoes}
-                popcornScore={effectiveOmdb?.rottenTomatoesAudience}
-                imdbId={effectiveOmdb?.imdbId}
-                tmdbId={film?.tmdb?.id || (film as any)?.tmdbId}
-                className="gap-x-5 sm:gap-x-6"
-              />
-            </div>
           </section>
 
           <section className="space-y-3 pt-4 border-t border-white/5">

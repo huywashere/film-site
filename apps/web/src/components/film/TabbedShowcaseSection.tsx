@@ -126,7 +126,7 @@ export function TabbedShowcaseSection({
                 className={cn(
                   "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all duration-200 cursor-pointer select-none",
                   isActive
-                    ? "bg-cyan-500 text-black shadow-[0_2px_12px_rgba(6,182,212,0.4)]"
+                    ? "bg-white text-black shadow-md font-extrabold"
                     : "bg-white/5 text-neutral-400 border border-white/10 hover:bg-white/10 hover:text-white hover:border-white/20"
                 )}
               >
@@ -177,8 +177,8 @@ export function TabbedShowcaseSection({
           <div className="absolute inset-0 bg-gradient-to-t from-[#0c0e14] via-[#0c0e14]/80 to-transparent" />
         </div>
 
-        {/* Horizontal Card Rail (6 Cards per view on Desktop) */}
-        <div className="relative z-10 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+        {/* Horizontal Card Rail (6 Cards per view on Desktop, 4 on Mobile) */}
+        <div className="relative z-10 grid grid-cols-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-1.5 sm:gap-4">
           {displayFilms.slice(0, 6).map((film, idx) => {
             const isHovered = hoveredSlug === film.slug;
             const rating = Number(film.vote_average || film.rating || 0);

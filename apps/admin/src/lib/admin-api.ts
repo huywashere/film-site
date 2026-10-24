@@ -1,3 +1,8 @@
+import {
+  currentAdminSessionEpoch,
+  endAdminSession,
+} from "@/lib/admin-session-client";
+
 export interface AdminFetchOptions extends RequestInit {
   bypassCache?: boolean;
   cacheTtlMs?: number;
@@ -56,6 +61,8 @@ export async function adminFetch<T>(
 
   const isFormData =
     typeof FormData !== "undefined" && init?.body instanceof FormData;
+  const sessionEpoch =
+    typeof window !== "undefined" ? currentAdminSessionEpoch() : null;
 
   const fetchPromise = (async () => {
     try {
@@ -77,10 +84,10 @@ export async function adminFetch<T>(
           typeof window !== "undefined" &&
           window.location.pathname !== "/login"
         ) {
-          try {
-            localStorage.removeItem("netphim_admin_session_start");
-          } catch {}
-          window.location.assign("/login?session_expired=1");
+          if (currentAdminSessionEpoch() === sessionEpoch) {
+            endAdminSession();
+            window.location.assign("/login?session_expired=1");
+          }
         }
         throw new Error(
           payload?.message || `Yêu cầu thất bại (HTTP ${response.status})`,

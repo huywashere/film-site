@@ -534,7 +534,7 @@ function SearchContent() {
                   </span>
                 </p>
               </div>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8 gap-y-6 sm:gap-y-8">
+              <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8 gap-y-3.5 sm:gap-y-8">
                 {Array.from({ length: 14 }).map((_, i) => (
                   <FilmCardSkeleton key={i} />
                 ))}
@@ -605,7 +605,7 @@ function SearchContent() {
               </div>
               <div
                 className={cn(
-                  "grid grid-cols-2 gap-3 animate-in fade-in duration-300 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8 gap-y-6 sm:gap-y-8 transition-opacity",
+                  "grid grid-cols-4 gap-1.5 animate-in fade-in duration-300 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8 gap-y-3.5 sm:gap-y-8 transition-opacity",
                   (isFetching || isNavigating) && "opacity-55",
                 )}
                 aria-busy={isFetching || isNavigating}
@@ -644,7 +644,7 @@ export default function SearchPage() {
       fallback={
         <div className="container mx-auto px-4 md:px-8 max-w-7xl pt-24 pb-16 flex flex-col space-y-6">
           <div className="h-6 bg-white/5 rounded w-48 animate-pulse" />
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8 gap-y-6 sm:gap-y-8">
+          <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8 gap-y-3.5 sm:gap-y-8">
             {Array.from({ length: 14 }).map((_, i) => (
               <FilmCardSkeleton key={i} />
             ))}

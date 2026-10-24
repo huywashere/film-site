@@ -59,7 +59,7 @@ export function BrowseFilmsSkeleton() {
           <SkeletonBlock className="h-3 w-20 rounded" />
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2.5 sm:gap-3.5 lg:gap-4 pt-2">
+        <div className="grid grid-cols-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-1.5 sm:gap-3.5 lg:gap-4 gap-y-3.5 sm:gap-y-6 pt-2">
           {Array.from({ length: 14 }).map((_, index) => (
             <FilmCardSkeleton key={index} />
           ))}
@@ -89,7 +89,7 @@ export function CatalogCardGrid({
   return (
     <div
       className={cn(
-        'grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-y-6 sm:gap-y-8',
+        'grid grid-cols-4 gap-1.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-y-3.5 sm:gap-y-8',
         className,
       )}
     >

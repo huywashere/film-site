@@ -4123,7 +4123,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                 </span>
               </button>
 
-              {/* Chế độ Rạp phim (Theater Mode) — Full-Cinema */}
+              {/* Chế độ Rạp phim (Theater Mode) — Full-Cinema (Ẩn trên mobile vì không cần thiết) */}
               <button
                 type="button"
                 onClick={() => {
@@ -4139,7 +4139,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                   });
                 }}
                 className={cn(
-                  'flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all font-medium text-xs cursor-pointer select-none border',
+                  'hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all font-medium text-xs cursor-pointer select-none border',
                   theaterMode
                     ? 'bg-purple-500/15 text-purple-300 border-purple-500/30 font-semibold'
                     : 'bg-white/[0.04] hover:bg-white/[0.08] text-neutral-400 hover:text-white border-white/[0.06]',
@@ -4150,12 +4150,12 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                 <span className="hidden sm:inline">Rạp phim</span>
               </button>
 
-              {/* Bảng Phím tắt (Keyboard Shortcuts) */}
+              {/* Bảng Phím tắt (Keyboard Shortcuts) (Ẩn trên mobile vì không có bàn phím vật lý) */}
               <button
                 type="button"
                 onClick={() => setShowShortcutsGuide((prev) => !prev)}
                 className={cn(
-                  'flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all font-medium text-xs cursor-pointer select-none border',
+                  'hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all font-medium text-xs cursor-pointer select-none border',
                   showShortcutsGuide
                     ? 'bg-purple-500/15 text-purple-400 border-purple-500/30 font-semibold shadow-sm'
                     : 'bg-white/[0.04] hover:bg-white/[0.08] text-neutral-400 hover:text-white border-white/[0.06]',

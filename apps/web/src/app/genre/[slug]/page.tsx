@@ -26,6 +26,9 @@ const GENRE_NAMES: Record<string, string> = {
   "vo-thuat": "Võ Thuật",
   "tai-lieu": "Tài Liệu",
   "hoat-hinh": "Hoạt Hình",
+  "chinh-kich": "Chính Kịch",
+  "tre-em": "Trẻ Em (Kids)",
+  "gia-tuong": "Phim Giả Tưởng",
 };
 
 function normalizePage(value: string | string[] | undefined): number {
