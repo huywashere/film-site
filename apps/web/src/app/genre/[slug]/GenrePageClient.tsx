@@ -111,6 +111,15 @@ const WAR_TABS = [
   { id: "sniper", label: "Bắn Tỉa & Đặc Nhiệm", keywords: ["bắn tỉa", "sniper", "đặc nhiệm", "1917", "diều hâu", "black hawk", "sát thủ"] },
 ];
 
+const FANTASY_TABS = [
+  { id: "all", label: "Tất cả" },
+  { id: "epic", label: "Sử Thi & Arrakis", keywords: ["dune", "chúa nhẫn", "hobbit", "sử thi", "arrakis", "hành tinh cát", "sandworm", "harkonnen", "atreides"] },
+  { id: "magic", label: "Phép Thuật & Kỳ Ảo", keywords: ["phép thuật", "phù thủy", "magic", "harry potter", "ma thuật", "phép", "phù thuỷ", "wizard", "sorcerer"] },
+  { id: "adventure", label: "Phiêu Lưu Kỳ Bí", keywords: ["phiêu lưu", "thế giới", "vùng đất", "kỳ ảo", "narnia", "thám hiểm", "xứ sở", "wonderland", "adventure"] },
+  { id: "creatures", label: "Quái Vật & Thần Thú", keywords: ["rồng", "quái vật", "sinh vật", "thần thú", "beast", "dragon", "godzilla", "kong", "quái thú"] },
+  { id: "kingdom", label: "Đế Chế & Vương Quyền", keywords: ["vương quyền", "đế chế", "game of thrones", "hoàng gia", "ngai vàng", "thần thoại", "vua", "kingdom"] },
+];
+
 function stripEmojis(str?: string): string {
   if (!str) return "";
   return str.replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, "").trim();
@@ -942,78 +951,126 @@ function WarOdysseyHeroBanner({
         }}
       />
 
-      {/* ── Layer 3: Character Cutout with Smooth Slide Effect from Left/Right & Gentle Hover ── */}
-      <div className="absolute right-0 bottom-0 top-0 h-full w-full max-w-2xl sm:max-w-3xl md:max-w-4xl lg:max-w-5xl flex items-end justify-end pointer-events-none z-10 overflow-hidden pr-3 sm:pr-8 md:pr-14 lg:pr-20 xl:pr-28">
+      {/* ── Layer 3: ALL The Odyssey Warriors Co-appearing in Heroic Battle Formation with Multi-Directional Translation ── */}
+      <div className="absolute right-0 bottom-0 top-0 h-full w-full max-w-2xl sm:max-w-3xl md:max-w-4xl lg:max-w-5xl flex items-end justify-end pointer-events-none z-10 overflow-hidden pr-2 sm:pr-6 md:pr-12 lg:pr-16 xl:pr-24">
         <AnimatePresence initial={false} custom={direction}>
           <motion.div
-            key={currentSlide.id}
+            key={`odyssey-squad-${currentSlide.id}`}
             custom={direction}
-            initial={{ opacity: 0, x: direction > 0 ? 100 : -100 }}
+            initial={{ opacity: 0, x: direction > 0 ? 110 : -110 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: direction > 0 ? -100 : 100 }}
-            whileHover={{
-              scale: 1.025,
-              y: -6,
-              transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] },
-            }}
-            transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute right-0 bottom-0 h-full flex items-end justify-end pointer-events-auto cursor-pointer group/war-char"
+            exit={{ opacity: 0, x: direction > 0 ? -110 : 110 }}
+            transition={{ duration: 0.95, ease: [0.16, 1, 0.3, 1] }}
+            className="relative h-full w-full flex items-end justify-end pointer-events-auto select-none"
           >
-            <img
-              src={currentSlide.charImage}
-              alt={currentSlide.charAlt}
+            {/* 1. Background Atmosphere Warrior: Roman / Greek Gladiator Helmet & Smoke */}
+            <motion.div
+              initial={{ opacity: 0, x: direction > 0 ? 140 : -140 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1], delay: 0.05 }}
               className={cn(
-                currentSlide.charHeightClass || "h-[74%] sm:h-[82%] md:h-[88%] lg:h-[94%] max-h-[720px]",
-                "w-auto max-w-full object-contain object-bottom select-none filter contrast-[1.04] brightness-[1.02] drop-shadow-[0_20px_45px_rgba(0,0,0,0.85)] transition-all duration-500 group-hover/war-char:drop-shadow-[0_25px_65px_rgba(245,158,11,0.45)] group-hover/war-char:brightness-[1.06]",
+                "absolute right-[-8%] sm:right-[-4%] bottom-0 h-[65%] sm:h-[75%] md:h-[82%] lg:h-[88%] w-auto pointer-events-none transition-all duration-700",
+                currentIndex === 2
+                  ? "opacity-95 scale-105 z-20 filter contrast-125 brightness-110 drop-shadow-[0_20px_45px_rgba(245,158,11,0.5)]"
+                  : "opacity-45 sm:opacity-60 scale-100 z-10 filter contrast-110 brightness-85",
               )}
-              loading="eager"
-            />
+            >
+              <img
+                src="/Folder-Background/the odysey/odyssey-warrior-helmet.png"
+                alt="Chiến binh Mũ Giác Đấu La Mã"
+                className="h-full w-auto object-contain object-bottom"
+                loading="eager"
+              />
+            </motion.div>
+
+            {/* 2. Midground Hero: Spartan Warrior Commander with Shield & Spear */}
+            <motion.div
+              initial={{ opacity: 0, x: direction > 0 ? 100 : -100 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 1.0, ease: [0.16, 1, 0.3, 1], delay: 0.12 }}
+              className={cn(
+                "absolute right-[24%] sm:right-[28%] md:right-[32%] lg:right-[36%] bottom-0 h-[72%] sm:h-[82%] md:h-[88%] lg:h-[95%] max-h-[740px] w-auto transition-all duration-700",
+                currentIndex === 1
+                  ? "opacity-100 scale-105 z-30 filter contrast-[1.08] brightness-[1.1] drop-shadow-[0_25px_60px_rgba(245,158,11,0.55)]"
+                  : "opacity-80 sm:opacity-90 scale-100 z-15 filter contrast-[1.03] brightness-[0.95] drop-shadow-[0_20px_45px_rgba(0,0,0,0.85)]",
+              )}
+            >
+              <img
+                src="/Folder-Background/the odysey/odyssey-warrior-spartan.png"
+                alt="Thống lĩnh Sparta Leonidas"
+                className="h-full w-auto object-contain object-bottom"
+                loading="eager"
+              />
+            </motion.div>
+
+            {/* 3. Foreground Lead Hero: Achilles Charging */}
+            <motion.div
+              initial={{ opacity: 0, x: direction > 0 ? 60 : -60 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1], delay: 0.18 }}
+              className={cn(
+                "relative bottom-0 h-[74%] sm:h-[82%] md:h-[88%] lg:h-[96%] max-h-[750px] w-auto transition-all duration-700",
+                currentIndex === 0
+                  ? "opacity-100 scale-105 z-30 filter contrast-[1.08] brightness-[1.08] drop-shadow-[0_25px_65px_rgba(245,158,11,0.6)]"
+                  : "opacity-85 sm:opacity-90 scale-100 z-25 filter contrast-[1.02] brightness-[0.98] drop-shadow-[0_20px_45px_rgba(0,0,0,0.9)]",
+              )}
+            >
+              <img
+                src="/Folder-Background/the odysey/odyssey-warrior-achilles.png"
+                alt="Dũng tướng Achilles xuất trận thành Troy"
+                className="h-full w-auto object-contain object-bottom"
+                loading="eager"
+              />
+            </motion.div>
           </motion.div>
         </AnimatePresence>
       </div>
 
-      {/* ── Layer 4: Typography, Badges & Actions ── */}
+      {/* ── Layer 4: Typography, Logo Banner, Badges & Actions with Left-to-Right Translation ── */}
       <div className="absolute inset-0 z-20 pointer-events-none">
         <AnimatePresence initial={false} custom={direction}>
           <motion.div
             key={`war-meta-${currentSlide.id}`}
             custom={direction}
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -15 }}
-            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute left-4 sm:left-12 md:left-16 lg:left-24 top-20 sm:top-36 md:top-40 lg:top-44 max-w-xl sm:max-w-2xl space-y-2.5 sm:space-y-4 pointer-events-auto pr-2 sm:pr-0"
+            initial={{ opacity: 0, x: direction > 0 ? -80 : 80 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: direction > 0 ? 80 : -80 }}
+            transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute left-4 sm:left-12 md:left-16 lg:left-24 top-20 sm:top-28 md:top-32 lg:top-36 max-w-xl sm:max-w-2xl space-y-2.5 sm:space-y-3.5 pointer-events-auto pr-2 sm:pr-0"
           >
             {/* Top Badges (Monochrome Neutral Glass with Warm Amber Highlights) */}
             <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[10px] sm:text-[11px] font-bold">
-              <span className="px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-amber-500/20 text-amber-200 border border-amber-500/30 font-bold uppercase tracking-wider backdrop-blur-sm">
+              <span className="px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full bg-amber-500/25 text-amber-200 border border-amber-500/40 font-bold uppercase tracking-wider backdrop-blur-md shadow-sm">
                 {currentSlide.badge}
               </span>
-              <span className="px-1.5 sm:px-2 py-0.5 rounded bg-white/15 text-neutral-100 border border-white/15 backdrop-blur-sm">
+              <span className="px-2 py-0.5 rounded-full bg-white/15 text-neutral-100 border border-white/15 backdrop-blur-md">
                 {currentSlide.year}
               </span>
-              <span className="hidden sm:inline-block px-2 py-0.5 rounded bg-white/15 text-neutral-100 border border-white/15 backdrop-blur-sm">
+              <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full bg-white/15 text-neutral-100 border border-white/15 backdrop-blur-md">
                 Chiến Tranh & Lịch Sử
               </span>
-              <span className="px-1.5 sm:px-2 py-0.5 rounded bg-white/15 text-neutral-100 border border-white/15 backdrop-blur-sm">
+              <span className="px-2 py-0.5 rounded-full bg-white/15 text-neutral-100 border border-white/15 backdrop-blur-md">
                 {currentSlide.quality}
               </span>
-              <span className="px-1.5 sm:px-2 py-0.5 rounded bg-white/15 text-amber-300 border border-white/15 backdrop-blur-sm font-extrabold">
+              <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 backdrop-blur-md font-extrabold">
                 ★ {currentSlide.rating}
               </span>
             </div>
 
-            {/* Title & Subtitle */}
-            <div className="space-y-1.5 sm:space-y-2">
-              <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black uppercase tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-100 via-amber-200 to-amber-500 drop-shadow-[0_4px_25px_rgba(0,0,0,0.95)]">
-                {currentSlide.name}
-              </h1>
-
-              {/* Subtitle with character highlight */}
-              <p className="text-xs sm:text-lg font-semibold text-amber-200/95 font-mono tracking-wide drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)] line-clamp-1 sm:line-clamp-none">
-                {currentSlide.subtitle}
-              </p>
+            {/* Official HD Logo Banner (Replaces plain text) */}
+            <div className="h-16 sm:h-20 md:h-24 lg:h-28 max-w-[320px] sm:max-w-[460px] md:max-w-[540px] lg:max-w-[620px]">
+              <img
+                src="/Folder-Background/the odysey/odyssey-logo-hd.png"
+                alt="The Odyssey: Cuộc Chiến Thành Troy"
+                className="h-full w-auto object-contain object-left drop-shadow-[0_8px_25px_rgba(0,0,0,0.95)]"
+                loading="eager"
+              />
             </div>
+
+            {/* Subtitle with character highlight */}
+            <p className="text-sm sm:text-base md:text-lg font-semibold italic text-amber-200/95 font-mono tracking-wide drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)] line-clamp-1 sm:line-clamp-none">
+              {currentSlide.subtitle}
+            </p>
 
             {/* Genre Pills */}
             <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-0.5">
@@ -1021,7 +1078,7 @@ function WarOdysseyHeroBanner({
                 <span
                   key={genre}
                   className={cn(
-                    "px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full bg-white/[0.12] hover:bg-white/[0.2] text-[10px] sm:text-xs font-semibold text-neutral-100 border border-white/[0.15] backdrop-blur-md transition-colors shadow-sm",
+                    "px-3 py-1 rounded-full bg-white/[0.12] hover:bg-white/[0.2] text-xs font-semibold text-neutral-100 border border-white/[0.15] backdrop-blur-md transition-colors shadow-sm",
                     gIdx > 2 ? "hidden xs:inline-block" : "inline-block",
                   )}
                 >
@@ -1031,7 +1088,7 @@ function WarOdysseyHeroBanner({
             </div>
 
             {/* Description */}
-            <p className="text-xs sm:text-sm text-neutral-200/90 font-medium leading-relaxed max-w-lg line-clamp-2 sm:line-clamp-none drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)]">
+            <p className="text-xs sm:text-sm text-neutral-200/90 font-medium leading-relaxed max-w-lg line-clamp-2 sm:line-clamp-3 drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)]">
               {currentSlide.overview}
             </p>
 
@@ -1039,9 +1096,9 @@ function WarOdysseyHeroBanner({
             <div className="flex items-center gap-2 sm:gap-3 pt-1.5 sm:pt-3">
               <Link
                 href={`/watch/${currentSlide.slug}`}
-                className="inline-flex items-center gap-1.5 sm:gap-2.5 px-4 sm:px-7 py-2 sm:py-3 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-neutral-950 font-black text-xs sm:text-sm shadow-xl shadow-amber-950/40 transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0"
+                className="inline-flex items-center gap-2 px-5 sm:px-7 py-2.5 sm:py-3 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-neutral-950 font-black text-xs sm:text-sm shadow-xl shadow-amber-950/40 transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0"
               >
-                <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current text-neutral-950" />
+                <Play className="w-4 h-4 fill-current text-neutral-950" />
                 <span>Xem Ngay</span>
               </Link>
 
@@ -1049,18 +1106,18 @@ function WarOdysseyHeroBanner({
                 <button
                   type="button"
                   onClick={() => onOpenTrailer(currentSlide.name, currentSlide.trailer_url)}
-                  className="inline-flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-6 py-2 sm:py-3 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-xs sm:text-sm backdrop-blur-md transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0"
+                  className="inline-flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-xs sm:text-sm backdrop-blur-md transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0"
                 >
-                  <Clapperboard className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-300" />
+                  <Clapperboard className="w-4 h-4 text-amber-300" />
                   <span>Trailer</span>
                 </button>
               )}
 
               <Link
                 href={`/film/${currentSlide.slug}`}
-                className="inline-flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-6 py-2 sm:py-3 rounded-full bg-white/15 hover:bg-white/25 border border-white/20 text-white font-bold text-xs sm:text-sm backdrop-blur-md transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0"
+                className="inline-flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-full bg-white/15 hover:bg-white/25 border border-white/20 text-white font-bold text-xs sm:text-sm backdrop-blur-md transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0"
               >
-                <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <Info className="w-4 h-4" />
                 <span>Chi Tiết</span>
               </Link>
             </div>
@@ -1110,6 +1167,340 @@ function WarOdysseyHeroBanner({
             type="button"
             onClick={handleNext}
             aria-label="Next War Odyssey character"
+            className="w-6 h-6 sm:w-8 sm:h-8 rounded-full hover:bg-white/20 text-white flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer"
+          >
+            <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── FANTASY DUNE PART TWO CINEMATIC HERO BANNER COMPONENT ──
+const DUNE_BG_PATH = "/Folder-Background/dune-2/dune-arrakis-sun-bg.webp";
+const DUNE_LOGO_PATH = "/Folder-Background/dune-2/dune-2-logo-hd.png";
+
+interface DuneFantasySlide {
+  id: string;
+  name: string;
+  origin_name: string;
+  subtitle: string;
+  badge: string;
+  year: number;
+  quality: string;
+  rating: string;
+  genres: string[];
+  overview: string;
+  charImage: string;
+  charAlt: string;
+  slug: string;
+  trailer_url: string;
+  charHeightClass?: string;
+}
+
+const DUNE_FANTASY_SLIDES: DuneFantasySlide[] = [
+  {
+    id: "dune-ensemble-shaihulu",
+    name: "Dune: Hành Tinh Cát - Phần Hai",
+    origin_name: "Dune: Part Two",
+    subtitle: "Paul Atreides & Gia Tộc Arrakis • Cơn Thịnh Nộ Sâu Sa Mạc",
+    badge: "BOM TẤN GIẢ TƯỞNG SỬ THI",
+    year: 2024,
+    quality: "4K UHD • Thuyết Minh",
+    rating: "IMDb 8.5",
+    genres: ["Sử Thi Giả Tưởng", "Vũ Trụ Arrakis", "Hành Động", "Khoa Học Kỳ Ảo"],
+    overview:
+      "Paul Atreides hợp nhất cùng Chani và tộc người Fremen để phát động cuộc kháng chiến báo thù những kẻ hủy diệt gia tộc mình, đối diện với định mệnh nghiệt ngã làm rung chuyển toàn cõi thiên hà.",
+    charImage: "/Folder-Background/dune-2/dune-ensemble-sandworm.png",
+    charAlt: "Toàn bộ nhân vật Dune 2 và Thần Thú Shai-Hulud sa mạc",
+    slug: "hanh-tinh-cat-phan-hai",
+    trailer_url: "https://www.youtube.com/watch?v=Way9Dexny3w",
+    charHeightClass: "h-[80%] sm:h-[88%] md:h-[94%] lg:h-[98%] max-h-[760px]",
+  },
+  {
+    id: "dune-paul-chani-duo",
+    name: "Dune: Chiến Binh Định Mệnh",
+    origin_name: "Dune: Part Two - Desert Warriors",
+    subtitle: "Paul & Chani • Sát Cánh Kháng Chiến Tộc Fremen",
+    badge: "CHIẾN BINH SA MẠC ARRAKIS",
+    year: 2024,
+    quality: "4K UHD • Thuyết Minh",
+    rating: "IMDb 8.5",
+    genres: ["Tình Yêu & Khát Vọng", "Kháng Chiến Fremen", "Sa Mạc Vô Tận", "Phiêu Lưu"],
+    overview:
+      "Sát cánh chiến đấu bên chiến binh quả cảm Chani, Paul thuần hóa loài sâu cát khổng lồ và học hỏi giáo lý sa mạc cổ xưa để trở thành thủ lĩnh được toàn thể người dân Arrakis tôn sùng.",
+    charImage: "/Folder-Background/dune-2/dune-paul-chani-hd.png",
+    charAlt: "Paul Atreides và Chani sát cánh trong bộ chiến giáp Stillsuit",
+    slug: "hanh-tinh-cat-phan-hai",
+    trailer_url: "https://www.youtube.com/watch?v=Way9Dexny3w",
+    charHeightClass: "h-[76%] sm:h-[84%] md:h-[90%] lg:h-[96%] max-h-[720px]",
+  },
+  {
+    id: "dune-muaddib-prophet",
+    name: "Dune: Tiên Tri Muad'Dib Trỗi Dậy",
+    origin_name: "Dune: Part Two - The Kwisatz Haderach",
+    subtitle: "Kwisatz Haderach Muad'Dib • Quyền Năng Thấu Thị Tương Lai",
+    badge: "ĐẤNG CỨU THẾ THIÊN HÀ",
+    year: 2024,
+    quality: "4K UHD • Thuyết Minh",
+    rating: "IMDb 8.5",
+    genres: ["Quyền Năng Huyền Bí", "Tranh Đoạt Vương Quyền", "Thần Thoại Vũ Trụ", "Kịch Tính"],
+    overview:
+      "Vượt qua lằn ranh sinh tử nhờ Nước Sự Sống, Paul thức tỉnh đôi mắt xanh rực sáng của hương dược Arrakis và dẫn đầu hàng triệu chiến binh Fremen tiến thẳng vào trận chiến định đoạt ngai vàng hoàng đế.",
+    charImage: "/Folder-Background/dune-2/dune-paul-solo.png",
+    charAlt: "Paul Atreides khoác áo choàng sa mạc với đôi mắt xanh hương dược",
+    slug: "hanh-tinh-cat-phan-hai",
+    trailer_url: "https://www.youtube.com/watch?v=Way9Dexny3w",
+    charHeightClass: "h-[74%] sm:h-[82%] md:h-[88%] lg:h-[94%] max-h-[700px]",
+  },
+];
+
+function DuneFantasyHeroBanner({
+  onOpenTrailer,
+}: {
+  onOpenTrailer: (name: string, url?: string) => void;
+}) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [direction, setDirection] = useState(1);
+  const [isPaused, setIsPaused] = useState(false);
+  const [bgSrc, setBgSrc] = useState(DUNE_BG_PATH);
+  const [logoSrc, setLogoSrc] = useState(DUNE_LOGO_PATH);
+
+  const currentSlide = DUNE_FANTASY_SLIDES[currentIndex];
+
+  useEffect(() => {
+    if (isPaused) return;
+    const timer = setInterval(() => {
+      setDirection(1);
+      setCurrentIndex((prev) => (prev + 1) % DUNE_FANTASY_SLIDES.length);
+    }, 8500);
+    return () => clearInterval(timer);
+  }, [isPaused]);
+
+  const handleNext = () => {
+    setDirection(1);
+    setCurrentIndex((prev) => (prev + 1) % DUNE_FANTASY_SLIDES.length);
+  };
+
+  const handlePrev = () => {
+    setDirection(-1);
+    setCurrentIndex((prev) => (prev - 1 + DUNE_FANTASY_SLIDES.length) % DUNE_FANTASY_SLIDES.length);
+  };
+
+  const touchStartX = useRef<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 40) {
+      if (diff > 0) {
+        handleNext();
+      } else {
+        handlePrev();
+      }
+    }
+    touchStartX.current = null;
+  };
+
+  return (
+    <section
+      data-hero-banner="true"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      className="relative h-[76svh] min-h-[580px] max-h-[680px] w-full select-none overflow-hidden bg-[#0a0b10] sm:h-[95vh] sm:min-h-[740px] sm:max-h-[1000px] lg:h-[100vh] lg:min-h-[860px]"
+    >
+      {/* ── Layer 1: Background Scenic Image (Scorching Arrakis Desert Sun & Spice Dunes) ── */}
+      <div className="absolute inset-0 w-full h-full overflow-hidden">
+        <img
+          src={bgSrc}
+          alt="Dune: Hành Tinh Cát - Sa Mạc Arrakis"
+          onError={() => {
+            if (CDN_BASE && bgSrc !== `${CDN_BASE}${DUNE_BG_PATH}`) {
+              setBgSrc(`${CDN_BASE}${DUNE_BG_PATH}`);
+            }
+          }}
+          className="w-full h-full object-cover object-[center_35%] scale-[1.01] filter brightness-[0.92] contrast-[1.08]"
+          loading="eager"
+        />
+      </div>
+
+      {/* ── Layer 2: Warm Cinematic Desert Blending ── */}
+      <div
+        className="absolute inset-0 z-10 pointer-events-none"
+        style={{
+          background: `
+            linear-gradient(to right, rgba(10,11,16,0.88) 0%, rgba(10,11,16,0.58) 38%, rgba(10,11,16,0.18) 72%, transparent 100%),
+            linear-gradient(to top, #0a0b10 0%, rgba(10,11,16,0.7) 12%, rgba(10,11,16,0.2) 28%, transparent 48%),
+            linear-gradient(to bottom, rgba(10,11,16,0.65) 0%, rgba(10,11,16,0.15) 14%, transparent 26%)
+          `,
+        }}
+      />
+
+      {/* Atmospheric Warm Spice Ambient Glow */}
+      <div
+        className="pointer-events-none absolute -bottom-10 left-1/4 w-[600px] h-[300px] bg-amber-500/10 blur-[140px] rounded-full z-10"
+        aria-hidden="true"
+      />
+
+      {/* ── Layer 3: Character Cutout with Smooth Slide Effect from Left/Right & Gentle Hover ── */}
+      <div className="absolute right-0 bottom-0 top-0 h-full w-full max-w-2xl sm:max-w-3xl md:max-w-4xl lg:max-w-5xl flex items-end justify-end pointer-events-none z-10 overflow-hidden pr-3 sm:pr-8 md:pr-14 lg:pr-20 xl:pr-28">
+        <AnimatePresence initial={false} custom={direction}>
+          <motion.div
+            key={currentSlide.id}
+            custom={direction}
+            initial={{ opacity: 0, x: direction > 0 ? 100 : -100 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: direction > 0 ? -100 : 100 }}
+            transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+            className={cn(
+              "relative select-none pointer-events-none drop-shadow-[0_25px_50px_rgba(0,0,0,0.95)]",
+              currentSlide.charHeightClass || "h-[76%] sm:h-[84%] md:h-[90%] lg:h-[96%]",
+            )}
+          >
+            <motion.img
+              src={currentSlide.charImage}
+              alt={currentSlide.charAlt}
+              animate={{ y: [0, -6, 0] }}
+              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+              className="h-full w-auto object-contain filter contrast-[1.08] brightness-[0.98]"
+              loading="eager"
+            />
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      {/* ── Layer 4: Foreground Content (Netflix Layout with Title Logo & Action Buttons) ── */}
+      <div className="pointer-events-none absolute inset-0 z-20 flex flex-col justify-end px-4 pb-12 sm:justify-center sm:px-14 sm:pb-32 md:px-20 lg:px-24 lg:pb-12">
+        <AnimatePresence mode="wait" custom={direction}>
+          <motion.div
+            key={currentSlide.id}
+            custom={direction}
+            initial={{ x: direction > 0 ? -30 : 30, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: direction > 0 ? 20 : -20, opacity: 0 }}
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            className="max-w-2xl sm:max-w-3xl space-y-2.5 sm:space-y-4 lg:space-y-4.5 pointer-events-auto"
+          >
+            {/* Title Logo */}
+            <div className="relative h-14 sm:h-20 md:h-24 lg:h-28 w-64 sm:w-80 md:w-96 select-none -ml-1 sm:-ml-2">
+              <img
+                src={logoSrc}
+                alt="Dune: Part Two"
+                onError={() => {
+                  if (CDN_BASE && logoSrc !== `${CDN_BASE}${DUNE_LOGO_PATH}`) {
+                    setLogoSrc(`${CDN_BASE}${DUNE_LOGO_PATH}`);
+                  }
+                }}
+                className="h-full w-full object-contain object-left drop-shadow-[0_4px_24px_rgba(245,158,11,0.4)]"
+                loading="eager"
+              />
+            </div>
+
+            {/* Tagline / Subtitle */}
+            <p className="text-xs sm:text-base md:text-lg font-bold text-amber-300 drop-shadow-md">
+              {currentSlide.subtitle}
+            </p>
+
+            {/* Metadata Row */}
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-3 text-[11px] sm:text-sm md:text-base font-semibold text-neutral-200">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold text-[10px] sm:text-xs">
+                {currentSlide.badge}
+              </span>
+              <span className="text-white font-bold">{currentSlide.year}</span>
+              <span className="text-neutral-500">•</span>
+              <span className="text-amber-300 font-bold">{currentSlide.rating}</span>
+              <span className="text-neutral-500">•</span>
+              <span className="text-neutral-300">{currentSlide.quality}</span>
+            </div>
+
+            {/* Genres */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {currentSlide.genres.map((g, idx) => (
+                <span key={g} className="text-xs sm:text-sm text-amber-200/90 font-medium">
+                  {g}
+                  {idx < currentSlide.genres.length - 1 && (
+                    <span className="text-neutral-500 ml-1.5">•</span>
+                  )}
+                </span>
+              ))}
+            </div>
+
+            {/* Synopsis Description */}
+            <p className="hidden max-w-xl text-xs font-medium leading-relaxed text-neutral-200/90 drop-shadow-sm sm:line-clamp-3 sm:text-sm md:text-base">
+              {currentSlide.overview}
+            </p>
+
+            {/* Action Buttons: Solid White Buttons (Zero Glass) */}
+            <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 pt-1 sm:pt-2">
+              <Link
+                href={`/film/${currentSlide.slug}`}
+                className="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-5 sm:px-7 py-2.5 sm:py-3 rounded-xl bg-white hover:bg-neutral-100 text-black font-extrabold text-xs sm:text-sm shadow-md transition-all hover:scale-105 active:scale-95 cursor-pointer select-none"
+              >
+                <Play size={16} fill="black" />
+                <span>Xem Ngay</span>
+              </Link>
+
+              {currentSlide.trailer_url && (
+                <button
+                  type="button"
+                  onClick={() => onOpenTrailer(currentSlide.name, currentSlide.trailer_url)}
+                  className="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-white hover:bg-neutral-100 text-black font-bold text-xs sm:text-sm shadow-md transition-all hover:scale-105 active:scale-95 cursor-pointer select-none"
+                >
+                  <Clapperboard size={15} />
+                  <span>Xem Trailer</span>
+                </button>
+              )}
+            </div>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      {/* ── Layer 5: Slide Indicators & Navigation Controls ── */}
+      <div className="absolute right-3 sm:right-8 md:right-12 bottom-3 sm:bottom-32 md:bottom-40 lg:bottom-48 xl:bottom-56 z-30 flex items-center gap-1.5 sm:gap-3 select-none pointer-events-auto">
+        <div className="hidden sm:flex items-center gap-1.5 mr-2">
+          {DUNE_FANTASY_SLIDES.map((slide, idx) => (
+            <button
+              key={slide.id}
+              type="button"
+              onClick={() => {
+                setDirection(idx > currentIndex ? 1 : -1);
+                setCurrentIndex(idx);
+              }}
+              className={cn(
+                "h-1.5 rounded-full transition-all duration-300 cursor-pointer",
+                idx === currentIndex
+                  ? "w-7 bg-amber-400 shadow-sm shadow-amber-400/50"
+                  : "w-2 bg-white/30 hover:bg-white/60",
+              )}
+              title={slide.name}
+            />
+          ))}
+        </div>
+
+        <span className="text-[11px] sm:text-xs font-mono font-bold text-neutral-300 bg-black/60 backdrop-blur-md px-2.5 sm:px-3 py-1 rounded-full border border-white/10 shadow-lg">
+          {currentIndex + 1} / {DUNE_FANTASY_SLIDES.length}
+        </span>
+
+        <div className="flex items-center gap-0.5 sm:gap-1 bg-black/60 backdrop-blur-md px-1 sm:px-1.5 py-0.5 sm:py-1 rounded-full border border-white/20 shadow-lg">
+          <button
+            type="button"
+            onClick={handlePrev}
+            aria-label="Previous Dune character"
+            className="w-6 h-6 sm:w-8 sm:h-8 rounded-full hover:bg-white/20 text-white flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer"
+          >
+            <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={handleNext}
+            aria-label="Next Dune character"
             className="w-6 h-6 sm:w-8 sm:h-8 rounded-full hover:bg-white/20 text-white flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer"
           >
             <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -1496,7 +1887,8 @@ export default function GenrePageClient({
 
   const isSciFiPage = slug === "vien-tuong" || slug === "khoa-hoc-vien-tuong";
   const isWarPage = slug === "chien-tranh";
-  const isShowcasePage = isSciFiPage || isWarPage;
+  const isFantasyPage = slug === "gia-tuong";
+  const isShowcasePage = isSciFiPage || isWarPage || isFantasyPage;
   const secondaryReady = useDeferredContent();
 
   useEffect(() => {
@@ -1544,18 +1936,18 @@ export default function GenrePageClient({
 
   // Thematic Auxiliary Queries for Multi-Row Diversity (deferred after main content loads to prevent network choke)
   const { data: auxData1 } = useQuery({
-    queryKey: ["genre-aux-1", isSciFiPage ? "phieu-luu" : "lich-su"],
+    queryKey: ["genre-aux-1", isSciFiPage ? "phieu-luu" : isFantasyPage ? "than-thoai" : "lich-su"],
     queryFn: () =>
-      movieApi.getByGenre(isSciFiPage ? "phieu-luu" : "lich-su", 1).then((r) => r.data),
+      movieApi.getByGenre(isSciFiPage ? "phieu-luu" : isFantasyPage ? "than-thoai" : "lich-su", 1).then((r) => r.data),
     enabled: isShowcasePage && !isLoading && secondaryReady,
     staleTime: 30 * 60 * 1000,
     placeholderData: (prev) => prev,
   });
 
   const { data: auxData2 } = useQuery({
-    queryKey: ["genre-aux-2", isSciFiPage ? "hanh-dong" : "tam-ly"],
+    queryKey: ["genre-aux-2", isSciFiPage ? "hanh-dong" : isFantasyPage ? "phieu-luu" : "tam-ly"],
     queryFn: () =>
-      movieApi.getByGenre(isSciFiPage ? "hanh-dong" : "tam-ly", 1).then((r) => r.data),
+      movieApi.getByGenre(isSciFiPage ? "hanh-dong" : isFantasyPage ? "phieu-luu" : "tam-ly", 1).then((r) => r.data),
     enabled: isShowcasePage && !isLoading && secondaryReady,
     staleTime: 30 * 60 * 1000,
     placeholderData: (prev) => prev,
@@ -1589,8 +1981,8 @@ export default function GenrePageClient({
   );
 
   const tabs = useMemo(
-    () => (isSciFiPage ? SCIFI_TABS : isWarPage ? WAR_TABS : []),
-    [isSciFiPage, isWarPage],
+    () => (isSciFiPage ? SCIFI_TABS : isWarPage ? WAR_TABS : isFantasyPage ? FANTASY_TABS : []),
+    [isSciFiPage, isWarPage, isFantasyPage],
   );
 
   // Filtered films for the full catalog grid based on active tab
@@ -1723,7 +2115,7 @@ export default function GenrePageClient({
       const r1Candidates = [...rawFilms];
       const r1 = takeUnique(r1Candidates, rawPage2, 12);
 
-      // ── ROW 2: THEME 1 (KHÁM PHÁ VŨ TRỤ / THẾ CHIẾN II) ──
+      // ── ROW 2: THEME 1 (KHÁM PHÁ VŨ TRỤ / THẾ CHIẾN II / SỬ THI ARRAKIS) ──
       const theme1Keywords = isSciFiPage
         ? [
             "vũ trụ",
@@ -1743,26 +2135,41 @@ export default function GenrePageClient({
             "apollo",
             "star wars",
           ]
-        : [
-            "thế chiến",
-            "thế chiến ii",
-            "quân đội",
-            "fury",
-            "dunkirk",
-            "ryan",
-            "chiến dịch",
-            "tăng",
-            "lính",
-            "trận đánh",
-            "hacksaw",
-            "trân châu cảng",
-            "quân sự",
-            "midway",
-          ];
+        : isFantasyPage
+          ? [
+              "dune",
+              "chúa nhẫn",
+              "hobbit",
+              "sử thi",
+              "arrakis",
+              "hành tinh cát",
+              "sandworm",
+              "harkonnen",
+              "atreides",
+              "paul",
+              "chani",
+              "fremen",
+            ]
+          : [
+              "thế chiến",
+              "thế chiến ii",
+              "quân đội",
+              "fury",
+              "dunkirk",
+              "ryan",
+              "chiến dịch",
+              "tăng",
+              "lính",
+              "trận đánh",
+              "hacksaw",
+              "trân châu cảng",
+              "quân sự",
+              "midway",
+            ];
       const r2ThemeMatches = matchTheme(theme1Keywords);
       const r2 = takeUnique(r2ThemeMatches, rawAux1, 12);
 
-      // ── ROW 3: THEME 2 (AI & CYBERPUNK / ĐẠI KỶ NGUYÊN & LỊCH SỬ) ──
+      // ── ROW 3: THEME 2 (AI & CYBERPUNK / ĐẠI KỶ NGUYÊN / PHÉP THUẬT) ──
       const theme2Keywords = isSciFiPage
         ? [
             "trí tuệ",
@@ -1779,24 +2186,38 @@ export default function GenrePageClient({
             "tương lai",
             "ex machina",
           ]
-        : [
-            "lịch sử",
-            "oppenheimer",
-            "kỷ nguyên",
-            "danh nhân",
-            "hào hùng",
-            "vương triều",
-            "1917",
-            "napoleon",
-            "hoàng gia",
-            "thời đại",
-            "anh hùng",
-            "schindler",
-          ];
+        : isFantasyPage
+          ? [
+              "phép thuật",
+              "phù thủy",
+              "magic",
+              "harry potter",
+              "ma thuật",
+              "phép",
+              "phù thuỷ",
+              "wizard",
+              "sorcerer",
+              "bùa chú",
+              "thần chú",
+            ]
+          : [
+              "lịch sử",
+              "oppenheimer",
+              "kỷ nguyên",
+              "danh nhân",
+              "hào hùng",
+              "vương triều",
+              "1917",
+              "napoleon",
+              "hoàng gia",
+              "thời đại",
+              "anh hùng",
+              "schindler",
+            ];
       const r3ThemeMatches = matchTheme(theme2Keywords);
       const r3 = takeUnique(r3ThemeMatches, rawAux2, 12);
 
-      // ── ROW 4: THEME 3 (NGHỊCH LÝ THỜI GIAN / CHIẾN TRANH CỔ ĐẠI) ──
+      // ── ROW 4: THEME 3 (NGHỊCH LÝ THỜI GIAN / CHIẾN TRANH CỔ ĐẠI / PHIÊU LƯU KỲ ẢO) ──
       const theme3Keywords = isSciFiPage
         ? [
             "thời gian",
@@ -1812,26 +2233,39 @@ export default function GenrePageClient({
             "looper",
             "edge of tomorrow",
           ]
-        : [
-            "cổ đại",
-            "võ sĩ",
-            "giác đấu",
-            "gladiator",
-            "la mã",
-            "troy",
-            "300",
-            "kiếm",
-            "vương quyền",
-            "đế chế",
-            "thành bang",
-            "chiến binh",
-            "sparta",
-            "alexander",
-          ];
+        : isFantasyPage
+          ? [
+              "phiêu lưu",
+              "vùng đất",
+              "kỳ ảo",
+              "narnia",
+              "thám hiểm",
+              "xứ sở",
+              "wonderland",
+              "adventure",
+              "mê cung",
+              "kỳ bí",
+            ]
+          : [
+              "cổ đại",
+              "võ sĩ",
+              "giác đấu",
+              "gladiator",
+              "la mã",
+              "troy",
+              "300",
+              "kiếm",
+              "vương quyền",
+              "đế chế",
+              "thành bang",
+              "chiến binh",
+              "sparta",
+              "alexander",
+            ];
       const r4ThemeMatches = matchTheme(theme3Keywords);
       const r4 = takeUnique(r4ThemeMatches, rawPage2, 12);
 
-      // ── ROW 5: THEME 4 (SIÊU ANH HÙNG / BẮN TỈA & ĐẶC NHIỆM) ──
+      // ── ROW 5: THEME 4 (SIÊU ANH HÙNG / BẮN TỈA / VƯƠNG QUYỀN) ──
       const theme4Keywords = isSciFiPage
         ? [
             "siêu anh hùng",
@@ -1847,33 +2281,49 @@ export default function GenrePageClient({
             "pacific rim",
             "spider-man",
           ]
-        : [
-            "bắn tỉa",
-            "sniper",
-            "đặc nhiệm",
-            "sinh tồn",
-            "diều hâu",
-            "black hawk",
-            "sát thủ",
-            "chiến tuyến",
-            "biệt kích",
-            "đơn độc",
-            "giải cứu",
-            "lone survivor",
-          ];
+        : isFantasyPage
+          ? [
+              "vương quyền",
+              "đế chế",
+              "game of thrones",
+              "hoàng gia",
+              "ngai vàng",
+              "thần thoại",
+              "vua",
+              "kingdom",
+              "hoàng đế",
+            ]
+          : [
+              "bắn tỉa",
+              "sniper",
+              "đặc nhiệm",
+              "sinh tồn",
+              "diều hâu",
+              "black hawk",
+              "sát thủ",
+              "chiến tuyến",
+              "biệt kích",
+              "đơn độc",
+              "giải cứu",
+              "lone survivor",
+            ];
       const r5ThemeMatches = matchTheme(theme4Keywords);
       const r5 = takeUnique(r5ThemeMatches, fullCatalogPool, 12);
 
-      // ── ROW 6: SINH TỒN / TÌNH BÁO & CHÍNH TRỊ ──
+      // ── ROW 6: SINH TỒN / TÌNH BÁO / DỊ GIỚI TU TIÊN ──
       const theme5Keywords = isSciFiPage
         ? ["sinh tồn", "thảm họa", "tận thế", "dịch bệnh", "quái vật", "survival", "apocalypse"]
-        : ["tình báo", "gián điệp", "chính trị", "mật vụ", "chiến lược", "intelligence", "spy"];
+        : isFantasyPage
+          ? ["tu tiên", "huyền huyễn", "dị giới", "tiên hiệp", "trọng sinh", "thần ma", "kiếm hiệp", "đạo sĩ"]
+          : ["tình báo", "gián điệp", "chính trị", "mật vụ", "chiến lược", "intelligence", "spy"];
       const r6 = takeUnique(matchTheme(theme5Keywords), fullCatalogPool, 12);
 
-      // ── ROW 7: BÍ ẨN / HẬU CHIẾN ──
+      // ── ROW 7: BÍ ẨN / HẬU CHIẾN / RỒNG & THẦN THÚ ──
       const theme6Keywords = isSciFiPage
         ? ["bí ẩn", "kinh dị", "ngoài hành tinh", "sinh vật", "mất tích", "horror", "mystery"]
-        : ["hậu chiến", "hòa bình", "chấn thương", "gia đình", "chính kịch", "drama", "peace"];
+        : isFantasyPage
+          ? ["rồng", "quái vật", "sinh vật", "thần thú", "beast", "dragon", "godzilla", "kong", "quái thú"]
+          : ["hậu chiến", "hòa bình", "chấn thương", "gia đình", "chính kịch", "drama", "peace"];
       const r7 = takeUnique(matchTheme(theme6Keywords), fullCatalogPool, 12);
 
       // ── ROW 8: KIỆT TÁC TUYỂN CHỌN ──
@@ -1962,8 +2412,10 @@ export default function GenrePageClient({
           {/* Netflix-Grade Cinematic Hero Banner */}
           {isSciFiPage ? (
             <SciFiTransformersHeroBanner onOpenTrailer={handleOpenTrailer} />
-          ) : (
+          ) : isWarPage ? (
             <WarOdysseyHeroBanner onOpenTrailer={handleOpenTrailer} />
+          ) : (
+            <DuneFantasyHeroBanner onOpenTrailer={handleOpenTrailer} />
           )}
 
           {/* ── CURATED MULTI-CATEGORY SWIPER ROWS (OVERLAPPING HERO BANNER & VIDEO) ── */}
@@ -1971,9 +2423,11 @@ export default function GenrePageClient({
             {/* Row 1 */}
             <GenreCategoryRow
               title={
-                isSciFiPage
-                  ? "Phim Mới & Đang Thịnh Hành"
-                  : "Phim Mới Cập Nhật"
+                isFantasyPage
+                  ? "Phim Giả Tưởng Mới & Đang Thịnh Hành"
+                  : isSciFiPage
+                    ? "Phim Mới & Đang Thịnh Hành"
+                    : "Phim Mới Cập Nhật"
               }
               films={row1Films}
               isLoading={isLoading}
@@ -1982,9 +2436,11 @@ export default function GenrePageClient({
             {/* Row 2 */}
             <GenreCategoryRow
               title={
-                isSciFiPage
-                  ? "Khám Phá Vũ Trụ & Không Gian"
-                  : "Thế Chiến Khốc Liệt & Quân Sự"
+                isFantasyPage
+                  ? "Sử Thi Giả Tưởng & Thế Giới Arrakis"
+                  : isSciFiPage
+                    ? "Khám Phá Vũ Trụ & Không Gian"
+                    : "Thế Chiến Khốc Liệt & Quân Sự"
               }
               films={row2Films}
               isLoading={isLoading && !row2Films.length}
@@ -1994,9 +2450,11 @@ export default function GenrePageClient({
             {/* Row 3 */}
             <GenreCategoryRow
               title={
-                isSciFiPage
-                  ? "Trí Tuệ Nhân Tạo & Cyberpunk"
-                  : "Đại Kỷ Nguyên & Lịch Sử Hào Hùng"
+                isFantasyPage
+                  ? "Phép Thuật, Ma Pháp & Thế Giới Thần Kỳ"
+                  : isSciFiPage
+                    ? "Trí Tuệ Nhân Tạo & Cyberpunk"
+                    : "Đại Kỷ Nguyên & Lịch Sử Hào Hùng"
               }
               films={row3Films}
               isLoading={isLoading && !row3Films.length}
@@ -2006,9 +2464,11 @@ export default function GenrePageClient({
             {/* Row 4 */}
             <GenreCategoryRow
               title={
-                isSciFiPage
-                  ? "Nghịch Lý Thời Gian & Đa Chiều"
-                  : "Chiến Tranh Cổ Đại & Vương Triều"
+                isFantasyPage
+                  ? "Phiêu Lưu Kỳ Ảo & Xứ Sở Diệu Kỳ"
+                  : isSciFiPage
+                    ? "Nghịch Lý Thời Gian & Đa Chiều"
+                    : "Chiến Tranh Cổ Đại & Vương Triều"
               }
               films={row4Films}
               isLoading={isLoading && !row4Films.length}
@@ -2018,9 +2478,11 @@ export default function GenrePageClient({
             {/* Row 5 */}
             <GenreCategoryRow
               title={
-                isSciFiPage
-                  ? "Siêu Anh Hùng & Hành Động"
-                  : "Tâm Lý Chiến Tranh & Hòa Bình"
+                isFantasyPage
+                  ? "Cuộc Chiến Vương Quyền & Đế Chế Huyền Thoại"
+                  : isSciFiPage
+                    ? "Siêu Anh Hùng & Hành Động"
+                    : "Tâm Lý Chiến Tranh & Hòa Bình"
               }
               films={row5Films}
               isLoading={isLoading && !row5Films.length}
@@ -2030,9 +2492,11 @@ export default function GenrePageClient({
             {/* Row 6 */}
             <GenreCategoryRow
               title={
-                isSciFiPage
-                  ? "Sinh Tồn, Thảm Họa & Tận Thế"
-                  : "Tình Báo, Gián Điệp & Chính Trị"
+                isFantasyPage
+                  ? "Dị Giới, Tu Tiên & Huyền Huyễn Đông Tây"
+                  : isSciFiPage
+                    ? "Sinh Tồn, Thảm Họa & Tận Thế"
+                    : "Tình Báo, Gián Điệp & Chính Trị"
               }
               films={row6Films}
               isLoading={isLoading && !row6Films.length}
@@ -2042,9 +2506,11 @@ export default function GenrePageClient({
             {/* Row 7 */}
             <GenreCategoryRow
               title={
-                isSciFiPage
-                  ? "Bí Ẩn, Kinh Dị & Sinh Vật Ngoài Hành Tinh"
-                  : "Hậu Chiến, Hòa Bình & Số Phận Con Người"
+                isFantasyPage
+                  ? "Rồng Thiêng, Quái Vật & Thần Thú Cổ Đại"
+                  : isSciFiPage
+                    ? "Bí Ẩn, Kinh Dị & Sinh Vật Ngoài Hành Tinh"
+                    : "Hậu Chiến, Hòa Bình & Số Phận Con Người"
               }
               films={row7Films}
               isLoading={isLoading && !row7Films.length}
@@ -2054,9 +2520,11 @@ export default function GenrePageClient({
             {/* Row 8 */}
             <GenreCategoryRow
               title={
-                isSciFiPage
-                  ? "Kiệt Tác Khoa Học Viễn Tưởng Tuyển Chọn"
-                  : "Kiệt Tác Điện Ảnh Chiến Tranh Tuyển Chọn"
+                isFantasyPage
+                  ? "Kiệt Tác Điện Ảnh Giả Tưởng Đỉnh Cao"
+                  : isSciFiPage
+                    ? "Kiệt Tác Khoa Học Viễn Tưởng Tuyển Chọn"
+                    : "Kiệt Tác Điện Ảnh Chiến Tranh Tuyển Chọn"
               }
               films={row8Films}
               isLoading={isLoading && !row8Films.length}

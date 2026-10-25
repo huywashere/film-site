@@ -233,7 +233,7 @@ export default function WatchPartyListPage() {
         <nav className="flex items-center justify-between gap-3 text-xs text-neutral-400">
           <Link
             href="/"
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-neutral-300 hover:text-white text-xs font-semibold transition-all"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-neutral-100 text-black text-xs font-bold transition-all shadow-sm cursor-pointer active:scale-95"
           >
             <ArrowLeft size={13} />
             <span>Trang chủ</span>
@@ -352,7 +352,7 @@ export default function WatchPartyListPage() {
                             {movie.origin_name || movie.year || "Phim"}
                           </p>
                         </div>
-                        <span className="text-[10px] font-bold px-2.5 py-1 rounded-md bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-white/10 shrink-0 transition-colors">
+                        <span className="text-[10px] font-extrabold px-3 py-1.5 rounded-lg bg-white hover:bg-neutral-100 text-black shrink-0 transition-colors shadow-sm">
                           Tạo phòng
                         </span>
                       </button>
@@ -380,10 +380,10 @@ export default function WatchPartyListPage() {
               <button
                 type="submit"
                 aria-label="Vào phòng xem chung"
-                className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 border border-white/10 px-5 text-xs sm:text-sm font-bold text-white transition-all active:scale-95 cursor-pointer shrink-0"
+                className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl bg-white hover:bg-neutral-100 px-5 text-xs sm:text-sm font-extrabold text-black transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0 shadow-sm"
               >
                 <span>Vào phòng</span>
-                <ArrowRight size={14} />
+                <ArrowRight size={14} className="stroke-[2.5]" />
               </button>
             </form>
           </div>
@@ -408,7 +408,7 @@ export default function WatchPartyListPage() {
               <button
                 type="button"
                 onClick={refreshLobby}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] text-xs font-semibold text-neutral-400 hover:text-white transition-all cursor-pointer active:scale-95"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-neutral-100 text-black text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-sm"
               >
                 <RefreshCw
                   size={11}
@@ -419,7 +419,7 @@ export default function WatchPartyListPage() {
               <button
                 type="button"
                 onClick={() => openCreateModal()}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-neutral-800 hover:bg-neutral-700 border border-white/10 text-white text-xs font-bold transition-all cursor-pointer active:scale-95"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-neutral-100 text-black text-xs font-extrabold transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-sm"
               >
                 <Plus size={12} strokeWidth={2.5} />
                 <span>Tạo phòng</span>
@@ -564,9 +564,9 @@ export default function WatchPartyListPage() {
                   type="button"
                   onClick={handleCreateRoom}
                   disabled={!selectedMovie}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-purple-600 hover:bg-purple-500 px-6 py-2.5 text-xs font-extrabold text-white transition-all active:scale-95 cursor-pointer shadow-lg shadow-purple-600/30 disabled:opacity-40"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-white hover:bg-neutral-100 px-6 py-2.5 text-xs font-extrabold text-black transition-all active:scale-95 cursor-pointer shadow-lg disabled:opacity-40"
                 >
-                  <Play size={13} className="fill-white" />
+                  <Play size={13} className="fill-black text-black" />
                   <span>Bắt đầu phòng chiếu</span>
                 </button>
               </div>

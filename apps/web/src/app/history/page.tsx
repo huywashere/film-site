@@ -270,10 +270,10 @@ export default function HistoryPage() {
                   type="button"
                   onClick={() => setFilterMode(tab.id)}
                   className={cn(
-                    'relative px-3.5 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-bold transition-all whitespace-nowrap cursor-pointer select-none active:scale-95',
+                    'relative px-3.5 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all whitespace-nowrap cursor-pointer select-none active:scale-95',
                     isActive
-                      ? 'text-white bg-white/[0.16] border border-white/25 shadow-sm font-extrabold'
-                      : 'text-neutral-400 hover:text-white hover:bg-white/[0.06] border border-transparent',
+                      ? 'text-purple-200 bg-purple-500/20 border border-purple-400/35 shadow-sm font-bold'
+                      : 'text-purple-200/50 hover:text-purple-200 hover:bg-purple-500/10 border border-transparent',
                   )}
                 >
                   <span>{tab.label}</span>
@@ -417,14 +417,14 @@ export default function HistoryPage() {
           </>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-center py-10 sm:py-14 my-auto">
-            <HistoryIcon size={56} className="mx-auto mb-3.5 text-neutral-600" />
-            <p className="text-lg sm:text-xl font-semibold text-neutral-300">Chưa có lịch sử xem phim</p>
-            <p className="text-xs sm:text-sm text-neutral-500 mt-1.5">
+            <HistoryIcon size={48} className="mx-auto mb-3.5 text-purple-400/40" />
+            <p className="text-base sm:text-lg font-bold text-purple-200/90">Chưa có lịch sử xem phim</p>
+            <p className="text-xs sm:text-sm text-purple-200/60 mt-1.5">
               Bắt đầu xem phim để theo dõi tiến độ tại đây
             </p>
             <Link
               href="/"
-              className="inline-block mt-5 bg-blue-500 hover:bg-blue-600 text-white px-5 py-2.5 rounded-full text-xs sm:text-sm font-semibold transition-colors"
+              className="inline-block mt-5 bg-white hover:bg-neutral-100 text-black px-6 py-2.5 rounded-full text-xs sm:text-sm font-extrabold transition-all shadow-md active:scale-95"
             >
               Khám phá phim
             </Link>

@@ -14,6 +14,7 @@ import {
   LayoutGrid,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
+import { motion, AnimatePresence } from 'framer-motion';
 import { FilmCard, FilmItem } from '@/components/film/FilmCard';
 import { Pagination } from '@/components/film/Pagination';
 import { LandscapeSpotlightRow } from '@/components/film/LandscapeSpotlightRow';
@@ -111,7 +112,7 @@ function UniverseSpotlightBackdrop({
           fetchPriority={isPriority ? 'high' : 'low'}
           loading={isPriority ? 'eager' : 'lazy'}
           decoding={isPriority ? 'sync' : 'async'}
-          unoptimized={isWsrvImageUrl(src) || isTmdbImageUrl(src) || src.startsWith('/api/')}
+          unoptimized={isWsrvImageUrl(src) || isTmdbImageUrl(src) || src.startsWith('/api/') || src.startsWith('/Folder-Background/')}
           sizes="100vw"
           onError={() => {
             if (candidateIdx < candidates.length - 1) {
@@ -172,7 +173,7 @@ function UniverseSpotlightLogo({
         fetchPriority={isPriority ? 'high' : 'low'}
         loading="eager"
         decoding="sync"
-        unoptimized={isWsrvImageUrl(src) || isTmdbImageUrl(src) || src.startsWith('/api/')}
+        unoptimized={isWsrvImageUrl(src) || isTmdbImageUrl(src) || src.startsWith('/api/') || src.startsWith('/Folder-Background/')}
         onLoad={() => {
           markImagePreloaded(src);
           setLoadedSrc(src);
@@ -232,7 +233,7 @@ function UniverseThumbnailButton({
         fill
         sizes="(max-width: 640px) 96px, 120px"
         loading="lazy"
-        unoptimized={useFallback}
+        unoptimized={useFallback || src?.startsWith('/Folder-Background/')}
         onError={() => {
           if (!useFallback) setUseFallback(true);
         }}
@@ -482,186 +483,286 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
         {/* Top subtle fade for navbar readability */}
         <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-[#07080c]/80 to-transparent pointer-events-none z-[1]" />
 
+        {/* ── Layer 2.5: Left Character Cutout with Smooth Slide-In from Left (e.g. Joker for DC) ── */}
+        {activeSpotlight.charLeftImage && (
+          <div className="absolute left-0 bottom-0 top-0 h-full w-full max-w-lg sm:max-w-xl md:max-w-2xl lg:max-w-3xl flex items-end justify-start pointer-events-none z-[3] overflow-hidden pl-0 sm:pl-2 md:pl-6 lg:pl-10 pb-2 sm:pb-6 md:pb-10">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`left-char-${activeSpotlight.id}`}
+                initial={{ opacity: 0, x: -80 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 50 }}
+                transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+                className="relative h-full flex items-end justify-start w-full"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={activeSpotlight.charLeftImage}
+                  alt="Joker"
+                  className="h-[55%] sm:h-[70%] md:h-[78%] lg:h-[86%] max-h-[660px] w-auto max-w-full object-contain object-bottom select-none filter contrast-[1.06] brightness-[1.0] drop-shadow-[0_20px_50px_rgba(0,0,0,0.9)] opacity-40 sm:opacity-85 lg:opacity-95 transition-all duration-300"
+                  loading="eager"
+                />
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        )}
+
+        {/* ── Layer 3: Character Cutout with Smooth Slide-In from Right (e.g. Batman for DC / Spider-Man for Marvel) ── */}
+        {activeSpotlight.charImage && (
+          <div className="absolute right-0 bottom-0 top-0 h-full w-full max-w-2xl sm:max-w-3xl md:max-w-4xl lg:max-w-5xl xl:max-w-6xl flex items-end justify-end pointer-events-none z-[4] overflow-hidden pr-2 sm:pr-8 md:pr-14 lg:pr-20 xl:pr-28 pb-4 sm:pb-8 md:pb-12 lg:pb-14">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`right-char-${activeSpotlight.id}`}
+                initial={{ opacity: 0, x: 80 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -50 }}
+                transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
+                className="relative h-full flex items-end justify-end w-full"
+              >
+                {/* Secondary Cutout if co-appearing (e.g. Rampage Awakened) */}
+                {activeSpotlight.charImageSecondary && (
+                  <motion.div
+                    initial={{ opacity: 0, x: 100 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.95, ease: [0.16, 1, 0.3, 1], delay: 0.08 }}
+                    className="absolute right-[24%] sm:right-[28%] md:right-[32%] lg:right-[36%] bottom-0 h-[68%] sm:h-[76%] md:h-[82%] lg:h-[88%] max-h-[640px] w-auto pointer-events-none select-none filter contrast-[1.05] brightness-[0.98] drop-shadow-[0_20px_45px_rgba(0,0,0,0.8)]"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={activeSpotlight.charImageSecondary}
+                      alt={activeSpotlight.name}
+                      className="h-full w-auto object-contain object-bottom select-none"
+                      loading="eager"
+                    />
+                  </motion.div>
+                )}
+
+                {/* Primary Cutout */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={activeSpotlight.charImage}
+                  alt={activeSpotlight.name}
+                  className={cn(
+                    "h-[68%] sm:h-[78%] md:h-[84%] lg:h-[92%] max-h-[700px] w-auto max-w-full object-contain object-bottom select-none filter contrast-[1.04] brightness-[1.02] drop-shadow-[0_20px_50px_rgba(0,0,0,0.85)] transition-all duration-300",
+                    activeSpotlight.charImageSecondary ? "relative z-10" : ""
+                  )}
+                  loading="eager"
+                />
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        )}
+
         {/* Spotlight Content Overlay */}
         <div className="relative z-10 mx-auto flex h-full max-w-[1760px] flex-col justify-end px-4 pb-20 pt-20 sm:px-8 sm:pb-10 lg:px-14 lg:pb-12">
           <div className="flex flex-col gap-6 2xl:flex-row 2xl:items-end 2xl:justify-between 2xl:gap-8">
-            {/* Left Column: Movie Info & Actions */}
-            <div className="max-w-xl xl:max-w-2xl 2xl:max-w-3xl space-y-3.5 sm:space-y-4">
-              {/* Universe Official Brand Logo (Original Logo, no custom container wrapper) */}
-              <div className="flex items-center select-none ml-0.5 sm:ml-1">
-                {isMarvel && (
-                  // Official Marvel Brand Logo
-                  <div className="relative h-7 sm:h-9 md:h-10 w-20 sm:w-24 md:w-28 shrink-0">
-                    <Image
-                      src="/images/logos/marvel-logo.svg"
-                      alt="Marvel"
-                      fill
-                      priority
-                      sizes="(max-width: 640px) 80px, 112px"
-                      className="object-contain object-left"
-                    />
-                  </div>
-                )}
-                {isDC && (
-                  // Official DC Comics Vector Logo
-                  <div className="relative h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 shrink-0">
-                    <Image
-                      src="/images/logos/dc-logo.svg"
-                      alt="DC Comics"
-                      fill
-                      priority
-                      sizes="(max-width: 640px) 48px, 56px"
-                      className="object-contain object-left"
-                    />
-                  </div>
-                )}
-              </div>
-
-              {/* Movie Title or Logo. Keep every small logo mounted so changing
-                  slides only crossfades already-painted DOM nodes. */}
-              <div className="space-y-2">
-                <div className="relative h-16 w-72 max-w-full sm:h-24 sm:w-96 md:h-28 md:w-[420px] lg:h-32 lg:w-[480px] xl:h-36 xl:w-[520px]">
-                  {spotlights.map((item, idx) => (
-                    <div
-                      key={item.id}
-                      data-universe-logo-active={idx === currentIdx}
-                      className={cn(
-                        'absolute inset-0 transition-opacity duration-200',
-                        idx === currentIdx ? 'z-10 opacity-100' : 'pointer-events-none opacity-0',
-                      )}
-                    >
-                      <UniverseSpotlightLogo
-                        titleLogo={item.titleLogo}
-                        name={item.name}
-                        isPriority={idx === 0}
+            {/* Left Column: Movie Info & Actions with Glide Transition from Left */}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`info-${activeSpotlight.id}`}
+                initial={{ opacity: 0, x: -45 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 30 }}
+                transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+                className="max-w-xl xl:max-w-2xl 2xl:max-w-3xl space-y-3.5 sm:space-y-4 relative z-10"
+              >
+                {/* Universe Official Brand Logo (Original Logo, no custom container wrapper) */}
+                <div className="flex items-center select-none ml-0.5 sm:ml-1">
+                  {isMarvel && (
+                    // Official Marvel Brand Logo
+                    <div className="relative h-7 sm:h-9 md:h-10 w-20 sm:w-24 md:w-28 shrink-0">
+                      <Image
+                        src="/images/logos/marvel-logo.svg"
+                        alt="Marvel"
+                        fill
+                        priority
+                        sizes="(max-width: 640px) 80px, 112px"
+                        className="object-contain object-left"
                       />
                     </div>
-                  ))}
-                </div>
-
-                <div className="text-xs sm:text-sm font-medium text-neutral-300 drop-shadow">
-                  <span>{activeSpotlight.origin_name}</span>
-                  <span className="mx-2 text-neutral-500">•</span>
-                  <span>{activeSpotlight.year}</span>
-                </div>
-              </div>
-
-              {/* Meta tags */}
-              <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 font-bold shadow-sm">
-                  <Star size={12} className="fill-amber-400 text-amber-400" />
-                  <span>{activeSpotlight.rating.toFixed(1)} TMDB</span>
-                </span>
-
-                <span className="px-2.5 py-1 rounded-lg bg-[#141720] border border-white/10 text-neutral-300 font-medium shadow-sm">
-                  {activeSpotlight.lang}
-                </span>
-
-                <span className="px-2.5 py-1 rounded-lg bg-[#141720] border border-white/10 text-neutral-300 font-medium shadow-sm">
-                  {activeSpotlight.quality}
-                </span>
-              </div>
-
-              {/* Synopsis */}
-              <p className="text-xs sm:text-sm text-neutral-300/90 line-clamp-2 sm:line-clamp-3 leading-relaxed max-w-xl drop-shadow">
-                {activeSpotlight.content}
-              </p>
-
-              {/* Actions Buttons */}
-              <div className="grid w-full grid-cols-2 gap-2 pt-2 sm:flex sm:flex-wrap sm:items-center sm:gap-2.5">
-                <Link
-                  href={`/watch/${activeSpotlight.slug}`}
-                  data-universe-action="watch"
-                  className={cn(
-                    'col-span-2 inline-flex min-h-11 w-full items-center justify-center gap-2 whitespace-nowrap px-5 py-2.5 text-xs font-extrabold transition-[background-color,border-color,transform] active:translate-y-px sm:col-auto sm:w-auto sm:text-sm',
-                    isDoraemon
-                      ? 'rounded-[10px] border-2 border-[#78d7f5] border-b-[#08739e] bg-[#21a7db] text-[#041923] hover:bg-[#48bbe5] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#78d7f5]'
-                      : isConan
-                        ? 'rounded-[10px] border-2 border-[#ef6464] border-b-[#7f1717] bg-[#d83232] text-white hover:bg-[#e34848] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ef6464]'
-                        : 'rounded-xl bg-white text-black shadow-lg shadow-black/40 hover:bg-neutral-100',
                   )}
-                >
-                  <Play size={16} className={cn(isConan ? 'fill-white' : 'fill-current')} />
-                  <span>Xem Phim Ngay</span>
-                </Link>
+                  {isDC && (
+                    // Official DC Comics Vector Logo
+                    <div className="relative h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 shrink-0">
+                      <Image
+                        src="/images/logos/dc-logo.svg"
+                        alt="DC Comics"
+                        fill
+                        priority
+                        sizes="(max-width: 640px) 48px, 56px"
+                        className="object-contain object-left"
+                      />
+                    </div>
+                  )}
+                </div>
 
-                {activeSpotlight.trailer_url && (
-                  <button
-                    type="button"
-                    onClick={() => setTrailerFilm(activeFilmItem)}
-                    data-universe-action="trailer"
-                    className={cn(
-                      'inline-flex min-h-11 w-full items-center justify-center gap-2 whitespace-nowrap px-4 py-2.5 text-xs font-bold transition-[background-color,border-color,transform] active:translate-y-px sm:w-auto sm:text-sm',
-                      isDoraemon
-                        ? 'rounded-[10px] border-2 border-[#278fba] bg-[#101c27] text-[#dff7ff] hover:border-[#64c9ed] hover:bg-[#162a39] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#64c9ed]'
-                        : isConan
-                          ? 'rounded-[10px] border-2 border-[#a73a3a] bg-[#211415] text-[#ffe8e8] hover:border-[#e45757] hover:bg-[#30191b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e45757]'
-                          : 'rounded-xl border border-white/10 bg-[#181b24] text-white hover:bg-[#232836]',
+                {/* Movie Title or Logo. Keep every small logo mounted so changing
+                    slides only crossfades already-painted DOM nodes. */}
+                <div className="space-y-2">
+                  <div className="relative h-16 w-72 max-w-full sm:h-24 sm:w-96 md:h-28 md:w-[420px] lg:h-32 lg:w-[480px] xl:h-36 xl:w-[520px]">
+                    {spotlights.map((item, idx) => (
+                      <div
+                        key={item.id}
+                        data-universe-logo-active={idx === currentIdx}
+                        className={cn(
+                          'absolute inset-0 transition-opacity duration-200',
+                          idx === currentIdx ? 'z-10 opacity-100' : 'pointer-events-none opacity-0',
+                        )}
+                      >
+                        <UniverseSpotlightLogo
+                          titleLogo={item.titleLogo}
+                          name={item.name}
+                          isPriority={idx === 0}
+                        />
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="text-xs sm:text-sm font-medium text-neutral-300 drop-shadow flex items-center gap-2">
+                      <span>{activeSpotlight.origin_name}</span>
+                      <span className="text-neutral-500">•</span>
+                      <span>{activeSpotlight.year}</span>
+                    </div>
+                    {activeSpotlight.subtitle && (
+                      <p className="text-xs sm:text-base font-semibold text-cyan-300/90 font-mono tracking-wide drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)]">
+                        {activeSpotlight.subtitle}
+                      </p>
                     )}
-                  >
-                    <Clapperboard size={16} />
-                    <span>Xem Trailer</span>
-                  </button>
+                  </div>
+                </div>
+
+                {/* Meta tags */}
+                <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 font-bold shadow-sm">
+                    <Star size={12} className="fill-amber-400 text-amber-400" />
+                    <span>{activeSpotlight.rating.toFixed(1)} TMDB</span>
+                  </span>
+
+                  <span className="px-2.5 py-1 rounded-lg bg-[#141720] border border-white/10 text-neutral-300 font-medium shadow-sm">
+                    {activeSpotlight.lang}
+                  </span>
+
+                  <span className="px-2.5 py-1 rounded-lg bg-[#141720] border border-white/10 text-neutral-300 font-medium shadow-sm">
+                    {activeSpotlight.quality}
+                  </span>
+                </div>
+
+                {/* Genre Pills */}
+                {activeSpotlight.genres && activeSpotlight.genres.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-0.5">
+                    {activeSpotlight.genres.map((genre) => (
+                      <span
+                        key={genre}
+                        className="px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full bg-white/[0.12] hover:bg-white/[0.2] text-[10px] sm:text-xs font-semibold text-neutral-100 border border-white/[0.15] backdrop-blur-md transition-colors shadow-sm"
+                      >
+                        {genre}
+                      </span>
+                    ))}
+                  </div>
                 )}
 
-                <Link
-                  href={`/film/${activeSpotlight.slug}`}
-                  data-universe-action="detail"
-                  className={cn(
-                    'inline-flex min-h-11 w-full items-center justify-center gap-1.5 whitespace-nowrap px-3 py-2.5 text-xs font-bold transition-[background-color,border-color,transform] active:translate-y-px sm:w-auto sm:text-sm',
-                    isDoraemon
-                      ? 'rounded-[10px] border-2 border-[#344b5c] bg-[#17212b] text-white hover:border-[#5b7b91] hover:bg-[#202e3a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#64c9ed]'
-                      : isConan
-                        ? 'rounded-[10px] border-2 border-[#4f3434] bg-[#211b1b] text-white hover:border-[#805050] hover:bg-[#2d2222] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e45757]'
-                        : 'rounded-xl border border-white/10 bg-white/[0.04] font-semibold text-neutral-300 hover:bg-white/[0.08] hover:text-white sm:border-transparent sm:bg-transparent',
-                  )}
-                >
-                  <span>Chi tiết</span>
-                  <ChevronRight size={14} />
-                </Link>
+                {/* Synopsis */}
+                <p className="text-xs sm:text-sm text-neutral-300/90 line-clamp-2 sm:line-clamp-3 leading-relaxed max-w-xl drop-shadow">
+                  {activeSpotlight.content}
+                </p>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (isMarvel || isDC) {
-                      selectContentTab('timeline', true);
-                      return;
-                    }
-                    document
-                      .getElementById('full-catalog')
-                      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }}
-                  data-universe-action="explore"
-                  className={cn(
-                    'group col-span-2 inline-flex min-h-11 w-full items-center justify-center gap-2 whitespace-nowrap px-4 py-2.5 text-xs font-bold transition-[background-color,border-color,transform] active:translate-y-px sm:col-auto sm:w-auto sm:text-sm',
-                    isMarvel
-                      ? 'rounded-xl border border-red-500/35 bg-red-500/10 text-red-200 hover:bg-red-500/15'
-                      : isDC
-                        ? 'rounded-xl border border-sky-500/35 bg-sky-500/10 text-sky-200 hover:bg-sky-500/15'
-                        : isDoraemon
-                          ? 'rounded-[10px] border-2 border-[#278fba] bg-[#0b2634] text-[#8de3ff] hover:border-[#64c9ed] hover:bg-[#10384a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#64c9ed]'
-                          : 'rounded-[10px] border-2 border-[#a73a3a] bg-[#321718] text-[#ff9b9b] hover:border-[#e45757] hover:bg-[#481d20] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e45757]',
+                {/* Actions Buttons */}
+                <div className="grid w-full grid-cols-2 gap-2 pt-2 sm:flex sm:flex-wrap sm:items-center sm:gap-2.5">
+                  <Link
+                    href={`/watch/${activeSpotlight.slug}`}
+                    data-universe-action="watch"
+                    className={cn(
+                      'col-span-2 inline-flex min-h-11 w-full items-center justify-center gap-2 whitespace-nowrap px-5 py-2.5 text-xs font-extrabold transition-[background-color,border-color,transform] active:translate-y-px sm:col-auto sm:w-auto sm:text-sm',
+                      isDoraemon
+                        ? 'rounded-[10px] border-2 border-[#78d7f5] border-b-[#08739e] bg-[#21a7db] text-[#041923] hover:bg-[#48bbe5] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#78d7f5]'
+                        : isConan
+                          ? 'rounded-[10px] border-2 border-[#ef6464] border-b-[#7f1717] bg-[#d83232] text-white hover:bg-[#e34848] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ef6464]'
+                          : 'rounded-xl bg-white text-black shadow-lg shadow-black/40 hover:bg-neutral-100',
+                    )}
+                  >
+                    <Play size={16} className={cn(isConan ? 'fill-white' : 'fill-current')} />
+                    <span>Xem Phim Ngay</span>
+                  </Link>
+
+                  {activeSpotlight.trailer_url && (
+                    <button
+                      type="button"
+                      onClick={() => setTrailerFilm(activeFilmItem)}
+                      data-universe-action="trailer"
+                      className={cn(
+                        'inline-flex min-h-11 w-full items-center justify-center gap-2 whitespace-nowrap px-4 py-2.5 text-xs font-bold transition-[background-color,border-color,transform] active:translate-y-px sm:w-auto sm:text-sm',
+                        isDoraemon
+                          ? 'rounded-[10px] border-2 border-[#278fba] bg-[#101c27] text-[#dff7ff] hover:border-[#64c9ed] hover:bg-[#162a39] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#64c9ed]'
+                          : isConan
+                            ? 'rounded-[10px] border-2 border-[#a73a3a] bg-[#211415] text-[#ffe8e8] hover:border-[#e45757] hover:bg-[#30191b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e45757]'
+                            : 'rounded-xl border border-white/10 bg-[#181b24] text-white hover:bg-[#232836]',
+                      )}
+                    >
+                      <Clapperboard size={16} />
+                      <span>Xem Trailer</span>
+                    </button>
                   )}
-                >
-                  {isMarvel || isDC ? (
-                    <>
-                      <Clock aria-hidden="true" size={14} />
-                      <span>Dòng thời gian</span>
-                    </>
-                  ) : (
-                    <>
-                      <Clapperboard aria-hidden="true" size={14} />
-                      <span>Khám phá trọn bộ</span>
-                    </>
-                  )}
-                  <ChevronDown
-                    aria-hidden="true"
-                    size={14}
-                    className="transition-transform group-hover:translate-y-0.5"
-                  />
-                </button>
-              </div>
-            </div>
+
+                  <Link
+                    href={`/film/${activeSpotlight.slug}`}
+                    data-universe-action="detail"
+                    className={cn(
+                      'inline-flex min-h-11 w-full items-center justify-center gap-1.5 whitespace-nowrap px-3 py-2.5 text-xs font-bold transition-[background-color,border-color,transform] active:translate-y-px sm:w-auto sm:text-sm',
+                      isDoraemon
+                        ? 'rounded-[10px] border-2 border-[#344b5c] bg-[#17212b] text-white hover:border-[#5b7b91] hover:bg-[#202e3a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#64c9ed]'
+                        : isConan
+                          ? 'rounded-[10px] border-2 border-[#4f3434] bg-[#211b1b] text-white hover:border-[#805050] hover:bg-[#2d2222] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e45757]'
+                          : 'rounded-xl border border-white/10 bg-white/[0.04] font-semibold text-neutral-300 hover:bg-white/[0.08] hover:text-white sm:border-transparent sm:bg-transparent',
+                    )}
+                  >
+                    <span>Chi tiết</span>
+                    <ChevronRight size={14} />
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isMarvel || isDC) {
+                        selectContentTab('timeline', true);
+                        return;
+                      }
+                      document
+                        .getElementById('full-catalog')
+                        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }}
+                    data-universe-action="explore"
+                    className={cn(
+                      'group col-span-2 inline-flex min-h-11 w-full items-center justify-center gap-2 whitespace-nowrap px-4 py-2.5 text-xs font-bold transition-[background-color,border-color,transform] active:translate-y-px sm:col-auto sm:w-auto sm:text-sm',
+                      isMarvel
+                        ? 'rounded-xl border border-red-500/35 bg-red-500/10 text-red-200 hover:bg-red-500/15'
+                        : isDC
+                          ? 'rounded-xl border border-sky-500/35 bg-sky-500/10 text-sky-200 hover:bg-sky-500/15'
+                          : isDoraemon
+                            ? 'rounded-[10px] border-2 border-[#278fba] bg-[#0b2634] text-[#8de3ff] hover:border-[#64c9ed] hover:bg-[#10384a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#64c9ed]'
+                            : 'rounded-[10px] border-2 border-[#a73a3a] bg-[#321718] text-[#ff9b9b] hover:border-[#e45757] hover:bg-[#481d20] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e45757]',
+                    )}
+                  >
+                    {isMarvel || isDC ? (
+                      <>
+                        <Clock aria-hidden="true" size={14} />
+                        <span>Dòng thời gian</span>
+                      </>
+                    ) : (
+                      <>
+                        <Clapperboard aria-hidden="true" size={14} />
+                        <span>Khám phá trọn bộ</span>
+                      </>
+                    )}
+                    <ChevronDown
+                      aria-hidden="true"
+                      size={14}
+                      className="transition-transform group-hover:translate-y-0.5"
+                    />
+                  </button>
+                </div>
+              </motion.div>
+            </AnimatePresence>
 
             {/* Right Column: Carousel Thumbnails */}
             <div className="flex w-full shrink-0 items-center gap-2 sm:gap-2.5 2xl:w-auto 2xl:max-w-[700px]">

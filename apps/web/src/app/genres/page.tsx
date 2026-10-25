@@ -82,7 +82,8 @@ export const HUBS: HubCard[] = [
     slug: 'phim-gia-tuong',
     title: 'Phim Giả Tưởng',
     href: '/genre/gia-tuong',
-    image: '',
+    image: '/Folder-Background/dune-2/dune-hub-card.webp',
+    objectPosition: 'center 40%',
   },
   {
     slug: 'reality',
@@ -374,7 +375,6 @@ export default function GenresPage() {
       <VerticalTabsHeroBanner
         title="Chủ Đề"
         highlightText="& Tuyển Tập"
-        highlightClassName="text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.95)]"
         description="Khám phá các vũ trụ điện ảnh và tuyển tập phim đặc sắc nhất được tuyển chọn riêng cho bạn."
         imageSrc="/Folder-Background/starwar/1140629.jpg"
         objectPosition="center 30%"

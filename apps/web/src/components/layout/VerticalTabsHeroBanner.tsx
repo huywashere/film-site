@@ -10,9 +10,11 @@ export interface VerticalTabsHeroBannerProps {
   badge?: string;
   badgeIcon?: React.ReactNode;
   title?: string;
+  titleClassName?: string;
   highlightText?: string;
   highlightClassName?: string;
   description?: string;
+  descriptionClassName?: string;
   variant?: 'large' | 'compact';
   pureCover?: boolean;
   showTitle?: boolean;
@@ -35,9 +37,11 @@ function VerticalTabsHeroBannerComponent({
   badge,
   badgeIcon,
   title,
+  titleClassName,
   highlightText,
   highlightClassName,
   description,
+  descriptionClassName,
   variant = 'large',
   pureCover = false,
   showTitle = true,
@@ -112,9 +116,9 @@ function VerticalTabsHeroBannerComponent({
         aria-hidden="true"
       />
 
-      {/* Atmospheric ambient studio glow */}
+      {/* Atmospheric ambient studio glow (cohesive light purple tone) */}
       <div
-        className="pointer-events-none absolute -bottom-10 left-1/4 w-[500px] h-[250px] bg-sky-500/10 blur-[130px] rounded-full z-10"
+        className="pointer-events-none absolute -bottom-10 left-1/4 w-[500px] h-[250px] bg-purple-600/10 blur-[130px] rounded-full z-10"
         aria-hidden="true"
       />
 
@@ -133,7 +137,7 @@ function VerticalTabsHeroBannerComponent({
                 <button
                   type="button"
                   onClick={onBack}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 text-xs font-semibold text-neutral-300 hover:text-white transition-all cursor-pointer active:scale-95 group shadow-sm backdrop-blur-md"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white hover:bg-neutral-100 text-black text-xs font-bold transition-all cursor-pointer active:scale-95 group shadow-sm"
                 >
                   <ArrowLeft size={13} className="group-hover:-translate-x-0.5 transition-transform" />
                   <span>{backText}</span>
@@ -143,11 +147,11 @@ function VerticalTabsHeroBannerComponent({
 
             {/* Optional Badge */}
             {badge && (
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.08] border border-white/15 backdrop-blur-md shadow-sm">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-400/20 backdrop-blur-md shadow-sm">
                 {badgeIcon && (
-                  <span className="text-sky-400 shrink-0">{badgeIcon}</span>
+                  <span className="text-purple-300 shrink-0">{badgeIcon}</span>
                 )}
-                <span className="text-[11px] sm:text-xs font-black uppercase tracking-wider text-white">
+                <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-purple-200">
                   {badge}
                 </span>
               </div>
@@ -158,7 +162,8 @@ function VerticalTabsHeroBannerComponent({
               <h1
                 className={cn(
                   cardFont.className,
-                  'text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight drop-shadow-[0_4px_24px_rgba(0,0,0,0.95)]',
+                  'text-xl sm:text-2xl md:text-3xl lg:text-[2.1rem] font-bold tracking-tight text-[#d8b4fe] leading-tight drop-shadow-[0_2px_12px_rgba(168,85,247,0.25)]',
+                  titleClassName,
                 )}
               >
                 {title}{' '}
@@ -166,7 +171,7 @@ function VerticalTabsHeroBannerComponent({
                   <span
                     className={
                       highlightClassName ||
-                      'bg-gradient-to-r from-white via-sky-100 to-sky-300 bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(35,173,229,0.35)]'
+                      'bg-gradient-to-r from-purple-200 via-purple-300 to-violet-300 bg-clip-text text-transparent drop-shadow-[0_0_16px_rgba(168,85,247,0.3)]'
                     }
                   >
                     {highlightText}
@@ -177,7 +182,12 @@ function VerticalTabsHeroBannerComponent({
 
             {/* Description / Stats Subtitle */}
             {description && (
-              <p className="text-xs sm:text-sm md:text-base text-neutral-300 font-medium max-w-2xl leading-relaxed drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]">
+              <p
+                className={cn(
+                  'text-xs sm:text-sm md:text-base text-purple-200/70 font-medium max-w-2xl leading-relaxed drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]',
+                  descriptionClassName,
+                )}
+              >
                 {description}
               </p>
             )}

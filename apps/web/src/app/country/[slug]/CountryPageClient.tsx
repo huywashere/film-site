@@ -439,19 +439,15 @@ function ResilientAsianHeroLogo({
     return (
       <h1
         data-curated-hero-text={item.slug}
-        className="text-2xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white tracking-wide leading-tight drop-shadow-[0_8px_20px_rgba(0,0,0,0.95)]"
-        style={{
-          fontFamily: "'Playfair Display', 'Dancing Script', Georgia, serif",
-          fontStyle: "italic",
-        }}
+        className="text-2xl sm:text-4xl md:text-5xl font-black text-white tracking-wider uppercase drop-shadow-[0_8px_20px_rgba(0,0,0,0.95)]"
       >
-        {item.calligraphyTitle || item.name}
+        {item.origin_name || item.calligraphyTitle || item.name}
       </h1>
     );
   }
 
   return (
-    <div className="relative flex h-12 w-36 items-center sm:h-24 sm:w-72 md:h-28 md:w-80 lg:w-[440px]">
+    <div className="h-10 sm:h-14 md:h-16 lg:h-18 max-w-[280px] sm:max-w-[420px] md:max-w-[480px]">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         data-curated-hero-logo={item.slug}
@@ -468,7 +464,7 @@ function ResilientAsianHeroLogo({
             setHasFailedAll(true);
           }
         }}
-        className="max-h-full max-w-full object-contain object-left drop-shadow-[0_10px_25px_rgba(0,0,0,0.95)]"
+        className="h-full w-auto object-contain object-left drop-shadow-[0_6px_22px_rgba(0,0,0,0.9)]"
       />
     </div>
   );
@@ -539,9 +535,9 @@ function AsianCuratedHeroBanner({
       data-hero-banner="true"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
-      className="relative w-full select-none overflow-hidden bg-[#07080c] h-[62svh] min-h-[460px] sm:h-[76vh] sm:min-h-[580px] lg:h-[82vh] lg:min-h-[660px] lg:max-h-[860px]"
+      className="relative h-[78svh] min-h-[580px] w-full select-none overflow-hidden bg-[#0a0b10] sm:h-[88vh] sm:min-h-[680px] lg:h-[95vh] lg:min-h-[780px]"
     >
-      {/* ── High Resolution Dynamic Backdrop with Right-to-Left Gliding Motion ── */}
+      {/* ── Layer 1: Background Scenic Image (Backdrop) with Subtle Smooth Gliding Motion ── */}
       <div className="absolute inset-0 w-full h-full overflow-hidden">
         <AnimatePresence initial={false} custom={direction}>
           <motion.div
@@ -575,20 +571,43 @@ function AsianCuratedHeroBanner({
         </AnimatePresence>
       </div>
 
-      {/* ── Cinematic High-Clarity Gradient Overlays (Tapers cleanly so full artwork is visible) ── */}
+      {/* ── Layer 2: Soft Cinematic Blending Overlays (Hiển thị trọn vẹn cảnh nền, không đánh đen) ── */}
       <div
         className="absolute inset-0 z-10 pointer-events-none"
         style={{
           background: `
-            linear-gradient(to right, rgba(7,8,12,0.88) 0%, rgba(7,8,12,0.50) 28%, rgba(7,8,12,0.10) 52%, transparent 72%),
-            linear-gradient(to top, #07080c 0%, rgba(7,8,12,0.70) 10%, transparent 25%),
-            linear-gradient(to bottom, rgba(7,8,12,0.40) 0%, transparent 16%)
+            linear-gradient(to right, rgba(10,11,16,0.76) 0%, rgba(10,11,16,0.36) 44%, rgba(10,11,16,0.03) 75%, transparent 100%),
+            linear-gradient(to top, #0a0b10 0%, rgba(10,11,16,0.35) 8%, transparent 22%)
           `,
         }}
       />
 
-      {/* ── Left Content Overlay (Responsive positioning: bottom-aligned on mobile, center-aligned on desktop) ── */}
-      <div className="absolute inset-0 z-20 flex flex-col justify-end px-4 pb-14 sm:justify-center sm:px-14 sm:pb-20 md:px-20 lg:px-24 lg:pb-0">
+      {/* ── Layer 3: Character Cutout with Gentle Slide-in from Right ── */}
+      {currentItem.charactersUrl && (
+        <div className="absolute right-0 bottom-0 top-0 h-full w-full max-w-2xl sm:max-w-3xl md:max-w-4xl lg:max-w-5xl flex items-end justify-end pointer-events-none z-10 overflow-hidden pr-3 sm:pr-8 md:pr-14 lg:pr-20 xl:pr-28 pb-8 sm:pb-12 md:pb-16 lg:pb-20">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`chars-${currentItem.slug}`}
+              initial={{ opacity: 0, x: 70 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -40 }}
+              transition={{ duration: 1.15, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+              className="relative h-full flex items-end justify-end"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={currentItem.charactersUrl}
+                alt={currentItem.name}
+                className="h-[68%] sm:h-[78%] md:h-[84%] lg:h-[90%] max-h-[640px] w-auto max-w-full object-contain object-bottom select-none filter contrast-[1.03] brightness-[1.01] drop-shadow-[0_20px_45px_rgba(0,0,0,0.7)]"
+                loading="eager"
+              />
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      )}
+
+      {/* ── Layer 4: Typography, Logo Banner, Genre Pills & Actions ── */}
+      <div className="absolute inset-0 z-20 flex flex-col justify-start pt-52 sm:pt-56 md:pt-60 lg:pt-64 xl:pt-72 px-4 sm:px-10 md:px-16 lg:px-24 pointer-events-none">
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
             key={currentItem.slug || currentItem._id || currentIndex}
@@ -612,38 +631,25 @@ function AsianCuratedHeroBanner({
               duration: 0.65,
               ease: [0.16, 1, 0.3, 1],
             }}
-            className="max-w-2xl space-y-2.5 sm:space-y-4 lg:space-y-5 pt-0 sm:pt-8"
+            className="max-w-xl sm:max-w-2xl space-y-2.5 sm:space-y-4 pt-2 sm:pt-4 pointer-events-auto"
           >
-            {/* Official Title Logo PNG with Multi-CDN Resilient Fallback */}
-            <ResilientAsianHeroLogo key={currentItem.slug} item={currentItem} />
+            {/* Title Group with Logo Banner */}
+            <div className="space-y-2">
+              <ResilientAsianHeroLogo key={currentItem.slug} item={currentItem} />
 
-            {/* Subtitle / Vietnamese or English name */}
-            <p className="text-[11px] sm:text-sm text-neutral-300 font-semibold italic -mt-0.5 sm:-mt-2 drop-shadow">
-              {currentItem.name} {currentItem.origin_name ? `(${currentItem.origin_name})` : ""}
-            </p>
-
-            {/* Metadata Row: Year | Country | Total Episodes */}
-            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2.5 text-[10px] sm:text-xs font-semibold text-neutral-200">
-              {currentItem.year && (
-                <span className="text-white font-bold">{currentItem.year}</span>
-              )}
-              <span className="text-neutral-400">|</span>
-              <span className="text-neutral-300">{countryLabel}</span>
-              {currentItem.totalEpisodesText && (
-                <>
-                  <span className="text-neutral-400">|</span>
-                  <span className="text-neutral-300">{currentItem.totalEpisodesText}</span>
-                </>
-              )}
+              {/* Subtitle — Chuẩn không màu */}
+              <p className="text-base sm:text-xl font-medium italic text-neutral-200/90 drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)]">
+                {currentItem.name} {currentItem.origin_name ? `(${currentItem.origin_name})` : ""}
+              </p>
             </div>
 
-            {/* Genre Tags */}
+            {/* Genre Pills */}
             {currentItem.genres && currentItem.genres.length > 0 && (
-              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-0.5">
-                {currentItem.genres.slice(0, 3).map((genre) => (
+              <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                {currentItem.genres.map((genre) => (
                   <span
                     key={genre}
-                    className="px-2 sm:px-3 py-0.5 sm:py-1 rounded bg-neutral-800/90 text-neutral-200 text-[10px] sm:text-xs font-semibold border border-white/10"
+                    className="px-3 py-1 rounded-full bg-white/[0.12] hover:bg-white/[0.2] text-xs font-semibold text-neutral-100 border border-white/[0.15] backdrop-blur-md transition-colors shadow-sm"
                   >
                     {genre}
                   </span>
@@ -651,25 +657,26 @@ function AsianCuratedHeroBanner({
               </div>
             )}
 
-            {/* Description (Visible on sm screens and above) */}
-            <p className="hidden sm:block text-xs sm:text-sm text-neutral-300 font-normal line-clamp-2 sm:line-clamp-3 leading-relaxed drop-shadow max-w-lg pt-1">
+            {/* Description */}
+            <p className="text-xs sm:text-sm text-neutral-200/95 font-medium leading-relaxed max-w-lg line-clamp-3 sm:line-clamp-none drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)]">
               {currentItem.content}
             </p>
 
-            {/* Action Buttons */}
-            <div className="flex items-center gap-2 sm:gap-3 pt-1 sm:pt-2">
+            {/* CTA Buttons */}
+            <div className="flex items-center gap-3 pt-2 sm:pt-3">
               <Link
                 href={`/watch/${currentItem.slug}`}
-                className="inline-flex items-center gap-1.5 sm:gap-2 bg-white hover:bg-neutral-200 text-black font-extrabold px-5 sm:px-8 py-2 sm:py-3 rounded-md text-xs sm:text-base transition-all hover:scale-105 active:scale-95 shadow-2xl cursor-pointer"
+                className="inline-flex items-center gap-2.5 px-6 sm:px-7 py-2.5 sm:py-3 rounded-full bg-white hover:bg-neutral-100 text-neutral-950 font-black text-xs sm:text-sm shadow-xl shadow-black/40 transition-all hover:scale-105 active:scale-95 cursor-pointer"
               >
-                <Play size={15} fill="currentColor" className="ml-0.5" />
+                <Play className="w-4 h-4 fill-current text-neutral-950" />
                 <span>Xem Ngay</span>
               </Link>
+
               <Link
                 href={`/film/${currentItem.slug}`}
-                className="inline-flex items-center gap-1.5 sm:gap-2 bg-[#6d6d6e]/80 hover:bg-[#6d6d6e] text-white font-bold px-4 sm:px-7 py-2 sm:py-3 rounded-md text-xs sm:text-base transition-all cursor-pointer active:scale-95 shadow-lg"
+                className="inline-flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-white/15 hover:bg-white/25 border border-white/20 text-white font-bold text-xs sm:text-sm backdrop-blur-md transition-all hover:scale-105 active:scale-95 cursor-pointer"
               >
-                <Info size={15} />
+                <Info className="w-4 h-4" />
                 <span>Chi Tiết</span>
               </Link>
             </div>
@@ -683,7 +690,7 @@ function AsianCuratedHeroBanner({
           <button
             onClick={handlePrev}
             aria-label="Slide trước"
-            className="hidden sm:flex absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/60 hover:bg-black/90 text-white items-center justify-center transition-all hover:scale-110 cursor-pointer shadow-2xl"
+            className="hidden sm:flex absolute left-4 sm:left-8 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/60 hover:bg-black/90 text-white items-center justify-center transition-all hover:scale-110 cursor-pointer shadow-2xl backdrop-blur-sm border border-white/10"
           >
             <ChevronLeft size={22} />
           </button>
@@ -691,16 +698,16 @@ function AsianCuratedHeroBanner({
           <button
             onClick={handleNext}
             aria-label="Slide tiếp theo"
-            className="hidden sm:flex absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/60 hover:bg-black/90 text-white items-center justify-center transition-all hover:scale-110 cursor-pointer shadow-2xl"
+            className="hidden sm:flex absolute right-4 sm:right-8 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/60 hover:bg-black/90 text-white items-center justify-center transition-all hover:scale-110 cursor-pointer shadow-2xl backdrop-blur-sm border border-white/10"
           >
             <ChevronRight size={22} />
           </button>
         </>
       )}
 
-      {/* ── Pagination Dots (Centered on mobile, Bottom-Right on Desktop) ── */}
+      {/* ── Pagination Dots ── */}
       {curatedList.length > 1 && (
-        <div className="absolute bottom-3 left-1/2 z-30 flex -translate-x-1/2 items-center gap-1.5 sm:bottom-6 sm:gap-2 lg:right-14 lg:left-auto lg:bottom-8 lg:translate-x-0">
+        <div className="absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-1.5 sm:bottom-8 sm:gap-2 lg:right-16 lg:left-auto lg:translate-x-0">
           {curatedList.map((item, idx) => (
             <button
               key={item._id || item.slug || idx}
@@ -709,7 +716,7 @@ function AsianCuratedHeroBanner({
               className={cn(
                 "h-1.5 rounded-full transition-all duration-300 cursor-pointer",
                 idx === currentIndex
-                  ? "w-5 sm:w-6 bg-white/90 shadow-sm"
+                  ? "w-6 bg-white/90 shadow-sm"
                   : "w-1.5 bg-white/30 hover:bg-white/50",
               )}
             />
@@ -1022,9 +1029,13 @@ function filmMatchesKeywords(f: FilmItem, keywords: string[]): boolean {
 
   // Independent row memoization prevents full-page Swiper thrashing on incremental query arrivals
   const row1Films = useMemo(() => {
-    const poolToAdd = isKoreanPage ? CURATED_KOREAN_HERO_POOL : [];
+    const poolToAdd = isKoreanPage
+      ? CURATED_KOREAN_HERO_POOL
+      : isChinesePage
+        ? CURATED_CHINESE_HERO_POOL
+        : [];
     return dedupeFilmsList([...poolToAdd, ...films, ...page2Films]).slice(0, 16);
-  }, [films, page2Films, isKoreanPage]);
+  }, [films, page2Films, isKoreanPage, isChinesePage]);
 
   const row2Films = useMemo(
     () => dedupeFilmsList(romanceFilms).slice(0, 16),
@@ -1089,7 +1100,7 @@ function filmMatchesKeywords(f: FilmItem, keywords: string[]): boolean {
           )}
 
           {/* Curated Multi-Genre Rows (Tất cả Card dạng dọc chuẩn Poster 2:3, Đầy đủ 100%) */}
-          <div className="relative z-20 pl-4 sm:pl-12 md:pl-20 lg:pl-24 pr-2 sm:pr-4 md:pr-6 pb-16 space-y-6 mt-3 sm:-mt-10 md:-mt-14 lg:-mt-16">
+          <div className="relative z-20 pl-4 sm:pl-12 md:pl-20 lg:pl-24 pr-2 sm:pr-4 md:pr-6 pb-16 space-y-6 -mt-4 sm:-mt-10 md:-mt-14 lg:-mt-18">
             {/* Row 1: Phim Mới & Đang Thịnh Hành */}
             <CountryCategoryRow
               title={

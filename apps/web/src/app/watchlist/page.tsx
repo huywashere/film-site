@@ -36,19 +36,19 @@ export default function WatchlistPage() {
         />
 
         <div className="flex-1 flex flex-col items-center justify-center text-center px-4 py-16 sm:py-24 relative z-20">
-          <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-4 shadow-xl">
-            <Bookmark size={30} className="text-amber-400" />
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-purple-500/10 border border-purple-400/20 flex items-center justify-center mb-4 shadow-[0_0_24px_rgba(168,85,247,0.12)]">
+            <Bookmark size={28} className="text-purple-300" />
           </div>
-          <h2 className="text-xl sm:text-2xl font-extrabold text-white">
+          <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[#d8b4fe] tracking-tight">
             Đăng nhập để sử dụng Tủ Phim
           </h2>
-          <p className="mt-2 text-xs sm:text-sm text-neutral-400 max-w-sm">
+          <p className="mt-2 text-xs sm:text-sm text-purple-200/70 max-w-sm leading-relaxed">
             Tính năng Tủ Phim giúp bạn lưu trữ danh sách phim yêu thích vĩnh viễn và đồng bộ trên mọi thiết bị.
           </p>
           <button
             type="button"
             onClick={() => useAuthModalStore.getState().openModal("login")}
-            className="mt-6 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 px-8 py-3 text-xs sm:text-sm font-extrabold text-white transition-all duration-200 cursor-pointer shadow-lg shadow-violet-600/30 hover:scale-105 active:scale-95"
+            className="mt-6 rounded-full bg-white hover:bg-neutral-100 text-black px-8 py-3 text-xs sm:text-sm font-extrabold transition-all duration-200 cursor-pointer shadow-lg hover:scale-105 active:scale-95"
           >
             Đăng nhập ngay
           </button>
@@ -187,16 +187,16 @@ export default function WatchlistPage() {
           </>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-center py-10 sm:py-14 my-auto">
-            <Bookmark size={56} className="mx-auto mb-3.5 text-neutral-600" />
-            <p className="text-lg sm:text-xl font-semibold text-neutral-300">
+            <Bookmark size={48} className="mx-auto mb-3.5 text-purple-400/40" />
+            <p className="text-base sm:text-lg font-bold text-purple-200/90">
               Chưa có phim nào trong danh sách
             </p>
-            <p className="text-xs sm:text-sm text-neutral-500 mt-1.5">
+            <p className="text-xs sm:text-sm text-purple-200/60 mt-1.5">
               Thêm phim bạn muốn xem sau vào đây
             </p>
             <Link
               href="/"
-              className="inline-block mt-5 bg-blue-500 hover:bg-blue-600 text-white px-5 py-2.5 rounded-full text-xs sm:text-sm font-semibold transition-colors"
+              className="inline-block mt-5 bg-white hover:bg-neutral-100 text-black px-6 py-2.5 rounded-full text-xs sm:text-sm font-extrabold transition-all shadow-md active:scale-95"
             >
               Khám phá phim
             </Link>
