@@ -33,10 +33,11 @@ function seedPool(pool: unknown[]): void {
   if (!Array.isArray(pool)) return;
   for (const item of pool) {
     if (item && typeof item === "object") {
-      const record = item as { slug?: string; id?: string; titleLogo?: string };
+      const record = item as { slug?: string; id?: string; titleLogo?: string; logoUrl?: string };
       const slug = record.slug || record.id;
-      if (slug && record.titleLogo) {
-        logoBySlug.set(slug, record.titleLogo);
+      const logo = record.titleLogo || record.logoUrl;
+      if (slug && logo) {
+        logoBySlug.set(slug, logo);
       }
     }
   }

@@ -1021,10 +1021,10 @@ function filmMatchesKeywords(f: FilmItem, keywords: string[]): boolean {
     GENRE_OPTIONS.find((g) => g.slug === selectedGenre)?.label || "Thể loại";
 
   // Independent row memoization prevents full-page Swiper thrashing on incremental query arrivals
-  const row1Films = useMemo(
-    () => dedupeFilmsList([...films, ...page2Films]).slice(0, 16),
-    [films, page2Films],
-  );
+  const row1Films = useMemo(() => {
+    const poolToAdd = isKoreanPage ? CURATED_KOREAN_HERO_POOL : [];
+    return dedupeFilmsList([...poolToAdd, ...films, ...page2Films]).slice(0, 16);
+  }, [films, page2Films, isKoreanPage]);
 
   const row2Films = useMemo(
     () => dedupeFilmsList(romanceFilms).slice(0, 16),
