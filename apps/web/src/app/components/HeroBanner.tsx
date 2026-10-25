@@ -17,6 +17,7 @@ import dynamic from "next/dynamic";
 import { FilmItem } from "@/components/film/FilmCard";
 import { useTranslation } from "@/store/langStore";
 import { useAuthStore } from "@/store/authStore";
+import { useAuthModalStore } from "@/store/authModalStore";
 import { useQuery } from "@tanstack/react-query";
 import {
   movieApi,
@@ -2481,14 +2482,11 @@ export default function HeroBanner({
                     year: film.year,
                   };
                   if (!user) {
-                    guestDataStorage.addWatchlist(film.slug, movieData);
                     toast(
-                      t(
-                        "home.savedWatchlistLocal",
-                        "Đã lưu vào tủ phim (trên thiết bị này)",
-                      ),
-                      "success",
+                      "Vui lòng đăng nhập để lưu phim vào Tủ Phim.",
+                      "warning",
                     );
+                    useAuthModalStore.getState().openModal("login");
                     return;
                   }
                   watchlistApi

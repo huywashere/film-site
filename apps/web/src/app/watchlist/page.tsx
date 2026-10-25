@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { Bookmark, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
+import { useAuthModalStore } from "@/store/authModalStore";
 import { watchlistApi } from "@/lib/api";
 import { FilmCard } from "@/components/film/FilmCard";
 import { Pagination } from "@/components/film/Pagination";
@@ -19,6 +20,42 @@ export default function WatchlistPage() {
   const router = useReliableNavigation();
   const { user } = useAuthStore();
   const [page, setPage] = useState(1);
+
+  // Unauthenticated guard: Tủ phim requires login
+  if (!user) {
+    return (
+      <div
+        className={cn(cardFont.className, "min-h-[calc(100dvh+5rem)] sm:min-h-[calc(100dvh+6rem)] flex flex-col bg-[#0a0b10] text-white pb-24 sm:pb-28 -mt-20 sm:-mt-24 select-none")}
+      >
+        <VerticalTabsHeroBanner
+          title="Tủ Phim Của Tôi"
+          description="Đăng nhập để xem danh sách phim đã lưu và đồng bộ trên mọi thiết bị."
+          imageSrc="/img-backtop/tab-watchlist.webp"
+          objectPosition="center 4%"
+          contentClassName="pb-8 sm:pb-10 md:pb-12"
+        />
+
+        <div className="flex-1 flex flex-col items-center justify-center text-center px-4 py-16 sm:py-24 relative z-20">
+          <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-4 shadow-xl">
+            <Bookmark size={30} className="text-amber-400" />
+          </div>
+          <h2 className="text-xl sm:text-2xl font-extrabold text-white">
+            Đăng nhập để sử dụng Tủ Phim
+          </h2>
+          <p className="mt-2 text-xs sm:text-sm text-neutral-400 max-w-sm">
+            Tính năng Tủ Phim giúp bạn lưu trữ danh sách phim yêu thích vĩnh viễn và đồng bộ trên mọi thiết bị.
+          </p>
+          <button
+            type="button"
+            onClick={() => useAuthModalStore.getState().openModal("login")}
+            className="mt-6 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 px-8 py-3 text-xs sm:text-sm font-extrabold text-white transition-all duration-200 cursor-pointer shadow-lg shadow-violet-600/30 hover:scale-105 active:scale-95"
+          >
+            Đăng nhập ngay
+          </button>
+        </div>
+      </div>
+    );
+  }
   const [guestItems, setGuestItems] = useState<GuestWatchlistItem[]>([]);
   const [removedSlugs, setRemovedSlugs] = useState<string[]>([]);
 

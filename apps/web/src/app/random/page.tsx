@@ -44,6 +44,7 @@ import { cleanMovieDescription } from "@/lib/string-utils";
 import { resolveImageUrl } from "@/lib/movie-image-url";
 import { useToast } from "@/providers/ToastProvider";
 import { useAuthStore } from "@/store/authStore";
+import { useAuthModalStore } from "@/store/authModalStore";
 
 // ── Tab phân loại Mood / Vibe (Phong cách đơn giản, chuyên nghiệp) ────
 interface MoodTab {
@@ -262,6 +263,11 @@ export default function RandomMoviePage() {
   // Lưu / gỡ khỏi tủ phim
   const handleToggleWatchlist = () => {
     if (!spotlightFilm) return;
+    if (!user) {
+      toast("Vui lòng đăng nhập để lưu phim vào Tủ phim.", "warning");
+      useAuthModalStore.getState().openModal("login");
+      return;
+    }
     const movieData = {
       title: spotlightFilm.name || spotlightFilm.title || "",
       titleEn: spotlightFilm.origin_name,

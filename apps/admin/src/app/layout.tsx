@@ -44,8 +44,10 @@ import {
   IconCameraOff,
   IconSparkles,
   IconLayoutSidebar,
-  IconShoppingBag,
-  IconMail,
+  IconActivity,
+  IconPlayerPlay,
+  IconBadgeAd,
+  IconRefresh,
 } from "@tabler/icons-react";
 import flexphimLogo from "../../../web/public/flexphim-logo.png";
 import { adminFetch } from "@/lib/admin-api";
@@ -148,13 +150,13 @@ const NAV_GROUPS: Array<{
       {
         href: "/catalog",
         label: { vi: "Dữ liệu & đồng bộ", en: "Catalog Operations" },
-        icon: IconTopologyStar3,
+        icon: IconRefresh,
         permission: "movies.write",
       },
       {
         href: "/playback",
         label: { vi: "Vận hành player", en: "Playback Operations" },
-        icon: IconChartHistogram,
+        icon: IconPlayerPlay,
       },
       {
         href: "/users",
@@ -212,7 +214,7 @@ const NAV_GROUPS: Array<{
       {
         href: "/configuration/ads",
         label: { vi: "Vị trí quảng cáo", en: "Ads Management" },
-        icon: IconSpeakerphone,
+        icon: IconBadgeAd,
       },
       {
         href: "/system",
@@ -498,15 +500,35 @@ export default function AdminRootLayout({
             <div className="flex h-16 items-center justify-between px-5 border-b border-slate-100 dark:border-slate-800/80">
               <Link
                 href="/"
-                className="flex items-center gap-2.5"
+                className="group flex select-none items-center gap-2.5 transition-opacity hover:opacity-95"
                 onClick={() => setMobileNavigationOpen(false)}
+                title="Quản trị FlexPhim"
               >
-                <span className="grid h-8 w-8 place-items-center rounded-full bg-black text-white dark:bg-white dark:text-black font-extrabold text-[15px] shadow-xs">
-                  /
-                </span>
-                <span className="text-[19px] font-extrabold tracking-tight text-slate-900 dark:text-white">
-                  flexphim<span className="text-slate-400 font-normal">.</span>
-                </span>
+                <div className="relative flex items-center justify-center">
+                  <Image
+                    src="/flexphim-logo.svg"
+                    alt="FlexPhim Logo"
+                    width={32}
+                    height={32}
+                    priority
+                    unoptimized
+                    className="h-8 w-8 object-contain drop-shadow-[0_0_10px_rgba(168,85,247,0.4)] transition-transform duration-300 group-hover:scale-105"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = "/flexphim-logo.png";
+                    }}
+                  />
+                </div>
+                <div className="flex items-center">
+                  <span className="text-[19px] font-extrabold uppercase tracking-tight text-slate-900 dark:text-white transition-colors">
+                    Flex
+                    <span className="bg-gradient-to-r from-violet-500 via-fuchsia-500 to-indigo-500 dark:from-violet-400 dark:via-fuchsia-400 dark:to-indigo-300 bg-clip-text text-transparent drop-shadow-[0_0_12px_rgba(168,85,247,0.35)]">
+                      Phim
+                    </span>
+                  </span>
+                  <span className="ml-1.5 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-md bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20">
+                    Admin
+                  </span>
+                </div>
               </Link>
               <button
                 className="admin-topbar-button !text-slate-400 lg:hidden"
@@ -579,25 +601,6 @@ export default function AdminRootLayout({
                 </div>
               ))}
             </nav>
-
-            {/* Sidebar Bottom Pro Widget */}
-            <div className="p-3 border-t border-slate-100 dark:border-slate-800/80">
-              <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 p-3.5 text-center space-y-2.5">
-                <div className="mx-auto grid h-10 w-10 place-items-center rounded-full bg-white dark:bg-slate-700 shadow-xs border border-slate-200/60 dark:border-slate-700 text-amber-500">
-                  <IconSparkles size={20} />
-                </div>
-                <div>
-                  <h4 className="text-[13px] font-bold text-slate-800 dark:text-slate-100">FlexPhim Pro</h4>
-                  <p className="text-[11px] text-slate-400">Tối ưu vận hành & AI</p>
-                </div>
-                <Link
-                  href="/system"
-                  className="inline-block w-full rounded-lg bg-black text-white dark:bg-white dark:text-black py-2 text-[12px] font-semibold hover:opacity-90 transition-opacity"
-                >
-                  Kiểm tra hệ thống
-                </Link>
-              </div>
-            </div>
 
             {/* Admin User Profile Bottom Strip */}
             <div className="border-t border-slate-100 dark:border-slate-800/80 p-3">
@@ -688,29 +691,31 @@ export default function AdminRootLayout({
                     {darkMode ? <IconSun size={17} /> : <IconMoon size={17} />}
                   </button>
 
-                  {/* 2. Language Switcher (Flag) */}
+                  {/* 2. Language Switcher */}
                   <button
                     onClick={() => chooseLocale(locale === "vi" ? "en" : "vi")}
-                    className="admin-topbar-button font-bold text-[12px]"
+                    className="admin-topbar-button"
+                    aria-label={locale === "vi" ? "Đổi ngôn ngữ" : "Switch language"}
                     title={
                       locale === "vi"
                         ? "Đang chọn Tiếng Việt (Bấm để đổi sang English)"
                         : "English selected (Click to switch to Vietnamese)"
                     }
                   >
-                    {locale === "vi" ? "🇻🇳" : "🇬🇧"}
+                    <IconLanguage size={17} stroke={1.8} />
                   </button>
 
-                  {/* 3. Tasks / Shopping Queue Badge */}
+                  {/* 3. System Operations / Vận hành hệ thống */}
                   <Link
                     href="/operations"
                     className="admin-topbar-button relative"
-                    title="Tác vụ & Vận hành"
+                    title={
+                      locale === "vi"
+                        ? "Tác vụ & Vận hành hệ thống"
+                        : "Operations & Tasks"
+                    }
                   >
-                    <IconShoppingBag size={17} />
-                    <span className="absolute -top-0.5 -right-0.5 min-w-4 rounded-full bg-black text-white dark:bg-white dark:text-black px-1 text-center text-[9px] font-bold leading-4 shadow-xs">
-                      11
-                    </span>
+                    <IconActivity size={17} stroke={1.8} />
                   </Link>
 
                   {/* 4. Notification Bell with status dot */}
@@ -719,20 +724,25 @@ export default function AdminRootLayout({
                     className="admin-topbar-button relative"
                     aria-label={locale === "vi" ? "Thông báo" : "Notifications"}
                     aria-expanded={openMenu === "notifications"}
+                    title={locale === "vi" ? "Thông báo hệ thống" : "Notifications"}
                   >
-                    <IconBell size={17} />
+                    <IconBell size={17} stroke={1.8} />
                     {notificationCount > 0 && (
                       <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-slate-900" />
                     )}
                   </button>
 
-                  {/* 5. Mail / Messages */}
+                  {/* 5. Reviews / Bình luận & Phản hồi */}
                   <Link
                     href="/reviews"
                     className="admin-topbar-button"
-                    title="Bình luận & Phản hồi"
+                    title={
+                      locale === "vi"
+                        ? "Bình luận & Phản hồi"
+                        : "Reviews & Feedback"
+                    }
                   >
-                    <IconMail size={17} />
+                    <IconMessageCircle size={17} stroke={1.8} />
                   </Link>
 
                   {/* 6. User Profile Avatar with Online Status Dot */}

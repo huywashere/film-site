@@ -15,6 +15,7 @@ import { cardFont } from "@/lib/fonts";
 import { DeferredSection } from "@/components/layout/DeferredSection";
 import { useDeferredContent } from "@/hooks/useDeferredContent";
 import { cn } from "@/lib/utils";
+import { VerticalTabsHeroBanner } from "@/components/layout/VerticalTabsHeroBanner";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CURATED_ANIME_HERO_POOL,
@@ -48,9 +49,9 @@ const TYPE_LABELS: Record<string, string> = {
   "phim-bo": "Phim Bộ",
   single: "Phim Lẻ",
   "phim-le": "Phim Lẻ",
-  shows: "Shows",
-  tvshows: "Shows",
-  "tv-shows": "Shows",
+  shows: "Reality & TV Shows",
+  tvshows: "Reality & TV Shows",
+  "tv-shows": "Reality & TV Shows",
   anime: "Hoạt Hình & Anime",
   "hoat-hinh": "Hoạt Hình & Anime",
   vietsub: "Phim Vietsub",
@@ -1086,6 +1087,7 @@ export default function FilmsTypeClient({
     type === "song-ngu-ai";
   const isSeries = type === "series" || type === "phim-bo";
   const isSingle = type === "single" || type === "phim-le";
+  const isTvShows = type === "tv-shows" || type === "tvshows" || type === "shows";
   const label = TYPE_LABELS[type] || "Danh Sách Phim";
   const secondaryReady = useDeferredContent();
   const apiFn = useMemo(
@@ -1543,7 +1545,7 @@ function filmMatchesAnimeKeywords(f: FilmItem, keywords: string[]): boolean {
       className={cn(
         cardFont.className,
         "min-h-screen w-full bg-background text-foreground",
-        isAnime || isSongNguAI || isSeries || isSingle
+        isAnime || isSongNguAI || isSeries || isSingle || isTvShows
           ? "-mt-20 sm:-mt-24 bg-[#0a0b10]"
           : "pb-20 pl-4 pr-4 pt-20 sm:pt-24 md:pr-10 lg:pl-24",
       )}
@@ -1937,6 +1939,92 @@ function filmMatchesAnimeKeywords(f: FilmItem, keywords: string[]): boolean {
                 onPrefetchPage={prefetchPage}
               />
             )}
+          </div>
+        </div>
+      ) : isTvShows ? (
+        /* ── CASE 6: REALITY & TV SHOWS HUB ── */
+        <div className="w-full">
+          {/* Top Hero Banner */}
+          <VerticalTabsHeroBanner
+            badge="Chương Trình Thực Tế & Gameshow"
+            title="Reality & TV Shows"
+            highlightText="Giải Trí Tuyển Chọn"
+            description="Tổng hợp những chương trình truyền hình thực tế, gameshow đình đám và talkshow giải trí hấp dẫn nhất."
+            imageSrc="/img-backtop/tab-genres.webp"
+            variant="compact"
+            contentClassName="pt-24 sm:pt-28 md:pt-32 pb-6 sm:pb-8 md:pb-10"
+          />
+
+          {/* Content Container (Overlapping Hero Banner) */}
+          <div className="relative z-20 w-full pl-4 sm:pl-12 md:pl-20 lg:pl-24 pr-2 sm:pr-4 md:pr-6 pb-16 space-y-6 -mt-4 sm:-mt-6 md:-mt-8">
+            {page === 1 && films.length > 0 && (
+              <>
+                <AnimeCategoryRow
+                  title="TV Shows & Gameshow Mới Cập Nhật"
+                  films={films.slice(0, 12)}
+                  isLoading={isLoading}
+                  variant="standard"
+                />
+
+                {films.length > 12 && (
+                  <AnimeCategoryRow
+                    title="Chương Trình Thực Tế Thịnh Hành"
+                    films={films.slice(12, 24)}
+                    isLoading={isLoading}
+                    variant="standard"
+                    defer
+                  />
+                )}
+              </>
+            )}
+
+            {/* Catalog Section Header */}
+            <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row md:items-end justify-between gap-2">
+              <div>
+                <h2 className="text-xl md:text-2xl font-bold text-white tracking-tight">
+                  Tất Cả Shows & Truyền Hình Thực Tế
+                </h2>
+                <p className="text-xs text-neutral-400 font-semibold mt-1">
+                  Kho chương trình truyền hình thực tế, gameshow đặc sắc cập nhật liên tục
+                </p>
+              </div>
+
+              <div className="text-xs font-bold text-neutral-400 bg-white/5 px-3.5 py-1.5 rounded-full border border-white/10 self-start md:self-auto">
+                Trang <span className="text-white font-extrabold">{page}</span> / {totalPages}
+              </div>
+            </div>
+
+            {/* Full Catalog Grid */}
+            {isLoading ? (
+              <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-y-3.5 sm:gap-y-6">
+                {Array.from({ length: 14 }).map((_, i) => (
+                  <FilmCardSkeleton key={i} />
+                ))}
+              </div>
+            ) : films.length > 0 ? (
+              <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-y-3.5 sm:gap-y-6 cv-grid-auto">
+                {films.map((f, idx) => (
+                  <FilmCard
+                    key={`${f.slug || f._id || (f as any).id}-${idx}`}
+                    film={f}
+                    priority={idx < 7}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="py-20 text-center text-neutral-500 font-semibold text-sm">
+                Không tìm thấy chương trình nào trong danh mục này.
+              </div>
+            )}
+
+            {/* Pagination Controls */}
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              onPageChange={handlePageChange}
+              onPrefetchPage={prefetchPage}
+            />
           </div>
         </div>
       ) : (

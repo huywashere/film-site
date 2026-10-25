@@ -37,6 +37,8 @@ import {
   Send,
   Keyboard,
   Maximize2,
+  Minimize2,
+  X,
   Heart,
   Plus,
   SkipForward,
@@ -65,6 +67,7 @@ import {
   vicdnApi,
   viewApi,
   watchHistoryApi,
+  watchlistApi,
 } from '@/lib/api';
 import { canUseUnsandboxedEmbed } from '@/lib/player-source-routing';
 import { extractFilmItems, normalizeText } from '@/lib/movie-normalizer';
@@ -1573,6 +1576,19 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
   // Cinema Mode & Player Enhancement States
   const [lightOff, setLightOff] = useState(false);
   const [theaterMode, setTheaterMode] = useState(false);
+  const [isTheaterControlsVisible, setIsTheaterControlsVisible] = useState(true);
+  const [isHoveringTheaterControls, setIsHoveringTheaterControls] = useState(false);
+  const theaterControlsTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const resetTheaterControlsTimer = useCallback(() => {
+    setIsTheaterControlsVisible(true);
+    if (theaterControlsTimerRef.current) {
+      clearTimeout(theaterControlsTimerRef.current);
+    }
+    theaterControlsTimerRef.current = setTimeout(() => {
+      setIsTheaterControlsVisible(false);
+    }, 3500);
+  }, []);
 
   useEffect(() => {
     if (lightOff) document.body.dataset.cinemaLights = 'off';
@@ -1585,12 +1601,25 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
 
   // Theater mode syncs to body for potential CSS targeting
   useEffect(() => {
-    if (theaterMode) document.body.dataset.theaterMode = 'on';
-    else delete document.body.dataset.theaterMode;
+    if (theaterMode) {
+      document.body.dataset.theaterMode = 'on';
+      document.body.style.overflow = 'hidden';
+      resetTheaterControlsTimer();
+    } else {
+      delete document.body.dataset.theaterMode;
+      document.body.style.overflow = '';
+      if (theaterControlsTimerRef.current) {
+        clearTimeout(theaterControlsTimerRef.current);
+      }
+    }
     return () => {
       delete document.body.dataset.theaterMode;
+      document.body.style.overflow = '';
+      if (theaterControlsTimerRef.current) {
+        clearTimeout(theaterControlsTimerRef.current);
+      }
     };
-  }, [theaterMode]);
+  }, [theaterMode, resetTheaterControlsTimer]);
 
   const [subDelayOffset, setSubDelayOffset] = useState<number>(0);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -1650,8 +1679,21 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
   useEffect(() => {
     if (!slug) return;
     setIsFavorite(guestDataStorage.isFavorite(slug));
-    setIsInWatchlist(guestDataStorage.isWatchlisted(slug));
-  }, [slug]);
+    if (!user) {
+      setIsInWatchlist(false);
+      return;
+    }
+    let active = true;
+    watchlistApi
+      .check(slug)
+      .then((res) => {
+        if (active) setIsInWatchlist(!!res.data?.inWatchlist);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [slug, user]);
 
   // Reset auto-next countdown when episode / server / movie changes
   useEffect(() => {
@@ -1671,8 +1713,13 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       if (theaterMode) {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        window.scrollTo({ top: 0, behavior: 'instant' });
       }
+      const t0 = setTimeout(() => {
+        if (artInstance && typeof artInstance.resize === 'function') {
+          artInstance.resize();
+        }
+      }, 50);
       const t1 = setTimeout(() => {
         if (artInstance && typeof artInstance.resize === 'function') {
           artInstance.resize();
@@ -1684,6 +1731,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
         }
       }, 380);
       return () => {
+        clearTimeout(t0);
         clearTimeout(t1);
         clearTimeout(t2);
       };
@@ -1882,16 +1930,31 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     );
   };
 
-  const handleToggleWatchlist = () => {
-    const current = guestDataStorage.isWatchlisted(slug);
-    if (current) {
-      guestDataStorage.removeWatchlist(slug);
-      setIsInWatchlist(false);
-      toast('Đã xóa khỏi Tủ phim', 'info');
-    } else {
-      guestDataStorage.addWatchlist(slug, movieStoredData);
-      setIsInWatchlist(true);
-      toast('Đã lưu vào Tủ phim 📁', 'success');
+  const handleToggleWatchlist = async () => {
+    if (!user) {
+      toast('Vui lòng đăng nhập để lưu phim vào Tủ phim.', 'warning');
+      useAuthModalStore.getState().openModal('login');
+      return;
+    }
+    const current = isInWatchlist;
+    const next = !current;
+    setIsInWatchlist(next);
+    try {
+      if (next) {
+        await watchlistApi.add(slug, movieStoredData);
+        toast('Đã lưu vào Tủ phim 📁', 'success');
+      } else {
+        await watchlistApi.remove(slug);
+        toast('Đã xóa khỏi Tủ phim', 'info');
+      }
+      window.dispatchEvent(
+        new CustomEvent('netphim_watchlist_changed', {
+          detail: { movieId: slug, action: next ? 'add' : 'remove' },
+        }),
+      );
+    } catch {
+      setIsInWatchlist(current);
+      toast('Không thể cập nhật Tủ phim', 'error');
     }
   };
 
@@ -3544,6 +3607,15 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
         }
       } else if (e.key === 'Escape') {
         setShowShortcutsGuide(false);
+        if (typeof document !== 'undefined' && !document.fullscreenElement) {
+          setTheaterMode((prev) => {
+            if (prev) {
+              toast('Đã tắt chế độ rạp phim', 'info');
+              return false;
+            }
+            return false;
+          });
+        }
       } else if (e.key === 'n' || e.key === 'N') {
         e.preventDefault();
         goNextEpisode();
@@ -4352,14 +4424,95 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
           {/* ───── 1. PLAYER ───── */}
           <div
             ref={playerContainerRef}
+            onMouseMove={() => {
+              if (theaterMode) resetTheaterControlsTimer();
+            }}
+            onTouchStart={() => {
+              if (theaterMode) resetTheaterControlsTimer();
+            }}
             className={cn(
               'netphim-watch-player bg-black rounded-none overflow-hidden relative shadow-2xl ring-1 ring-white/[0.06] select-none transition-all duration-300 flex items-center justify-center',
               theaterMode
-                ? 'is-theater col-span-full w-full aspect-video mx-auto shadow-2xl ring-1 ring-white/10'
+                ? 'is-theater'
                 : 'lg:col-start-1 lg:row-start-2 w-full aspect-video',
               lightOff ? 'relative z-50 ring-1 ring-white/20 shadow-2xl' : '',
             )}
           >
+            {/* ── THEATER MODE FULL-SCREEN FLOATING HEADER & EXIT CONTROLS ── */}
+            {theaterMode && (
+              <div
+                className={cn(
+                  'absolute top-0 inset-x-0 z-[100000] px-4 py-3 sm:px-6 sm:py-4 flex items-center justify-between',
+                  'bg-gradient-to-b from-black/95 via-black/60 to-transparent',
+                  'transition-all duration-300 pointer-events-auto select-none',
+                  isTheaterControlsVisible || isHoveringTheaterControls
+                    ? 'opacity-100 translate-y-0'
+                    : 'opacity-0 -translate-y-2 pointer-events-none',
+                )}
+                onMouseEnter={() => setIsHoveringTheaterControls(true)}
+                onMouseLeave={() => setIsHoveringTheaterControls(false)}
+              >
+                {/* Left: Quick Back + Film Name & Episode */}
+                <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0 pr-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTheaterMode(false);
+                      toast('Đã tắt chế độ rạp phim', 'info');
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white font-medium text-xs backdrop-blur-md transition-all active:scale-95 cursor-pointer border border-white/15 shadow-sm shrink-0"
+                    title="Quay lại giao diện thông thường (Esc)"
+                  >
+                    <ArrowLeft size={13} />
+                    <span className="hidden sm:inline">Quay lại trang</span>
+                  </button>
+
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse shrink-0" />
+                    <h2 className="text-white font-bold text-xs sm:text-sm drop-shadow-md truncate max-w-[140px] sm:max-w-xs md:max-w-md">
+                      {film?.name || film?.title}
+                    </h2>
+                    {currentEpData?.name && (
+                      <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-[#23ade5]/20 text-[#23ade5] border border-[#23ade5]/30 shrink-0">
+                        Tập {currentEpData.name}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Right: Prominent Exit Theater Button */}
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTheaterMode(false);
+                      toast('Đã tắt chế độ rạp phim', 'info');
+                    }}
+                    className="flex items-center gap-1.5 sm:gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full bg-purple-600 hover:bg-purple-500 active:scale-95 text-white font-bold text-xs sm:text-sm shadow-xl hover:shadow-purple-500/40 border border-purple-400/40 transition-all cursor-pointer backdrop-blur-md"
+                    title="Thoát chế độ rạp phim (Phím Esc hoặc T)"
+                  >
+                    <Minimize2 size={15} />
+                    <span>Thoát Rạp Phim</span>
+                    <kbd className="hidden sm:inline-block text-[10px] px-1.5 py-0.5 rounded bg-black/40 text-purple-200 font-mono border border-white/10">
+                      Esc
+                    </kbd>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTheaterMode(false);
+                      toast('Đã tắt chế độ rạp phim', 'info');
+                    }}
+                    className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center cursor-pointer transition-colors border border-white/10 active:scale-95 shrink-0"
+                    title="Đóng chế độ rạp phim (Esc)"
+                    aria-label="Đóng chế độ rạp phim"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              </div>
+            )}
             {/* Fallback overlay */}
             {isFallbacking && (
               <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm gap-3">
@@ -4621,6 +4774,16 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
               </div>
             )}
           </div>
+
+          {/* Grid placeholder to preserve layout height while player is in full-screen theater mode */}
+          {theaterMode && (
+            <div className="lg:col-start-1 lg:row-start-2 w-full aspect-video bg-black/40 border border-white/5 rounded-xl flex items-center justify-center text-xs text-neutral-400 select-none shadow-inner">
+              <span className="flex items-center gap-2">
+                <Tv size={14} className="text-purple-400 animate-pulse" />
+                Đang phát ở chế độ Rạp Phim toàn màn hình
+              </span>
+            </div>
+          )}
 
           {/* ── 2. UNDER-PLAYER CONTENT (Title, Episodes, Cast, Comments) ── */}
           <div

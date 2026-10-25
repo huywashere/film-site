@@ -413,7 +413,7 @@ function BrowseFilmsContent({
         description="Khám phá kho phim điện ảnh, phim bộ và hoạt hình chọn lọc với hệ thống lọc đa tầng chuyên sâu."
         imageSrc="/img-backtop/tab-films.webp"
         objectPosition="center 10%"
-        contentClassName="pb-24 sm:pb-32 md:pb-40 lg:pb-48"
+        contentClassName="pt-24 sm:pt-28 md:pt-32 pb-6 sm:pb-8 md:pb-10"
       />
 
       {/* ── Ambient Studio Lighting (Đồng bộ trang chủ) ── */}
@@ -421,7 +421,7 @@ function BrowseFilmsContent({
         <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[1200px] h-[500px] bg-gradient-to-b from-white/[0.025] to-transparent blur-[140px] rounded-full" />
       </div>
 
-      <div className="relative z-20 w-full px-3.5 sm:px-6 md:pl-20 lg:pl-24 pr-3.5 sm:pr-6 md:pr-10 space-y-5 sm:space-y-6 -mt-14 sm:-mt-20 md:-mt-28 lg:-mt-36">
+      <div className="relative z-20 w-full px-3.5 sm:px-6 md:pl-20 lg:pl-24 pr-3.5 sm:pr-6 md:pr-10 space-y-5 sm:space-y-6 -mt-6 sm:-mt-8 md:-mt-10 lg:-mt-12">
 
         {/* ── Hàng 1: Thanh Tìm Kiếm & Quick Format Pills ── */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">

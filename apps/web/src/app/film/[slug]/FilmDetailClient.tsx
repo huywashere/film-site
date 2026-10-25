@@ -89,6 +89,11 @@ const TrailerModal = dynamic(
   { ssr: false },
 );
 
+const ShareFilmModal = dynamic(
+  () => import('@/components/film/ShareFilmModal').then((module) => module.ShareFilmModal),
+  { ssr: false },
+);
+
 
 function formatRating(value: number) {
   return Number.isFinite(value) && value > 0 ? value.toFixed(1) : null;
@@ -1252,7 +1257,7 @@ export default function FilmDetailPage({
   const [myRating, setMyRating] = useState(0);
   const [hoverRatingScore, setHoverRatingScore] = useState<number>(0);
   const lastRatingPromptRef = useRef(0);
-  const [shareCopied, setShareCopied] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -1628,7 +1633,7 @@ export default function FilmDetailPage({
     window.addEventListener('netphim_watchlist_changed', syncWatchlistState);
 
     if (!user) {
-      setInWatchlist(guestDataStorage.isWatchlisted(slug));
+      setInWatchlist(false);
       return () => window.removeEventListener('netphim_watchlist_changed', syncWatchlistState);
     }
 
@@ -1709,6 +1714,11 @@ export default function FilmDetailPage({
 
   const handleWatchlist = async () => {
     if (watchlistPending) return;
+    if (!user) {
+      toast(t('toast.loginToWatchlist', 'Vui lòng đăng nhập để lưu phim vào Tủ Phim.'), 'warning');
+      useAuthModalStore.getState().openModal('login');
+      return;
+    }
     const previous = inWatchlist;
     const next = !previous;
     const movieData = {
@@ -1723,29 +1733,24 @@ export default function FilmDetailPage({
     setInWatchlist(next);
     setWatchlistPending(true);
     try {
-      if (!user) {
-        if (next) guestDataStorage.addWatchlist(slug, movieData);
-        else guestDataStorage.removeWatchlist(slug);
-      } else if (!next) {
+      if (!next) {
         await watchlistApi.remove(slug);
       } else {
         await watchlistApi.add(slug, movieData);
       }
 
-      if (user) {
-        window.dispatchEvent(
-          new CustomEvent('netphim_watchlist_changed', {
-            detail: { movieId: slug, action: next ? 'add' : 'remove' },
-          }),
-        );
-      }
+      window.dispatchEvent(
+        new CustomEvent('netphim_watchlist_changed', {
+          detail: { movieId: slug, action: next ? 'add' : 'remove' },
+        }),
+      );
 
       await queryClient.invalidateQueries({ queryKey: ['watchlist'] });
       await queryClient.invalidateQueries({ queryKey: ['user-watchlist'] });
-      toast(next ? 'Đã thêm vào Xem sau' : 'Đã xóa khỏi Xem sau', 'success');
+      toast(next ? 'Đã thêm vào Tủ Phim' : 'Đã xóa khỏi Tủ Phim', 'success');
     } catch {
       setInWatchlist(previous);
-      toast('Chưa thể cập nhật Xem sau, vui lòng thử lại', 'error');
+      toast('Chưa thể cập nhật Tủ Phim, vui lòng thử lại', 'error');
     } finally {
       setWatchlistPending(false);
     }
@@ -2361,24 +2366,17 @@ export default function FilmDetailPage({
                 <div className="flex flex-col items-center gap-1 group">
                   <button
                     onClick={() => {
-                      navigator.clipboard.writeText(window.location.href);
-                      setShareCopied(true);
-                      toast(
-                        t('film.copiedLink', 'Đã sao chép liên kết phim vào bộ nhớ tạm!'),
-                        'success',
-                      );
-                      setTimeout(() => setShareCopied(false), 2000);
+                      setShowShareModal(true);
                     }}
-                    className={cn(
-                      'w-10 h-10 rounded-full border border-white/10 flex items-center justify-center bg-[#181b22] hover:bg-[#222731] hover:border-white/20 transition-all text-neutral-200 hover:text-white cursor-pointer active:scale-95 shadow-sm',
-                      shareCopied && 'border-emerald-400/40 bg-emerald-500/15 text-emerald-400',
-                    )}
+                    className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center bg-[#181b22] hover:bg-[#222731] hover:border-white/20 transition-all text-neutral-200 hover:text-white cursor-pointer active:scale-95 shadow-sm"
+                    title={t('film.share', 'Chia sẻ')}
+                    aria-label={t('film.share', 'Chia sẻ')}
                   >
                     <MorphIcon
-                      icon={shareCopied ? LucideCheck : LucideShare2}
+                      icon={LucideShare2}
                       size={16}
                       spring="snappy"
-                      className={shareCopied ? 'text-emerald-400' : 'text-neutral-200 group-hover:text-white'}
+                      className="text-neutral-200 group-hover:text-white"
                     />
                   </button>
                   <span className="text-[10px] font-semibold text-neutral-300 uppercase tracking-wider group-hover:text-white transition-colors">
@@ -2796,6 +2794,14 @@ export default function FilmDetailPage({
         images={allGalleryImages.length > 0 ? allGalleryImages : heroPosterCandidates}
         initialIndex={lightboxIndex}
         filmName={film?.name || ''}
+      />
+
+      {/* Direct Share Form Modal */}
+      <ShareFilmModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        film={film}
+        posterUrl={posterUrl}
       />
     </div>
   );

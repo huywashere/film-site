@@ -1864,10 +1864,10 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "titleLogo": "https://image.tmdb.org/t/p/w500/iBSqLtHA9ZerSVviA0GFFdFKeg2.png"
   },
   {
-    "_id": "nhiem-vu-giai-cuu-2",
-    "name": "Nhiệm Vụ Giải Cứu 2",
+    "_id": "tyler-rake-nhiem-vu-giai-cuu-2",
+    "name": "Tyler Rake: Nhiệm Vụ Giải Cứu 2",
     "origin_name": "Extraction 2",
-    "slug": "nhiem-vu-giai-cuu-2",
+    "slug": "tyler-rake-nhiem-vu-giai-cuu-2",
     "type": "single",
     "tmdbId": 697843,
     "tmdb": {

@@ -77,55 +77,48 @@ export const HUBS: HubCard[] = [
     href: '/universe/dc',
     image: '/Folder-Background/DC/thumb-1920-457955.png',
   },
-  // ── 7 Thể Loại Đặc Sắc Được Bổ Sung ──
+  // ── 7 Thể Loại Đặc Sắc Được Bổ Sung (Đang chờ ảnh từ người dùng) ──
   {
     slug: 'phim-gia-tuong',
     title: 'Phim Giả Tưởng',
-    href: '/genre/vien-tuong',
-    image: '/Folder-Background/dune-2/ads (1).png',
-    objectPosition: 'center 35%',
+    href: '/genre/gia-tuong',
+    image: '',
   },
   {
     slug: 'reality',
     title: 'Reality & TV Shows',
     href: '/films/tv-shows',
-    image: '/Folder-Background/Korea/ha-canh-noi-anh/cloy-couple-chars.png',
-    objectPosition: 'center 20%',
+    image: '',
   },
   {
     slug: 'kids',
     title: 'Phim Thiếu Nhi (Kids)',
-    href: '/films/hoat-hinh',
-    image: '/Folder-Background/starwar/star-wars-the-mandalorian-season-3-poster.png',
-    objectPosition: 'center 22%',
+    href: '/genre/tre-em',
+    image: '',
   },
   {
     slug: 'phim-hinh-su',
     title: 'Phim Hình Sự',
     href: '/genre/hinh-su',
-    image: '/Folder-Background/thegodfather/marlon-brando-in-the-godfather.png',
-    objectPosition: 'center 38%',
+    image: '',
   },
   {
     slug: 'phim-tai-lieu',
     title: 'Phim Tài Liệu',
     href: '/genre/tai-lieu',
-    image: '/Folder-Background/the odysey/btsa (1).png',
-    objectPosition: 'center 25%',
+    image: '',
   },
   {
     slug: 'phim-chinh-kich',
     title: 'Phim Chính Kịch',
     href: '/genre/chinh-kich',
-    image: '/Folder-Background/Korea/qeenoftear/queen-of-tears-user-chars-clean.png',
-    objectPosition: 'center 20%',
+    image: '',
   },
   {
     slug: 'phim-hai',
     title: 'Phim Hài Hước',
     href: '/genre/hai-huoc',
-    image: '/img-backtop/background-top/invincible-deadpool-o7-1920x1080.webp',
-    objectPosition: 'center 25%',
+    image: '',
   },
 ];
 
@@ -294,10 +287,16 @@ export default function GenresPage() {
           queryFn: () => movieApi.getByGenre('chien-tranh', 1).then((r) => r.data),
           staleTime: 30 * 60 * 1000,
         });
-      } else if (hub.slug === 'khoa-hoc-vien-tuong' || hub.slug === 'phim-gia-tuong') {
+      } else if (hub.slug === 'khoa-hoc-vien-tuong') {
         void queryClient.prefetchQuery({
           queryKey: ['genre', 'vien-tuong', 1],
           queryFn: () => movieApi.getByGenre('vien-tuong', 1).then((r) => r.data),
+          staleTime: 30 * 60 * 1000,
+        });
+      } else if (hub.slug === 'phim-gia-tuong') {
+        void queryClient.prefetchQuery({
+          queryKey: ['genre', 'gia-tuong', 1],
+          queryFn: () => movieApi.getByGenre('gia-tuong', 1).then((r) => r.data),
           staleTime: 30 * 60 * 1000,
         });
       } else if (hub.slug === 'reality') {
@@ -308,8 +307,8 @@ export default function GenresPage() {
         });
       } else if (hub.slug === 'kids') {
         void queryClient.prefetchQuery({
-          queryKey: ['films-type', 'hoat-hinh', 1],
-          queryFn: () => movieApi.getFilmsByType('hoat-hinh', 1).then((r) => r.data),
+          queryKey: ['genre', 'tre-em', 1],
+          queryFn: () => movieApi.getByGenre('tre-em', 1).then((r) => r.data),
           staleTime: 30 * 60 * 1000,
         });
       } else if (hub.slug === 'phim-hinh-su') {

@@ -64,8 +64,8 @@ function VerticalTabsHeroBannerComponent({
         'relative w-full select-none overflow-hidden bg-[#0a0b10]',
         // Balanced cinematic height so faces and characters are visible while content is raised up nicely
         isCompact
-          ? 'h-[30svh] min-h-[250px] sm:h-[33vh] sm:min-h-[270px] md:h-[36vh] md:min-h-[300px] lg:h-[38vh] lg:min-h-[330px]'
-          : 'h-[42svh] min-h-[340px] sm:h-[40vh] sm:min-h-[330px] md:h-[44vh] md:min-h-[360px] lg:h-[46vh] lg:min-h-[390px] xl:h-[48vh] xl:min-h-[420px]',
+          ? 'h-[32svh] min-h-[260px] sm:h-[35vh] sm:min-h-[280px] md:h-[38vh] md:min-h-[310px] lg:h-[40vh] lg:min-h-[340px]'
+          : 'h-[44svh] min-h-[360px] sm:h-[44vh] sm:min-h-[360px] md:h-[48vh] md:min-h-[400px] lg:h-[50vh] lg:min-h-[440px] xl:h-[52vh] xl:min-h-[480px]',
         className,
       )}
     >
@@ -118,11 +118,11 @@ function VerticalTabsHeroBannerComponent({
         aria-hidden="true"
       />
 
-      {/* ── Layer 3: Foreground Content (Embedded cleanly at the bottom-left just like Reference UI) ── */}
+      {/* ── Layer 3: Foreground Content (Embedded cleanly with navbar clearance) ── */}
       {(showTitle || !pureCover) && (title || children) && (
         <div
           className={cn(
-            'relative z-20 w-full h-full flex flex-col justify-end px-3.5 sm:px-6 md:pl-20 lg:pl-24 pr-3.5 sm:pr-6 md:pr-10 pt-16 sm:pt-20 pb-5 sm:pb-7',
+            'relative z-20 w-full h-full flex flex-col justify-end px-3.5 sm:px-6 md:pl-20 lg:pl-24 pr-3.5 sm:pr-6 md:pr-10 pt-24 sm:pt-28 md:pt-32 pb-6 sm:pb-8',
             contentClassName,
           )}
         >

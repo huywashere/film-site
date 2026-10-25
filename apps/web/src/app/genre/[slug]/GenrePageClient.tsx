@@ -42,6 +42,7 @@ import {
 import { CuratedHeroMovie } from "@/lib/curated-hero-pool";
 import { buildAsianHeroImageCandidates } from "@/lib/curated-asian-hero";
 import { preloadMovieLogo } from "@/lib/movie-logo-cache";
+import { VerticalTabsHeroBanner } from "@/components/layout/VerticalTabsHeroBanner";
 
 const GENRE_NAMES: Record<string, string> = {
   "vien-tuong": "Khoa Học Viễn Tưởng",
@@ -67,6 +68,28 @@ const GENRE_NAMES: Record<string, string> = {
   "chinh-kich": "Chính Kịch",
   "tre-em": "Trẻ Em (Kids)",
   "gia-tuong": "Phim Giả Tưởng",
+};
+
+const GENRE_DESCRIPTIONS: Record<string, string> = {
+  "gia-tuong": "Khám phá thế giới thần thoại kỳ bí, ma thuật huyễn hoặc và những cuộc phiêu lưu vượt ngoài trí tưởng tượng.",
+  "tre-em": "Kho phim thiếu nhi và hoạt hình vui nhộn, giàu tính giáo dục và tràn đầy tiếng cười cho các bạn nhỏ.",
+  "hinh-su": "Những vụ trọng án gay cấn, cuộc đối đầu nghẹt thở giữa cơ quan điều tra và thế giới ngầm hiểm ác.",
+  "tai-lieu": "Những thước phim tài liệu chân thực về thế giới tự nhiên, lịch sử, văn hóa và những sự kiện mang tầm vóc nhân loại.",
+  "chinh-kich": "Các tác phẩm điện ảnh sâu sắc, lay động lòng người với những góc nhìn nhân sinh và chiều sâu tâm lý nhân vật.",
+  "hai-huoc": "Những bộ phim hài hước duyên dáng, tràn đầy tiếng cười sảng khoái mang lại năng lượng tích cực.",
+  "hanh-dong": "Những pha hành động mãn nhãn, kỹ xảo đỉnh cao và những màn rượt đuổi nghẹt thở.",
+  "tinh-cam": "Những câu chuyện tình yêu ngọt ngào, sâu lắng và lãng mạn chạm đến trái tim người xem.",
+  "co-trang": "Thế giới võ hiệp giang hồ, hoàng cung tranh đấu và những thiên tình sử kinh điển phương Đông.",
+  "tam-ly": "Khai thác sâu sắc chiều sâu nội tâm, những giằng xé đạo đức và chuyển biến tâm lý phức tạp.",
+  "vo-thuat": "Những màn quyền cước kinh điển, võ công đỉnh cao và tinh thần thượng võ bất khuất.",
+  "phieu-luu": "Hành trình thám hiểm những vùng đất mới lạ, đối mặt hiểm nguy và khám phá những bí ẩn bất tận.",
+  "kinh-di": "Những tác phẩm rùng rợn, hồi hộp và ám ảnh dành cho các tín đồ đam mê cảm giác mạnh.",
+  "bi-an": "Những vụ án bí ẩn, tình tiết ly kỳ và những manh mối khó đoán chờ được giải mã.",
+  "am-nhac": "Những giai điệu thăng hoa, hành trình theo đuổi đam mê nghệ thuật và thế giới âm nhạc bùng nổ.",
+  "gia-dinh": "Những thước phim ấm áp về tình thân, sự gắn kết và những giá trị thiêng liêng của gia đình.",
+  "hoc-duong": "Kỷ niệm thanh xuân tươi đẹp, tình bạn hồn nhiên và những ước mơ tuổi trẻ đầy nhiệt huyết.",
+  "than-thoai": "Thế giới truyền thuyết thần thoại huyền bí, các vị thần và các trận chiến huyền sử.",
+  "the-thao": "Tinh thần thể thao bất diệt, nghị lực phi thường và ý chí chạm tới đỉnh vinh quang.",
 };
 
 // ── TABS CONFIGURATION (CLEAN TEXT - NO EMOJIS) ──
@@ -755,6 +778,348 @@ function SciFiTransformersHeroBanner({
   );
 }
 
+// ── WAR & HISTORY THE ODYSSEY CINEMATIC HERO BANNER COMPONENT ──
+const ODYSSEY_BG_PATH = "/Folder-Background/the odysey/odyssey-bg.jpg";
+
+interface WarOdysseySlide {
+  id: string;
+  name: string;
+  origin_name: string;
+  subtitle: string;
+  badge: string;
+  year: number;
+  quality: string;
+  rating: string;
+  genres: string[];
+  overview: string;
+  charImage: string;
+  charAlt: string;
+  slug: string;
+  trailer_url: string;
+  charHeightClass?: string;
+}
+
+const WAR_ODYSSEY_SLIDES: WarOdysseySlide[] = [
+  {
+    id: "odyssey-achilles",
+    name: "The Odyssey: Cuộc Chiến Thành Troy",
+    origin_name: "The Odyssey: Fall of Troy",
+    subtitle: "Dũng Tướng Achilles • Cơn Thịnh Nộ Thần Thánh",
+    badge: "SỬ THI CHIẾN TRANH",
+    year: 2024,
+    quality: "4K UHD • Thuyết Minh",
+    rating: "IMDb 8.8",
+    genres: ["Chiến Tranh Cổ Đại", "Sử Thi", "Hy Lạp & La Mã", "Hành Động"],
+    overview:
+      "Hành trình sử thi bi tráng về cuộc vây hãm thành Troy huyền thoại và chuyến hải trình trở về đầy bão táp của Odysseus qua những đại dương kỳ bí và thử thách thần linh tàn khốc.",
+    charImage: "/Folder-Background/the odysey/odyssey-warrior-achilles.png",
+    charAlt: "Dũng tướng Achilles xuất trận thành Troy",
+    slug: "cuoc-chien-thanh-troy",
+    trailer_url: "https://www.youtube.com/watch?v=znTLzRJbgCA",
+    charHeightClass: "h-[74%] sm:h-[82%] md:h-[88%] lg:h-[94%] max-h-[720px]",
+  },
+  {
+    id: "odyssey-spartan",
+    name: "300: Huyền Thoại Chiến Binh Sparta",
+    origin_name: "300: Rise of an Empire",
+    subtitle: "Thống Lĩnh Leonidas • Cửa Tử Thermopylae Bất Tử",
+    badge: "CHIẾN BINH HUYỀN THOẠI",
+    year: 2023,
+    quality: "4K UHD • Thuyết Minh",
+    rating: "IMDb 8.9",
+    genres: ["Chiến Tranh Cổ Đại", "Đế Chế Ba Tư", "Sinh Tử Vực Thẳm", "Hào Hùng"],
+    overview:
+      "Trận đánh huyền thoại tại hẻm núi Thermopylae, nơi 300 dũng sĩ Sparta kiên cường đối đầu với hàng triệu quân xâm lược Ba Tư để bảo vệ nền văn minh và tự do của Hy Lạp.",
+    charImage: "/Folder-Background/the odysey/odyssey-warrior-spartan.png",
+    charAlt: "Chiến binh thống lĩnh Sparta",
+    slug: "300-chien-binh",
+    trailer_url: "https://www.youtube.com/watch?v=UrIbxk7idYA",
+    charHeightClass: "h-[78%] sm:h-[86%] md:h-[92%] lg:h-[98%] max-h-[760px]",
+  },
+  {
+    id: "odyssey-gladiator",
+    name: "Đấu Sĩ La Mã: Khát Vọng Tự Do",
+    origin_name: "Gladiator: Rome Imperium",
+    subtitle: "Vị Tướng Bị Phản Bội Maximus • Vinh Quang Đấu Trường",
+    badge: "ĐẾ CHẾ LA MÃ VĨ ĐẠI",
+    year: 2024,
+    quality: "4K UHD • Thuyết Minh",
+    rating: "IMDb 9.0",
+    genres: ["Chiến Tranh Cổ Đại", "Đấu Sĩ La Mã", "Lịch Sử & Dã Sử", "Kiệt Tác"],
+    overview:
+      "Từ một đại tướng quân bách chiến bách thắng của Đế chế La Mã bị phản bội, Maximus trở thành dũng sĩ giác đấu huyền thoại khuynh đảo đấu trường Colosseum để trả thù bạo chúa.",
+    charImage: "/Folder-Background/the odysey/odyssey-warrior-helmet.png",
+    charAlt: "Mũ chiến binh giác đấu La Mã",
+    slug: "vo-si-giac-dau",
+    trailer_url: "https://www.youtube.com/watch?v=4rgYUipGJNo",
+    charHeightClass: "h-[74%] sm:h-[82%] md:h-[88%] lg:h-[94%] max-h-[710px]",
+  },
+];
+
+function WarOdysseyHeroBanner({
+  onOpenTrailer,
+}: {
+  onOpenTrailer: (name: string, url?: string) => void;
+}) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [direction, setDirection] = useState(1);
+  const [isPaused, setIsPaused] = useState(false);
+  const [bgSrc, setBgSrc] = useState(ODYSSEY_BG_PATH);
+
+  const currentSlide = WAR_ODYSSEY_SLIDES[currentIndex];
+
+  useEffect(() => {
+    if (isPaused) return;
+    const timer = setInterval(() => {
+      setDirection(1);
+      setCurrentIndex((prev) => (prev + 1) % WAR_ODYSSEY_SLIDES.length);
+    }, 8500);
+    return () => clearInterval(timer);
+  }, [isPaused]);
+
+  const handleNext = () => {
+    setDirection(1);
+    setCurrentIndex((prev) => (prev + 1) % WAR_ODYSSEY_SLIDES.length);
+  };
+
+  const handlePrev = () => {
+    setDirection(-1);
+    setCurrentIndex((prev) => (prev - 1 + WAR_ODYSSEY_SLIDES.length) % WAR_ODYSSEY_SLIDES.length);
+  };
+
+  const touchStartX = useRef<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 40) {
+      if (diff > 0) {
+        handleNext();
+      } else {
+        handlePrev();
+      }
+    }
+    touchStartX.current = null;
+  };
+
+  return (
+    <section
+      data-hero-banner="true"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      className="relative h-[76svh] min-h-[580px] max-h-[680px] w-full select-none overflow-hidden bg-[#0a0b10] sm:h-[95vh] sm:min-h-[740px] sm:max-h-[1000px] lg:h-[100vh] lg:min-h-[860px]"
+    >
+      {/* ── Layer 1: Background Scenic Image (Epic Battle Coastal Fire & Burning Ships) ── */}
+      <div className="absolute inset-0 w-full h-full overflow-hidden">
+        <img
+          src={bgSrc}
+          alt="The Odyssey - Trận chiến sử thi cổ đại thành Troy"
+          onError={() => {
+            if (CDN_BASE && bgSrc !== `${CDN_BASE}${ODYSSEY_BG_PATH}`) {
+              setBgSrc(`${CDN_BASE}${ODYSSEY_BG_PATH}`);
+            }
+          }}
+          className="w-full h-full object-cover object-[center_35%] scale-[1.01] filter brightness-[0.88] contrast-[1.1]"
+          loading="eager"
+        />
+      </div>
+
+      {/* ── Layer 2: Soft Cinematic Blending (hiển thị trọn vẹn cảnh chiến trận bốc lửa, không đánh đen) ── */}
+      <div
+        className="absolute inset-0 z-10 pointer-events-none"
+        style={{
+          background: `
+            linear-gradient(to right, rgba(10,11,16,0.85) 0%, rgba(10,11,16,0.52) 42%, rgba(10,11,16,0.18) 72%, transparent 100%),
+            linear-gradient(to top, #0a0b10 0%, rgba(10,11,16,0.7) 12%, rgba(10,11,16,0.2) 28%, transparent 48%),
+            linear-gradient(to bottom, rgba(10,11,16,0.65) 0%, rgba(10,11,16,0.15) 14%, transparent 26%)
+          `,
+        }}
+      />
+
+      {/* ── Layer 3: Character Cutout with Smooth Slide Effect from Left/Right & Gentle Hover ── */}
+      <div className="absolute right-0 bottom-0 top-0 h-full w-full max-w-2xl sm:max-w-3xl md:max-w-4xl lg:max-w-5xl flex items-end justify-end pointer-events-none z-10 overflow-hidden pr-3 sm:pr-8 md:pr-14 lg:pr-20 xl:pr-28">
+        <AnimatePresence initial={false} custom={direction}>
+          <motion.div
+            key={currentSlide.id}
+            custom={direction}
+            initial={{ opacity: 0, x: direction > 0 ? 100 : -100 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: direction > 0 ? -100 : 100 }}
+            whileHover={{
+              scale: 1.025,
+              y: -6,
+              transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] },
+            }}
+            transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute right-0 bottom-0 h-full flex items-end justify-end pointer-events-auto cursor-pointer group/war-char"
+          >
+            <img
+              src={currentSlide.charImage}
+              alt={currentSlide.charAlt}
+              className={cn(
+                currentSlide.charHeightClass || "h-[74%] sm:h-[82%] md:h-[88%] lg:h-[94%] max-h-[720px]",
+                "w-auto max-w-full object-contain object-bottom select-none filter contrast-[1.04] brightness-[1.02] drop-shadow-[0_20px_45px_rgba(0,0,0,0.85)] transition-all duration-500 group-hover/war-char:drop-shadow-[0_25px_65px_rgba(245,158,11,0.45)] group-hover/war-char:brightness-[1.06]",
+              )}
+              loading="eager"
+            />
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      {/* ── Layer 4: Typography, Badges & Actions ── */}
+      <div className="absolute inset-0 z-20 pointer-events-none">
+        <AnimatePresence initial={false} custom={direction}>
+          <motion.div
+            key={`war-meta-${currentSlide.id}`}
+            custom={direction}
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute left-4 sm:left-12 md:left-16 lg:left-24 top-20 sm:top-36 md:top-40 lg:top-44 max-w-xl sm:max-w-2xl space-y-2.5 sm:space-y-4 pointer-events-auto pr-2 sm:pr-0"
+          >
+            {/* Top Badges (Monochrome Neutral Glass with Warm Amber Highlights) */}
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[10px] sm:text-[11px] font-bold">
+              <span className="px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-amber-500/20 text-amber-200 border border-amber-500/30 font-bold uppercase tracking-wider backdrop-blur-sm">
+                {currentSlide.badge}
+              </span>
+              <span className="px-1.5 sm:px-2 py-0.5 rounded bg-white/15 text-neutral-100 border border-white/15 backdrop-blur-sm">
+                {currentSlide.year}
+              </span>
+              <span className="hidden sm:inline-block px-2 py-0.5 rounded bg-white/15 text-neutral-100 border border-white/15 backdrop-blur-sm">
+                Chiến Tranh & Lịch Sử
+              </span>
+              <span className="px-1.5 sm:px-2 py-0.5 rounded bg-white/15 text-neutral-100 border border-white/15 backdrop-blur-sm">
+                {currentSlide.quality}
+              </span>
+              <span className="px-1.5 sm:px-2 py-0.5 rounded bg-white/15 text-amber-300 border border-white/15 backdrop-blur-sm font-extrabold">
+                ★ {currentSlide.rating}
+              </span>
+            </div>
+
+            {/* Title & Subtitle */}
+            <div className="space-y-1.5 sm:space-y-2">
+              <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black uppercase tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-100 via-amber-200 to-amber-500 drop-shadow-[0_4px_25px_rgba(0,0,0,0.95)]">
+                {currentSlide.name}
+              </h1>
+
+              {/* Subtitle with character highlight */}
+              <p className="text-xs sm:text-lg font-semibold text-amber-200/95 font-mono tracking-wide drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)] line-clamp-1 sm:line-clamp-none">
+                {currentSlide.subtitle}
+              </p>
+            </div>
+
+            {/* Genre Pills */}
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-0.5">
+              {currentSlide.genres.map((genre, gIdx) => (
+                <span
+                  key={genre}
+                  className={cn(
+                    "px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full bg-white/[0.12] hover:bg-white/[0.2] text-[10px] sm:text-xs font-semibold text-neutral-100 border border-white/[0.15] backdrop-blur-md transition-colors shadow-sm",
+                    gIdx > 2 ? "hidden xs:inline-block" : "inline-block",
+                  )}
+                >
+                  {genre}
+                </span>
+              ))}
+            </div>
+
+            {/* Description */}
+            <p className="text-xs sm:text-sm text-neutral-200/90 font-medium leading-relaxed max-w-lg line-clamp-2 sm:line-clamp-none drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)]">
+              {currentSlide.overview}
+            </p>
+
+            {/* CTA Buttons */}
+            <div className="flex items-center gap-2 sm:gap-3 pt-1.5 sm:pt-3">
+              <Link
+                href={`/watch/${currentSlide.slug}`}
+                className="inline-flex items-center gap-1.5 sm:gap-2.5 px-4 sm:px-7 py-2 sm:py-3 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-neutral-950 font-black text-xs sm:text-sm shadow-xl shadow-amber-950/40 transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0"
+              >
+                <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current text-neutral-950" />
+                <span>Xem Ngay</span>
+              </Link>
+
+              {currentSlide.trailer_url && (
+                <button
+                  type="button"
+                  onClick={() => onOpenTrailer(currentSlide.name, currentSlide.trailer_url)}
+                  className="inline-flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-6 py-2 sm:py-3 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-xs sm:text-sm backdrop-blur-md transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0"
+                >
+                  <Clapperboard className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-300" />
+                  <span>Trailer</span>
+                </button>
+              )}
+
+              <Link
+                href={`/film/${currentSlide.slug}`}
+                className="inline-flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-6 py-2 sm:py-3 rounded-full bg-white/15 hover:bg-white/25 border border-white/20 text-white font-bold text-xs sm:text-sm backdrop-blur-md transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0"
+              >
+                <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span>Chi Tiết</span>
+              </Link>
+            </div>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      {/* ── Slide Navigation Controls (Prev / Next & Dots) ── */}
+      <div className="absolute right-3 sm:right-8 md:right-12 bottom-3 sm:bottom-32 md:bottom-40 lg:bottom-48 xl:bottom-56 z-30 flex items-center gap-1.5 sm:gap-3 select-none pointer-events-auto">
+        {/* Indicators */}
+        <div className="hidden sm:flex items-center gap-1.5 mr-2">
+          {WAR_ODYSSEY_SLIDES.map((slide, idx) => (
+            <button
+              key={slide.id}
+              type="button"
+              onClick={() => {
+                setDirection(idx > currentIndex ? 1 : -1);
+                setCurrentIndex(idx);
+              }}
+              className={cn(
+                "h-1.5 rounded-full transition-all duration-300 cursor-pointer",
+                idx === currentIndex
+                  ? "w-7 bg-amber-400 shadow-sm shadow-amber-400/50"
+                  : "w-2 bg-white/30 hover:bg-white/60",
+              )}
+              title={slide.name}
+            />
+          ))}
+        </div>
+
+        {/* Counter */}
+        <span className="text-[11px] sm:text-xs font-mono font-bold text-neutral-300 bg-black/60 backdrop-blur-md px-2.5 sm:px-3 py-1 rounded-full border border-white/10 shadow-lg">
+          {currentIndex + 1} / {WAR_ODYSSEY_SLIDES.length}
+        </span>
+
+        {/* Arrow Buttons */}
+        <div className="flex items-center gap-0.5 sm:gap-1 bg-black/60 backdrop-blur-md px-1 sm:px-1.5 py-0.5 sm:py-1 rounded-full border border-white/20 shadow-lg">
+          <button
+            type="button"
+            onClick={handlePrev}
+            aria-label="Previous War Odyssey character"
+            className="w-6 h-6 sm:w-8 sm:h-8 rounded-full hover:bg-white/20 text-white flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer"
+          >
+            <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={handleNext}
+            aria-label="Next War Odyssey character"
+            className="w-6 h-6 sm:w-8 sm:h-8 rounded-full hover:bg-white/20 text-white flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer"
+          >
+            <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ── NETFLIX-GRADE CINEMATIC HERO BANNER COMPONENT ──
 function GenreCuratedHeroBanner({
   pool,
@@ -1168,11 +1533,11 @@ export default function GenrePageClient({
     placeholderData: (previousData) => previousData,
   });
 
-  // Page 2 Query for Showcase Hubs
+  // Page 2 Query for Showcase Hubs & Curated Sections
   const { data: page2Data } = useQuery({
     queryKey: ["genre-page-2", slug],
     queryFn: () => movieApi.getByGenre(slug, 2).then((r) => r.data),
-    enabled: isShowcasePage && secondaryReady,
+    enabled: (isShowcasePage || page === 1) && secondaryReady,
     staleTime: 30 * 60 * 1000,
     placeholderData: (prev) => prev,
   });
@@ -1588,7 +1953,7 @@ export default function GenrePageClient({
       className={cn(
         cardFont.className,
         "min-h-screen w-full bg-[#0a0b10] text-white",
-        isShowcasePage ? "mt-0 sm:-mt-24 pb-20" : "pb-20 pl-4 pr-4 pt-20 sm:pt-24 md:pr-10 lg:pl-24",
+        "-mt-20 sm:-mt-24 pb-20",
       )}
     >
       {/* ── CASE 1: SHOWCASE HUBS (Khoa Học Viễn Tưởng & Chiến Tranh) ── */}
@@ -1598,11 +1963,7 @@ export default function GenrePageClient({
           {isSciFiPage ? (
             <SciFiTransformersHeroBanner onOpenTrailer={handleOpenTrailer} />
           ) : (
-            <GenreCuratedHeroBanner
-              pool={heroPool}
-              genreLabel={label}
-              onOpenTrailer={handleOpenTrailer}
-            />
+            <WarOdysseyHeroBanner onOpenTrailer={handleOpenTrailer} />
           )}
 
           {/* ── CURATED MULTI-CATEGORY SWIPER ROWS (OVERLAPPING HERO BANNER & VIDEO) ── */}
@@ -1757,54 +2118,101 @@ export default function GenrePageClient({
           </div>
         </>
       ) : (
-        /* ── CASE 2: ALL OTHER GENRES (Clean Modern Catalog View) ── */
+        /* ── CASE 2: ALL OTHER GENRES (Clean Modern Catalog View with Hero Banner & Curated Rows) ── */
         <div className="w-full">
-          {/* Page Header — Centered */}
-          <div className="flex flex-col items-center justify-center text-center mb-10 pb-6 border-b border-white/10 gap-2.5 max-w-3xl mx-auto">
-            <span className="text-xs font-bold uppercase tracking-widest text-neutral-400">
-              Khám Phá Thể Loại
-            </span>
-            <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
-              Thể Loại: {label}
-            </h1>
-            <p className="text-xs sm:text-sm text-neutral-400 font-medium">
-              Tổng hợp danh sách các bộ phim thuộc thể loại {label} tuyển chọn hay nhất
-            </p>
-            <div className="mt-1 text-xs font-mono font-bold text-neutral-300 bg-white/5 px-4 py-1.5 rounded-full border border-white/10">
-              Trang <span className="text-white font-extrabold">{page}</span> / {totalPages}
-            </div>
-          </div>
-
-          {isLoading ? (
-            <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-y-3.5 sm:gap-y-8">
-              {Array.from({ length: 21 }).map((_, i) => (
-                <FilmCardSkeleton key={i} />
-              ))}
-            </div>
-          ) : rawFilms.length > 0 ? (
-            <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-y-3.5 sm:gap-y-8 cv-grid-auto">
-              {rawFilms.map((f, idx) => (
-                <FilmCard
-                  key={`${f.slug || f._id || (f as any).id}-${idx}`}
-                  film={f}
-                  priority={idx < 7}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="py-20 text-center text-neutral-500 font-semibold text-sm">
-              Chưa tìm thấy bộ phim nào thuộc thể loại này.
-            </div>
-          )}
-
-          {/* Pagination Controls */}
-          <Pagination
-            currentPage={page}
-            totalPages={totalPages}
-            totalItems={totalItems}
-            onPageChange={handlePageChange}
-            onPrefetchPage={prefetchPage}
+          {/* Netflix-Grade Compact Hero Banner */}
+          <VerticalTabsHeroBanner
+            badge="Khám Phá Thể Loại"
+            title={label}
+            highlightText="Tuyển Chọn"
+            description={
+              GENRE_DESCRIPTIONS[slug] ||
+              `Kho phim điện ảnh và truyền hình thể loại ${label} đặc sắc nhất với chất lượng cao và phụ đề/thuyết minh chuẩn.`
+            }
+            imageSrc="/img-backtop/tab-genres.webp"
+            variant="compact"
+            contentClassName="pt-24 sm:pt-28 md:pt-32 pb-6 sm:pb-8 md:pb-10"
           />
+
+          {/* Content Container (Overlapping Hero Banner) */}
+          <div className="relative z-20 w-full pl-4 sm:pl-12 md:pl-20 lg:pl-24 pr-2 sm:pr-4 md:pr-6 pb-16 space-y-6 -mt-4 sm:-mt-6 md:-mt-8">
+            {/* On Page 1, render Curated Swiper Sections */}
+            {page === 1 && rawFilms.length > 0 && (
+              <>
+                <GenreCategoryRow
+                  title={`Phim ${label} Mới Cập Nhật`}
+                  films={rawFilms.slice(0, 12)}
+                  isLoading={isLoading}
+                />
+
+                {rawFilms.length > 12 && (
+                  <GenreCategoryRow
+                    title={`Phim ${label} Thịnh Hành & Đánh Giá Cao`}
+                    films={rawFilms.slice(12, 24)}
+                    isLoading={isLoading}
+                    defer
+                  />
+                )}
+
+                {rawPage2.length > 0 && (
+                  <GenreCategoryRow
+                    title={`Phim ${label} Tuyển Chọn Đặc Sắc`}
+                    films={rawPage2.slice(0, 12)}
+                    isLoading={false}
+                    defer
+                  />
+                )}
+              </>
+            )}
+
+            {/* Full Catalog Section Header */}
+            <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row md:items-end justify-between gap-2">
+              <div>
+                <h2 className="text-xl md:text-2xl font-bold text-white tracking-tight">
+                  Tất Cả Phim {label}
+                </h2>
+                <p className="text-xs text-neutral-400 font-semibold mt-1">
+                  Danh sách tuyển chọn các bộ phim {label} chất lượng cao phụ đề và thuyết minh chuẩn
+                </p>
+              </div>
+
+              <div className="text-xs font-bold text-neutral-400 bg-white/5 px-3.5 py-1.5 rounded-full border border-white/10 self-start md:self-auto">
+                Trang <span className="text-white font-extrabold">{page}</span> / {totalPages}
+              </div>
+            </div>
+
+            {/* Catalog Grid (Standard 7-Cols Desktop) */}
+            {isLoading ? (
+              <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-y-3.5 sm:gap-y-6">
+                {Array.from({ length: 14 }).map((_, i) => (
+                  <FilmCardSkeleton key={i} />
+                ))}
+              </div>
+            ) : rawFilms.length > 0 ? (
+              <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-y-3.5 sm:gap-y-6 cv-grid-auto">
+                {rawFilms.map((f, idx) => (
+                  <FilmCard
+                    key={`${f.slug || f._id || (f as any).id}-${idx}`}
+                    film={f}
+                    priority={idx < 7}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="py-20 text-center text-neutral-500 font-semibold text-sm">
+                Chưa tìm thấy bộ phim nào thuộc thể loại này.
+              </div>
+            )}
+
+            {/* Pagination Controls */}
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              onPageChange={handlePageChange}
+              onPrefetchPage={prefetchPage}
+            />
+          </div>
         </div>
       )}
 

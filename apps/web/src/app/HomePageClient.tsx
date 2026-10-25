@@ -1228,9 +1228,17 @@ export default function HomePageClient({
     // Only allow genuine Action Blockbusters (strictly filter out Asian BL, monk comedies, tiên hiệp, donghua, teen romance, etc.)
     const isGenuineAction = (film: FilmItem) => {
       if (!film?.name || !film?.slug) return false;
+      if (isAnimationOrAnime(film)) return false;
+      if (
+        film.episode_current?.toLowerCase().includes("trailer") ||
+        film.quality?.toLowerCase().includes("trailer") ||
+        /sắp chiếu|trailer|dự kiến khởi chiếu/i.test(film.episode_current || "")
+      ) {
+        return false;
+      }
       const combined = `${film.name} ${film.origin_name || ""} ${film.content || ""}`.toLowerCase();
       if (
-        /chiến binh ánh sáng|tàn thuốc|luang pho|người yêu xui xẻo|unlucky bae|độc kiếm cửu thiên|sư huynh quá cẩn trọng|tiên hiệp|kiếm hiệp|ngôn tình|học đường|đam mỹ|boys love|tình cảm gia đình|hài kịch thái lan|gián đột biến/i.test(
+        /deadpool|doraemon|conan|chiến binh ánh sáng|tàn thuốc|luang pho|người yêu xui xẻo|unlucky bae|độc kiếm cửu thiên|sư huynh quá cẩn trọng|tiên hiệp|kiếm hiệp|ngôn tình|học đường|đam mỹ|boys love|tình cảm gia đình|hài kịch thái lan|gián đột biến/i.test(
           combined,
         )
       ) {
