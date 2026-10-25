@@ -7,6 +7,7 @@ import { ChevronRight, ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   movieApi,
+  recommendationApi,
   siteConfigApi,
   type PublicSiteConfiguration,
 } from "@/lib/api";
@@ -18,7 +19,6 @@ import {
 import { useTranslation } from "@/store/langStore";
 import { deduplicateSectionRow } from "@/lib/recommendation-engine";
 import { extractFilmItems } from "@/lib/movie-normalizer";
-import { watchProgressStorage } from "@/lib/watch-progress";
 import { useSettingsStore } from "@/store/settingsStore";
 import { rankHotCatalogFilms } from "@/lib/catalog-curation";
 const HomeAnnouncementPopup = dynamic(
@@ -252,6 +252,8 @@ const SECTION_TITLE_TONES: Record<string, string> = {
   "Phim Hành Động": "from-orange-400 via-amber-400 to-yellow-300",
   "Phim Hành Động Kịch Tính": "from-orange-400 via-amber-400 to-yellow-300",
   "Phim Kinh Dị": "from-red-400 via-rose-400 to-orange-300",
+  "Phim Hình Sự & Tội Phạm": "from-sky-400 via-blue-400 to-indigo-300",
+  "Phim Hình Sự - Tội Phạm": "from-sky-400 via-blue-400 to-indigo-300",
   "Phim Cổ Trang": "from-amber-300 via-orange-400 to-red-400",
   "Phim Chiếu Rạp": "from-fuchsia-400 via-violet-400 to-indigo-300",
   "Phim Âu-Mỹ Đáng Xem": "from-emerald-400 via-teal-400 to-cyan-300",
@@ -590,7 +592,6 @@ export default function HomePageClient({
 
   const [showMoreSections, setShowMoreSections] = useState(false);
   const [loadedSections, setLoadedSections] = useState<Record<string, boolean>>({});
-  const [userHistoryFilms, setUserHistoryFilms] = useState<FilmItem[]>([]);
   const infiniteSentinelRef = useRef<HTMLDivElement>(null);
 
   const markSectionLoaded = useCallback((sectionKey: string) => {
@@ -638,32 +639,6 @@ export default function HomePageClient({
         "flexphim:restore-scroll",
         revealSectionsForRestore,
       );
-  }, []);
-
-  // Đọc danh sách phim người dùng thực tế đang xem / yêu thích trên hệ thống
-  useEffect(() => {
-    try {
-      const history = watchProgressStorage.getHistoryEntries();
-      if (Array.isArray(history) && history.length > 0) {
-        const mapped: FilmItem[] = history
-          .filter((item) => item.slug && item.title)
-          .slice(0, 10)
-          .map((item) => ({
-            _id: item.slug,
-            slug: item.slug,
-            name: item.title,
-            origin_name: item.originName || item.title,
-            poster_url: item.poster || item.thumb || "",
-            thumb_url: item.thumb || item.poster || "",
-            quality: "FHD",
-            lang: "Vietsub",
-            type: "single",
-          }));
-        setUserHistoryFilms(mapped);
-      }
-    } catch {
-      // Bỏ qua nếu môi trường không hỗ trợ localStorage
-    }
   }, []);
 
   // Progressive scroll-based loading: automatically fetch and reveal remaining sections as user approaches them
@@ -962,23 +937,21 @@ export default function HomePageClient({
     [historicalFallbackData, homeFeedSections?.historical],
   );
 
+  // Phim Hình Sự & Tội Phạm (Live-Action, không Anime/Hoạt hình)
   const { data: wuxiaQueryData, isLoading: wuxiaQueryLoading } = useQuery({
-    queryKey: ["home-section-wuxia-v1"],
-    queryFn: () => movieApi.getByGenre("co-trang", 1).then((r) => r.data),
+    queryKey: ["home-section-crime-v1"],
+    queryFn: () => movieApi.getByGenre("hinh-su", 1).then((r) => r.data),
     staleTime: 10 * 60 * 1000,
     gcTime: 60 * 60 * 1000,
     retry: false,
     refetchOnWindowFocus: false,
-    enabled: !homeFeedSections?.historical?.length,
+    enabled: true,
   });
   const wuxiaData = useMemo(
-    () =>
-      homeFeedSections?.historical?.length
-        ? asCatalogPayload(homeFeedSections.historical)
-        : wuxiaQueryData || historicalData,
-    [homeFeedSections?.historical, wuxiaQueryData, historicalData],
+    () => wuxiaQueryData,
+    [wuxiaQueryData],
   );
-  const wuxiaLoading = !homeFeedSections?.historical?.length && wuxiaQueryLoading && !wuxiaData;
+  const wuxiaLoading = wuxiaQueryLoading && !wuxiaData;
   const theatricalData = useMemo(
     () =>
       homeFeedSections?.theatrical?.length
@@ -1157,14 +1130,47 @@ export default function HomePageClient({
     [homeFeedSections?.latest],
   );
   const latestLoading = catalogReady && homeFeedLoading;
+  // Top 10 phim đang được xem nhiều nhất toàn hệ thống (Global Platform-wide Top 10)
+  const { data: systemTop10Data } = useQuery({
+    queryKey: ["home-system-top10-v2"],
+    queryFn: async () => {
+      try {
+        const res = await recommendationApi.getTop10();
+        if (Array.isArray(res?.items) && res.items.length > 0) {
+          return res.items as FilmItem[];
+        }
+      } catch {
+        // Fallback
+      }
+      try {
+        const top10Res = await movieApi.getTop10(10);
+        const items =
+          (top10Res as any)?.data?.items ||
+          (top10Res as any)?.items ||
+          (Array.isArray(top10Res) ? top10Res : []);
+        if (Array.isArray(items) && items.length > 0) {
+          return items as FilmItem[];
+        }
+      } catch {
+        // Fallback
+      }
+      return [];
+    },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
+
   const trendingData = useMemo(
     () => homeFeedData?.top10 || [],
     [homeFeedData?.top10],
   );
-  const trendingFilms = useMemo(
-    () => deduplicate(Array.isArray(trendingData) ? trendingData : []),
-    [trendingData],
-  );
+  const trendingFilms = useMemo(() => {
+    const fromSystem = Array.isArray(systemTop10Data) ? systemTop10Data : [];
+    const fromHomeFeed = Array.isArray(trendingData) ? trendingData : [];
+    return deduplicate([...fromSystem, ...fromHomeFeed]);
+  }, [systemTop10Data, trendingData]);
 
   // ── Process arrays with STRICT Live-Action filtering for Hollywood rows ──
   const vfxFilms = useMemo(() => {
@@ -1277,6 +1283,26 @@ export default function HomePageClient({
     const list = wuxiaData?.data?.items || wuxiaData?.items || [];
     const poolMatches = homeFeedPool.filter((film) =>
       movieTaxonomyContains(film.category, [
+        "hình sự",
+        "hinh-su",
+        "tội phạm",
+        "toi-pham",
+        "trinh thám",
+        "trinh-tham",
+      ]),
+    );
+    return deduplicate(
+      rankHotCatalogFilms(
+        filterLiveActionOnly([...list, ...poolMatches]),
+        trendingFilms,
+      ),
+    );
+  }, [wuxiaData, homeFeedPool, trendingFilms]);
+
+  const historicalFilms = useMemo(() => {
+    const list = historicalData?.data?.items || historicalData?.items || [];
+    const poolMatches = homeFeedPool.filter((film) =>
+      movieTaxonomyContains(film.category, [
         "cổ trang",
         "co-trang",
         "kiếm hiệp",
@@ -1292,14 +1318,7 @@ export default function HomePageClient({
         trendingFilms,
       ),
     );
-  }, [wuxiaData, homeFeedPool, trendingFilms]);
-
-  const historicalFilms = useMemo(() => {
-    const list = historicalData?.data?.items || historicalData?.items || [];
-    return deduplicate(
-      rankHotCatalogFilms(filterLiveActionOnly(list), trendingFilms),
-    );
-  }, [historicalData, trendingFilms]);
+  }, [historicalData, homeFeedPool, trendingFilms]);
 
   const theatricalFilms = useMemo(() => {
     const list = theatricalData?.data?.items || theatricalData?.items || [];
@@ -1557,10 +1576,10 @@ export default function HomePageClient({
       ].map((film) => film.slug),
     );
 
-    // Phim thực tế người dùng xem nhiều & yêu thích trên hệ thống
+    // Phim Top 10 thịnh hành được xem nhiều nhất toàn hệ thống (không lấy lịch sử cá nhân từng user)
     const realCandidates = deduplicate([
-      ...userHistoryFilms,
       ...trendingFilms,
+      ...REAL_TRENDING_TOP10_POOL,
       ...latestFilms,
       ...usUkSeriesFilms,
       ...actionFilms,
@@ -1573,7 +1592,6 @@ export default function HomePageClient({
       ...theatricalFilms,
       ...acclaimedFilms,
       ...workplaceFilms,
-      ...REAL_TRENDING_TOP10_POOL,
     ]);
 
     const sanitizedCandidates = realCandidates.map((film) => {
@@ -1617,7 +1635,6 @@ export default function HomePageClient({
       romanceRowList,
     };
   }, [
-    userHistoryFilms,
     trendingFilms,
     latestFilms,
     vfxFilms,
@@ -1646,7 +1663,12 @@ export default function HomePageClient({
   const configuredTop10List = useMemo(() => {
     const slugs = publicConfig?.homeTop10Slugs || [];
     if (!slugs.length) return top10List;
-    const pool = deduplicate([...top10List, ...trendingFilms, ...latestFilms]);
+    const pool = deduplicate([
+      ...top10List,
+      ...trendingFilms,
+      ...REAL_TRENDING_TOP10_POOL,
+      ...latestFilms,
+    ]);
     const selected = slugs
       .map((slug) => pool.find((film) => film.slug === slug))
       .filter((film): film is FilmItem => Boolean(film));
@@ -1768,10 +1790,20 @@ export default function HomePageClient({
     wuxia: (
       <LazySection initiallyVisible>
         <FilmSection
-          title={t("sections.wuxia", "Cổ Trang Kiếm Hiệp Đặc Sắc")}
+          title={t("sections.wuxia", "Phim Hình Sự & Tội Phạm")}
           films={wuxiaRowList}
           isLoading={wuxiaLoading}
-          href="/genre/co-trang"
+          href="/genre/hinh-su"
+        />
+      </LazySection>
+    ),
+    crime: (
+      <LazySection initiallyVisible>
+        <FilmSection
+          title={t("sections.crime", "Phim Hình Sự & Tội Phạm")}
+          films={wuxiaRowList}
+          isLoading={wuxiaLoading}
+          href="/genre/hinh-su"
         />
       </LazySection>
     ),

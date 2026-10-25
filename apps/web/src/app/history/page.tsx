@@ -61,19 +61,30 @@ export default function HistoryPage() {
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-    setGuestHistory(
-      guestDataStorage.getHistory().map((item) => ({
-        id: `guest-${item.slug}-${item.epSlug}`,
-        movieId: item.slug,
-        movieTitle: item.title,
-        movieThumb: item.thumb || item.poster,
-        moviePoster: item.poster || item.thumb,
-        episode: item.epSlug,
-        progress: item.currentTime,
-        duration: item.duration,
-        updatedAt: new Date(item.updatedAt).toISOString(),
-      })),
-    );
+    const loadGuestHistory = () => {
+      setGuestHistory(
+        guestDataStorage.getHistory().map((item) => ({
+          id: `guest-${item.slug}-${item.epSlug}`,
+          movieId: item.slug,
+          movieTitle: item.title,
+          movieThumb: item.thumb || item.poster,
+          moviePoster: item.poster || item.thumb,
+          episode: item.epSlug,
+          progress: item.currentTime,
+          duration: item.duration,
+          updatedAt: new Date(item.updatedAt).toISOString(),
+        })),
+      );
+    };
+
+    loadGuestHistory();
+
+    window.addEventListener('netphim_history_cleared', loadGuestHistory);
+    window.addEventListener('netphim_episode_progress_changed', loadGuestHistory);
+    return () => {
+      window.removeEventListener('netphim_history_cleared', loadGuestHistory);
+      window.removeEventListener('netphim_episode_progress_changed', loadGuestHistory);
+    };
   }, []);
 
   // Fetch history - must be called unconditionally (Rules of Hooks)
@@ -162,14 +173,6 @@ export default function HistoryPage() {
   const total = rawHistoryItems.filter((item) => !removedIds.includes(item.id)).length;
   const totalPages = user ? historyData?.totalPages || 1 : 1;
 
-  const handleBack = () => {
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      router.back();
-    } else {
-      router.push("/");
-    }
-  };
-
   const HISTORY_TABS = [
     { id: 'all' as const, label: `Tất Cả (${total})` },
     { id: 'in_progress' as const, label: 'Đang Xem Dở' },
@@ -181,18 +184,13 @@ export default function HistoryPage() {
     setRemovedIds((prev) => [...prev, id]);
     toast('Đã xóa khỏi lịch sử', 'success');
 
+    // Always clean up from local device progress
+    const item = rawHistoryItems.find((entry) => entry.id === id);
+    if (item) {
+      watchProgressStorage.removeEntry(item.movieId, item.episode);
+    }
+
     if (!user) {
-      const item = guestHistory.find((entry) => entry.id === id);
-      if (item) {
-        const entry = guestDataStorage
-          .getHistory()
-          .find(
-            (candidate) => candidate.slug === item.movieId && candidate.epSlug === item.episode,
-          );
-        if (entry) {
-          watchProgressStorage.removeEntry(entry.slug, entry.epSlug);
-        }
-      }
       setGuestHistory((entries) => entries.filter((entry) => entry.id !== id));
       return;
     }
@@ -211,6 +209,11 @@ export default function HistoryPage() {
     setRemovedIds((prev) => [...new Set([...prev, ...allIds])]);
     toast('Đã xóa toàn bộ lịch sử', 'success');
 
+    // Always clear local device storage completely
+    watchProgressStorage.clearAll();
+    guestDataStorage.clear();
+    setGuestHistory([]);
+
     if (user) {
       clearAllMutation.mutate(undefined, {
         onError: () => {
@@ -218,9 +221,6 @@ export default function HistoryPage() {
           toast('Không thể xóa toàn bộ lịch sử', 'error');
         },
       });
-    } else {
-      watchProgressStorage.clearAll();
-      setGuestHistory([]);
     }
   };
 
@@ -246,7 +246,7 @@ export default function HistoryPage() {
   };
 
   return (
-    <div className={cn(cardFont.className, "min-h-screen bg-[#0a0b10] text-white pb-20 -mt-20 sm:-mt-24 select-none")}>
+    <div className={cn(cardFont.className, "min-h-[calc(100dvh+5rem)] sm:min-h-[calc(100dvh+6rem)] flex flex-col bg-[#0a0b10] text-white pb-24 sm:pb-28 -mt-20 sm:-mt-24 select-none")}>
       {/* ── Top Hero Banner (Fury Movie with Full Face Visibility & Integrated Controls) ── */}
       <VerticalTabsHeroBanner
         title="Lịch Sử Xem Phim"
@@ -257,9 +257,7 @@ export default function HistoryPage() {
         }
         imageSrc="/img-backtop/tab-history.webp"
         objectPosition="center 4%"
-        onBack={handleBack}
-        backText="Quay lại"
-        contentClassName="pb-16 sm:pb-20 md:pb-24"
+        contentClassName="pb-6 sm:pb-8 md:pb-10"
       >
         {/* Filter Tabs matching reference UI & Clear Button */}
         <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
@@ -279,9 +277,6 @@ export default function HistoryPage() {
                   )}
                 >
                   <span>{tab.label}</span>
-                  {isActive && (
-                    <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-0.5 bg-white rounded-full shadow-[0_0_8px_rgba(255,255,255,0.6)]" />
-                  )}
                 </button>
               );
             })}
@@ -301,9 +296,9 @@ export default function HistoryPage() {
       </VerticalTabsHeroBanner>
 
       {/* Content */}
-      <div className="relative z-20 w-full px-3.5 sm:px-6 md:pl-20 lg:pl-24 pr-3.5 sm:pr-6 md:pr-10 pt-6 sm:pt-8">
+      <div className="flex-1 relative z-20 w-full px-3.5 sm:px-6 md:pl-20 lg:pl-24 pr-3.5 sm:pr-6 md:pr-10 pt-2 sm:pt-3 flex flex-col">
         {isLoading ? (
-          <div className="flex items-center justify-center py-20">
+          <div className="flex-1 flex items-center justify-center py-20">
             <Loader2 size={40} className="animate-spin text-blue-500" />
           </div>
         ) : historyItems.length > 0 ? (
@@ -421,15 +416,15 @@ export default function HistoryPage() {
             )}
           </>
         ) : (
-          <div className="text-center py-20">
-            <HistoryIcon size={64} className="mx-auto mb-4 text-neutral-700" />
-            <p className="text-xl font-semibold text-neutral-400">Chưa có lịch sử xem phim</p>
-            <p className="text-sm text-neutral-500 mt-2">
+          <div className="flex-1 flex flex-col items-center justify-center text-center py-10 sm:py-14 my-auto">
+            <HistoryIcon size={56} className="mx-auto mb-3.5 text-neutral-600" />
+            <p className="text-lg sm:text-xl font-semibold text-neutral-300">Chưa có lịch sử xem phim</p>
+            <p className="text-xs sm:text-sm text-neutral-500 mt-1.5">
               Bắt đầu xem phim để theo dõi tiến độ tại đây
             </p>
             <Link
               href="/"
-              className="inline-block mt-6 bg-blue-500 hover:bg-blue-600 text-white px-6 py-2.5 rounded-full font-semibold transition-colors"
+              className="inline-block mt-5 bg-blue-500 hover:bg-blue-600 text-white px-5 py-2.5 rounded-full text-xs sm:text-sm font-semibold transition-colors"
             >
               Khám phá phim
             </Link>

@@ -512,12 +512,33 @@ function SciFiTransformersHeroBanner({
     setCurrentIndex((prev) => (prev - 1 + TRANSFORMERS_SLIDES.length) % TRANSFORMERS_SLIDES.length);
   };
 
+  const touchStartX = useRef<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 40) {
+      if (diff > 0) {
+        handleNext();
+      } else {
+        handlePrev();
+      }
+    }
+    touchStartX.current = null;
+  };
+
   return (
     <section
       data-hero-banner="true"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
-      className="relative h-[68svh] min-h-[520px] max-h-[640px] w-full select-none overflow-hidden bg-[#0a0b10] sm:h-[95vh] sm:min-h-[740px] sm:max-h-[1000px] lg:h-[100vh] lg:min-h-[860px]"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      className="relative h-[76svh] min-h-[580px] max-h-[680px] w-full select-none overflow-hidden bg-[#0a0b10] sm:h-[95vh] sm:min-h-[740px] sm:max-h-[1000px] lg:h-[100vh] lg:min-h-[860px]"
     >
       {/* ── Layer 1: Background Scenic Image (Desolate Glacial Cybertron Ring) ── */}
       <div className="absolute inset-0 w-full h-full overflow-hidden">
@@ -586,30 +607,30 @@ function SciFiTransformersHeroBanner({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -15 }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute left-5 sm:left-12 md:left-16 lg:left-24 top-28 sm:top-36 md:top-40 lg:top-44 max-w-xl sm:max-w-2xl space-y-3 sm:space-y-4 pointer-events-auto"
+            className="absolute left-4 sm:left-12 md:left-16 lg:left-24 top-20 sm:top-36 md:top-40 lg:top-44 max-w-xl sm:max-w-2xl space-y-2.5 sm:space-y-4 pointer-events-auto pr-2 sm:pr-0"
           >
-            {/* Top Badges (Monochrome Neutral Glass - Không màu) */}
-            <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold">
-              <span className="px-2.5 py-1 rounded-full bg-white/15 text-neutral-100 border border-white/20 font-bold uppercase tracking-wider backdrop-blur-sm">
+            {/* Top Badges (Monochrome Neutral Glass - Không màu, compact trên mobile) */}
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[10px] sm:text-[11px] font-bold">
+              <span className="px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-white/15 text-neutral-100 border border-white/20 font-bold uppercase tracking-wider backdrop-blur-sm">
                 {currentSlide.badge}
               </span>
-              <span className="px-2 py-0.5 rounded bg-white/15 text-neutral-100 border border-white/15 backdrop-blur-sm">
+              <span className="px-1.5 sm:px-2 py-0.5 rounded bg-white/15 text-neutral-100 border border-white/15 backdrop-blur-sm">
                 {currentSlide.year}
               </span>
-              <span className="px-2 py-0.5 rounded bg-white/15 text-neutral-100 border border-white/15 backdrop-blur-sm">
+              <span className="hidden sm:inline-block px-2 py-0.5 rounded bg-white/15 text-neutral-100 border border-white/15 backdrop-blur-sm">
                 Khoa Học Viễn Tưởng
               </span>
-              <span className="px-2 py-0.5 rounded bg-white/15 text-neutral-100 border border-white/15 backdrop-blur-sm">
+              <span className="px-1.5 sm:px-2 py-0.5 rounded bg-white/15 text-neutral-100 border border-white/15 backdrop-blur-sm">
                 {currentSlide.quality}
               </span>
-              <span className="px-2 py-0.5 rounded bg-white/15 text-neutral-100 border border-white/15 backdrop-blur-sm">
+              <span className="px-1.5 sm:px-2 py-0.5 rounded bg-white/15 text-amber-300 border border-white/15 backdrop-blur-sm font-extrabold">
                 ★ {currentSlide.rating}
               </span>
             </div>
 
             {/* Official 3D Chrome Logo & Title */}
-            <div className="space-y-2">
-              <div className="h-10 sm:h-14 md:h-16 lg:h-20 max-w-[280px] sm:max-w-[440px] md:max-w-[520px]">
+            <div className="space-y-1.5 sm:space-y-2">
+              <div className="h-8 sm:h-14 md:h-16 lg:h-20 max-w-[240px] sm:max-w-[440px] md:max-w-[520px]">
                 <img
                   src={logoSrc}
                   alt="Transformers"
@@ -624,17 +645,20 @@ function SciFiTransformersHeroBanner({
               </div>
 
               {/* Subtitle with character highlight */}
-              <p className="text-sm sm:text-lg font-semibold text-neutral-200/95 font-mono tracking-wide drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)]">
+              <p className="text-xs sm:text-lg font-semibold text-neutral-200/95 font-mono tracking-wide drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)] line-clamp-1 sm:line-clamp-none">
                 {currentSlide.subtitle}
               </p>
             </div>
 
             {/* Genre Pills */}
-            <div className="flex flex-wrap items-center gap-2 pt-0.5">
-              {currentSlide.genres.map((genre) => (
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-0.5">
+              {currentSlide.genres.map((genre, gIdx) => (
                 <span
                   key={genre}
-                  className="px-3 py-1 rounded-full bg-white/[0.12] hover:bg-white/[0.2] text-xs font-semibold text-neutral-100 border border-white/[0.15] backdrop-blur-md transition-colors shadow-sm"
+                  className={cn(
+                    "px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full bg-white/[0.12] hover:bg-white/[0.2] text-[10px] sm:text-xs font-semibold text-neutral-100 border border-white/[0.15] backdrop-blur-md transition-colors shadow-sm",
+                    gIdx > 2 ? "hidden xs:inline-block" : "inline-block",
+                  )}
                 >
                   {genre}
                 </span>
@@ -642,17 +666,17 @@ function SciFiTransformersHeroBanner({
             </div>
 
             {/* Description */}
-            <p className="text-xs sm:text-sm text-neutral-200/95 font-medium leading-relaxed max-w-lg line-clamp-3 sm:line-clamp-none drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)]">
+            <p className="text-xs sm:text-sm text-neutral-200/90 font-medium leading-relaxed max-w-lg line-clamp-2 sm:line-clamp-none drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)]">
               {currentSlide.overview}
             </p>
 
             {/* CTA Buttons */}
-            <div className="flex items-center gap-3 pt-2 sm:pt-3">
+            <div className="flex items-center gap-2 sm:gap-3 pt-1.5 sm:pt-3">
               <Link
                 href={`/watch/${currentSlide.slug}`}
-                className="inline-flex items-center gap-2.5 px-6 sm:px-7 py-2.5 sm:py-3 rounded-full bg-white hover:bg-neutral-100 text-neutral-950 font-black text-xs sm:text-sm shadow-xl shadow-black/40 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                className="inline-flex items-center gap-1.5 sm:gap-2.5 px-4 sm:px-7 py-2 sm:py-3 rounded-full bg-white hover:bg-neutral-100 text-neutral-950 font-black text-xs sm:text-sm shadow-xl shadow-black/40 transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0"
               >
-                <Play className="w-4 h-4 fill-current text-neutral-950" />
+                <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current text-neutral-950" />
                 <span>Xem Ngay</span>
               </Link>
 
@@ -660,18 +684,18 @@ function SciFiTransformersHeroBanner({
                 <button
                   type="button"
                   onClick={() => onOpenTrailer(currentSlide.name, currentSlide.trailer_url)}
-                  className="inline-flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-xs sm:text-sm backdrop-blur-md transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                  className="inline-flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-6 py-2 sm:py-3 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-xs sm:text-sm backdrop-blur-md transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0"
                 >
-                  <Clapperboard className="w-4 h-4 text-white" />
+                  <Clapperboard className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
                   <span>Trailer</span>
                 </button>
               )}
 
               <Link
                 href={`/film/${currentSlide.slug}`}
-                className="inline-flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-white/15 hover:bg-white/25 border border-white/20 text-white font-bold text-xs sm:text-sm backdrop-blur-md transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                className="inline-flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-6 py-2 sm:py-3 rounded-full bg-white/15 hover:bg-white/25 border border-white/20 text-white font-bold text-xs sm:text-sm backdrop-blur-md transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0"
               >
-                <Info className="w-4 h-4" />
+                <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 <span>Chi Tiết</span>
               </Link>
             </div>
@@ -680,7 +704,7 @@ function SciFiTransformersHeroBanner({
       </div>
 
       {/* ── Slide Navigation Controls (Prev / Next & Dots) ── */}
-      <div className="absolute right-4 sm:right-8 md:right-12 bottom-20 sm:bottom-32 md:bottom-40 lg:bottom-48 xl:bottom-56 z-30 flex items-center gap-2 sm:gap-3 select-none pointer-events-auto">
+      <div className="absolute right-3 sm:right-8 md:right-12 bottom-3 sm:bottom-32 md:bottom-40 lg:bottom-48 xl:bottom-56 z-30 flex items-center gap-1.5 sm:gap-3 select-none pointer-events-auto">
         {/* Indicators */}
         <div className="hidden sm:flex items-center gap-1.5 mr-2">
           {TRANSFORMERS_SLIDES.map((slide, idx) => (
@@ -703,27 +727,27 @@ function SciFiTransformersHeroBanner({
         </div>
 
         {/* Counter */}
-        <span className="text-xs font-mono font-bold text-neutral-300 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 shadow-lg">
+        <span className="text-[11px] sm:text-xs font-mono font-bold text-neutral-300 bg-black/60 backdrop-blur-md px-2.5 sm:px-3 py-1 rounded-full border border-white/10 shadow-lg">
           {currentIndex + 1} / {TRANSFORMERS_SLIDES.length}
         </span>
 
         {/* Arrow Buttons */}
-        <div className="flex items-center gap-1 bg-black/60 backdrop-blur-md px-1.5 py-1 rounded-full border border-white/20 shadow-lg">
+        <div className="flex items-center gap-0.5 sm:gap-1 bg-black/60 backdrop-blur-md px-1 sm:px-1.5 py-0.5 sm:py-1 rounded-full border border-white/20 shadow-lg">
           <button
             type="button"
             onClick={handlePrev}
             aria-label="Previous Transformers character"
-            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full hover:bg-white/20 text-white flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer"
+            className="w-6 h-6 sm:w-8 sm:h-8 rounded-full hover:bg-white/20 text-white flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer"
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
           <button
             type="button"
             onClick={handleNext}
             aria-label="Next Transformers character"
-            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full hover:bg-white/20 text-white flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer"
+            className="w-6 h-6 sm:w-8 sm:h-8 rounded-full hover:bg-white/20 text-white flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer"
           >
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
         </div>
       </div>
@@ -800,12 +824,33 @@ function GenreCuratedHeroBanner({
     setCurrentIndex((prev) => (prev - 1 + pool.length) % pool.length);
   };
 
+  const touchStartX = useRef<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 40) {
+      if (diff > 0) {
+        handleNext();
+      } else {
+        handlePrev();
+      }
+    }
+    touchStartX.current = null;
+  };
+
   return (
     <section
       data-hero-banner="true"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
-      className="relative h-[68svh] min-h-[500px] max-h-[620px] w-full select-none overflow-hidden bg-[#0a0b10] sm:h-[95vh] sm:min-h-[740px] sm:max-h-[1080px] lg:h-[100vh] lg:min-h-[860px]"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      className="relative h-[76svh] min-h-[580px] max-h-[680px] w-full select-none overflow-hidden bg-[#0a0b10] sm:h-[95vh] sm:min-h-[740px] sm:max-h-[1080px] lg:h-[100vh] lg:min-h-[860px]"
     >
       {/* ── Background Media: Live Video Trailer or Dynamic Backdrop ── */}
       <div className="absolute inset-0 w-full h-full overflow-hidden">
@@ -1543,7 +1588,7 @@ export default function GenrePageClient({
       className={cn(
         cardFont.className,
         "min-h-screen w-full bg-[#0a0b10] text-white",
-        isShowcasePage ? "-mt-20 sm:-mt-24 pb-20" : "pb-20 pl-4 pr-4 pt-20 sm:pt-24 md:pr-10 lg:pl-24",
+        isShowcasePage ? "mt-0 sm:-mt-24 pb-20" : "pb-20 pl-4 pr-4 pt-20 sm:pt-24 md:pr-10 lg:pl-24",
       )}
     >
       {/* ── CASE 1: SHOWCASE HUBS (Khoa Học Viễn Tưởng & Chiến Tranh) ── */}
@@ -1561,7 +1606,7 @@ export default function GenrePageClient({
           )}
 
           {/* ── CURATED MULTI-CATEGORY SWIPER ROWS (OVERLAPPING HERO BANNER & VIDEO) ── */}
-          <div className="relative z-20 pl-4 sm:pl-12 md:pl-20 lg:pl-24 pr-2 sm:pr-4 md:pr-6 pb-16 space-y-6 -mt-12 sm:-mt-24 md:-mt-32 lg:-mt-44 xl:-mt-52">
+          <div className="relative z-20 pl-4 sm:pl-12 md:pl-20 lg:pl-24 pr-2 sm:pr-4 md:pr-6 pb-16 space-y-6 mt-3 sm:-mt-24 md:-mt-32 lg:-mt-44 xl:-mt-52">
             {/* Row 1 */}
             <GenreCategoryRow
               title={

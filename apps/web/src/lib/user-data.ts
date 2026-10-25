@@ -279,6 +279,10 @@ export const guestDataStorage = {
     return true;
   },
 
+  clearHistory() {
+    watchProgressStorage.clearAll();
+  },
+
   clear() {
     if (typeof window === "undefined") return;
     localStorage.removeItem(WATCHLIST_KEY);

@@ -1794,17 +1794,29 @@ export const watchHistoryApi = {
 
   /** Get paginated history list */
   getHistory: (page = 1, limit = 20) =>
-    api.get<any>(`/users/me/watch-history?page=${page}&limit=${limit}`).catch(() => ({ data: [] })),
+    api
+      .get<any>(`/watch-history?page=${page}&limit=${limit}`)
+      .catch(() =>
+        api.get<any>(`/users/me/watch-history?page=${page}&limit=${limit}`).catch(() => ({ data: [] })),
+      ),
 
   /** Get resume data for a specific movie (returns all episodes) */
-  getResume: (movieId: string) => api.get(`/users/me/watch-history`).catch(() => ({ data: [] })),
+  getResume: (movieId: string) =>
+    api
+      .get(`/watch-history/resume/${movieId}`)
+      .catch(() => api.get(`/users/me/watch-history`).catch(() => ({ data: [] }))),
 
   /** Delete a single history entry */
   deleteEntry: (id: string) =>
-    api.put('/users/me/watch-history/remove', { id }).catch(() => ({ data: null })),
+    api
+      .delete(`/watch-history/${id}`)
+      .catch(() => api.put('/users/me/watch-history/remove', { id }).catch(() => ({ data: null }))),
 
   /** Clear all history */
-  clearAll: () => api.put('/users/me/watch-history/clear', {}).catch(() => ({ data: null })),
+  clearAll: () =>
+    api
+      .delete('/watch-history')
+      .catch(() => api.put('/users/me/watch-history/clear', {}).catch(() => ({ data: null }))),
 };
 
 export type PublicSystemNotification = {

@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { useAuthStore } from "@/store/authStore";
 import UserDashboardPage from "./[username]/page";
 import { useReliableNavigation } from "@/hooks/useReliableNavigation";
+import ProfileLoading from "./[username]/loading";
 
 export default function UserProfileIndexPage() {
   const router = useReliableNavigation();
@@ -56,14 +57,7 @@ export default function UserProfileIndexPage() {
   }, [user, router, fetchMe]);
 
   return (
-    <Suspense
-      fallback={
-        <div
-          className="min-h-screen bg-[#0b0d12]"
-          aria-label="Đang tải hồ sơ"
-        />
-      }
-    >
+    <Suspense fallback={<ProfileLoading />}>
       <UserDashboardPage />
     </Suspense>
   );

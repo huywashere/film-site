@@ -10,6 +10,11 @@ export class UsersService {
   ) {}
 
   async getProfile(username: string) {
+    const normalized = username.toLowerCase().trim();
+    const cacheKey = `user:profile:${normalized}`;
+    const cached = await this.cache.getJson<any>(cacheKey);
+    if (cached) return cached;
+
     const user = await this.prisma.user.findUnique({
       where: { username },
       select: {
@@ -32,6 +37,7 @@ export class UsersService {
       },
     });
     if (!user) throw new NotFoundException("User không tồn tại");
+    await this.cache.setJson(cacheKey, user, 120);
     return user;
   }
 
@@ -61,7 +67,7 @@ export class UsersService {
       dto.username = normalizedUsername;
     }
 
-    return this.prisma.user.update({
+    const updated = await this.prisma.user.update({
       where: { id: userId },
       data: dto,
       select: {
@@ -74,6 +80,14 @@ export class UsersService {
         bio: true,
       },
     });
+
+    if (updated.username) {
+      await this.cache.del(`user:profile:${updated.username.toLowerCase().trim()}`);
+      await this.cache.del(`user:stats:${updated.username.toLowerCase().trim()}`);
+      await this.cache.del(`user:stats:${updated.id.toLowerCase().trim()}`);
+    }
+
+    return updated;
   }
 
   async getRecentActivity(username: string) {
@@ -151,6 +165,19 @@ export class UsersService {
     });
   }
 
+  async clearWatchHistory(userId: string) {
+    return this.prisma.watchHistory.deleteMany({ where: { userId } });
+  }
+
+  async deleteWatchHistoryEntry(userId: string, idOrMovieId: string) {
+    return this.prisma.watchHistory.deleteMany({
+      where: {
+        userId,
+        OR: [{ id: idOrMovieId }, { movieId: idOrMovieId }],
+      },
+    });
+  }
+
   // ── WATCHLIST PERSISTENCE ─────────────────────────────────────────
   async getWatchlist(userId: string) {
     return this.prisma.watchlist.findMany({
@@ -216,6 +243,10 @@ export class UsersService {
 
   // ── USER REAL WATCH STATS & LEADERBOARD ─────────────────────────────
   async getUserStats(usernameOrId: string) {
+    const cacheKey = `user:stats:${usernameOrId.toLowerCase().trim()}`;
+    const cached = await this.cache.getJson<any>(cacheKey);
+    if (cached) return cached;
+
     const user = await this.prisma.user.findFirst({
       where: {
         OR: [{ id: usernameOrId }, { username: usernameOrId }],
@@ -455,7 +486,7 @@ export class UsersService {
             { name: "Khác", percentage: 10, hoursText: `10% • 1 giờ` },
           ];
 
-    return {
+    const result = {
       userId: user.id,
       username: user.username,
       displayName: user.displayName || user.username,
@@ -482,6 +513,9 @@ export class UsersService {
       badges,
       topGenres: displayGenres,
     };
+
+    await this.cache.setJson(cacheKey, result, 60);
+    return result;
   }
 
   async getLeaderboard(
@@ -490,7 +524,7 @@ export class UsersService {
     currentUserIdOrUsername?: string,
   ) {
     const validRange = ["day", "week", "month", "all"].includes(range) ? range : "all";
-    const LEADERBOARD_CACHE_KEY = `leaderboard:top_watchers:${validRange}:${limit}`;
+    const LEADERBOARD_CACHE_KEY = `leaderboard:top_watchers_v2:${validRange}:${limit}`;
     const cached = await this.cache.getJson<{ items: any[]; totalUsers: number }>(
       LEADERBOARD_CACHE_KEY,
     );
@@ -500,6 +534,12 @@ export class UsersService {
     if (cached && Array.isArray(cached.items)) {
       rankedWithPosition = cached.items;
     } else {
+      const EXCLUDED_LEADERBOARD_USERNAMES = [
+        "admin",
+        "userwritezeus",
+        "huywashere",
+      ];
+
       const dateThreshold =
         validRange === "day"
           ? new Date(Date.now() - 24 * 60 * 60 * 1000)
@@ -512,12 +552,20 @@ export class UsersService {
       const historyWhere = dateThreshold ? { watchedAt: { gte: dateThreshold } } : {};
 
       const users = await this.prisma.user.findMany({
-        where: { isBanned: false },
+        where: {
+          isBanned: false,
+          role: "USER",
+          username: {
+            notIn: EXCLUDED_LEADERBOARD_USERNAMES,
+            mode: "insensitive",
+          },
+        },
         select: {
           id: true,
           username: true,
           displayName: true,
           avatarUrl: true,
+          role: true,
           createdAt: true,
           watchHistories: {
             where: historyWhere,
@@ -531,6 +579,12 @@ export class UsersService {
       });
 
       const allRanked = users
+        .filter((u) => {
+          const lower = (u.username || "").toLowerCase().trim();
+          if (EXCLUDED_LEADERBOARD_USERNAMES.includes(lower)) return false;
+          if (u.role && u.role !== "USER") return false;
+          return true;
+        })
         .map((u) => {
           let totalSeconds = 0;
           for (const h of u.watchHistories) {

@@ -5,9 +5,9 @@ import { useEffect, useState } from 'react';
 import { logoFont } from '@/lib/fonts';
 import { cn } from '@/lib/utils';
 
-const MIN_VISIBLE_MS = 400;
+const MIN_VISIBLE_MS = 600;
 const MAX_VISIBLE_MS = 950;
-const EXIT_DURATION_MS = 240;
+const EXIT_DURATION_MS = 450;
 
 export function LogoSplashIntro() {
   const [visible, setVisible] = useState(true);
@@ -21,22 +21,39 @@ export function LogoSplashIntro() {
           navigator.userAgent || '',
         ));
 
+    const splashKey = 'flexphim-entry-splash-v1';
+    let alreadySeen = false;
+    try {
+      alreadySeen =
+        sessionStorage.getItem(splashKey) === '1' ||
+        localStorage.getItem(splashKey) === '1';
+    } catch {}
+
     if (
       isAuditOrBot ||
+      alreadySeen ||
       document.documentElement.dataset.entrySplash === 'skip' ||
       document.body.dataset.statusPage === 'true'
     ) {
+      document.documentElement.dataset.entrySplash = 'skip';
       setVisible(false);
       return;
     }
 
     const startedAt = performance.now();
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
 
     let closeStarted = false;
     let closeTimer: number | undefined;
     let removeTimer: number | undefined;
+
+    const finalizeClose = () => {
+      try {
+        sessionStorage.setItem(splashKey, '1');
+        localStorage.setItem(splashKey, '1');
+      } catch {}
+      document.documentElement.dataset.entrySplash = 'skip';
+      setVisible(false);
+    };
 
     const close = () => {
       if (closeStarted) return;
@@ -44,11 +61,8 @@ export function LogoSplashIntro() {
       const remaining = Math.max(0, MIN_VISIBLE_MS - (performance.now() - startedAt));
       closeTimer = window.setTimeout(() => {
         setLeaving(true);
-        removeTimer = window.setTimeout(() => {
-          document.body.style.overflow = previousOverflow;
-          document.documentElement.dataset.entrySplash = 'skip';
-          setVisible(false);
-        }, EXIT_DURATION_MS);
+        // Fallback timer ensures unmount even if onTransitionEnd does not fire
+        removeTimer = window.setTimeout(finalizeClose, EXIT_DURATION_MS + 60);
       }, remaining);
     };
 
@@ -61,7 +75,6 @@ export function LogoSplashIntro() {
       window.clearTimeout(maximumTimer);
       if (closeTimer) window.clearTimeout(closeTimer);
       if (removeTimer) window.clearTimeout(removeTimer);
-      document.body.style.overflow = previousOverflow;
     };
   }, []);
 
@@ -73,7 +86,17 @@ export function LogoSplashIntro() {
       role="status"
       aria-live="polite"
       aria-label="Đang mở FlexPhim"
-      className={`fixed inset-0 z-[10000] overflow-hidden bg-[#06070a] transition-opacity duration-300 ease-out ${
+      onTransitionEnd={(e) => {
+        if (e.target === e.currentTarget && leaving) {
+          try {
+            sessionStorage.setItem('flexphim-entry-splash-v1', '1');
+            localStorage.setItem('flexphim-entry-splash-v1', '1');
+          } catch {}
+          document.documentElement.dataset.entrySplash = 'skip';
+          setVisible(false);
+        }
+      }}
+      className={`fixed inset-0 z-[10000] overflow-hidden bg-[#06070a] transition-opacity duration-[450ms] ease-out will-change-[opacity] ${
         leaving
           ? 'pointer-events-none opacity-0'
           : 'pointer-events-auto opacity-100'

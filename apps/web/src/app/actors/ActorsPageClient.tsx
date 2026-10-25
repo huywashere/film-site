@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { Search, Loader2, UserX, TrendingUp } from "lucide-react";
+import { Search, Loader2, UserX } from "lucide-react";
 import { tmdbApi, tmdbProfile } from "@/lib/tmdb";
 
 // ── Actor Card ────────────────────────────────────────────────────
@@ -42,38 +42,38 @@ function ActorCard({ person }: { person: any }) {
   return (
     <Link
       href={`/actors/${person.id}`}
-      className="group flex flex-col items-center gap-3 p-3 rounded-2xl transition-all duration-300 hover:bg-white/[0.04]"
+      className="flex flex-col items-center gap-2.5 p-2 rounded-2xl cursor-pointer"
     >
-      {/* Avatar */}
-      <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden ring-2 ring-white/10 group-hover:ring-white/40 transition-all duration-300 bg-neutral-900 shrink-0">
+      {/* Avatar - enlarged, no scale/hover colors */}
+      <div className="relative w-28 h-28 sm:w-32 sm:h-32 md:w-36 md:h-36 rounded-full overflow-hidden ring-1 ring-white/10 bg-neutral-900 shrink-0">
         {profileUrl ? (
           <img
             src={profileUrl}
             alt={displayName}
-            className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-110"
+            className="w-full h-full object-cover object-top"
             loading="lazy"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-neutral-800">
-            <span className="text-lg font-extrabold text-neutral-400">
+            <span className="text-xl font-extrabold text-neutral-400">
               {initials}
             </span>
           </div>
         )}
-        {/* Popularity glow on hover */}
-        <div className="absolute inset-0 rounded-full bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </div>
 
       {/* Name */}
       <div className="text-center w-full">
-        <h3 className={`w-full text-center line-clamp-2 leading-snug transition-colors duration-200 group-hover:text-white ${
+        <h3
+          className={`w-full text-center line-clamp-2 leading-snug ${
             isNativeScript
-              ? "text-[11px] font-medium text-neutral-500 italic"
-              : "text-xs sm:text-[13px] font-bold text-neutral-200"
-          }`}>
+              ? "text-xs font-medium text-neutral-400 italic"
+              : "text-sm sm:text-[15px] font-bold text-neutral-100"
+          }`}
+        >
           {displayName}
         </h3>
-        <p className="mt-0.5 text-[10px] text-neutral-600 font-medium">
+        <p className="mt-0.5 text-xs text-neutral-500 font-medium">
           {person.known_for_department === "Acting"
             ? "Diễn viên"
             : person.known_for_department || "Diễn viên"}
@@ -143,12 +143,6 @@ export default function ActorsPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-5">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <TrendingUp size={14} className="text-amber-400" />
-              <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-amber-400">
-                Nổi tiếng nhất
-              </span>
-            </div>
             <h1 className="text-3xl md:text-4xl font-black tracking-tight text-white">
               Diễn Viên
             </h1>
@@ -185,7 +179,7 @@ export default function ActorsPage() {
             <p className="text-xs text-neutral-600">Đang tải danh sách diễn viên...</p>
           </div>
         ) : displayPeople.length > 0 ? (
-          <div className="grid grid-cols-3 gap-1 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-9">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             {displayPeople.map((person: any) => (
               <ActorCard key={person.id} person={person} />
             ))}

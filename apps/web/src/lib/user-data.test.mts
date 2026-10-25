@@ -190,3 +190,65 @@ test("guestDataStorage.hasPendingData tracks sync state per user", async () => {
   );
   assert.equal(guestDataStorage.hasPendingData("user-123"), true);
 });
+
+test("watchProgressStorage.clearAll wipes continue_watching, per-movie maps, and watched eps", async () => {
+  mockStorage.clear();
+
+  mockStorage.setItem(
+    "netphim_continue_watching",
+    JSON.stringify([{ slug: "oppenheimer", epSlug: "full", currentTime: 500, duration: 1000 }]),
+  );
+  mockStorage.setItem(
+    "netphim_ep_progress_oppenheimer",
+    JSON.stringify({ full: { time: 500, duration: 1000, percent: 50 } }),
+  );
+  mockStorage.setItem(
+    "netphim_watched_eps_oppenheimer",
+    JSON.stringify(["full"]),
+  );
+
+  const { watchProgressStorage } = await import("./watch-progress.js");
+  const { getAllGuestWatchHistoryEntries } = await import("./user-data.js");
+
+  // Ensure entries exist initially
+  assert.equal(getAllGuestWatchHistoryEntries().length, 1);
+
+  // Clear all
+  watchProgressStorage.clearAll();
+
+  // Storage and guest entries should now be completely empty
+  assert.equal(mockStorage.getItem("netphim_continue_watching"), null);
+  assert.equal(mockStorage.getItem("netphim_ep_progress_oppenheimer"), null);
+  assert.equal(mockStorage.getItem("netphim_watched_eps_oppenheimer"), null);
+  assert.equal(getAllGuestWatchHistoryEntries().length, 0);
+});
+
+test("watchProgressStorage.removeEntry cleanly removes single episode across stores", async () => {
+  mockStorage.clear();
+
+  mockStorage.setItem(
+    "netphim_continue_watching",
+    JSON.stringify([
+      { slug: "naruto", epSlug: "1", epName: "Tập 1", currentTime: 100, duration: 1000 },
+      { slug: "naruto", epSlug: "2", epName: "Tập 2", currentTime: 200, duration: 1000 },
+    ]),
+  );
+  mockStorage.setItem(
+    "netphim_ep_progress_naruto",
+    JSON.stringify({
+      "1": { time: 100, duration: 1000, percent: 10 },
+      "2": { time: 200, duration: 1000, percent: 20 },
+    }),
+  );
+
+  const { watchProgressStorage } = await import("./watch-progress.js");
+  const { getAllGuestWatchHistoryEntries } = await import("./user-data.js");
+
+  // Remove ep 1
+  watchProgressStorage.removeEntry("naruto", "1");
+
+  const remaining = getAllGuestWatchHistoryEntries();
+  assert.equal(remaining.length, 1);
+  assert.equal(remaining[0].epSlug, "2");
+});
+

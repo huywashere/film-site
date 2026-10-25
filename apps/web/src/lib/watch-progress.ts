@@ -194,23 +194,124 @@ export const watchProgressStorage = {
   removeEntry: (slug: string, epSlug?: string) => {
     if (typeof window === "undefined") return;
     try {
-      let entries = watchProgressStorage.getEntries();
-      if (epSlug) {
-        entries = entries.filter(
-          (e) => !(e.slug === slug && e.epSlug === epSlug),
-        );
+      // 1. Remove from top-level continue watching list
+      let entries = watchProgressStorage.getHistoryEntries();
+      const normTargetEp = epSlug
+        ? String(epSlug)
+            .toLowerCase()
+            .replace(/^tập\s*/i, "")
+            .replace(/^tap-/i, "")
+            .replace(/^0+/, "")
+            .trim()
+        : null;
+
+      if (normTargetEp) {
+        entries = entries.filter((e) => {
+          if (e.slug !== slug) return true;
+          const eNorm = String(e.epSlug || e.epName || "")
+            .toLowerCase()
+            .replace(/^tập\s*/i, "")
+            .replace(/^tap-/i, "")
+            .replace(/^0+/, "")
+            .trim();
+          return eNorm !== normTargetEp && e.epSlug !== epSlug;
+        });
       } else {
         entries = entries.filter((e) => e.slug !== slug);
       }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+
+      // 2. Remove from dedicated per-movie progress store
+      const movieProgressKey = `netphim_ep_progress_${slug}`;
+      const movieRaw = localStorage.getItem(movieProgressKey);
+      if (movieRaw) {
+        if (!normTargetEp) {
+          localStorage.removeItem(movieProgressKey);
+        } else {
+          try {
+            const movieMap = JSON.parse(movieRaw) as Record<string, unknown>;
+            delete movieMap[epSlug!];
+            delete movieMap[normTargetEp];
+            delete movieMap[`tap-${normTargetEp}`];
+            delete movieMap[`tap-${normTargetEp.padStart(2, "0")}`];
+            delete movieMap[normTargetEp.padStart(2, "0")];
+
+            if (Object.keys(movieMap).length === 0) {
+              localStorage.removeItem(movieProgressKey);
+            } else {
+              localStorage.setItem(movieProgressKey, JSON.stringify(movieMap));
+            }
+          } catch {
+            localStorage.removeItem(movieProgressKey);
+          }
+        }
+      }
+
+      // 3. Remove from watched episodes set
+      const watchedEpsKey = `netphim_watched_eps_${slug}`;
+      const watchedRaw = localStorage.getItem(watchedEpsKey);
+      if (watchedRaw) {
+        if (!normTargetEp) {
+          localStorage.removeItem(watchedEpsKey);
+        } else {
+          try {
+            const list = JSON.parse(watchedRaw);
+            if (Array.isArray(list)) {
+              const updated = list.filter(
+                (ep) => String(ep) !== epSlug && String(ep) !== normTargetEp,
+              );
+              if (updated.length === 0) {
+                localStorage.removeItem(watchedEpsKey);
+              } else {
+                localStorage.setItem(watchedEpsKey, JSON.stringify(updated));
+              }
+            }
+          } catch {
+            localStorage.removeItem(watchedEpsKey);
+          }
+        }
+      }
     } catch (e) {
       console.error("Failed to remove watch progress entry:", e);
+    }
+
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("netphim_episode_progress_changed", {
+          detail: { slug, epSlug, currentTime: 0, duration: 0 },
+        }),
+      );
     }
   },
 
   clearAll: () => {
     if (typeof window === "undefined") return;
-    localStorage.removeItem(STORAGE_KEY);
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (
+          key &&
+          (key.startsWith("netphim_ep_progress_") ||
+            key.startsWith("netphim_watched_eps_"))
+        ) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach((k) => localStorage.removeItem(k));
+    } catch (e) {
+      console.error("Failed to clear watch progress:", e);
+    }
+
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("netphim_history_cleared"));
+      window.dispatchEvent(
+        new CustomEvent("netphim_episode_progress_changed", {
+          detail: { slug: "", epSlug: "", currentTime: 0, duration: 0 },
+        }),
+      );
+    }
   },
 };
 

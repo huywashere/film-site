@@ -97,7 +97,7 @@ function SongNguTuocCotHeroBanner() {
       </div>
 
       {/* ── Layer 4: Typography, Logo Banner & Actions ── */}
-      <div className="absolute inset-0 z-20 flex flex-col justify-start pt-48 sm:pt-52 md:pt-60 lg:pt-64 xl:pt-72 px-4 sm:px-10 md:px-16 lg:px-24 pointer-events-none">
+      <div className="absolute inset-0 z-20 flex flex-col justify-start pt-56 sm:pt-56 md:pt-60 lg:pt-64 xl:pt-72 px-4 sm:px-10 md:px-16 lg:px-24 pointer-events-none">
         <motion.div
           initial={{ opacity: 0, y: 22 }}
           animate={{ opacity: 1, y: 0 }}

@@ -2522,9 +2522,9 @@ export default function HeroBanner({
                 type="button"
                 onClick={prevSlide}
                 aria-label="Banner trước"
-                className="h-8 w-8 min-h-[32px] min-w-[32px] flex items-center justify-center rounded-full bg-white/10 active:bg-white/25 border border-white/15 text-white/90 backdrop-blur-md transition-all active:scale-90 cursor-pointer shadow-sm"
+                className="h-8 w-8 min-h-[32px] min-w-[32px] flex items-center justify-center rounded-full bg-transparent hover:bg-white/10 active:bg-white/15 text-white/70 hover:text-white transition-all active:scale-90 cursor-pointer"
               >
-                <ChevronLeft size={16} />
+                <ChevronLeft size={17} />
               </button>
 
               <div className="flex items-center gap-1 px-1">
@@ -2553,9 +2553,9 @@ export default function HeroBanner({
                 type="button"
                 onClick={nextSlide}
                 aria-label="Banner tiếp theo"
-                className="h-8 w-8 min-h-[32px] min-w-[32px] flex items-center justify-center rounded-full bg-white/10 active:bg-white/25 border border-white/15 text-white/90 backdrop-blur-md transition-all active:scale-90 cursor-pointer shadow-sm"
+                className="h-8 w-8 min-h-[32px] min-w-[32px] flex items-center justify-center rounded-full bg-transparent hover:bg-white/10 active:bg-white/15 text-white/70 hover:text-white transition-all active:scale-90 cursor-pointer"
               >
-                <ChevronRight size={16} />
+                <ChevronRight size={17} />
               </button>
             </div>
           )}

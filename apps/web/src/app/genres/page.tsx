@@ -77,6 +77,56 @@ export const HUBS: HubCard[] = [
     href: '/universe/dc',
     image: '/Folder-Background/DC/thumb-1920-457955.png',
   },
+  // ── 7 Thể Loại Đặc Sắc Được Bổ Sung ──
+  {
+    slug: 'phim-gia-tuong',
+    title: 'Phim Giả Tưởng',
+    href: '/genre/vien-tuong',
+    image: '/Folder-Background/dune-2/ads (1).png',
+    objectPosition: 'center 35%',
+  },
+  {
+    slug: 'reality',
+    title: 'Reality & TV Shows',
+    href: '/films/tv-shows',
+    image: '/Folder-Background/Korea/ha-canh-noi-anh/cloy-couple-chars.png',
+    objectPosition: 'center 20%',
+  },
+  {
+    slug: 'kids',
+    title: 'Phim Thiếu Nhi (Kids)',
+    href: '/films/hoat-hinh',
+    image: '/Folder-Background/starwar/star-wars-the-mandalorian-season-3-poster.png',
+    objectPosition: 'center 22%',
+  },
+  {
+    slug: 'phim-hinh-su',
+    title: 'Phim Hình Sự',
+    href: '/genre/hinh-su',
+    image: '/Folder-Background/thegodfather/marlon-brando-in-the-godfather.png',
+    objectPosition: 'center 38%',
+  },
+  {
+    slug: 'phim-tai-lieu',
+    title: 'Phim Tài Liệu',
+    href: '/genre/tai-lieu',
+    image: '/Folder-Background/the odysey/btsa (1).png',
+    objectPosition: 'center 25%',
+  },
+  {
+    slug: 'phim-chinh-kich',
+    title: 'Phim Chính Kịch',
+    href: '/genre/chinh-kich',
+    image: '/Folder-Background/Korea/qeenoftear/queen-of-tears-user-chars-clean.png',
+    objectPosition: 'center 20%',
+  },
+  {
+    slug: 'phim-hai',
+    title: 'Phim Hài Hước',
+    href: '/genre/hai-huoc',
+    image: '/img-backtop/background-top/invincible-deadpool-o7-1920x1080.webp',
+    objectPosition: 'center 25%',
+  },
 ];
 
 function ResilientHubCardImage({
@@ -90,7 +140,7 @@ function ResilientHubCardImage({
 }) {
   const candidates = useMemo(() => {
     if (!src) return [];
-    if (src.startsWith('/Folder-Background/')) {
+    if (src.startsWith('/Folder-Background/') || src.startsWith('/img-backtop/')) {
       const encodedSrc = encodeURI(src);
       const cdnUrl = CDN_BASE ? `${CDN_BASE}${encodedSrc}` : '';
       return cdnUrl ? [encodedSrc, cdnUrl] : [encodedSrc];
@@ -244,10 +294,46 @@ export default function GenresPage() {
           queryFn: () => movieApi.getByGenre('chien-tranh', 1).then((r) => r.data),
           staleTime: 30 * 60 * 1000,
         });
-      } else if (hub.slug === 'khoa-hoc-vien-tuong') {
+      } else if (hub.slug === 'khoa-hoc-vien-tuong' || hub.slug === 'phim-gia-tuong') {
         void queryClient.prefetchQuery({
           queryKey: ['genre', 'vien-tuong', 1],
           queryFn: () => movieApi.getByGenre('vien-tuong', 1).then((r) => r.data),
+          staleTime: 30 * 60 * 1000,
+        });
+      } else if (hub.slug === 'reality') {
+        void queryClient.prefetchQuery({
+          queryKey: ['films-type', 'tv-shows', 1],
+          queryFn: () => movieApi.getTvShows(1).then((r) => r.data),
+          staleTime: 30 * 60 * 1000,
+        });
+      } else if (hub.slug === 'kids') {
+        void queryClient.prefetchQuery({
+          queryKey: ['films-type', 'hoat-hinh', 1],
+          queryFn: () => movieApi.getFilmsByType('hoat-hinh', 1).then((r) => r.data),
+          staleTime: 30 * 60 * 1000,
+        });
+      } else if (hub.slug === 'phim-hinh-su') {
+        void queryClient.prefetchQuery({
+          queryKey: ['genre', 'hinh-su', 1],
+          queryFn: () => movieApi.getByGenre('hinh-su', 1).then((r) => r.data),
+          staleTime: 30 * 60 * 1000,
+        });
+      } else if (hub.slug === 'phim-tai-lieu') {
+        void queryClient.prefetchQuery({
+          queryKey: ['genre', 'tai-lieu', 1],
+          queryFn: () => movieApi.getByGenre('tai-lieu', 1).then((r) => r.data),
+          staleTime: 30 * 60 * 1000,
+        });
+      } else if (hub.slug === 'phim-chinh-kich') {
+        void queryClient.prefetchQuery({
+          queryKey: ['genre', 'chinh-kich', 1],
+          queryFn: () => movieApi.getByGenre('chinh-kich', 1).then((r) => r.data),
+          staleTime: 30 * 60 * 1000,
+        });
+      } else if (hub.slug === 'phim-hai') {
+        void queryClient.prefetchQuery({
+          queryKey: ['genre', 'hai-huoc', 1],
+          queryFn: () => movieApi.getByGenre('hai-huoc', 1).then((r) => r.data),
           staleTime: 30 * 60 * 1000,
         });
       }
@@ -285,23 +371,23 @@ export default function GenresPage() {
         'relative min-h-[100dvh] bg-[#0a0b10] text-white pb-20 sm:pb-28 -mt-20 sm:-mt-24 select-none',
       )}
     >
-      {/* ── Top Hero Banner (Tilted 3D Movie Posters Wallpaper with Full Face Visibility) ── */}
+      {/* ── Top Hero Banner ── */}
       <VerticalTabsHeroBanner
         title="Chủ Đề"
         highlightText="& Tuyển Tập"
         highlightClassName="text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.95)]"
         description="Khám phá các vũ trụ điện ảnh và tuyển tập phim đặc sắc nhất được tuyển chọn riêng cho bạn."
-        imageSrc="/img-backtop/tab-genres.webp"
-        objectPosition="center 18%"
-        contentClassName="pb-16 sm:pb-20 md:pb-24 lg:pb-28"
+        imageSrc="/Folder-Background/starwar/1140629.jpg"
+        objectPosition="center 30%"
+        contentClassName="pb-5 sm:pb-6 md:pb-7"
       />
 
-      <div className="relative z-20 w-full px-3.5 sm:px-6 md:pl-20 lg:pl-24 pr-3.5 sm:pr-6 md:pr-10 space-y-8 sm:space-y-12 -mt-10 sm:-mt-14 md:-mt-18 lg:-mt-22 pb-16 sm:pb-24">
-        {/* ── Danh Mục Chủ Đề Điện Ảnh (Full Layout Edge-to-Edge) ── */}
+      <div className="relative z-20 w-full px-3.5 sm:px-6 md:pl-20 lg:pl-24 pr-3.5 sm:pr-6 md:pr-10 space-y-8 sm:space-y-12 pt-2 sm:pt-3 pb-16 sm:pb-24">
+        {/* ── Danh Mục Chủ Đề Điện Ảnh (16 Hubs cân đối 4x4) ── */}
         <section aria-label="Danh sách chủ đề điện ảnh" className="w-full">
           <h2 className="sr-only">Danh Mục Chủ Đề & Thể Loại</h2>
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 sm:gap-4 md:gap-4.5 lg:gap-5 gap-y-4 sm:gap-y-5 cv-section-auto">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-4 sm:gap-4 md:gap-4.5 lg:gap-5 gap-y-4 sm:gap-y-5.5 cv-section-auto">
             {HUBS.map((hub, idx) => (
               <HubCardItem
                 key={hub.slug}

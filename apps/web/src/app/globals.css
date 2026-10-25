@@ -49,6 +49,11 @@ body {
   overscroll-behavior-y: none;
 }
 
+/* Hide Next.js dev portal overlay from colliding with mobile floating dock in dev */
+nextjs-portal {
+  display: none !important;
+}
+
 /* ── Hardware Acceleration & Smooth 60/120fps Rendering ── */
 [data-film-card='true'] {
   contain: layout;

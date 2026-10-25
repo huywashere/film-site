@@ -1,4 +1,4 @@
-import { Controller, Get, Put, Body, Param, UseGuards, Request, Query } from '@nestjs/common';
+import { Controller, Get, Put, Delete, Body, Param, UseGuards, Request, Query } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Throttle } from '@nestjs/throttler';
 import { UsersService } from './users.service';
@@ -68,6 +68,21 @@ export class UsersController {
   @Throttle({ default: { limit: 60, ttl: 60_000 } })
   saveWatchHistory(@Request() req, @Body() dto: SaveUserWatchHistoryDto) {
     return this.usersService.saveWatchHistory(req.user.id, dto);
+  }
+
+  @Delete('me/watch-history')
+  @Put('me/watch-history/clear')
+  @UseGuards(AuthGuard('jwt'))
+  clearWatchHistory(@Request() req) {
+    return this.usersService.clearWatchHistory(req.user.id);
+  }
+
+  @Put('me/watch-history/remove')
+  @UseGuards(AuthGuard('jwt'))
+  deleteWatchHistoryEntry(@Request() req, @Body() dto: { id?: string; movieId?: string }) {
+    const target = dto.id || dto.movieId;
+    if (!target) return { count: 0 };
+    return this.usersService.deleteWatchHistoryEntry(req.user.id, target);
   }
 
   // ── Watchlist Endpoints ─────────────────────────────────────────────

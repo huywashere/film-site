@@ -32,9 +32,14 @@ const PREPAINT_SCRIPT = `
       /Lighthouse|Chrome-Lighthouse|PTST|HeadlessChrome/i.test(navigator.userAgent || "")
     );
     const splashKey = "flexphim-entry-splash-v1";
-    const hasSeenSplash = isAuditOrBot || sessionStorage.getItem(splashKey) === "1";
+    const hasSeenSplash = isAuditOrBot || 
+      sessionStorage.getItem(splashKey) === "1" || 
+      localStorage.getItem(splashKey) === "1";
     root.dataset.entrySplash = hasSeenSplash ? "skip" : "show";
-    if (!hasSeenSplash) sessionStorage.setItem(splashKey, "1");
+    if (!hasSeenSplash) {
+      sessionStorage.setItem(splashKey, "1");
+      localStorage.setItem(splashKey, "1");
+    }
   } catch {
     root.dataset.entrySplash = "skip";
   }
@@ -197,7 +202,7 @@ export default function RootLayout({
               <div data-site-chrome>
                 <Sidebar />
               </div>
-              <main id="main-content" className="page-content min-h-screen" tabIndex={-1}>
+              <main id="main-content" className="page-content min-h-screen bg-[#0a0b10]" tabIndex={-1}>
                 {children}
                 <div data-site-chrome>
                   <ConditionalFooter />

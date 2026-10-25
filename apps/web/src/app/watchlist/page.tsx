@@ -92,17 +92,9 @@ export default function WatchlistPage() {
   ).length;
   const totalPages = user ? watchlistData?.totalPages || 1 : 1;
 
-  const handleBack = () => {
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      router.back();
-    } else {
-      router.push("/");
-    }
-  };
-
   return (
     <div
-      className={cn(cardFont.className, "min-h-screen bg-[#0a0b10] text-white pb-20 -mt-20 sm:-mt-24 select-none")}
+      className={cn(cardFont.className, "min-h-[calc(100dvh+5rem)] sm:min-h-[calc(100dvh+6rem)] flex flex-col bg-[#0a0b10] text-white pb-24 sm:pb-28 -mt-20 sm:-mt-24 select-none")}
     >
       {/* ── Top Hero Banner (Supergirl with Full Face Visibility & Integrated Controls) ── */}
       <VerticalTabsHeroBanner
@@ -114,15 +106,13 @@ export default function WatchlistPage() {
         }
         imageSrc="/img-backtop/tab-watchlist.webp"
         objectPosition="center 4%"
-        onBack={handleBack}
-        backText="Quay lại"
-        contentClassName="pb-16 sm:pb-20 md:pb-24"
+        contentClassName="pb-8 sm:pb-10 md:pb-12"
       />
 
       {/* Content */}
-      <div className="relative z-20 w-full px-3.5 sm:px-6 md:pl-20 lg:pl-24 pr-3.5 sm:pr-6 md:pr-10 pt-6 sm:pt-8">
+      <div className="flex-1 relative z-20 w-full px-3.5 sm:px-6 md:pl-20 lg:pl-24 pr-3.5 sm:pr-6 md:pr-10 -mt-6 sm:-mt-8 md:-mt-10 lg:-mt-12 flex flex-col">
         {isLoading ? (
-          <div className="flex items-center justify-center py-20">
+          <div className="flex-1 flex items-center justify-center py-16">
             <Loader2 size={40} className="animate-spin text-sky-400" />
           </div>
         ) : watchlistItems.length > 0 ? (
@@ -159,17 +149,17 @@ export default function WatchlistPage() {
             )}
           </>
         ) : (
-          <div className="text-center py-20">
-            <Bookmark size={64} className="mx-auto mb-4 text-neutral-700" />
-            <p className="text-xl font-semibold text-neutral-400">
+          <div className="flex-1 flex flex-col items-center justify-center text-center py-10 sm:py-14 my-auto">
+            <Bookmark size={56} className="mx-auto mb-3.5 text-neutral-600" />
+            <p className="text-lg sm:text-xl font-semibold text-neutral-300">
               Chưa có phim nào trong danh sách
             </p>
-            <p className="text-sm text-neutral-500 mt-2">
+            <p className="text-xs sm:text-sm text-neutral-500 mt-1.5">
               Thêm phim bạn muốn xem sau vào đây
             </p>
             <Link
               href="/"
-              className="inline-block mt-6 bg-blue-500 hover:bg-blue-600 text-white px-6 py-2.5 rounded-full font-semibold transition-colors"
+              className="inline-block mt-5 bg-blue-500 hover:bg-blue-600 text-white px-5 py-2.5 rounded-full text-xs sm:text-sm font-semibold transition-colors"
             >
               Khám phá phim
             </Link>

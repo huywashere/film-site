@@ -19,6 +19,7 @@ export interface VerticalTabsHeroBannerProps {
   imageSrc?: string;
   blurDataURL?: string;
   objectPosition?: string;
+  imageClassName?: string;
   onBack?: () => void;
   backText?: string;
   children?: React.ReactNode;
@@ -43,6 +44,7 @@ function VerticalTabsHeroBannerComponent({
   imageSrc: customImageSrc,
   blurDataURL: customBlurDataURL,
   objectPosition = 'center 15%',
+  imageClassName,
   onBack,
   backText = 'Quay lại',
   children,
@@ -60,10 +62,10 @@ function VerticalTabsHeroBannerComponent({
       aria-label={title || 'Ảnh bìa chủ đề điện ảnh'}
       className={cn(
         'relative w-full select-none overflow-hidden bg-[#0a0b10]',
-        // Generous cinematic height so faces and characters are never cropped or cut off
+        // Balanced cinematic height so faces and characters are visible while content is raised up nicely
         isCompact
-          ? 'h-[36svh] min-h-[300px] sm:h-[40vh] sm:min-h-[340px] md:h-[44vh] md:min-h-[380px] lg:h-[48vh] lg:min-h-[420px]'
-          : 'h-[44svh] min-h-[360px] sm:h-[48vh] sm:min-h-[400px] md:h-[52vh] md:min-h-[440px] lg:h-[56vh] lg:min-h-[480px] xl:h-[60vh] xl:min-h-[520px]',
+          ? 'h-[30svh] min-h-[250px] sm:h-[33vh] sm:min-h-[270px] md:h-[36vh] md:min-h-[300px] lg:h-[38vh] lg:min-h-[330px]'
+          : 'h-[42svh] min-h-[340px] sm:h-[40vh] sm:min-h-[330px] md:h-[44vh] md:min-h-[360px] lg:h-[46vh] lg:min-h-[390px] xl:h-[48vh] xl:min-h-[420px]',
         className,
       )}
     >
@@ -81,7 +83,12 @@ function VerticalTabsHeroBannerComponent({
           sizes="100vw"
           placeholder="blur"
           blurDataURL={targetBlurDataURL}
-          className="w-full h-full object-cover select-none"
+          className={cn(
+            'w-full h-full object-cover select-none transition-transform duration-300',
+            // Lower image down on mobile so character heads and faces are not hidden behind navbar or top edge
+            'translate-y-[84px] sm:translate-y-0 scale-[1.08] sm:scale-100',
+            imageClassName,
+          )}
           style={{ objectPosition, imageRendering: '-webkit-optimize-contrast' }}
         />
       </div>
@@ -115,7 +122,7 @@ function VerticalTabsHeroBannerComponent({
       {(showTitle || !pureCover) && (title || children) && (
         <div
           className={cn(
-            'relative z-20 w-full h-full flex flex-col justify-end px-3.5 sm:px-6 md:pl-20 lg:pl-24 pr-3.5 sm:pr-6 md:pr-10 pb-5 sm:pb-7',
+            'relative z-20 w-full h-full flex flex-col justify-end px-3.5 sm:px-6 md:pl-20 lg:pl-24 pr-3.5 sm:pr-6 md:pr-10 pt-16 sm:pt-20 pb-5 sm:pb-7',
             contentClassName,
           )}
         >

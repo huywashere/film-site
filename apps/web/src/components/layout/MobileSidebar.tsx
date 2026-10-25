@@ -226,6 +226,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                 <div className="grid grid-cols-2 gap-1.5">
                   <Link
                     href={`/user/${encodeURIComponent(user.username)}`}
+                    prefetch={true}
                     className="flex h-8 items-center justify-center gap-1.5 rounded-lg border border-white/15 bg-white/10 px-3 text-center text-[11px] font-semibold text-white transition-all hover:bg-white/20 active:scale-95"
                     onClick={onClose}
                   >

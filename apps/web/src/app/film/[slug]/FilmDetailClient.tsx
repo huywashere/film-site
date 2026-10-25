@@ -525,7 +525,7 @@ function FilmGalleryItem({
   return (
     <div
       onClick={() => onOpen(index)}
-      className="group relative aspect-video overflow-hidden rounded-xl bg-neutral-900/80 border border-white/10 hover:border-cyan-400/60 transition-all duration-300 cursor-pointer shadow-lg hover:shadow-cyan-950/40 select-none"
+      className="group relative aspect-video overflow-hidden rounded-xl bg-neutral-900/80 border border-white/10 cursor-pointer select-none"
       title="Bấm để xem ảnh phóng to"
     >
       {!loaded && (
@@ -541,7 +541,7 @@ function FilmGalleryItem({
         onLoad={() => setLoaded(true)}
         onError={() => setFailed(true)}
         className={cn(
-          'w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105',
+          'w-full h-full object-cover',
           loaded ? 'opacity-100' : 'opacity-0'
         )}
       />
@@ -549,7 +549,7 @@ function FilmGalleryItem({
         <span className="text-[11px] font-semibold text-white/95 truncate drop-shadow">
           {img.label}
         </span>
-        <div className="p-1 rounded-full bg-black/70 text-cyan-400 backdrop-blur-sm border border-white/10 shadow-sm">
+        <div className="p-1 rounded-full bg-black/70 text-neutral-300 backdrop-blur-sm border border-white/10 shadow-sm">
           <Maximize2 size={12} />
         </div>
       </div>
@@ -610,8 +610,8 @@ function CastCard({
   // If loading, show skeleton pulse
   if (isLoading && !directTmdbUrl) {
     return (
-      <div className="flex flex-col items-center space-y-1.5 p-1.5 w-24 md:w-28 flex-shrink-0 animate-pulse">
-        <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-white/10" />
+      <div className="flex flex-col items-center space-y-1.5 p-1.5 w-28 md:w-32 flex-shrink-0 animate-pulse">
+        <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-white/10" />
         <div className="w-16 h-3 bg-white/10 rounded" />
       </div>
     );
@@ -624,10 +624,10 @@ function CastCard({
 
   const cardContent = (
     <div
-      className="flex flex-col items-center text-center space-y-1.5 p-1.5 w-24 md:w-28 flex-shrink-0 group cursor-pointer"
+      className="flex flex-col items-center text-center space-y-1.5 p-1.5 w-28 md:w-32 flex-shrink-0 group cursor-pointer"
       title={`${cleanName}${role ? ` (${role})` : ''}`}
     >
-      <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-neutral-900 transition-[border-color,transform] duration-200 group-hover:scale-[1.03] group-hover:border-white/30 md:h-20 md:w-20 shadow-md">
+      <div className="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-neutral-900 md:h-24 md:w-24 shadow-md">
         {activePhotoSrc && !photoFailed ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -637,7 +637,7 @@ function CastCard({
             referrerPolicy="strict-origin-when-cross-origin"
             loading="lazy"
             decoding="async"
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            className="w-full h-full object-cover"
             onError={() => {
               if (photoIndex < photoCandidates.length - 1) {
                 setPhotoIndex((i) => i + 1);
@@ -653,10 +653,10 @@ function CastCard({
         )}
       </div>
       <div className="w-full truncate px-1">
-        <p className="truncate text-[11px] font-bold text-white group-hover:text-amber-300 transition-colors">
+        <p className="truncate text-xs font-bold text-neutral-100">
           {cleanName}
         </p>
-        <p className="text-[9px] text-neutral-500 truncate mt-0.5">{role}</p>
+        <p className="text-[10px] text-neutral-500 truncate mt-0.5">{role}</p>
       </div>
     </div>
   );
@@ -1834,6 +1834,93 @@ export default function FilmDetailPage({
   const filmName = film?.name || film?.title || slug;
   const originName = film?.origin_name || '';
 
+  // Xây dựng danh sách từ khóa chuẩn xác cho từng phim theo nội dung & thể loại
+  const movieKeywords = useMemo(() => {
+    if (!film) return [];
+    const list: Array<{ label: string; href: string }> = [];
+    const seen = new Set<string>();
+
+    const addTag = (label: string, href: string) => {
+      const trimmed = label.trim();
+      const lower = trimmed.toLowerCase();
+      if (!trimmed || seen.has(lower)) return;
+      seen.add(lower);
+      list.push({ label: trimmed, href });
+    };
+
+    // 1. Tên phim tiếng Việt chính xác
+    if (film.name) {
+      addTag(film.name, `/films?search=${encodeURIComponent(film.name)}`);
+    }
+
+    // 2. Tên phim gốc quốc tế
+    if (film.origin_name && film.origin_name.toLowerCase() !== film.name?.toLowerCase()) {
+      addTag(film.origin_name, `/films?search=${encodeURIComponent(film.origin_name)}`);
+    }
+
+    // 3. Các thể loại phim tiếng Việt chuẩn
+    genres.forEach((g: any) => {
+      const genreName = t(`genres_list.${g.slug}`, g.name);
+      if (genreName) {
+        addTag(genreName, g.slug ? `/genre/${g.slug}` : `/films?genre=${encodeURIComponent(genreName)}`);
+      }
+    });
+
+    // 4. Định dạng phim (Phim Lẻ, Phim Bộ, Phim Chiếu Rạp, Phim Hoạt Hình, Anime nếu đúng là anime)
+    const isSeries = film.type === 'series' || (episodeCount && episodeCount > 1);
+    const isSingle = film.type === 'single';
+    const isAnimation =
+      film.type === 'hoathinh' ||
+      film.type === 'hoat-hinh' ||
+      genres.some((g: any) =>
+        ['hoat-hinh', 'animation', 'anime'].includes(String(g.slug || '').toLowerCase()),
+      );
+
+    if (isAnimation) {
+      const isAnime =
+        genres.some((g: any) => String(g.slug || '').toLowerCase().includes('anime')) ||
+        countries.some((c: any) => String(c.slug || '').toLowerCase() === 'nhat-ban');
+      if (isAnime) {
+        addTag('Anime', '/films?type=hoathinh');
+      }
+      addTag('Phim Hoạt Hình', '/films?type=hoathinh');
+    } else if (isSeries) {
+      addTag('Phim Bộ', '/films?type=series');
+    } else if (isSingle) {
+      addTag('Phim Lẻ', '/films?type=single');
+      addTag('Phim Chiếu Rạp', '/films?type=single');
+    }
+
+    // 5. Quốc gia sản xuất
+    countries.forEach((c: any) => {
+      const countryName = t(`countries_list.${c.slug}`, c.name);
+      if (countryName) {
+        addTag(`Phim ${countryName}`, c.slug ? `/country/${c.slug}` : `/films?country=${encodeURIComponent(countryName)}`);
+      }
+    });
+
+    // 6. Năm phát hành
+    if (film.year) {
+      addTag(`Phim ${film.year}`, `/films?year=${film.year}`);
+    }
+
+    // 7. Diễn viên chính hàng đầu
+    const topCast = (tmdbCast && tmdbCast.length > 0)
+      ? tmdbCast.slice(0, 3).map((c: any) => ({ name: c.name, id: c.id }))
+      : actors.slice(0, 3).map((name: string) => ({ name, id: null }));
+
+    topCast.forEach((castItem: any) => {
+      if (castItem.name) {
+        addTag(
+          castItem.name,
+          castItem.id ? `/actors/${castItem.id}` : `/films?actor=${encodeURIComponent(castItem.name)}`
+        );
+      }
+    });
+
+    return list;
+  }, [film, genres, countries, episodeCount, tmdbCast, actors, t]);
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': film?.type === 'series' ? 'TVSeries' : 'Movie',
@@ -2609,37 +2696,34 @@ export default function FilmDetailPage({
             )}
           </section>
 
-          <section className="space-y-3 pt-4 border-t border-white/5">
-            <h2 className="text-base sm:text-lg font-bold text-white flex items-center">
-              <span>{t('film.tags', 'Từ khóa')}</span>
-              <span className="ml-2 text-xs font-normal text-neutral-400">
-                ({genres.length + 2} {t('film.tagsCount', 'từ khóa')})
-              </span>
-            </h2>
-            <div className="flex flex-wrap gap-2">
-              {genres.map((g: any) => (
-                <span
-                  key={g.slug || g.name}
-                  className="bg-white/5 border border-white/10 text-neutral-300 px-3 py-1 rounded-md text-xs font-medium hover:border-white/20 transition-colors cursor-pointer"
-                >
-                  {g.slug || g.name.toLowerCase()}
+          {movieKeywords.length > 0 && (
+            <section className="space-y-3 pt-4 border-t border-white/5">
+              <h2 className="text-base sm:text-lg font-bold text-white flex items-center">
+                <span>{t('film.tags', 'Từ khóa')}</span>
+                <span className="ml-2 text-xs font-normal text-neutral-400">
+                  ({movieKeywords.length} {t('film.tagsCount', 'từ khóa')})
                 </span>
-              ))}
-              <span className="bg-white/5 border border-white/10 text-neutral-300 px-3 py-1 rounded-md text-xs font-medium">
-                anime
-              </span>
-              <span className="bg-white/5 border border-white/10 text-neutral-300 px-3 py-1 rounded-md text-xs font-medium">
-                fantasy
-              </span>
-            </div>
-          </section>
+              </h2>
+              <div className="flex flex-wrap gap-2">
+                {movieKeywords.map((tag) => (
+                  <Link
+                    key={tag.label}
+                    href={tag.href}
+                    className="bg-white/5 border border-white/10 text-neutral-300 px-3 py-1 rounded-md text-xs font-medium hover:border-white/20 hover:text-white transition-colors cursor-pointer"
+                  >
+                    {tag.label}
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* ── Hình ảnh liên quan tới phim (Stills & Backdrops) ── */}
           {galleryImages.length > 0 && (
             <section className="space-y-4 pt-6 border-t border-white/5 cv-section-auto">
               <div className="flex items-center justify-between">
                 <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                  <Images className="text-cyan-400" size={20} />
+                  <Images className="text-neutral-400" size={20} />
                   <span>{t('film.relatedImages', 'Hình ảnh liên quan')}</span>
                   <span className="text-xs font-normal text-neutral-400">
                     ({galleryImages.length} ảnh)
@@ -2662,7 +2746,7 @@ export default function FilmDetailPage({
 
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3.5 cv-grid-auto">
                 {galleryImages
-                  .slice(0, showAllGallery ? undefined : 8)
+                  .slice(0, showAllGallery ? undefined : 4)
                   .map((img, idx) => (
                     <FilmGalleryItem
                       key={img.url + idx}
@@ -2677,14 +2761,14 @@ export default function FilmDetailPage({
                   ))}
               </div>
 
-              {galleryImages.length > 8 && !showAllGallery && (
+              {galleryImages.length > 4 && !showAllGallery && (
                 <div className="flex justify-center pt-2">
                   <button
                     type="button"
                     onClick={() => setShowAllGallery(true)}
                     className="px-4 py-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 text-xs font-semibold text-neutral-200 hover:text-white transition-all duration-200 flex items-center gap-2 cursor-pointer active:scale-95"
                   >
-                    <span>Xem thêm {galleryImages.length - 8} ảnh khác</span>
+                    <span>Xem thêm {galleryImages.length - 4} ảnh khác</span>
                     <ChevronDown size={14} />
                   </button>
                 </div>

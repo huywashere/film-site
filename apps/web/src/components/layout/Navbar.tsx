@@ -41,7 +41,7 @@ import { useAuthModalStore } from "@/store/authModalStore";
 import { useSettingsStore } from "@/store/settingsStore";
 import { useTranslation } from "@/store/langStore";
 import { useThemeStore } from "@/store/themeStore";
-import { movieApi, publishedMovieApi, systemNotificationApi } from "@/lib/api";
+import { api, movieApi, publishedMovieApi, systemNotificationApi } from "@/lib/api";
 import { resolveImageUrl } from "@/components/film/FilmCard";
 import { cn } from "@/lib/utils";
 import { cardFont, logoFont } from "@/lib/fonts";
@@ -492,9 +492,27 @@ export function Navbar() {
           queryFn: () => movieApi.getLatest(1).then((r) => r.data),
           staleTime: 15 * 60 * 1000,
         });
+      } else if (href.startsWith("/user") || href === "/user") {
+        const targetUsername = href.startsWith("/user/")
+          ? decodeURIComponent(href.replace("/user/", "").split("?")[0])
+          : user?.username;
+        if (targetUsername && targetUsername !== "me") {
+          void queryClient.prefetchQuery({
+            queryKey: ["user-profile", targetUsername],
+            queryFn: async () => {
+              try {
+                const res = await api.get(`/users/${encodeURIComponent(targetUsername)}`);
+                return res.data;
+              } catch {
+                return null;
+              }
+            },
+            staleTime: 5 * 60 * 1000,
+          });
+        }
       }
     },
-    [queryClient, navigation],
+    [queryClient, navigation, user?.username],
   );
 
   // Delay background route prefetching until browser is fully idle (after initial paint & hydration)
@@ -505,6 +523,9 @@ export function Navbar() {
         navigation.prefetch("/");
         navigation.prefetch("/films");
         navigation.prefetch("/genres");
+        if (user?.username) {
+          navigation.prefetch(`/user/${encodeURIComponent(user.username)}`);
+        }
       } catch {}
       NAV_LINKS.forEach((link) => {
         try {
@@ -522,7 +543,7 @@ export function Navbar() {
       const timer = setTimeout(prefetchIdle, 1200);
       return () => clearTimeout(timer);
     }
-  }, [navigation]);
+  }, [navigation, user?.username]);
 
   const [notifTab, setNotifTab] = useState<"system" | MovieNotificationChannel>(
     "system",
@@ -1283,6 +1304,12 @@ export function Navbar() {
                       <DropdownMenuTrigger
                         aria-label={`Tài khoản của ${user.displayName || user.username}`}
                         className="flex items-center space-x-1.5 focus:outline-none cursor-pointer group"
+                        onMouseEnter={() => {
+                          if (user?.username) prefetchNav(`/user/${encodeURIComponent(user.username)}`);
+                        }}
+                        onPointerDown={() => {
+                          if (user?.username) prefetchNav(`/user/${encodeURIComponent(user.username)}`);
+                        }}
                       >
                         {renderNavAvatar("w-8 h-8", 64)}
                         <ChevronDown
@@ -1322,6 +1349,12 @@ export function Navbar() {
                         <Link
                           href={user.username ? `/user/${encodeURIComponent(user.username)}` : "/user"}
                           prefetch={false}
+                          onMouseEnter={() => {
+                            prefetchNav(user.username ? `/user/${encodeURIComponent(user.username)}` : "/user");
+                          }}
+                          onPointerDown={() => {
+                            prefetchNav(user.username ? `/user/${encodeURIComponent(user.username)}` : "/user");
+                          }}
                           className="hover:bg-white/12 hover:backdrop-blur-md hover:text-white transition-all rounded-lg cursor-pointer flex items-center py-1.5 px-2.5 text-xs font-medium"
                         >
                           <User
@@ -1333,6 +1366,8 @@ export function Navbar() {
                         <Link
                           href="/watchlist"
                           prefetch={false}
+                          onMouseEnter={() => prefetchNav("/watchlist")}
+                          onPointerDown={() => prefetchNav("/watchlist")}
                           className="hover:bg-white/12 hover:backdrop-blur-md hover:text-white transition-all rounded-lg cursor-pointer flex items-center py-1.5 px-2.5 text-xs font-medium"
                         >
                           <Bookmark
@@ -1344,6 +1379,8 @@ export function Navbar() {
                         <Link
                           href="/history"
                           prefetch={false}
+                          onMouseEnter={() => prefetchNav("/history")}
+                          onPointerDown={() => prefetchNav("/history")}
                           className="hover:bg-white/12 hover:backdrop-blur-md hover:text-white transition-all rounded-lg cursor-pointer flex items-center py-1.5 px-2.5 text-xs font-medium"
                         >
                           <History
@@ -1355,6 +1392,8 @@ export function Navbar() {
                         <Link
                           href="/settings"
                           prefetch={false}
+                          onMouseEnter={() => prefetchNav("/settings")}
+                          onPointerDown={() => prefetchNav("/settings")}
                           className="hover:bg-white/12 hover:backdrop-blur-md hover:text-white transition-all rounded-lg cursor-pointer flex items-center py-1.5 px-2.5 text-xs font-medium"
                         >
                           <Settings

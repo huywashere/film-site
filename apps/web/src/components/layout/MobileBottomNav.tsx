@@ -70,6 +70,11 @@ export function MobileBottomNav() {
             router.prefetch(route);
           } catch {}
         });
+        if (user?.username) {
+          try {
+            router.prefetch(`/user/${encodeURIComponent(user.username)}`);
+          } catch {}
+        }
         warmRoute('/films');
       };
 
@@ -86,7 +91,7 @@ export function MobileBottomNav() {
         window.cancelIdleCallback(idleId);
       }
     };
-  }, [mounted, router, warmRoute]);
+  }, [mounted, router, warmRoute, user?.username]);
 
   const warmProfileRoute = () => {
     if (user?.username) {

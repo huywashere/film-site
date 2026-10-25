@@ -609,7 +609,24 @@ export default function UserDashboardPage() {
     "";
 
   const tabParam = searchParams.get("tab") as TabType;
-  const [activeTab, setActiveTab] = useState<TabType>("account");
+  const [activeTab, setActiveTab] = useState<TabType>(() => {
+    if (
+      tabParam &&
+      [
+        "account",
+        "stats",
+        "leaderboard",
+        "security",
+        "favorites",
+        "watchlist",
+        "history",
+        "settings",
+      ].includes(tabParam)
+    ) {
+      return tabParam;
+    }
+    return "account";
+  });
 
   useEffect(() => {
     if (isMeRoute && !user) {
@@ -638,7 +655,7 @@ export default function UserDashboardPage() {
         "settings",
       ].includes(tabParam)
     ) {
-      setActiveTab(tabParam);
+      setActiveTab((prev) => (prev !== tabParam ? tabParam : prev));
     }
   }, [tabParam]);
 
@@ -912,6 +929,25 @@ export default function UserDashboardPage() {
     },
     enabled: Boolean(username) && username !== "me",
     retry: false,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
+    initialData:
+      isOwnProfile && user
+        ? {
+            id: user.id,
+            username: user.username,
+            displayName: user.displayName || user.username,
+            avatarUrl:
+              user.avatarUrl ||
+              (isAdminUser ? "/avatars/admin-mascot-riso.png" : undefined),
+            nameColor: user.nameColor || DEFAULT_NAME_COLOR,
+            avatarFrameColor:
+              user.avatarFrameColor || DEFAULT_AVATAR_FRAME_COLOR,
+            bio: user.bio || "",
+            createdAt: (user as any)?.createdAt,
+            _count: { watchlist: 0, reviews: 0 },
+          }
+        : undefined,
   });
 
   const profile =
@@ -968,7 +1004,11 @@ export default function UserDashboardPage() {
         .getHistory(1, 40)
         .then((r) => r.data)
         .catch(() => ({ items: [], total: 0 })),
-    enabled: isOwnProfile,
+    enabled:
+      isOwnProfile &&
+      (activeTab === "history" || activeTab === "account" || activeTab === "stats"),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
     retry: false,
   });
 
@@ -979,7 +1019,9 @@ export default function UserDashboardPage() {
         .get(1)
         .then((r) => r.data)
         .catch(() => ({ items: [], total: 0 })),
-    enabled: isOwnProfile,
+    enabled: isOwnProfile && (activeTab === "watchlist" || activeTab === "account"),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
     retry: false,
   });
 
@@ -993,8 +1035,9 @@ export default function UserDashboardPage() {
         return null;
       }
     },
-    enabled: Boolean(username),
-    staleTime: 60_000,
+    enabled: Boolean(username) && (activeTab === "stats" || activeTab === "account"),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
   });
 
   const { data: leaderboardData, isLoading: loadingLeaderboard } = useQuery({
@@ -1011,14 +1054,35 @@ export default function UserDashboardPage() {
         return { items: [], range: leaderboardRange };
       }
     },
-    staleTime: 60_000,
+    enabled: activeTab === "leaderboard",
+    staleTime: 5 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
   });
 
-  const rawLeaderboard: any[] = Array.isArray(leaderboardData)
-    ? leaderboardData
-    : Array.isArray(leaderboardData?.items)
-    ? leaderboardData.items
-    : [];
+  const EXCLUDED_LEADERBOARD_USERS = useMemo(
+    () => new Set(["admin", "userwritezeus", "huywashere"]),
+    [],
+  );
+
+  const rawLeaderboard: any[] = (
+    Array.isArray(leaderboardData)
+      ? leaderboardData
+      : Array.isArray(leaderboardData?.items)
+      ? leaderboardData.items
+      : []
+  )
+    .filter((item: any) => {
+      const uname = (item?.username || "").toLowerCase().trim();
+      return !EXCLUDED_LEADERBOARD_USERS.has(uname);
+    })
+    .map((item: any, index: number) => ({
+      ...item,
+      rank: index + 1,
+      isTop1: index === 0,
+      isTop2: index === 1,
+      isTop3: index === 2,
+      medal: index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : null,
+    }));
 
   const performProfileUpdate = async (options?: {
     avatar?: string;
@@ -1254,8 +1318,39 @@ export default function UserDashboardPage() {
     }
   };
 
-  const [localHistory, setLocalHistory] = useState<any[]>([]);
-  const [localWatchlist, setLocalWatchlist] = useState<any[]>([]);
+  const [localHistory, setLocalHistory] = useState<any[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      return getAllGuestWatchHistoryEntries().map((e) => ({
+        id: `${e.slug}-${e.epSlug || "full"}`,
+        movieId: e.slug,
+        movieTitle: e.title,
+        movieThumb: e.thumb || e.poster,
+        episode: e.epSlug,
+        progress: e.currentTime,
+        duration: e.duration,
+        updatedAt: e.updatedAt,
+      }));
+    } catch {
+      return [];
+    }
+  });
+
+  const [localWatchlist, setLocalWatchlist] = useState<any[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      return guestDataStorage.getWatchlist().map((w) => ({
+        id: w.id,
+        movieId: w.movieId,
+        title: w.movieData?.title || w.movieId,
+        thumbUrl: w.movieData?.thumbUrl || w.movieData?.posterUrl,
+        movieData: w.movieData,
+        addedAt: w.addedAt,
+      }));
+    } catch {
+      return [];
+    }
+  });
 
   useEffect(() => {
     if (!isOwnProfile) return;
@@ -1575,30 +1670,30 @@ export default function UserDashboardPage() {
     const defaultCommunityUsers = [
       {
         id: "usr-comm-1",
-        username: "huywashere",
-        displayName: "Phu Huy Nguyen",
-        avatarUrl: "/avatars/admin-mascot-riso.png",
-        totalHours: 128.5,
-        totalEpisodes: 164,
-        rankTitle: "Đại Sư Điện Ảnh",
-        rankBadge: "👑",
-        rankIconType: "crown",
-      },
-      {
-        id: "usr-comm-2",
-        username: "mod_cine",
-        displayName: "Kiểm Duyệt Viên",
+        username: "minh_duc_cine",
+        displayName: "Minh Đức Cinephile",
         avatarUrl: null,
-        totalHours: 64.2,
-        totalEpisodes: 88,
+        totalHours: 58.5,
+        totalEpisodes: 82,
         rankTitle: "Mọt Phim Thượng Thừa",
         rankBadge: "🏆",
         rankIconType: "trophy",
       },
       {
+        id: "usr-comm-2",
+        username: "hoang_nam_movie",
+        displayName: "Hoàng Nam Movie",
+        avatarUrl: null,
+        totalHours: 42.0,
+        totalEpisodes: 64,
+        rankTitle: "Cinephile Chính Hiệu",
+        rankBadge: "⭐",
+        rankIconType: "star",
+      },
+      {
         id: "usr-comm-3",
-        username: "member_vip",
-        displayName: "Mọt Phim FHD",
+        username: "lan_huong_film",
+        displayName: "Lan Hương",
         avatarUrl: null,
         totalHours: 32.0,
         totalEpisodes: 45,
@@ -1642,10 +1737,18 @@ export default function UserDashboardPage() {
       rankIconType: effectiveStats.rankIconType || "sparkles",
     };
 
-    const combined = [
-      ...defaultCommunityUsers.filter((u) => u.username !== currentEntry.username),
-      currentEntry,
-    ]
+    const isCurrentExcluded = EXCLUDED_LEADERBOARD_USERS.has(
+      (currentEntry.username || "").toLowerCase().trim(),
+    );
+
+    const communityList = isCurrentExcluded
+      ? defaultCommunityUsers
+      : [
+          ...defaultCommunityUsers.filter((u) => u.username !== currentEntry.username),
+          currentEntry,
+        ];
+
+    const combined = communityList
       .sort((a, b) => b.totalHours - a.totalHours)
       .map((item, index) => ({
         ...item,
@@ -1657,16 +1760,21 @@ export default function UserDashboardPage() {
       }));
 
     return combined;
-  }, [user, profile, effectiveStats]);
+  }, [user, profile, effectiveStats, EXCLUDED_LEADERBOARD_USERS]);
+
+  const isCurrentLeaderboardExcluded = EXCLUDED_LEADERBOARD_USERS.has(
+    (user?.username || profile?.username || "").toLowerCase().trim(),
+  );
 
   const leaderboard: any[] =
     rawLeaderboard.length > 0 ? rawLeaderboard : communityFallbackLeaderboard;
-  const myLeaderboardRank =
-    (!Array.isArray(leaderboardData) && leaderboardData?.myRank) ||
-    leaderboard.find(
-      (u: any) => u.username === (user?.username || profile?.username),
-    ) ||
-    null;
+  const myLeaderboardRank = isCurrentLeaderboardExcluded
+    ? null
+    : (!Array.isArray(leaderboardData) && leaderboardData?.myRank) ||
+      leaderboard.find(
+        (u: any) => u.username === (user?.username || profile?.username),
+      ) ||
+      null;
 
   const isAdmin = Boolean(
     user?.email?.toLowerCase() === "huywashere@gmail.com" ||
@@ -2544,12 +2652,20 @@ export default function UserDashboardPage() {
                           <strong className="text-sm font-semibold text-white truncate">
                             {user.displayName || user.username}
                           </strong>
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                            BẠN
-                          </span>
+                          {isCurrentLeaderboardExcluded ? (
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                              QUẢN TRỊ
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                              BẠN
+                            </span>
+                          )}
                         </div>
                         <p className="text-xs text-neutral-400 truncate mt-0.5">
-                          {myLeaderboardRank
+                          {isCurrentLeaderboardExcluded
+                            ? "Tài khoản Quản trị viên • Không tham gia xếp hạng để nhường sân chơi cho thành viên"
+                            : myLeaderboardRank
                             ? `Đang xếp thứ #${myLeaderboardRank.rank} • ${myLeaderboardRank.totalHours} giờ xem • ${myLeaderboardRank.totalEpisodes} tập đã xem`
                             : "Chưa ghi nhận giờ xem trong khung thời gian này • Hãy xem thêm phim để lọt Top!"}
                         </p>
@@ -2562,7 +2678,11 @@ export default function UserDashboardPage() {
                           Thứ hạng
                         </div>
                         <div className="text-base sm:text-lg font-bold font-mono text-white">
-                          {myLeaderboardRank ? `#${myLeaderboardRank.rank}` : "Chưa xếp"}
+                          {isCurrentLeaderboardExcluded
+                            ? "Quản trị"
+                            : myLeaderboardRank
+                            ? `#${myLeaderboardRank.rank}`
+                            : "Chưa xếp"}
                         </div>
                       </div>
                       <Link
