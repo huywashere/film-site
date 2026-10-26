@@ -151,12 +151,15 @@ async function getInitialPublicConfiguration(): Promise<PublicSiteConfiguration 
       const Redis = (await import("ioredis")).default;
       const client = new Redis(redisUrl, {
         lazyConnect: true,
-        connectTimeout: 500,
+        connectTimeout: 2000,
         maxRetriesPerRequest: 1,
       });
+      // Must attach error handler BEFORE connect() to prevent unhandled
+      // 'error' event from crashing the Node.js process on ETIMEDOUT.
+      client.on("error", () => {});
       await client.connect();
       const raw = await client.get("site-config:primary");
-      await client.quit();
+      await client.quit().catch(() => {});
       if (raw) {
         const parsed = JSON.parse(raw);
         if (parsed && Array.isArray(parsed.heroMovieSlugs)) {
