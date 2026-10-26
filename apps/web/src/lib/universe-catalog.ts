@@ -27,6 +27,7 @@ export interface UniverseSpotlightItem {
   charLeftImage?: string;
   subtitle?: string;
   genres?: string[];
+  objectPosition?: string;
 }
 
 export const MARVEL_SPOTLIGHTS: UniverseSpotlightItem[] = [
@@ -104,60 +105,13 @@ export const DC_SPOTLIGHTS: UniverseSpotlightItem[] = [
     subtitle: "Kỵ Sĩ Bóng Đêm • Cuộc Đối Đầu Huyền Thoại Batman & Joker",
     genres: ["Hành Động", "Tội Phạm", "Kịch Tính", "Kiệt Tác DC"],
     content: "Batman đối đầu với Joker - tên tội phạm hỗn loạn muốn hủy hoại trật tự đạo đức của thành phố Gotham và biến Người Dơi thành kẻ thù.",
-    heroBackdrop: "https://image.tmdb.org/t/p/w1280/9FE5eD92WfVCiivM9Pq9GVSrlWk.jpg",
+    heroBackdrop: "/Folder-Background/DC/iUIgje.webp",
     titleLogo: "https://image.tmdb.org/t/p/w500/nO5Uix3Qr4WjOyU1BMPv0okyNWm.png",
     charLeftImage: "/Folder-Background/DC/dc-joker-char.png",
     charImage: "/Folder-Background/DC/dc-batman-char.png",
     trailer_url: "https://www.youtube.com/watch?v=EXeTwQWrcwY",
     subFranchise: "batman",
-  },
-  {
-    id: "nguoi-doi-2022",
-    slug: "nguoi-doi-2022",
-    name: "Người Dơi",
-    origin_name: "The Batman",
-    year: 2022,
-    quality: "Full HD",
-    lang: "Vietsub + Thuyết Minh",
-    rating: 7.8,
-    spotlightBadge: "🌑 THÁM TỬ BÓNG ĐÊM GOTHAM",
-    content: "Trong năm thứ hai chống tội phạm, Batman lần theo dấu vết của Riddler - kẻ giết người hàng loạt nhắm vào giới tinh hoa Gotham.",
-    heroBackdrop: "https://image.tmdb.org/t/p/w1280/IYUD7rAIXzBM91TT3Z5fILUS7n.jpg",
-    titleLogo: "https://image.tmdb.org/t/p/w500/feJw5OvuutgHt4G9jZQibO8j4Gu.png",
-    trailer_url: "https://www.youtube.com/watch?v=mqqft2x_Aa4",
-    subFranchise: "batman",
-  },
-  {
-    id: "nguoi-dan-ong-thep",
-    slug: "nguoi-dan-ong-thep",
-    name: "Người Đàn Ông Thép",
-    origin_name: "Man of Steel",
-    year: 2013,
-    quality: "Full HD",
-    lang: "Vietsub + Thuyết Minh",
-    rating: 7.5,
-    spotlightBadge: "⚡ KHỞI ĐẦU SIÊU NHÂN DC",
-    content: "Clark Kent khám phá nguồn gốc ngoài hành tinh của mình và chấp nhận số phận trở thành người hùng bảo vệ Trái Đất trước Tướng Zod.",
-    heroBackdrop: "https://image.tmdb.org/t/p/w1280/j2MlEEpA3wgwQiJB6p1UHC50oiw.jpg",
-    titleLogo: "https://image.tmdb.org/t/p/w500/qBtAryVKg11iEOmxeb31fxIHuvN.png",
-    trailer_url: "https://www.youtube.com/watch?v=T6DJcgm3wNY",
-    subFranchise: "justice-league",
-  },
-  {
-    id: "joker",
-    slug: "joker",
-    name: "Joker",
-    origin_name: "Joker",
-    year: 2019,
-    quality: "Full HD",
-    lang: "Vietsub + Thuyết Minh",
-    rating: 8.4,
-    spotlightBadge: "🃏 ĐẠT 2 GIẢI OSCAR DANH GIÁ",
-    content: "Arthur Fleck - một nghệ sĩ hài thất bại bị xã hội cô lập dần trượt sâu vào sự điên loạn và trở thành biểu tượng hỗn loạn Joker.",
-    heroBackdrop: "https://image.tmdb.org/t/p/w1280/rlay2M5QYvi6igbGcFjq8jxeusY.jpg",
-    titleLogo: "https://image.tmdb.org/t/p/w500/uACD19MjHdpLBlzmFSztlwsW5Q6.png",
-    trailer_url: "https://www.youtube.com/watch?v=zAGVQLHvwOY",
-    subFranchise: "villains",
+    objectPosition: "object-[center_28%]",
   },
 ];
 
@@ -15157,7 +15111,7 @@ export const DC_SUB_FRANCHISES = [
   { id: "standalone", label: "Anh Hùng Khác" },
 ];
 
-export type UniverseType = "marvel" | "dc" | "doraemon" | "conan";
+export type UniverseType = "marvel" | "dc" | "doraemon" | "conan" | "khoa-hoc-vu-tru" | "star-wars";
 
 export {
   DORAEMON_SPOTLIGHTS,
@@ -15171,6 +15125,12 @@ export {
   CONAN_UNIVERSE_FILMS,
 } from "./conan-catalog";
 
+export {
+  SPACE_SPOTLIGHTS,
+  SPACE_SUB_FRANCHISES,
+  SPACE_UNIVERSE_FILMS,
+} from "./space-catalog";
+
 import {
   DORAEMON_SPOTLIGHTS,
   DORAEMON_UNIVERSE_FILMS,
@@ -15181,11 +15141,17 @@ import {
   CONAN_UNIVERSE_FILMS,
 } from "./conan-catalog";
 
+import {
+  SPACE_SPOTLIGHTS,
+  SPACE_UNIVERSE_FILMS,
+} from "./space-catalog";
+
 export function getUniverseSpotlights(universe: UniverseType): UniverseSpotlightItem[] {
   if (universe === "marvel") return MARVEL_SPOTLIGHTS;
   if (universe === "dc") return DC_SPOTLIGHTS;
   if (universe === "doraemon") return DORAEMON_SPOTLIGHTS;
   if (universe === "conan") return CONAN_SPOTLIGHTS;
+  if (universe === "khoa-hoc-vu-tru" || universe === "star-wars") return SPACE_SPOTLIGHTS;
   return [];
 }
 
@@ -15207,6 +15173,7 @@ export function getUniverseFilms(
   else if (universe === "dc") baseList = DC_UNIVERSE_FILMS;
   else if (universe === "doraemon") baseList = DORAEMON_UNIVERSE_FILMS;
   else if (universe === "conan") baseList = CONAN_UNIVERSE_FILMS;
+  else if (universe === "khoa-hoc-vu-tru" || universe === "star-wars") baseList = SPACE_UNIVERSE_FILMS;
   let list = [...baseList];
 
   if (options?.subFranchise && options.subFranchise !== "all") {

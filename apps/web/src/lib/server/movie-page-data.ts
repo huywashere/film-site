@@ -2,6 +2,7 @@ import { cache } from "react";
 import { addSignedHlsFallbacksInPayload } from "@/lib/hls-proxy-signature";
 import { normalizeVicdnPayload } from "@/lib/vicdn-normalizer";
 import { normalizeXinkPayload } from "@/lib/xink-normalizer";
+import { CURATED_HERO_SLUG_ALIASES } from "@/lib/curated-hero-pool";
 
 type MoviePagePayload = Record<string, any>;
 
@@ -122,7 +123,8 @@ async function fetchInternalApiMovie(slug: string): Promise<MoviePagePayload | n
  * this result, while Next's Data Cache keeps repeat visits off upstream APIs.
  */
 export const getMoviePageData = cache(async (slug: string) => {
-  const rawSlug = slug.trim();
+  const trimmed = slug.trim();
+  const rawSlug = CURATED_HERO_SLUG_ALIASES[trimmed] || trimmed;
   const cleanSlug = encodeURIComponent(rawSlug);
   if (!cleanSlug) return null;
 

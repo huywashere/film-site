@@ -317,7 +317,7 @@ function FilmCardComponent({
       data-film-card="true"
       style={width ? { width } : undefined}
       className={cn(
-        `${cardFont.className} group/card relative flex flex-col select-none [contain:layout]`,
+        `${cardFont.className} group/card relative flex flex-col select-none [contain:layout] hover:z-20`,
         !width && 'w-full',
       )}
     >

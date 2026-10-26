@@ -27,6 +27,7 @@ import {
   DC_SUB_FRANCHISES,
   DORAEMON_SUB_FRANCHISES,
   CONAN_SUB_FRANCHISES,
+  SPACE_SUB_FRANCHISES,
   UniverseSpotlightItem,
   UniverseType,
 } from '@/lib/universe-catalog';
@@ -119,7 +120,10 @@ function UniverseSpotlightBackdrop({
               setCandidateIdx((prev) => prev + 1);
             }
           }}
-          className="object-cover object-center sm:object-[center_22%]"
+          className={cn(
+            'object-cover object-center',
+            item.objectPosition ? item.objectPosition : 'sm:object-[center_22%]',
+          )}
         />
       )}
     </div>
@@ -259,6 +263,7 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
   const isDC = universe === 'dc';
   const isDoraemon = universe === 'doraemon';
   const isConan = universe === 'conan';
+  const isSpace = universe === 'khoa-hoc-vu-tru' || universe === 'star-wars';
 
   // Data & Spotlights
   const spotlights = useMemo(() => getUniverseSpotlights(universe), [universe]);
@@ -276,7 +281,9 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
       ? DC_SUB_FRANCHISES
       : isDoraemon
         ? DORAEMON_SUB_FRANCHISES
-        : CONAN_SUB_FRANCHISES;
+        : isConan
+          ? CONAN_SUB_FRANCHISES
+          : SPACE_SUB_FRANCHISES;
   const [selectedSub, setSelectedSub] = useState('all');
   const [page, setPage] = useState(1);
   const [contentTab, setContentTab] = useState<'collection' | 'timeline'>('collection');
@@ -412,36 +419,40 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
     if (isDC) sub = 'batman';
     else if (isDoraemon) sub = 'movies';
     else if (isConan) sub = 'movies';
+    else if (isSpace) sub = 'star-wars';
     const raw = getUniverseFilms(universe, { subFranchise: sub });
     return mapRawToFilmItems(raw);
-  }, [universe, isDC, isDoraemon, isConan]);
+  }, [universe, isDC, isDoraemon, isConan, isSpace]);
 
   const rail2 = useMemo(() => {
     let sub = 'spiderman';
     if (isDC) sub = 'justice-league';
     else if (isDoraemon) sub = '3d';
     else if (isConan) sub = 'black-org';
+    else if (isSpace) sub = 'series';
     const raw = getUniverseFilms(universe, { subFranchise: sub });
     return mapRawToFilmItems(raw);
-  }, [universe, isDC, isDoraemon, isConan]);
+  }, [universe, isDC, isDoraemon, isConan, isSpace]);
 
   const rail3 = useMemo(() => {
     let sub = 'xmen';
     if (isDC) sub = 'superman';
     else if (isDoraemon) sub = 'adventure';
     else if (isConan) sub = 'kaito-kid';
+    else if (isSpace) sub = 'movies';
     const raw = getUniverseFilms(universe, { subFranchise: sub });
     return mapRawToFilmItems(raw);
-  }, [universe, isDC, isDoraemon, isConan]);
+  }, [universe, isDC, isDoraemon, isConan, isSpace]);
 
   const rail4 = useMemo(() => {
     let sub = 'disneyplus';
     if (isDC) sub = 'series';
     else if (isDoraemon) sub = 'classic';
     else if (isConan) sub = 'series';
+    else if (isSpace) sub = 'all';
     const raw = getUniverseFilms(universe, { subFranchise: sub });
     return mapRawToFilmItems(raw);
-  }, [universe, isDC, isDoraemon, isConan]);
+  }, [universe, isDC, isDoraemon, isConan, isSpace]);
 
   // Catalog filtered items
   const catalogFilms = useMemo(() => {
@@ -484,8 +495,9 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
         <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-[#07080c]/80 to-transparent pointer-events-none z-[1]" />
 
         {/* ── Layer 2.5: Left Character Cutout with Smooth Slide-In from Left (e.g. Joker for DC) ── */}
+        {/* ── Layer 2.5: Left Character Cutout (e.g. Joker for DC / Mandalorian for Space) ── */}
         {activeSpotlight.charLeftImage && (
-          <div className="absolute left-0 bottom-0 top-0 h-full w-full max-w-lg sm:max-w-xl md:max-w-2xl lg:max-w-3xl flex items-end justify-start pointer-events-none z-[3] overflow-hidden pl-0 sm:pl-2 md:pl-6 lg:pl-10 pb-2 sm:pb-6 md:pb-10">
+          <div className="absolute left-0 bottom-[-16px] sm:bottom-[-28px] md:bottom-[-36px] top-0 h-full w-full max-w-lg sm:max-w-xl md:max-w-2xl lg:max-w-3xl flex items-end justify-start pointer-events-none z-[3] overflow-hidden pl-0 sm:pl-2 md:pl-6 lg:pl-10">
             <AnimatePresence mode="wait">
               <motion.div
                 key={`left-char-${activeSpotlight.id}`}
@@ -493,12 +505,12 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 50 }}
                 transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-                className="relative h-full flex items-end justify-start w-full"
+                className="relative h-full flex items-end justify-start w-full [mask-image:linear-gradient(to_bottom,black_0%,black_75%,transparent_98%)] [-webkit-mask-image:linear-gradient(to_bottom,black_0%,black_75%,transparent_98%)]"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={activeSpotlight.charLeftImage}
-                  alt="Joker"
+                  alt=""
                   className="h-[55%] sm:h-[70%] md:h-[78%] lg:h-[86%] max-h-[660px] w-auto max-w-full object-contain object-bottom select-none filter contrast-[1.06] brightness-[1.0] drop-shadow-[0_20px_50px_rgba(0,0,0,0.9)] opacity-40 sm:opacity-85 lg:opacity-95 transition-all duration-300"
                   loading="eager"
                 />
@@ -507,9 +519,9 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
           </div>
         )}
 
-        {/* ── Layer 3: Character Cutout with Smooth Slide-In from Right (e.g. Batman for DC / Spider-Man for Marvel) ── */}
+        {/* ── Layer 3: Character Cutout with Smooth Slide-In from Right (e.g. Batman for DC / Spider-Man for Marvel / Darth Vader for Space) ── */}
         {activeSpotlight.charImage && (
-          <div className="absolute right-0 bottom-0 top-0 h-full w-full max-w-2xl sm:max-w-3xl md:max-w-4xl lg:max-w-5xl xl:max-w-6xl flex items-end justify-end pointer-events-none z-[4] overflow-hidden pr-2 sm:pr-8 md:pr-14 lg:pr-20 xl:pr-28 pb-4 sm:pb-8 md:pb-12 lg:pb-14">
+          <div className="absolute right-0 bottom-[-16px] sm:bottom-[-28px] md:bottom-[-36px] top-0 h-full w-full max-w-2xl sm:max-w-3xl md:max-w-4xl lg:max-w-5xl xl:max-w-6xl flex items-end justify-end pointer-events-none z-[4] overflow-hidden pr-2 sm:pr-8 md:pr-14 lg:pr-20 xl:pr-28">
             <AnimatePresence mode="wait">
               <motion.div
                 key={`right-char-${activeSpotlight.id}`}
@@ -517,7 +529,7 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -50 }}
                 transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
-                className="relative h-full flex items-end justify-end w-full"
+                className="relative h-full flex items-end justify-end w-full [mask-image:linear-gradient(to_bottom,black_0%,black_75%,transparent_98%)] [-webkit-mask-image:linear-gradient(to_bottom,black_0%,black_75%,transparent_98%)]"
               >
                 {/* Secondary Cutout if co-appearing (e.g. Rampage Awakened) */}
                 {activeSpotlight.charImageSecondary && (
@@ -590,6 +602,20 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                         fill
                         priority
                         sizes="(max-width: 640px) 48px, 56px"
+                        className="object-contain object-left"
+                      />
+                    </div>
+                  )}
+                  {isSpace && (
+                    // Official Star Wars Logo Banner
+                    <div className="relative h-8 sm:h-10 md:h-11 w-28 sm:w-36 md:w-40 shrink-0">
+                      <Image
+                        src="/Folder-Background/starwar/star-wars-logo.svg"
+                        alt="Star Wars"
+                        fill
+                        priority
+                        unoptimized
+                        sizes="(max-width: 640px) 112px, 160px"
                         className="object-contain object-left"
                       />
                     </div>
@@ -765,55 +791,57 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
             </AnimatePresence>
 
             {/* Right Column: Carousel Thumbnails */}
-            <div className="flex w-full shrink-0 items-center gap-2 sm:gap-2.5 2xl:w-auto 2xl:max-w-[700px]">
-              <div
-                ref={thumbnailScrollRef}
-                className="flex items-center gap-2 sm:gap-2.5 overflow-x-auto no-scrollbar py-2.5 px-0.5 scroll-smooth overscroll-x-contain"
-              >
-                {spotlights.map((item, idx) => (
-                  <UniverseThumbnailButton
-                    key={item.id}
-                    item={item}
-                    isActive={idx === currentIdx}
-                    onClick={() => void activateSpotlight(idx)}
-                  />
-                ))}
-              </div>
+            {spotlights.length > 1 && (
+              <div className="flex w-full shrink-0 items-center gap-2 sm:gap-2.5 2xl:w-auto 2xl:max-w-[700px]">
+                <div
+                  ref={thumbnailScrollRef}
+                  className="flex items-center gap-2 sm:gap-2.5 overflow-x-auto no-scrollbar py-2.5 px-0.5 scroll-smooth overscroll-x-contain"
+                >
+                  {spotlights.map((item, idx) => (
+                    <UniverseThumbnailButton
+                      key={item.id}
+                      item={item}
+                      isActive={idx === currentIdx}
+                      onClick={() => void activateSpotlight(idx)}
+                    />
+                  ))}
+                </div>
 
-              {/* Prev / Next Arrows */}
-              <div className="hidden items-center gap-1 pl-1 shrink-0 sm:flex">
-                <button
-                  type="button"
-                  onClick={() => void activateSpotlight(currentIdx - 1)}
-                  className={cn(
-                    'cursor-pointer rounded-[10px] border-2 bg-[#10131a] p-2 text-white transition-[background-color,border-color,transform] active:scale-95 sm:p-2.5',
-                    isDoraemon
-                      ? 'border-[#278fba] hover:border-[#64c9ed] hover:bg-[#162a39] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#64c9ed]'
-                      : isConan
-                        ? 'border-[#803333] hover:border-[#e45757] hover:bg-[#30191b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e45757]'
-                        : 'border-white/15 hover:border-white/30 hover:bg-[#20242e]',
-                  )}
-                  aria-label="Previous"
-                >
-                  <ChevronLeft size={16} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void activateSpotlight(currentIdx + 1)}
-                  className={cn(
-                    'cursor-pointer rounded-[10px] border-2 bg-[#10131a] p-2 text-white transition-[background-color,border-color,transform] active:scale-95 sm:p-2.5',
-                    isDoraemon
-                      ? 'border-[#278fba] hover:border-[#64c9ed] hover:bg-[#162a39] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#64c9ed]'
-                      : isConan
-                        ? 'border-[#803333] hover:border-[#e45757] hover:bg-[#30191b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e45757]'
-                        : 'border-white/15 hover:border-white/30 hover:bg-[#20242e]',
-                  )}
-                  aria-label="Next"
-                >
-                  <ChevronRight size={16} />
-                </button>
+                {/* Prev / Next Arrows */}
+                <div className="hidden items-center gap-1 pl-1 shrink-0 sm:flex">
+                  <button
+                    type="button"
+                    onClick={() => void activateSpotlight(currentIdx - 1)}
+                    className={cn(
+                      'cursor-pointer rounded-[10px] border-2 bg-[#10131a] p-2 text-white transition-[background-color,border-color,transform] active:scale-95 sm:p-2.5',
+                      isDoraemon
+                        ? 'border-[#278fba] hover:border-[#64c9ed] hover:bg-[#162a39] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#64c9ed]'
+                        : isConan
+                          ? 'border-[#803333] hover:border-[#e45757] hover:bg-[#30191b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e45757]'
+                          : 'border-white/15 hover:border-white/30 hover:bg-[#20242e]',
+                    )}
+                    aria-label="Previous"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void activateSpotlight(currentIdx + 1)}
+                    className={cn(
+                      'cursor-pointer rounded-[10px] border-2 bg-[#10131a] p-2 text-white transition-[background-color,border-color,transform] active:scale-95 sm:p-2.5',
+                      isDoraemon
+                        ? 'border-[#278fba] hover:border-[#64c9ed] hover:bg-[#162a39] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#64c9ed]'
+                        : isConan
+                          ? 'border-[#803333] hover:border-[#e45757] hover:bg-[#30191b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e45757]'
+                          : 'border-white/15 hover:border-white/30 hover:bg-[#20242e]',
+                    )}
+                    aria-label="Next"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </section>
@@ -899,7 +927,9 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                     ? 'Kỵ Sĩ Bóng Đêm & Huyền Thoại Gotham'
                     : isDoraemon
                       ? 'Movie Chiếu Rạp Mới Nhất (Thế Hệ Mới)'
-                      : 'Movie Chiếu Rạp Bom Tấn (Movie 1 - 28)'
+                      : isConan
+                        ? 'Movie Chiếu Rạp Bom Tấn (Movie 1 - 28)'
+                        : 'Vũ Trụ Star Wars Saga & Phim Chiếu Rạp'
               }
               films={rail1}
             />
@@ -914,7 +944,9 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                       ? 'Liên Minh Công Lý & Siêu Anh Hùng DC'
                       : isDoraemon
                         ? 'Stand by Me & Kỷ Niệm Tuổi Thơ (3D)'
-                        : 'Cuộc Chiến Tổ Chức Áo Đen & FBI'
+                        : isConan
+                          ? 'Cuộc Chiến Tổ Chức Áo Đen & FBI'
+                          : 'Series Truyền Hình Không Gian Đỉnh Cao'
                 }
                 films={rail2}
               />
@@ -930,7 +962,9 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                       ? 'Thế Giới Phản Diện & Joker'
                       : isDoraemon
                         ? 'Phiêu Lưu Vũ Trụ & Thế Giới Diệu Kỳ'
-                        : 'Màn Đối Đầu Siêu Đạo Tặc Kaito Kid'
+                        : isConan
+                          ? 'Màn Đối Đầu Siêu Đạo Tặc Kaito Kid'
+                          : 'Siêu Phẩm Điện Ảnh Không Gian & Du Hành Vũ Trụ'
                 }
                 films={rail3}
               />
@@ -946,7 +980,9 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                       ? 'DC Series & Hoạt Hình Huyền Thoại'
                       : isDoraemon
                         ? 'Movie Chiếu Rạp Kinh Điển (2D Tuyển Chọn)'
-                        : 'Conan TV Series & Ngoại Truyện Đặc Biệt'
+                        : isConan
+                          ? 'Conan TV Series & Ngoại Truyện Đặc Biệt'
+                          : 'Khoa Học Viễn Tưởng & Khám Phá Không Gian'
                 }
                 films={rail4}
               />
@@ -966,7 +1002,9 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                           ? 'bg-sky-500 shadow-[0_0_12px_rgba(14,165,233,0.7)]'
                           : isDoraemon
                             ? 'bg-cyan-500 shadow-[0_0_12px_rgba(6,182,212,0.7)]'
-                            : 'bg-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.7)]',
+                            : isConan
+                              ? 'bg-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.7)]'
+                              : 'bg-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.7)]',
                     )}
                   />
                   <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">
@@ -976,7 +1014,9 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                         ? 'Kho Kiệt Tác DC Toàn Diện'
                         : isDoraemon
                           ? 'Trọn Bộ 48 Movie Doraemon Chiếu Rạp'
-                          : 'Trọn Bộ Thám Tử Lừng Danh Conan'}
+                          : isConan
+                            ? 'Trọn Bộ Thám Tử Lừng Danh Conan'
+                            : 'Kho Phim Điện Ảnh & Truyền Hình Khoa Học Vũ Trụ'}
                   </h2>
                   <span className="text-xs font-semibold text-neutral-400">
                     ({catalogFilms.length} phim)
@@ -1016,7 +1056,7 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
               </div>
 
               {/* Standard 7-Column Movie Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2.5 sm:gap-3.5 lg:gap-4 cv-grid-auto">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2.5 sm:gap-3.5 lg:gap-4 pt-3 pb-3 -mt-3">
                 {pagedFilms.map((film, index) => (
                   <FilmCard key={film._id || film.slug} film={film} priority={index < 7} />
                 ))}

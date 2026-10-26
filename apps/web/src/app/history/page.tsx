@@ -272,8 +272,8 @@ export default function HistoryPage() {
                   className={cn(
                     'relative px-3.5 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all whitespace-nowrap cursor-pointer select-none active:scale-95',
                     isActive
-                      ? 'text-purple-200 bg-purple-500/20 border border-purple-400/35 shadow-sm font-bold'
-                      : 'text-purple-200/50 hover:text-purple-200 hover:bg-purple-500/10 border border-transparent',
+                      ? 'text-white bg-white/15 border border-white/20 shadow-sm font-bold'
+                      : 'text-neutral-400 hover:text-white hover:bg-white/5 border border-transparent',
                   )}
                 >
                   <span>{tab.label}</span>
@@ -417,9 +417,9 @@ export default function HistoryPage() {
           </>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-center py-10 sm:py-14 my-auto">
-            <HistoryIcon size={48} className="mx-auto mb-3.5 text-purple-400/40" />
-            <p className="text-base sm:text-lg font-bold text-purple-200/90">Chưa có lịch sử xem phim</p>
-            <p className="text-xs sm:text-sm text-purple-200/60 mt-1.5">
+            <HistoryIcon size={48} className="mx-auto mb-3.5 text-neutral-500" />
+            <p className="text-base sm:text-lg font-bold text-white">Chưa có lịch sử xem phim</p>
+            <p className="text-xs sm:text-sm text-neutral-400 mt-1.5">
               Bắt đầu xem phim để theo dõi tiến độ tại đây
             </p>
             <Link

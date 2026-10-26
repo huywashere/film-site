@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import WatchPage from "./WatchPageClient";
 import { normalizeMovieArtworkUrl } from "@/lib/movie-image-url";
 import { safeJsonLd } from "@/lib/safe-json-ld";
@@ -8,6 +9,7 @@ import {
 } from "@/lib/server/movie-page-data";
 import { getMovieTmdbServer } from "@/lib/server/movie-tmdb-server";
 import { getSiteUrl, buildSeoMetadata, resolveOgImageUrl } from "@/lib/seo";
+import { CURATED_HERO_SLUG_ALIASES } from "@/lib/curated-hero-pool";
 
 export const revalidate = 3600;
 
@@ -24,7 +26,8 @@ export async function generateMetadata({
 }: PageProps): Promise<Metadata> {
   const resolvedParams = await params;
   const resolvedSearchParams = (await searchParams) || {};
-  const slug = resolvedParams?.slug || "";
+  const rawSlug = resolvedParams?.slug || "";
+  const slug = CURATED_HERO_SLUG_ALIASES[rawSlug.trim()] || rawSlug;
   const epParam = resolvedSearchParams?.ep;
   const epNumber = Array.isArray(epParam) ? epParam[0] : epParam;
 
@@ -81,9 +84,15 @@ export async function generateMetadata({
   });
 }
 
-export default async function WatchPageWrapper({ params }: PageProps) {
+export default async function WatchPageWrapper({ params, searchParams }: PageProps) {
   const resolvedParams = await params;
   const slug = resolvedParams?.slug || "";
+  const canonicalSlug = CURATED_HERO_SLUG_ALIASES[slug.trim()];
+  if (canonicalSlug && canonicalSlug !== slug) {
+    const resolvedSearchParams = (await searchParams) || {};
+    const epParam = resolvedSearchParams?.ep ? `?ep=${resolvedSearchParams.ep}` : "";
+    redirect(`/watch/${canonicalSlug}${epParam}`);
+  }
   const initialData = await getMoviePageData(slug);
   const movie = getMovieFromPageData(initialData);
 

@@ -437,7 +437,7 @@ test('ensureSixHeroFilms always guarantees exactly six films on reload/reset', (
   assert.equal(new Set(fourPadded.map((f) => f.slug)).size, 6);
 
   // Common aliases correctly resolve to curated pool entries
-  assert.equal(CURATED_HERO_SLUG_ALIASES['joker-2019'], 'joker');
+  assert.equal(CURATED_HERO_SLUG_ALIASES['joker-2019'], 'joker-ga-he');
   assert.equal(CURATED_HERO_SLUG_ALIASES['the-batman'], 'nguoi-doi-2022');
   assert.equal(CURATED_HERO_SLUG_ALIASES['avengers-hoi-ket'], 'biet-doi-sieu-anh-hung-4-hoi-ket');
 

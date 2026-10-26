@@ -20,6 +20,7 @@ import { normalizeNguonCPayload } from '@/lib/nguonc-normalizer';
 import { normalizeVicdnPayload } from '@/lib/vicdn-normalizer';
 import { normalizeXinkPayload } from '@/lib/xink-normalizer';
 import { curateCatalogFilms, type CuratedCatalogKind } from '@/lib/catalog-curation';
+import { CURATED_HERO_SLUG_ALIASES } from '@/lib/curated-hero-pool';
 
 // ── Search In-Memory Cache & Deduping ─────────────────────────────
 const SEARCH_CACHE_MAX_AGE_MS = 1000 * 60 * 10; // 10 phút
@@ -939,14 +940,16 @@ const DETAIL_CACHE_MAX_AGE_MS = 1000 * 60 * 15; // 15 minutes
 const globalDetailCache = new Map<string, { data: any; timestamp: number }>();
 
 async function getDetailFromAnySource(slug: string, preferredSource?: MovieSource): Promise<any> {
-  const cacheKey = `${slug}__${preferredSource || 'any'}`;
+  const trimmed = (slug || '').trim();
+  const canonicalSlug = CURATED_HERO_SLUG_ALIASES[trimmed] || trimmed;
+  const cacheKey = `${canonicalSlug}__${preferredSource || 'any'}`;
   const cached = globalDetailCache.get(cacheKey);
   if (cached && Date.now() - cached.timestamp < DETAIL_CACHE_MAX_AGE_MS) {
     return cached.data;
   }
 
   try {
-    const bootstrap = await fetchCatalogGateway(`/movies/${encodeURIComponent(slug)}/bootstrap`);
+    const bootstrap = await fetchCatalogGateway(`/movies/${encodeURIComponent(canonicalSlug)}/bootstrap`);
     if (isUsableMovieDetail(bootstrap)) {
       globalDetailCache.set(cacheKey, { data: bootstrap, timestamp: Date.now() });
       return bootstrap;
@@ -961,31 +964,31 @@ async function getDetailFromAnySource(slug: string, preferredSource?: MovieSourc
   }> = [
     {
       source: 'kkphim',
-      request: () => kkphimApi.getDetail(slug),
+      request: () => kkphimApi.getDetail(canonicalSlug),
     },
     {
       source: 'xink',
-      request: () => xinkApi.getDetail(slug),
+      request: () => xinkApi.getDetail(canonicalSlug),
     },
     ...(ENABLE_OPHIM
       ? [
           {
             source: 'ophim' as MovieSource,
-            request: () => fetchOphim(`/phim/${slug}`),
+            request: () => fetchOphim(`/phim/${canonicalSlug}`),
           },
         ]
       : []),
     {
       source: 'nguonc',
-      request: () => fetchNguonc(`/film/${slug}`),
+      request: () => fetchNguonc(`/film/${canonicalSlug}`),
     },
     {
       source: 'vsmov',
-      request: () => vsmovApi.getDetail(slug),
+      request: () => vsmovApi.getDetail(canonicalSlug),
     },
     {
       source: 'vicdn',
-      request: () => fetchVicdn(`/info/${slug}`),
+      request: () => fetchVicdn(`/info/${canonicalSlug}`),
     },
   ];
 
@@ -1014,7 +1017,7 @@ async function getDetailFromAnySource(slug: string, preferredSource?: MovieSourc
     return {
       status: false,
       error: true,
-      message: `Không tìm thấy phim: ${slug}`,
+      message: `Không tìm thấy phim: ${canonicalSlug}`,
     };
   }
 }
@@ -1078,14 +1081,16 @@ async function getHomeFeed(limit = 24): Promise<HomeFeedPayload> {
 }
 
 async function getDetailFromSource(source: MovieSource, slug: string) {
-  if (!slug) return null;
+  const trimmed = (slug || '').trim();
+  const canonicalSlug = CURATED_HERO_SLUG_ALIASES[trimmed] || trimmed;
+  if (!canonicalSlug) return null;
   const requests: Record<MovieSource, () => Promise<unknown>> = {
-    kkphim: () => kkphimApi.getDetail(slug),
-    xink: () => xinkApi.getDetail(slug),
-    nguonc: () => fetchNguonc(`/film/${slug}`),
-    vsmov: () => vsmovApi.getDetail(slug),
-    ophim: () => fetchOphim(`/phim/${slug}`),
-    vicdn: () => fetchVicdn(`/info/${slug}`),
+    kkphim: () => kkphimApi.getDetail(canonicalSlug),
+    xink: () => xinkApi.getDetail(canonicalSlug),
+    nguonc: () => fetchNguonc(`/film/${canonicalSlug}`),
+    vsmov: () => vsmovApi.getDetail(canonicalSlug),
+    ophim: () => fetchOphim(`/phim/${canonicalSlug}`),
+    vicdn: () => fetchVicdn(`/info/${canonicalSlug}`),
     vidfast: () => Promise.reject(new Error('VidFast chỉ hỗ trợ trình phát bằng TMDB ID.')),
     vidup: () => Promise.reject(new Error('VidUp chỉ hỗ trợ trình phát bằng TMDB ID.')),
     vaplayer: () => Promise.reject(new Error('VAPlayer chỉ hỗ trợ trình phát bằng TMDB ID.')),

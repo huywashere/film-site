@@ -44,6 +44,20 @@ const UNIVERSE_META: Record<
     imageUrl: "https://image.tmdb.org/t/p/w1280/4TMkOnI6rCYxqD059aeeQSBv5mc.jpg",
     keywords: ["Thám Tử Lừng Danh Conan", "Conan Movie", "Kaito Kid", "Tổ Chức Áo Đen", "FlexPhim"],
   },
+  "khoa-hoc-vu-tru": {
+    title: "Khoa Học Vũ Trụ & Star Wars | FlexPhim",
+    description:
+      "Khám phá toàn bộ phim điện ảnh và truyền hình đỉnh cao về khoa học vũ trụ, đại chiến ngân hà Star Wars, du hành không gian và bí ẩn thiên hà chất lượng cao.",
+    imageUrl: "/Folder-Background/starwar/1140629.jpg",
+    keywords: ["Khoa Học Vũ Trụ", "Star Wars", "Vũ Trụ", "Không Gian", "The Mandalorian", "Interstellar", "Dune", "FlexPhim"],
+  },
+  "star-wars": {
+    title: "Vũ Trụ Điện Ảnh Star Wars | FlexPhim",
+    description:
+      "Khám phá toàn bộ kiệt tác Star Wars, The Mandalorian, Andor và những cuộc phiêu lưu thiên hà đỉnh cao chất lượng Full HD 4K.",
+    imageUrl: "/Folder-Background/starwar/1140629.jpg",
+    keywords: ["Star Wars", "The Mandalorian", "Darth Vader", "Khoa Học Vũ Trụ", "FlexPhim"],
+  },
 };
 
 export async function generateMetadata({
@@ -72,10 +86,11 @@ export async function generateMetadata({
 
 export default async function UniversePage({ params }: UniversePageProps) {
   const { slug } = await params;
-  if (slug !== "marvel" && slug !== "dc" && slug !== "doraemon" && slug !== "conan") {
+  const validUniverses = ["marvel", "dc", "doraemon", "conan", "khoa-hoc-vu-tru", "star-wars"];
+  if (!validUniverses.includes(slug)) {
     notFound();
   }
 
-  const universe = slug as "marvel" | "dc" | "doraemon" | "conan";
+  const universe = slug as "marvel" | "dc" | "doraemon" | "conan" | "khoa-hoc-vu-tru" | "star-wars";
   return <UniversePageClient key={universe} universe={universe} />;
 }

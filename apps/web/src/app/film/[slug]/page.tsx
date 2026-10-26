@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import FilmDetailPage from "./FilmDetailClient";
 import { normalizeMovieArtworkUrl } from "@/lib/movie-image-url";
 import { safeJsonLd } from "@/lib/safe-json-ld";
@@ -10,6 +11,7 @@ import { getMovieTmdbServer } from "@/lib/server/movie-tmdb-server";
 import { tmdbLogo } from "@/lib/tmdb";
 import { buildArtworkCandidates } from "@/lib/image-cdn";
 import { getSiteUrl, buildSeoMetadata } from "@/lib/seo";
+import { CURATED_HERO_SLUG_ALIASES } from "@/lib/curated-hero-pool";
 
 export const revalidate = 3600;
 
@@ -24,7 +26,8 @@ export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const resolvedParams = await params;
-  const slug = resolvedParams?.slug || "";
+  const rawSlug = resolvedParams?.slug || "";
+  const slug = CURATED_HERO_SLUG_ALIASES[rawSlug.trim()] || rawSlug;
   const movie = getMovieFromPageData(await getMoviePageData(slug));
 
   if (!movie) {
@@ -84,6 +87,10 @@ export async function generateMetadata({
 export default async function FilmPage({ params }: PageProps) {
   const resolvedParams = await params;
   const slug = resolvedParams?.slug || "";
+  const canonicalSlug = CURATED_HERO_SLUG_ALIASES[slug.trim()];
+  if (canonicalSlug && canonicalSlug !== slug) {
+    redirect(`/film/${canonicalSlug}`);
+  }
   const initialData = await getMoviePageData(slug);
   const movie = getMovieFromPageData(initialData);
   const initialTmdb = await getMovieTmdbServer(movie);

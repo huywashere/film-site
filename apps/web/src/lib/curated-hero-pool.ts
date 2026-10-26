@@ -112,10 +112,10 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "titleLogo": "https://image.tmdb.org/t/p/w500/5z6WuO1x5LgGfDYMZGj7rgD47Sq.png"
   },
   {
-    "_id": "nguoi-dan-ong-xu-ireland",
+    "_id": "nguoi-dan-ong-ireland",
     "name": "Người Đàn Ông Xứ Ireland",
     "origin_name": "The Irishman",
-    "slug": "nguoi-dan-ong-xu-ireland",
+    "slug": "nguoi-dan-ong-ireland",
     "type": "single",
     "tmdbId": 398978,
     "tmdb": {
@@ -136,10 +136,10 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "titleLogo": "https://image.tmdb.org/t/p/w500/dwGgp4AsCWtpc1f13ZVdVnxJ4pv.png"
   },
   {
-    "_id": "ke-di-san",
-    "name": "Kẻ Đi Săn",
+    "_id": "diep-vu-boston",
+    "name": "Điệp Vụ Boston",
     "origin_name": "The Departed",
-    "slug": "ke-di-san",
+    "slug": "diep-vu-boston",
     "type": "single",
     "tmdbId": 1422,
     "tmdb": {
@@ -208,10 +208,10 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "titleLogo": "https://image.tmdb.org/t/p/w500/zQGDFzjfXC47foVucagHYIxRUfW.png"
   },
   {
-    "_id": "hao-han",
-    "name": "Hảo Hán",
+    "_id": "chien-huu",
+    "name": "Chiến Hữu (Hảo Hán)",
     "origin_name": "Goodfellas",
-    "slug": "hao-han",
+    "slug": "chien-huu",
     "type": "single",
     "tmdbId": 769,
     "tmdb": {
@@ -232,10 +232,10 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "titleLogo": "https://image.tmdb.org/t/p/w500/jsRyKKKYLPU4vUmlRJPlRFrKNN0.png"
   },
   {
-    "_id": "bo-gia",
+    "_id": "bo-gia-1972",
     "name": "Bố Già",
     "origin_name": "The Godfather",
-    "slug": "bo-gia",
+    "slug": "bo-gia-1972",
     "type": "single",
     "tmdbId": 238,
     "tmdb": {
@@ -256,10 +256,10 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "titleLogo": "https://image.tmdb.org/t/p/w500/go316CQeTX9yPYbhBPDhmtFwNhj.png"
   },
   {
-    "_id": "bo-gia-phan-2",
+    "_id": "bo-gia-2",
     "name": "Bố Già Phần II",
     "origin_name": "The Godfather Part II",
-    "slug": "bo-gia-phan-2",
+    "slug": "bo-gia-2",
     "type": "single",
     "tmdbId": 240,
     "tmdb": {
@@ -280,10 +280,10 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "titleLogo": "https://image.tmdb.org/t/p/w500/gEfwCTLbcX7jvIHLTXfVW1idZby.png"
   },
   {
-    "_id": "xa-hoi-den-my",
-    "name": "Xã Hội Đen Mỹ",
+    "_id": "giang-ho-my",
+    "name": "Giang Hồ Mỹ",
     "origin_name": "American Gangster",
-    "slug": "xa-hoi-den-my",
+    "slug": "giang-ho-my",
     "type": "single",
     "tmdbId": 4982,
     "tmdb": {
@@ -304,10 +304,10 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "titleLogo": "https://image.tmdb.org/t/p/w500/yEM7OGidkNoQjewoDtK1aNT20w7.png"
   },
   {
-    "_id": "ranh-gioi-bao-luc",
+    "_id": "sicario-ranh-gioi",
     "name": "Ranh Giới Bạo Lực",
     "origin_name": "Sicario",
-    "slug": "ranh-gioi-bao-luc",
+    "slug": "sicario-ranh-gioi",
     "type": "single",
     "tmdbId": 273481,
     "tmdb": {
@@ -400,10 +400,10 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "titleLogo": "https://image.tmdb.org/t/p/w500/hRtb8ju7S4xNP3s6RtDqyR1wn8j.png"
   },
   {
-    "_id": "bay-toi-loi-chet-nguoi",
-    "name": "Bảy Tội Lỗi Chết Người",
+    "_id": "7-toi-loi-chet-nguoi",
+    "name": "7 Tội Lỗi Chết Người",
     "origin_name": "Se7en",
-    "slug": "bay-toi-loi-chet-nguoi",
+    "slug": "7-toi-loi-chet-nguoi",
     "type": "single",
     "tmdbId": 807,
     "tmdb": {
@@ -424,10 +424,10 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "titleLogo": "https://image.tmdb.org/t/p/w500/zVyZvT1zVO7GIk65RlcOx5KdAN.png"
   },
   {
-    "_id": "ho-so-sat-nhan",
+    "_id": "zodiac",
     "name": "Hồ Sơ Sát Nhân",
     "origin_name": "Zodiac",
-    "slug": "ho-so-sat-nhan",
+    "slug": "zodiac",
     "type": "single",
     "tmdbId": 1949,
     "tmdb": {
@@ -496,10 +496,10 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "titleLogo": "https://image.tmdb.org/t/p/w500/6u3WGSBwqmsG3tooD2B5eMKkxKU.png"
   },
   {
-    "_id": "1917",
-    "name": "1917",
+    "_id": "the-chien-1917",
+    "name": "Thế Chiến 1917",
     "origin_name": "1917",
-    "slug": "1917",
+    "slug": "the-chien-1917",
     "type": "single",
     "tmdbId": 530915,
     "tmdb": {
@@ -640,10 +640,10 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "titleLogo": "https://image.tmdb.org/t/p/w500/xLresrupcXIq7AfeMc5V6XHCxd5.png"
   },
   {
-    "_id": "song-sot",
+    "_id": "song-sot-2013",
     "name": "Sống Sót",
     "origin_name": "Lone Survivor",
-    "slug": "song-sot",
+    "slug": "song-sot-2013",
     "type": "single",
     "tmdbId": 193756,
     "tmdb": {
@@ -688,10 +688,10 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "titleLogo": "https://image.tmdb.org/t/p/w500/6aytdNlbaWgLdJOr0ZV5ye58l9H.png"
   },
   {
-    "_id": "khe-uoc-sinh-tu",
+    "_id": "khe-uoc",
     "name": "Khế Ước Sinh Tử",
     "origin_name": "The Covenant",
-    "slug": "khe-uoc-sinh-tu",
+    "slug": "khe-uoc",
     "type": "single",
     "tmdbId": 882569,
     "tmdb": {
@@ -712,10 +712,10 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "titleLogo": "https://image.tmdb.org/t/p/w500/3CjMi5T3Om7TLVh0gOYxSlrrmxe.png"
   },
   {
-    "_id": "noi-chien-my",
-    "name": "Nội Chiến Mỹ",
+    "_id": "ngay-tan-cua-de-quoc",
+    "name": "Ngày Tàn Của Đế Quốc",
     "origin_name": "Civil War",
-    "slug": "noi-chien-my",
+    "slug": "ngay-tan-cua-de-quoc",
     "type": "single",
     "tmdbId": 929590,
     "tmdb": {
@@ -784,10 +784,10 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "titleLogo": "https://image.tmdb.org/t/p/w500/zCYP0A2q7FCEppQOKOXsdaJ9ne9.png"
   },
   {
-    "_id": "tham-hoa-thien-thach",
+    "_id": "greenland-tham-hoa-thien-thach",
     "name": "Thảm Họa Thiên Thạch",
     "origin_name": "Greenland",
-    "slug": "tham-hoa-thien-thach",
+    "slug": "greenland-tham-hoa-thien-thach",
     "type": "single",
     "tmdbId": 524047,
     "tmdb": {
@@ -832,10 +832,10 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "titleLogo": "https://image.tmdb.org/t/p/w500/7jZAqfVNeGxRmxZ9x3MOR6BXFxd.png"
   },
   {
-    "_id": "ngay-kinh-hoang",
+    "_id": "ngay-khong-xa",
     "name": "Ngày Kinh Hoàng",
     "origin_name": "The Day After Tomorrow",
-    "slug": "ngay-kinh-hoang",
+    "slug": "ngay-khong-xa",
     "type": "single",
     "tmdbId": 2059,
     "tmdb": {
@@ -904,10 +904,10 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "titleLogo": "https://image.tmdb.org/t/p/w500/x91Wo1b4GhW0BrAzxSWkvFlQ3TR.png"
   },
   {
-    "_id": "ngay-tan-the",
+    "_id": "ngay-tan-the-1998",
     "name": "Ngày Tận Thế",
     "origin_name": "Armageddon",
-    "slug": "ngay-tan-the",
+    "slug": "ngay-tan-the-1998",
     "type": "single",
     "tmdbId": 95,
     "tmdb": {
@@ -976,10 +976,10 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "titleLogo": "https://image.tmdb.org/t/p/w500/fzB3khU5ZlLo52jzoWfLgjmyjna.png"
   },
   {
-    "_id": "hanh-tinh-chet",
+    "_id": "hanh-trinh-den-hanh-tinh-chet",
     "name": "Hành Tinh Chết",
     "origin_name": "Prometheus",
-    "slug": "hanh-tinh-chet",
+    "slug": "hanh-trinh-den-hanh-tinh-chet",
     "type": "single",
     "tmdbId": 70981,
     "tmdb": {
@@ -1048,10 +1048,10 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "titleLogo": "https://image.tmdb.org/t/p/w500/wnGqljuqb2KBNJQ0GCEoUjcAnTU.png"
   },
   {
-    "_id": "quai-thu-vo-hinh-con-moi",
+    "_id": "quai-thu-vo-hinh-4",
     "name": "Quái Thú Vô Hình: Con Mồi",
     "origin_name": "Prey",
-    "slug": "quai-thu-vo-hinh-con-moi",
+    "slug": "quai-thu-vo-hinh-4",
     "type": "single",
     "tmdbId": 766507,
     "tmdb": {
@@ -1192,10 +1192,10 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "titleLogo": "https://image.tmdb.org/t/p/w500/97AapmS6CAhg3ZZgYQgsmstulNX.png"
   },
   {
-    "_id": "tro-choi-ao-giac",
+    "_id": "tro-choi-ao-giac-ke-thua",
     "name": "Trò Chơi Ảo Giác",
     "origin_name": "Tron: Legacy",
-    "slug": "tro-choi-ao-giac",
+    "slug": "tro-choi-ao-giac-ke-thua",
     "type": "single",
     "tmdbId": 20526,
     "tmdb": {
@@ -1336,10 +1336,10 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "titleLogo": "https://image.tmdb.org/t/p/w500/feJw5OvuutgHt4G9jZQibO8j4Gu.png"
   },
   {
-    "_id": "joker",
+    "_id": "joker-ga-he",
     "name": "Joker",
     "origin_name": "Joker",
-    "slug": "joker",
+    "slug": "joker-ga-he",
     "type": "single",
     "tmdbId": 475557,
     "tmdb": {
@@ -1432,10 +1432,10 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "titleLogo": "https://image.tmdb.org/t/p/w500/yrZkQffWfFG16U9XnpcpQQLJvE2.png"
   },
   {
-    "_id": "phu-thuy-toi-thuong-trong-da-vu-tru-hon-loan",
+    "_id": "phu-thuy-toi-thuong-da-vu-tru-hon-loan",
     "name": "Phù Thủy Tối Thượng Trong Đa Vũ Trụ Hỗn Loạn",
     "origin_name": "Doctor Strange in the Multiverse of Madness",
-    "slug": "phu-thuy-toi-thuong-trong-da-vu-tru-hon-loan",
+    "slug": "phu-thuy-toi-thuong-da-vu-tru-hon-loan",
     "type": "single",
     "tmdbId": 453395,
     "tmdb": {
@@ -1600,10 +1600,10 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "titleLogo": "https://image.tmdb.org/t/p/w500/iXYh7y0vI1DZR0taTuvrr8PSnOd.png"
   },
   {
-    "_id": "nguyen-ly-tenet",
+    "_id": "tenet",
     "name": "Nguyên Lý Tenet",
     "origin_name": "Tenet",
-    "slug": "nguyen-ly-tenet",
+    "slug": "tenet",
     "type": "single",
     "tmdbId": 577922,
     "tmdb": {
@@ -1744,10 +1744,10 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "titleLogo": "https://image.tmdb.org/t/p/w500/zmNDyebaa4BDhehqXj5SF85vu8I.png"
   },
   {
-    "_id": "nhiem-vu-bat-kha-thi-nghiep-bao",
+    "_id": "nhiem-vu-bat-kha-thi-nghiep-bao-phan-1",
     "name": "Nhiệm Vụ Bất Khả Thi: Nghiệp Báo",
     "origin_name": "Mission: Impossible – Dead Reckoning",
-    "slug": "nhiem-vu-bat-kha-thi-nghiep-bao",
+    "slug": "nhiem-vu-bat-kha-thi-nghiep-bao-phan-1",
     "type": "single",
     "tmdbId": 575264,
     "tmdb": {
@@ -1960,10 +1960,10 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "titleLogo": "https://image.tmdb.org/t/p/w500/4skeKFtpdXvHFj7ab86cU20nju0.png"
   },
   {
-    "_id": "chua-te-godzilla",
+    "_id": "chua-te-godzilla-de-vuong-bat-tu",
     "name": "Chúa Tể Godzilla",
     "origin_name": "Godzilla: King of the Monsters",
-    "slug": "chua-te-godzilla",
+    "slug": "chua-te-godzilla-de-vuong-bat-tu",
     "type": "single",
     "tmdbId": 373571,
     "tmdb": {
@@ -1984,10 +1984,10 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "titleLogo": "https://image.tmdb.org/t/p/w500/bsXIWV5jaKvRwYEyjkito8khUfe.png"
   },
   {
-    "_id": "sieu-dai-chien-thai-binh-duong",
+    "_id": "sieu-dai-chien",
     "name": "Siêu Đại Chiến Thái Bình Dương",
     "origin_name": "Pacific Rim",
-    "slug": "sieu-dai-chien-thai-binh-duong",
+    "slug": "sieu-dai-chien",
     "type": "single",
     "tmdbId": 68726,
     "tmdb": {
@@ -2056,10 +2056,10 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "titleLogo": "https://image.tmdb.org/t/p/w500/auoso7QuNtcrqb8FB8djDqdVEih.png"
   },
   {
-    "_id": "ca-map-sieu-bao-chua-2",
-    "name": "Cá Mập Siêu Bạo Chúa 2",
-    "origin_name": "The Meg 2",
-    "slug": "ca-map-sieu-bao-chua-2",
+    "_id": "ca-map-sieu-bao-chua-2-vuc-sau",
+    "name": "Cá Mập Siêu Bạo Chúa 2: Vực Sâu",
+    "origin_name": "Meg 2: The Trench",
+    "slug": "ca-map-sieu-bao-chua-2-vuc-sau",
     "type": "single",
     "tmdbId": 615656,
     "tmdb": {
@@ -2080,10 +2080,10 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "titleLogo": "https://image.tmdb.org/t/p/w500/iQDrbgBPGuY7WGpxSKzvU5Nt3i1.png"
   },
   {
-    "_id": "am-anh-kinh-hoang",
+    "_id": "am-anh-kinh-hoang-2013",
     "name": "Ám Ảnh Kinh Hoàng",
     "origin_name": "The Conjuring",
-    "slug": "am-anh-kinh-hoang",
+    "slug": "am-anh-kinh-hoang-2013",
     "type": "single",
     "tmdbId": 138843,
     "tmdb": {
@@ -2272,10 +2272,10 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "titleLogo": "https://image.tmdb.org/t/p/w500/5ffl0wnYvirnyEDut48ClJazV6z.png"
   },
   {
-    "_id": "28-nam-sau",
+    "_id": "28-nam-sau-hau-tan-the",
     "name": "28 Năm Sau",
     "origin_name": "28 Years Later",
-    "slug": "28-nam-sau",
+    "slug": "28-nam-sau-hau-tan-the",
     "type": "single",
     "tmdbId": 1214484,
     "tmdb": {
@@ -2296,10 +2296,10 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "titleLogo": "https://image.tmdb.org/t/p/w500/jS6QnXBLTUjLX8jDgIyBEojxpD4.png"
   },
   {
-    "_id": "chua-te-nhan-su-tro-ve-cua-nha-vua",
+    "_id": "chua-te-cua-nhung-chiec-nhan-su-tro-lai-cua-nha-vua",
     "name": "Chúa Tể Của Những Chiếc Nhẫn: Sự Trở Về Của Nhà Vua",
     "origin_name": "The Lord of the Rings: The Return of the King",
-    "slug": "chua-te-nhan-su-tro-ve-cua-nha-vua",
+    "slug": "chua-te-cua-nhung-chiec-nhan-su-tro-lai-cua-nha-vua",
     "type": "single",
     "tmdbId": 122,
     "tmdb": {
@@ -2368,10 +2368,10 @@ export const CURATED_HERO_FRANCHISE_POOL: CuratedHeroMovie[] = [
     "titleLogo": "https://image.tmdb.org/t/p/w500/vEQROv1sAh6K2RWN1J59ZM7HduQ.png"
   },
   {
-    "_id": "vo-si-giac-dau-2",
+    "_id": "vo-si-giac-dau-ii",
     "name": "Võ Sĩ Giác Đấu II",
     "origin_name": "Gladiator II",
-    "slug": "vo-si-giac-dau-2",
+    "slug": "vo-si-giac-dau-ii",
     "type": "single",
     "tmdbId": 558449,
     "tmdb": {
@@ -2426,8 +2426,67 @@ export function getRandomCuratedHeroSet(count = 6): CuratedHeroMovie[] {
 }
 
 export const CURATED_HERO_SLUG_ALIASES: Record<string, string> = {
+  // Classics & Mafia (Fixed for real PhimAPI streaming routes)
+  "hao-han": "chien-huu",
+  "goodfellas": "chien-huu",
+  "bo-gia": "bo-gia-1972",
+  "the-godfather": "bo-gia-1972",
+  "godfather": "bo-gia-1972",
+  "bo-gia-1": "bo-gia-1972",
+  "bo-gia-phan-2": "bo-gia-2",
+  "the-godfather-2": "bo-gia-2",
+  "the-godfather-part-ii": "bo-gia-2",
+  "bo-gia-phan-3": "bo-gia-3",
+  "the-godfather-3": "bo-gia-3",
+  "the-godfather-part-iii": "bo-gia-3",
+  "nguoi-dan-ong-xu-ireland": "nguoi-dan-ong-ireland",
+  "the-irishman": "nguoi-dan-ong-ireland",
+  "ke-di-san": "diep-vu-boston",
+  "the-departed": "diep-vu-boston",
+  "xa-hoi-den-my": "giang-ho-my",
+  "american-gangster": "giang-ho-my",
+  "ranh-gioi-bao-luc": "sicario-ranh-gioi",
+  "sicario": "sicario-ranh-gioi",
+  "bay-toi-loi-chet-nguoi": "7-toi-loi-chet-nguoi",
+  "se7en": "7-toi-loi-chet-nguoi",
+  "ho-so-sat-nhan": "zodiac",
+  "1917": "the-chien-1917",
+  "song-sot": "song-sot-2013",
+  "lone-survivor": "song-sot-2013",
+  "khe-uoc-sinh-tu": "khe-uoc",
+  "the-covenant": "khe-uoc",
+  "noi-chien-my": "ngay-tan-cua-de-quoc",
+  "civil-war": "ngay-tan-cua-de-quoc",
+  "tham-hoa-thien-thach": "greenland-tham-hoa-thien-thach",
+  "greenland": "greenland-tham-hoa-thien-thach",
+  "ngay-kinh-hoang": "ngay-khong-xa",
+  "the-day-after-tomorrow": "ngay-khong-xa",
+  "ngay-tan-the": "ngay-tan-the-1998",
+  "armageddon": "ngay-tan-the-1998",
+  "hanh-tinh-chet": "hanh-trinh-den-hanh-tinh-chet",
+  "prometheus": "hanh-trinh-den-hanh-tinh-chet",
+  "quai-thu-vo-hinh-con-moi": "quai-thu-vo-hinh-4",
+  "tro-choi-ao-giac": "tro-choi-ao-giac-ke-thua",
+  "tron-legacy": "tro-choi-ao-giac-ke-thua",
+  "joker": "joker-ga-he",
+  "joker-2019": "joker-ga-he",
+  "phu-thuy-toi-thuong-trong-da-vu-tru-hon-loan": "phu-thuy-toi-thuong-da-vu-tru-hon-loan",
+  "nguyen-ly-tenet": "tenet",
+  "nhiem-vu-bat-kha-thi-nghiep-bao": "nhiem-vu-bat-kha-thi-nghiep-bao-phan-1",
+  "chua-te-godzilla": "chua-te-godzilla-de-vuong-bat-tu",
+  "sieu-dai-chien-thai-binh-duong": "sieu-dai-chien",
+  "pacific-rim": "sieu-dai-chien",
+  "ca-map-sieu-bao-chua-2": "ca-map-sieu-bao-chua-2-vuc-sau",
+  "meg-2": "ca-map-sieu-bao-chua-2-vuc-sau",
+  "28-nam-sau": "28-nam-sau-hau-tan-the",
+  "chua-te-nhan-su-tro-ve-cua-nha-vua": "chua-te-cua-nhung-chiec-nhan-su-tro-lai-cua-nha-vua",
+  "vo-si-giac-dau-2": "vo-si-giac-dau-ii",
+  "gladiator-2": "vo-si-giac-dau-ii",
+  "am-anh-kinh-hoang": "am-anh-kinh-hoang-2013",
+  "the-conjuring": "am-anh-kinh-hoang-2013",
+
+  // Blockbusters & Franchises
   "hope-vung-tu-dia": "vung-tu-dia",
-  "joker-2019": "joker",
   "the-batman": "nguoi-doi-2022",
   "batman-2022": "nguoi-doi-2022",
   "avengers-hoi-ket": "biet-doi-sieu-anh-hung-4-hoi-ket",
@@ -2444,8 +2503,6 @@ export const CURATED_HERO_SLUG_ALIASES: Record<string, string> = {
   "the-wolf-of-wall-street": "soi-gia-pho-wall",
   "the-revenant": "nguoi-ve-tu-coi-chet",
   "once-upon-a-time-in-hollywood": "chuyen-ngay-xua-o-hollywood",
-  "the-irishman": "nguoi-dan-ong-xu-ireland",
-  "the-departed": "ke-di-san",
 };
 
 /**

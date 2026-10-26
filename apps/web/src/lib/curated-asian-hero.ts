@@ -55,6 +55,22 @@ export function buildAsianHeroImageCandidates(url?: string | null): string[] {
   } else {
     // Direct provider CDN first or local public asset
     list.push(clean);
+    if (clean.includes("truc-ngoc-logo")) {
+      list.push("/Folder-Background/China/truc-ngoc/truc-ngoc-logo-vi.png");
+      list.push("/Folder-Background/China/truc-ngoc/truc-ngoc-logo-zh.png");
+      list.push("https://image.tmdb.org/t/p/original/nsWITA9BJOJ7ol3QhX1Vsd04ERL.png");
+    } else if (clean.includes("cho-hoang-va-xuong-logo")) {
+      list.push("/Folder-Background/China/cho-hoang-va-xuong/love-for-you-logo.png");
+      list.push("/Folder-Background/China/cho-hoang-va-xuong/cho-hoang-va-xuong-logo-zh.png");
+      list.push("https://image.tmdb.org/t/p/original/xkBDd37L7jEXUrUjVeJyTQDd45p.png");
+    } else if (clean.includes("lovely-runner-logo")) {
+      list.push("/Folder-Background/Korea/cong-anh-ma-chay/lovely-runner-logo-vi.png");
+      list.push("/Folder-Background/Korea/cong-anh-ma-chay/lovely-runner-logo-en.png");
+      list.push("https://image.tmdb.org/t/p/original/oaUqkVCfALXIbjAyEbZzMOMTeD1.png");
+    } else if (clean.includes("our-sticky-love-logo")) {
+      list.push("/Folder-Background/Korea/keo-ngot-tinh-yeu/our-sticky-love-logo-hd.png");
+      list.push("/Folder-Background/Korea/keo-ngot-tinh-yeu/love-next-door-logo-en.png");
+    }
     if (!clean.startsWith("/") && !clean.startsWith("/api/image-proxy")) {
       list.push(`/api/image-proxy?url=${encodeURIComponent(clean)}&strict=1`);
     }

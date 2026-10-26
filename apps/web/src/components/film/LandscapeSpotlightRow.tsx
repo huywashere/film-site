@@ -157,7 +157,7 @@ export function LandscapeSpotlightRow({
       <div
         ref={scrollRef}
         onScroll={checkScroll}
-        className="scrollbar-none flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-1 pb-3 pt-1 scroll-smooth [-webkit-overflow-scrolling:touch] sm:gap-4"
+        className="scrollbar-none flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-1 pb-3 pt-2 -mt-1 scroll-smooth [-webkit-overflow-scrolling:touch] sm:gap-4"
       >
         {cleanList.map((film, index) => {
           const rating = Number(
@@ -194,7 +194,7 @@ export function LandscapeSpotlightRow({
           return (
             <article
               key={film.slug || index}
-              className="group relative w-[48vw] min-w-[160px] shrink-0 snap-start select-none sm:w-[48vw] lg:w-[calc((100%-3rem)/4)]"
+              className="group relative w-[48vw] min-w-[160px] shrink-0 snap-start select-none sm:w-[48vw] lg:w-[calc((100%-3rem)/4)] hover:z-20"
             >
               <Link
                 href={targetHref}

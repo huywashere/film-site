@@ -166,7 +166,7 @@ export function GiantNumberRankSection({
           return (
             <div
               key={film.slug || index}
-              className="group relative flex shrink-0 items-end cursor-pointer select-none"
+              className="group relative flex shrink-0 items-end cursor-pointer select-none hover:z-30"
             >
               {/* 3D Solid Metallic Giant Number */}
               <div

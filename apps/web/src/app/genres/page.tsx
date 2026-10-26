@@ -75,7 +75,8 @@ export const HUBS: HubCard[] = [
     slug: 'dc',
     title: 'Vũ Trụ DC',
     href: '/universe/dc',
-    image: '/Folder-Background/DC/thumb-1920-457955.png',
+    image: '/Folder-Background/DC/iUIgje.webp',
+    objectPosition: 'center 35%',
   },
   // ── 7 Thể Loại Đặc Sắc Được Bổ Sung (Đang chờ ảnh từ người dùng) ──
   {
@@ -86,10 +87,11 @@ export const HUBS: HubCard[] = [
     objectPosition: 'center 40%',
   },
   {
-    slug: 'reality',
-    title: 'Reality & TV Shows',
-    href: '/films/tv-shows',
-    image: '',
+    slug: 'khoa-hoc-vu-tru',
+    title: 'Khoa Học Vũ Trụ',
+    href: '/universe/khoa-hoc-vu-tru',
+    image: '/Folder-Background/starwar/1140629.jpg',
+    objectPosition: 'center 35%',
   },
   {
     slug: 'kids',
@@ -208,7 +210,7 @@ function HubCardItem({
       onFocus={() => onPrefetch(hub)}
       onTouchStart={() => onPrefetch(hub)}
       onPointerDown={() => onPrefetch(hub)}
-      className="group relative isolate aspect-[16/9] cursor-pointer select-none overflow-hidden rounded-xl sm:rounded-2xl border border-white/[0.08] bg-[#0e1017] shadow-[0_8px_20px_rgba(0,0,0,0.25)] transition-all duration-300 hover:-translate-y-1 hover:border-white/[0.22] hover:shadow-[0_12px_28px_rgba(0,0,0,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+      className="group relative z-10 aspect-[16/9] cursor-pointer select-none overflow-hidden rounded-xl sm:rounded-2xl border border-white/[0.08] bg-[#0e1017] shadow-[0_8px_20px_rgba(0,0,0,0.25)] transition-all duration-300 hover:z-30 hover:-translate-y-1.5 hover:border-white/35 hover:shadow-[0_16px_36px_rgba(0,0,0,0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
     >
       {/* Artwork with rich contrast protection */}
       <div
@@ -272,7 +274,8 @@ export default function GenresPage() {
         hub.slug === 'doraemon' ||
         hub.slug === 'conan' ||
         hub.slug === 'marvel' ||
-        hub.slug === 'dc'
+        hub.slug === 'dc' ||
+        hub.slug === 'khoa-hoc-vu-tru'
       ) {
         void queryClient.prefetchQuery({
           queryKey: ['films-universe', hub.slug, 1],
@@ -386,7 +389,7 @@ export default function GenresPage() {
         <section aria-label="Danh sách chủ đề điện ảnh" className="w-full">
           <h2 className="sr-only">Danh Mục Chủ Đề & Thể Loại</h2>
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-4 sm:gap-4 md:gap-4.5 lg:gap-5 gap-y-4 sm:gap-y-5.5 cv-section-auto">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-4 sm:gap-4 md:gap-4.5 lg:gap-5 gap-y-4 sm:gap-y-5.5 pt-3 pb-3 -mt-3">
             {HUBS.map((hub, idx) => (
               <HubCardItem
                 key={hub.slug}

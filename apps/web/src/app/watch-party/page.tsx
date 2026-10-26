@@ -241,7 +241,7 @@ export default function WatchPartyListPage() {
         </nav>
 
         {/* ── Visual Cinema Banner Hero Card ── */}
-        <div className="isolate relative rounded-2xl sm:rounded-3xl overflow-hidden border border-white/15 shadow-[0_20px_60px_rgba(0,0,0,0.8)] bg-[#0b0c10] p-6 sm:p-10 md:p-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 min-h-[260px] sm:min-h-[300px] md:min-h-[320px] group">
+        <div className="isolate relative rounded-2xl sm:rounded-3xl overflow-hidden border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.8)] bg-[#07080b] p-6 sm:p-10 md:p-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 min-h-[240px] sm:min-h-[270px] md:min-h-[290px] group">
           <div className="absolute inset-0 -z-10 overflow-hidden">
             <Image
               src="/img-backtop/tab-watch-party.webp"
@@ -253,19 +253,18 @@ export default function WatchPartyListPage() {
               blurDataURL="data:image/webp;base64,UklGRn4AAABXRUJQVlA4IHIAAADQBACdASogABIAPzmIvFavKKYjsBgIAeAnCWMAAI9AyVWwdcX8rz8+XoNxsUWygAD+7UTcT3Esw3GL02YjG+iu8ovjZJlMKjawD0pWUxjKJrC+60jdUY5jV+9RYiB0jXxrjV5fqMalEcKh6cxkZTemAAA="
               sizes="(max-width: 768px) 100vw, (max-width: 1280px) 1200px, 1280px"
               quality={90}
-              className="object-cover object-[center_28%] sm:object-[center_24%] scale-100 group-hover:scale-105 transition-transform duration-1000 ease-out brightness-[0.98] contrast-[1.05] saturate-[1.1] pointer-events-none"
+              className="object-cover object-[center_28%] sm:object-[center_24%] scale-100 group-hover:scale-105 transition-transform duration-1000 ease-out brightness-[0.7] contrast-[1.1] pointer-events-none"
             />
-            {/* Directional gradient: deep contrast on left for crisp readability, open on right for cinematic poster collage */}
-            <div className="absolute inset-0 bg-gradient-to-r from-[#07080b]/95 via-[#07080b]/75 via-45% to-black/20" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#07080b]/90 via-transparent to-black/40" />
-            <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-violet-600/10 to-transparent pointer-events-none" />
+            {/* Deep dark cinematic gradient masks so the white studio image is not washed out or bright */}
+            <div className="absolute inset-0 bg-gradient-to-r from-[#07080b] via-[#07080b]/85 via-45% to-[#07080b]/75" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#07080b] via-[#07080b]/35 to-black/60" />
           </div>
 
-          <div className="space-y-2.5 max-w-xl relative z-10">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white leading-tight drop-shadow-[0_4px_20px_rgba(0,0,0,0.9)]">
+          <div className="space-y-2 max-w-xl relative z-10">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-white leading-tight drop-shadow-[0_2px_12px_rgba(0,0,0,0.8)]">
               Phòng Xem Chung
             </h1>
-            <p className="text-xs sm:text-sm text-neutral-200 leading-relaxed drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
+            <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
               Thưởng thức phim điện ảnh và series cùng bạn bè với tính năng đồng
               bộ phát video tức thì, tua phim siêu tốc và trò chuyện trực tiếp
               không độ trễ.
@@ -276,7 +275,7 @@ export default function WatchPartyListPage() {
             <button
               type="button"
               onClick={() => openCreateModal()}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-white hover:bg-neutral-100 text-black font-extrabold text-xs sm:text-sm shadow-[0_10px_25px_rgba(255,255,255,0.2)] transition-all hover:scale-105 active:scale-95 cursor-pointer select-none"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white hover:bg-neutral-100 text-black font-extrabold text-xs sm:text-sm shadow-md transition-all hover:scale-105 active:scale-95 cursor-pointer select-none"
             >
               <Plus size={16} className="stroke-[2.5]" />
               <span>Tạo phòng ngay</span>
@@ -429,7 +428,7 @@ export default function WatchPartyListPage() {
 
           {lobbyState === "connecting" && rooms.length === 0 ? (
             <div className="flex min-h-24 flex-col items-center justify-center gap-2 text-neutral-400 p-6">
-              <Loader2 size={18} className="animate-spin text-purple-400" />
+              <Loader2 size={18} className="animate-spin text-neutral-400" />
               <p className="text-xs font-medium">Đang tải danh sách phòng...</p>
             </div>
           ) : rooms.length === 0 ? (
@@ -451,10 +450,10 @@ export default function WatchPartyListPage() {
                   onClick={() =>
                     router.push(`/watch/${room.movie.slug}?room=${room.id}`)
                   }
-                  className="group relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4 text-left transition-all hover:border-purple-500/40 hover:bg-white/[0.04] cursor-pointer shadow-lg"
+                  className="group relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4 text-left transition-all hover:border-white/30 hover:bg-white/[0.04] cursor-pointer shadow-lg"
                 >
                   <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className="inline-flex items-center gap-1 rounded-md bg-purple-500/20 text-purple-300 px-2 py-0.5 text-[10px] font-bold">
+                    <span className="inline-flex items-center gap-1 rounded-md bg-white/10 text-neutral-200 border border-white/10 px-2 py-0.5 text-[10px] font-bold">
                       <Radio size={10} /> Live
                     </span>
                     <span className="flex items-center gap-1 text-[11px] font-semibold text-neutral-400">
@@ -462,7 +461,7 @@ export default function WatchPartyListPage() {
                     </span>
                   </div>
 
-                  <h3 className="line-clamp-1 text-sm font-bold text-white group-hover:text-purple-300 transition-colors">
+                  <h3 className="line-clamp-1 text-sm font-bold text-white group-hover:text-white transition-colors">
                     {room.name || `Xem cùng ${room.hostName}`}
                   </h3>
                   <p className="mt-1 line-clamp-1 text-xs text-neutral-400 flex items-center gap-1">
@@ -489,7 +488,7 @@ export default function WatchPartyListPage() {
             >
               <div className="flex items-start justify-between gap-4 border-b border-white/[0.08] pb-4">
                 <div>
-                  <span className="flex items-center gap-1.5 text-xs font-bold text-purple-400">
+                  <span className="flex items-center gap-1.5 text-xs font-bold text-neutral-300">
                     <Radio size={14} /> Tạo phòng mới
                   </span>
                   <h3 className="mt-1 text-lg sm:text-xl font-extrabold text-white">
@@ -519,7 +518,7 @@ export default function WatchPartyListPage() {
                     className="h-16 w-12 rounded-xl object-cover border border-white/10 shrink-0"
                   />
                   <div className="min-w-0 flex-1">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-purple-400">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
                       Phim đã chọn
                     </span>
                     <h4 className="font-extrabold text-sm text-white truncate">
@@ -547,7 +546,7 @@ export default function WatchPartyListPage() {
                       ? `Phòng xem: ${selectedMovie.name}`
                       : "Ví dụ: Xem phim cuối tuần..."
                   }
-                  className="h-11 w-full rounded-2xl border border-white/[0.08] bg-white/[0.03] px-4 text-xs sm:text-sm text-white placeholder:text-neutral-500 outline-none focus:border-purple-500/50 focus:bg-white/[0.05] transition-all"
+                  className="h-11 w-full rounded-2xl border border-white/[0.08] bg-white/[0.03] px-4 text-xs sm:text-sm text-white placeholder:text-neutral-500 outline-none focus:border-white/30 focus:bg-white/[0.05] transition-all"
                 />
               </div>
 

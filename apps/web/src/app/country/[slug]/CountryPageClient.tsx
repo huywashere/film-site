@@ -447,7 +447,7 @@ function ResilientAsianHeroLogo({
   }
 
   return (
-    <div className="h-10 sm:h-14 md:h-16 lg:h-18 max-w-[280px] sm:max-w-[420px] md:max-w-[480px]">
+    <div className="h-12 sm:h-16 md:h-20 lg:h-24 max-w-[320px] sm:max-w-[460px] md:max-w-[540px]">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         data-curated-hero-logo={item.slug}
@@ -582,9 +582,9 @@ function AsianCuratedHeroBanner({
         }}
       />
 
-      {/* ── Layer 3: Character Cutout with Gentle Slide-in from Right ── */}
+      {/* ── Layer 3: Character Cutout with Gentle Slide-in from Right (Căn chìm sâu xuống đáy, khuất hẳn mép cắt) ── */}
       {currentItem.charactersUrl && (
-        <div className="absolute right-0 bottom-0 top-0 h-full w-full max-w-2xl sm:max-w-3xl md:max-w-4xl lg:max-w-5xl flex items-end justify-end pointer-events-none z-10 overflow-hidden pr-3 sm:pr-8 md:pr-14 lg:pr-20 xl:pr-28 pb-8 sm:pb-12 md:pb-16 lg:pb-20">
+        <div className="absolute right-0 bottom-[-20px] sm:bottom-[-32px] md:bottom-[-44px] top-0 h-[calc(100%+44px)] w-full max-w-2xl sm:max-w-3xl md:max-w-4xl lg:max-w-5xl flex items-end justify-end pointer-events-none z-10 overflow-hidden pr-3 sm:pr-8 md:pr-14 lg:pr-20 xl:pr-28 [mask-image:linear-gradient(to_bottom,black_0%,black_62%,transparent_94%)]">
           <AnimatePresence mode="wait">
             <motion.div
               key={`chars-${currentItem.slug}`}
@@ -598,13 +598,16 @@ function AsianCuratedHeroBanner({
               <img
                 src={currentItem.charactersUrl}
                 alt={currentItem.name}
-                className="h-[68%] sm:h-[78%] md:h-[84%] lg:h-[90%] max-h-[640px] w-auto max-w-full object-contain object-bottom select-none filter contrast-[1.03] brightness-[1.01] drop-shadow-[0_20px_45px_rgba(0,0,0,0.7)]"
+                className="h-[80%] sm:h-[88%] md:h-[94%] lg:h-[98%] max-h-[760px] w-auto max-w-full object-contain object-bottom select-none filter contrast-[1.03] brightness-[1.01] drop-shadow-[0_20px_45px_rgba(0,0,0,0.7)]"
                 loading="eager"
               />
             </motion.div>
           </AnimatePresence>
         </div>
       )}
+
+      {/* ── Layer 3.5: Seamless Bottom Blend Gradient to guarantee characters fade deeply into bottom background ── */}
+      <div className="absolute inset-x-0 bottom-0 h-36 sm:h-48 md:h-56 bg-gradient-to-t from-[#0a0b10] via-[#0a0b10]/80 via-40% to-transparent pointer-events-none z-15" />
 
       {/* ── Layer 4: Typography, Logo Banner, Genre Pills & Actions ── */}
       <div className="absolute inset-0 z-20 flex flex-col justify-start pt-52 sm:pt-56 md:pt-60 lg:pt-64 xl:pt-72 px-4 sm:px-10 md:px-16 lg:px-24 pointer-events-none">

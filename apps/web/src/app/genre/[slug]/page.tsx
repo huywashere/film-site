@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import GenrePageClient from "./GenrePageClient";
 import { getInitialGenreCatalog } from "@/lib/server-catalog";
 import { headers } from "next/headers";
@@ -29,6 +30,7 @@ const GENRE_NAMES: Record<string, string> = {
   "chinh-kich": "Chính Kịch",
   "tre-em": "Trẻ Em (Kids)",
   "gia-tuong": "Phim Giả Tưởng",
+  "khoa-hoc-vu-tru": "Khoa Học Vũ Trụ",
 };
 
 function normalizePage(value: string | string[] | undefined): number {
@@ -40,6 +42,9 @@ export async function generateMetadata({
   params,
 }: GenrePageProps): Promise<Metadata> {
   const { slug } = await params;
+  if (slug === "khoa-hoc-vu-tru" || slug === "star-wars") {
+    redirect("/universe/khoa-hoc-vu-tru");
+  }
   const name =
     GENRE_NAMES[slug] ||
     slug
@@ -61,6 +66,9 @@ export default async function GenrePage({ params, searchParams }: GenrePageProps
     searchParams,
     headers(),
   ]);
+  if (slug === "khoa-hoc-vu-tru" || slug === "star-wars") {
+    redirect("/universe/khoa-hoc-vu-tru");
+  }
   const page = normalizePage(query.page);
   const initialData =
     requestHeaders.get("rsc") === "1"

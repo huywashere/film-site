@@ -69,12 +69,12 @@ export default function TopicBanners() {
       <h3 className="text-xs font-black uppercase tracking-wider text-neutral-400 mb-4 px-1">
         {t("home.exploreTopics", "Bạn đang quan tâm gì?")}
       </h3>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 px-1">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 px-1 pt-2.5 pb-2.5 -mt-2.5">
         {topics.map((topic, i) => (
           <Link
             key={i}
             href={topic.href}
-            className="relative overflow-hidden rounded-[24px] sm:rounded-[28px] p-3.5 sm:p-4 flex flex-col justify-between shadow-2xl transition-all duration-300 hover:-translate-y-1 group cursor-pointer min-h-[160px] sm:min-h-[220px] md:min-h-[260px] bg-slate-900"
+            className="relative overflow-hidden rounded-[24px] sm:rounded-[28px] p-3.5 sm:p-4 flex flex-col justify-between shadow-2xl transition-all duration-300 hover:z-20 hover:-translate-y-1 group cursor-pointer min-h-[160px] sm:min-h-[220px] md:min-h-[260px] bg-slate-900"
             style={{
               backgroundImage: `url('${wsrvPublicImageUrl(topic.image, "backdrop", { width: 640, height: null, quality: 75 }) || topic.image}')`,
               backgroundSize: "cover",

@@ -36,9 +36,6 @@ import {
   MessageCircle,
   Send,
   Keyboard,
-  Maximize2,
-  Minimize2,
-  X,
   Heart,
   Plus,
   SkipForward,
@@ -4438,11 +4435,11 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
               lightOff ? 'relative z-50 ring-1 ring-white/20 shadow-2xl' : '',
             )}
           >
-            {/* ── THEATER MODE FULL-SCREEN FLOATING HEADER & EXIT CONTROLS ── */}
+            {/* ── THEATER MODE FULL-SCREEN FLOATING HEADER (Clean Minimalist Standard) ── */}
             {theaterMode && (
               <div
                 className={cn(
-                  'absolute top-0 inset-x-0 z-[100000] px-4 py-3 sm:px-6 sm:py-4 flex items-center justify-between',
+                  'absolute top-0 inset-x-0 z-[100000] px-4 py-3 sm:px-6 sm:py-4 flex items-center',
                   'bg-gradient-to-b from-black/95 via-black/60 to-transparent',
                   'transition-all duration-300 pointer-events-auto select-none',
                   isTheaterControlsVisible || isHoveringTheaterControls
@@ -4452,64 +4449,24 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                 onMouseEnter={() => setIsHoveringTheaterControls(true)}
                 onMouseLeave={() => setIsHoveringTheaterControls(false)}
               >
-                {/* Left: Quick Back + Film Name & Episode */}
-                <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0 pr-3">
+                {/* Back Button + Film Title Only */}
+                <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 pr-3">
                   <button
                     type="button"
                     onClick={() => {
                       setTheaterMode(false);
                       toast('Đã tắt chế độ rạp phim', 'info');
                     }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white font-medium text-xs backdrop-blur-md transition-all active:scale-95 cursor-pointer border border-white/15 shadow-sm shrink-0"
-                    title="Quay lại giao diện thông thường (Esc)"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white font-medium text-xs sm:text-sm backdrop-blur-md transition-all active:scale-95 cursor-pointer border border-white/15 shadow-sm shrink-0"
+                    title="Quay lại (Esc)"
                   >
-                    <ArrowLeft size={13} />
-                    <span className="hidden sm:inline">Quay lại trang</span>
+                    <ArrowLeft size={14} />
+                    <span>Quay lại</span>
                   </button>
 
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse shrink-0" />
-                    <h2 className="text-white font-bold text-xs sm:text-sm drop-shadow-md truncate max-w-[140px] sm:max-w-xs md:max-w-md">
-                      {film?.name || film?.title}
-                    </h2>
-                    {currentEpData?.name && (
-                      <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-[#23ade5]/20 text-[#23ade5] border border-[#23ade5]/30 shrink-0">
-                        Tập {currentEpData.name}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Right: Prominent Exit Theater Button */}
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setTheaterMode(false);
-                      toast('Đã tắt chế độ rạp phim', 'info');
-                    }}
-                    className="flex items-center gap-1.5 sm:gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full bg-purple-600 hover:bg-purple-500 active:scale-95 text-white font-bold text-xs sm:text-sm shadow-xl hover:shadow-purple-500/40 border border-purple-400/40 transition-all cursor-pointer backdrop-blur-md"
-                    title="Thoát chế độ rạp phim (Phím Esc hoặc T)"
-                  >
-                    <Minimize2 size={15} />
-                    <span>Thoát Rạp Phim</span>
-                    <kbd className="hidden sm:inline-block text-[10px] px-1.5 py-0.5 rounded bg-black/40 text-purple-200 font-mono border border-white/10">
-                      Esc
-                    </kbd>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setTheaterMode(false);
-                      toast('Đã tắt chế độ rạp phim', 'info');
-                    }}
-                    className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center cursor-pointer transition-colors border border-white/10 active:scale-95 shrink-0"
-                    title="Đóng chế độ rạp phim (Esc)"
-                    aria-label="Đóng chế độ rạp phim"
-                  >
-                    <X size={16} />
-                  </button>
+                  <h2 className="text-white font-bold text-xs sm:text-sm md:text-base drop-shadow-md truncate max-w-[220px] sm:max-w-md md:max-w-xl lg:max-w-2xl">
+                    {film?.name || film?.title}
+                  </h2>
                 </div>
               </div>
             )}
