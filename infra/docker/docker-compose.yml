@@ -313,6 +313,8 @@ services:
     depends_on:
       api:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - netphim_net
     healthcheck:
