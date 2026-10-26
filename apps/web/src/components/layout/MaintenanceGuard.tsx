@@ -183,12 +183,15 @@ export function MaintenanceGuard() {
           {/* Logo Brand Header */}
           <div className="flex items-center gap-2.5">
             <Image
-              src="/flexphim-logo.png"
+              src="/flexphim-logo.svg"
               alt="FlexPhim"
               width={42}
               height={42}
               className="rounded-xl drop-shadow-[0_0_20px_rgba(168,85,247,0.6)]"
               priority
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src = "/flexphim-logo.png";
+              }}
             />
             <span
               className={cn(

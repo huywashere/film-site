@@ -593,19 +593,18 @@ function AsianCuratedHeroBanner({
         }}
       />
 
-      {/* ── Layer 3: Character Cutout with Synchronized Smooth Crossfade ── */}
+      {/* ── Layer 3: Character Cutout with Smooth Right-to-Left Glide ── */}
       {currentItem.charactersUrl && (
-        <div className="absolute right-0 bottom-[-20px] sm:bottom-[-32px] md:bottom-[-44px] top-0 h-[calc(100%+44px)] w-full max-w-2xl sm:max-w-3xl md:max-w-4xl lg:max-w-5xl flex items-end justify-end pointer-events-none z-10 overflow-hidden pr-3 sm:pr-8 md:pr-14 lg:pr-20 xl:pr-28 [mask-image:linear-gradient(to_bottom,black_0%,black_62%,transparent_94%)]">
-          <AnimatePresence initial={false} custom={direction}>
+        <div className="absolute right-0 bottom-[-20px] sm:bottom-[-32px] md:bottom-[-44px] top-0 h-[calc(100%+44px)] w-full max-w-2xl sm:max-w-3xl md:max-w-4xl lg:max-w-5xl pointer-events-none z-10 overflow-hidden [mask-image:linear-gradient(to_bottom,black_0%,black_62%,transparent_94%)]">
+          <AnimatePresence>
             <motion.div
               key={`chars-${currentItem.slug}`}
-              custom={direction}
-              initial={{ opacity: 0, x: direction > 0 ? 50 : -50 }}
+              initial={{ opacity: 0, x: 75 }}
               animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: direction > 0 ? -40 : 40 }}
-              transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+              exit={{ opacity: 0, x: -45 }}
+              transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
               style={{ willChange: "transform, opacity", transform: "translateZ(0)" }}
-              className="relative h-full flex items-end justify-end"
+              className="absolute inset-0 flex items-end justify-end pr-3 sm:pr-8 md:pr-14 lg:pr-20 xl:pr-28"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img

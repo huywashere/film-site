@@ -411,6 +411,16 @@ html[data-pure-black='true'] .bg-\[\#141414\] {
   background-color: #000000 !important;
 }
 
+/* ── Netflix Signature Background (#141414) for Home Page Only ── */
+[data-home-page='true'],
+.netflix-home-page,
+html.pure-black [data-home-page='true'],
+html[data-pure-black='true'] [data-home-page='true'],
+html.pure-black .netflix-home-page,
+html[data-pure-black='true'] .netflix-home-page {
+  background-color: #141414 !important;
+}
+
 @media (min-width: 769px) {
   html.pure-black ::-webkit-scrollbar-track,
   html[data-pure-black='true'] ::-webkit-scrollbar-track {

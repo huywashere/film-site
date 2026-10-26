@@ -253,18 +253,18 @@ export default function WatchPartyListPage() {
               blurDataURL="data:image/webp;base64,UklGRn4AAABXRUJQVlA4IHIAAADQBACdASogABIAPzmIvFavKKYjsBgIAeAnCWMAAI9AyVWwdcX8rz8+XoNxsUWygAD+7UTcT3Esw3GL02YjG+iu8ovjZJlMKjawD0pWUxjKJrC+60jdUY5jV+9RYiB0jXxrjV5fqMalEcKh6cxkZTemAAA="
               sizes="(max-width: 768px) 100vw, (max-width: 1280px) 1200px, 1280px"
               quality={90}
-              className="object-cover object-[center_28%] sm:object-[center_24%] scale-100 group-hover:scale-105 transition-transform duration-1000 ease-out brightness-[0.7] contrast-[1.1] pointer-events-none"
+              className="object-cover object-[center_28%] sm:object-[center_24%] scale-100 group-hover:scale-105 transition-transform duration-1000 ease-out brightness-[1.15] contrast-[1.08] saturate-[1.12] pointer-events-none"
             />
-            {/* Deep dark cinematic gradient masks so the white studio image is not washed out or bright */}
-            <div className="absolute inset-0 bg-gradient-to-r from-[#07080b] via-[#07080b]/85 via-45% to-[#07080b]/75" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#07080b] via-[#07080b]/35 to-black/60" />
+            {/* Left readability mask for text, keeping Deadpool in center-right bright & vibrant */}
+            <div className="absolute inset-0 bg-gradient-to-r from-[#07080b] via-[#07080b]/80 via-35% to-[#07080b]/15" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#07080b]/80 via-transparent to-[#07080b]/25" />
           </div>
 
           <div className="space-y-2 max-w-xl relative z-10">
             <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-white leading-tight drop-shadow-[0_2px_12px_rgba(0,0,0,0.8)]">
               Phòng Xem Chung
             </h1>
-            <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
+            <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
               Thưởng thức phim điện ảnh và series cùng bạn bè với tính năng đồng
               bộ phát video tức thì, tua phim siêu tốc và trò chuyện trực tiếp
               không độ trễ.

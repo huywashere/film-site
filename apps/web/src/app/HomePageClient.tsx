@@ -1990,9 +1990,11 @@ export default function HomePageClient({
       (sectionId) => !configuredSectionOrder.includes(sectionId),
     ),
   ];
-
   return (
-    <div className="bg-background min-h-screen text-foreground overflow-hidden pb-12">
+    <div
+      data-home-page="true"
+      className="netflix-home-page min-h-screen text-foreground overflow-hidden pb-12 bg-[#141414]"
+    >
       <HomeAnnouncementPopup />
       {/* Hero Banner slider */}
       <HeroBanner

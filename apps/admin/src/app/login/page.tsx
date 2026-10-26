@@ -7,7 +7,6 @@ import {
   IconFingerprint,
   IconShieldCheck,
 } from "@tabler/icons-react";
-import flexphimLogo from "../../../../web/public/flexphim-logo.png";
 import { beginAdminSession, endAdminSession } from "@/lib/admin-session-client";
 
 export default function AdminLoginPage() {
@@ -71,11 +70,15 @@ export default function AdminLoginPage() {
       <section className="admin-login-card" aria-labelledby="admin-login-title">
         <div className="admin-login-brand">
           <Image
-            src={flexphimLogo}
+            src="/flexphim-logo.svg"
             alt="FlexPhim"
             width={46}
             height={46}
             priority
+            unoptimized
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).src = "/flexphim-logo.png";
+            }}
           />
           <div>
             <strong>FlexPhim</strong>

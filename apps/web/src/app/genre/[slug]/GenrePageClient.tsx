@@ -46,8 +46,9 @@ import { preloadMovieLogo } from "@/lib/movie-logo-cache";
 const GENRE_NAMES: Record<string, string> = {
   "vien-tuong": "Khoa Học Viễn Tưởng",
   "khoa-hoc-vien-tuong": "Khoa Học Viễn Tưởng",
+  "khoa-hoc": "Khoa Học",
   "chien-tranh": "Chiến Tranh & Lịch Sử",
-  "lich-su": "Lịch Sử & Dã Sử",
+  "lich-su": "Lịch Sử",
   "hanh-dong": "Hành Động",
   "tinh-cam": "Tình Cảm",
   "hai-huoc": "Hài Hước",
@@ -67,6 +68,22 @@ const GENRE_NAMES: Record<string, string> = {
   "chinh-kich": "Chính Kịch",
   "tre-em": "Trẻ Em (Kids)",
   "gia-tuong": "Phim Giả Tưởng",
+  "khoa-hoc-vu-tru": "Khoa Học Vũ Trụ",
+  "mien-tay": "Miền Tây",
+  "kinh-dien": "Kinh Điển",
+  "phim-18": "Phim 18+",
+  "phim-ngan": "Phim Ngắn",
+  "anime": "Hoạt Hình & Anime",
+  "hoat-hinh": "Hoạt Hình",
+  "tv-shows": "TV Shows & Reality Shows",
+  "kiem-hiep": "Kiếm Hiệp",
+  "tien-hiep": "Tiên Hiệp",
+  "huyen-huyen": "Huyền Huyễn",
+  "dam-my": "Đam Mỹ",
+  "bach-hop": "Bách Hợp",
+  "xuyen-khong": "Xuyên Không",
+  "trung-sinh": "Trọng Sinh",
+  "gay-can": "Gay Cấn",
 };
 
 const GENRE_DESCRIPTIONS: Record<string, string> = {
@@ -89,6 +106,23 @@ const GENRE_DESCRIPTIONS: Record<string, string> = {
   "hoc-duong": "Kỷ niệm thanh xuân tươi đẹp, tình bạn hồn nhiên và những ước mơ tuổi trẻ đầy nhiệt huyết.",
   "than-thoai": "Thế giới truyền thuyết thần thoại huyền bí, các vị thần và các trận chiến huyền sử.",
   "the-thao": "Tinh thần thể thao bất diệt, nghị lực phi thường và ý chí chạm tới đỉnh vinh quang.",
+  "mien-tay": "Những thước phim viễn Tây hoang dã, cuộc đời cao bồi lãng tử và những màn đấu súng kinh điển trên thảo nguyên bao la.",
+  "khoa-hoc": "Khám phá những bí ẩn của vũ trụ, công nghệ tương lai và những phát kiến khoa học vĩ đại.",
+  "kinh-dien": "Những kiệt tác điện ảnh kinh điển bất hủ, ghi dấu ấn sâu đậm trong lịch sử nghệ thuật thứ bảy.",
+  "phim-18": "Tuyển chọn các tác phẩm điện ảnh dành cho lứa tuổi trưởng thành với cốt truyện sâu sắc và góc nhìn táo bạo.",
+  "phim-ngan": "Những câu chuyện ngắn gọn, súc tích và giàu ý nghĩa nghệ thuật từ các nhà làm phim tài năng.",
+  "lich-su": "Hành trình ngược dòng thời gian, tái hiện những sự kiện hào hùng và các trang sử vàng của nhân loại.",
+  "hoat-hinh": "Thế giới hoạt hình muôn màu, giàu trí tưởng tượng và cảm xúc ấm áp cho mọi lứa tuổi.",
+  "anime": "Thế giới anime Nhật Bản đặc sắc với cốt truyện lôi cuốn, đồ họa đỉnh cao và phong cách độc đáo.",
+  "tv-shows": "Tổng hợp các chương trình truyền hình thực tế, gameshow đình đám và talkshow giải trí đặc sắc.",
+  "kiem-hiep": "Thế giới kiếm hiệp giang hồ, ân oán tình thù và những tuyệt kỹ võ học lừng lẫy thiên hạ.",
+  "tien-hiep": "Hành trình tu tiên thoát tục, nghịch thiên đoạt mệnh và những trận đại chiến thần ma tam giới.",
+  "huyen-huyen": "Thế giới huyền huyễn kỳ ảo với dị thú thượng cổ, ma pháp nhiệm màu và không gian vô tận.",
+  "dam-my": "Những câu chuyện tình yêu sâu sắc, ngọt ngào và lay động lòng người trong dòng phim đam mỹ.",
+  "bach-hop": "Những thước phim bách hợp tinh tế, lãng mạn và ngập tràn cảm xúc chân thành.",
+  "xuyen-khong": "Hành trình vượt thời không kỳ thú, đưa nhân vật về quá khứ hoặc tới tương lai đầy bất ngờ.",
+  "trung-sinh": "Cơ hội làm lại cuộc đời sau biến cố, báo thù rửa hận và chạm tới đỉnh cao vinh quang.",
+  "gay-can": "Những tình huống thót tim, nhịp phim dồn dập và những nút thắt nghẹt thở đến phút cuối cùng.",
 };
 
 // ── TABS CONFIGURATION (CLEAN TEXT - NO EMOJIS) ──
@@ -1882,7 +1916,13 @@ export default function GenrePageClient({
   const searchParams = useSearchParams();
   const slug = params.slug as string;
   const page = Number(searchParams.get("page") || 1);
-  const label = GENRE_NAMES[slug] || slug;
+  const label =
+    GENRE_NAMES[slug] ||
+    slug
+      .split(/[-_]+/)
+      .filter(Boolean)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ");
 
   const isSciFiPage = slug === "vien-tuong" || slug === "khoa-hoc-vien-tuong";
   const isWarPage = slug === "chien-tranh";
@@ -2593,7 +2633,7 @@ export default function GenrePageClient({
               Khám Phá Thể Loại
             </span>
             <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
-              Thể Loại: {label}
+              {label.toLowerCase().startsWith("phim") ? label : `Phim ${label}`}
             </h1>
             <p className="text-xs sm:text-sm text-neutral-400 font-medium">
               {GENRE_DESCRIPTIONS[slug] ||

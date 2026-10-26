@@ -291,7 +291,7 @@ export class AuthService {
     ipAddress?: string,
   ) {
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7);
+    expiresAt.setDate(expiresAt.getDate() + 30);
 
     const tokenRecord = await this.prisma.refreshToken.create({
       data: {
@@ -307,11 +307,11 @@ export class AuthService {
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwt.signAsync(payload, {
-        expiresIn: "15m",
+        expiresIn: this.config.get("JWT_EXPIRES_IN") || "7d",
         secret: this.config.get("JWT_SECRET"),
       }),
       this.jwt.signAsync(payload, {
-        expiresIn: "7d",
+        expiresIn: this.config.get("JWT_REFRESH_EXPIRES_IN") || "30d",
         secret: this.config.get("JWT_REFRESH_SECRET"),
       }),
     ]);

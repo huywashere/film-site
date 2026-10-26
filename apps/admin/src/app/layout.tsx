@@ -49,7 +49,6 @@ import {
   IconBadgeAd,
   IconRefresh,
 } from "@tabler/icons-react";
-import flexphimLogo from "../../../web/public/flexphim-logo.png";
 import { adminFetch } from "@/lib/admin-api";
 import { AdminDevToolsGuard } from "@/components/security/AdminDevToolsGuard";
 import { AdminAntiScreenshot } from "@/components/security/AdminAntiScreenshot";
@@ -462,7 +461,8 @@ export default function AdminRootLayout({
         <head>
           <title>Đăng nhập quản trị FlexPhim</title>
           <meta name="viewport" content="width=device-width, initial-scale=1" />
-          <link rel="icon" href={flexphimLogo.src} />
+          <link rel="icon" href="/flexphim-logo.svg" type="image/svg+xml" />
+          <link rel="alternate icon" href="/flexphim-logo.png" type="image/png" />
         </head>
         <body className={`${ibmPlexSans.variable} ${plusJakartaSans.variable}`}>
           <AdminDevToolsGuard />
@@ -479,9 +479,10 @@ export default function AdminRootLayout({
         <title>Quản trị FlexPhim</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content="#263244" />
-        <link rel="icon" href={flexphimLogo.src} type="image/png" />
-        <link rel="shortcut icon" href={flexphimLogo.src} type="image/png" />
-        <link rel="apple-touch-icon" href={flexphimLogo.src} />
+        <link rel="icon" href="/flexphim-logo.svg" type="image/svg+xml" />
+        <link rel="shortcut icon" href="/flexphim-logo.svg" />
+        <link rel="alternate icon" href="/flexphim-logo.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/flexphim-logo.png" />
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var oldPrefix=['cine','verse'].join(''),newPrefix='netphim',keys=[];for(var i=0;i<localStorage.length;i++){var key=localStorage.key(i);if(key&&key.indexOf(oldPrefix)===0)keys.push(key)}keys.forEach(function(key){var next=newPrefix+key.slice(oldPrefix.length);if(localStorage.getItem(next)===null)localStorage.setItem(next,localStorage.getItem(key));localStorage.removeItem(key)});var saved=localStorage.getItem('netphim-admin-theme');var theme=saved||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.dataset.adminTheme=theme;document.documentElement.style.colorScheme=theme;var sp=new URLSearchParams(window.location.search);var skin='matrix';if(sp.has('flat'))skin='flat';else if(sp.has('galaxy'))skin='galaxy';else if(sp.has('matrix'))skin='matrix';else{var sk=localStorage.getItem('netphim-admin-skin');if(sk==='flat'||sk==='galaxy'||sk==='matrix')skin=sk;}document.documentElement.dataset.adminSkin=skin;var locale=localStorage.getItem('netphim-admin-locale')||'vi';document.documentElement.lang=locale;var accents={blue:['#2878ee','#236dc9'],violet:['#7b70ef','#695fcb'],teal:['#02a98d','#028a74'],rose:['#f7577e','#dc4168'],amber:['#eaa638','#c9871e']};var accent=accents[localStorage.getItem('netphim-admin-accent')]||accents.blue;document.documentElement.style.setProperty('--admin-brand',accent[0]);document.documentElement.style.setProperty('--admin-brand-strong',accent[1])}catch(e){}})();`,

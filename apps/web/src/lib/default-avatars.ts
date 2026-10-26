@@ -55,57 +55,6 @@ const COLLECTIBLE_ECLIPSE = "/avatars/collectibles/eclipse-orb.webp";
 const COLLECTIBLE_APE = "/avatars/collectibles/cinema-ape.webp";
 
 // ─────────────────────────────────────────────────────────────────────
-// 3D Cinema Mascots Collection (FlexPhim 3D Universe)
-// ─────────────────────────────────────────────────────────────────────
-export const CINEMA_POPCORN_AVATAR: PresetAvatar = {
-  id: "mascot_cinema_popcorn",
-  name: "Popcorn 3D 🍿",
-  category: "mascot",
-  url: "/avatars/mascots/cinema-popcorn.jpg",
-  previewUrl: decorativeAssetUrl("/avatars/mascots/cinema-popcorn.jpg"),
-};
-
-export const SPACE_CAT_AVATAR: PresetAvatar = {
-  id: "mascot_space_cat",
-  name: "Mèo Vũ Trụ 🚀",
-  category: "mascot",
-  url: "/avatars/mascots/space-cat.jpg",
-  previewUrl: decorativeAssetUrl("/avatars/mascots/space-cat.jpg"),
-};
-
-export const CYBER_SHIBA_AVATAR: PresetAvatar = {
-  id: "mascot_cyber_shiba",
-  name: "Shiba Cyberpunk 🎧",
-  category: "mascot",
-  url: "/avatars/mascots/cyber-shiba.jpg",
-  previewUrl: decorativeAssetUrl("/avatars/mascots/cyber-shiba.jpg"),
-};
-
-export const BOBA_PANDA_AVATAR: PresetAvatar = {
-  id: "mascot_boba_panda",
-  name: "Gấu Trúc Cinema 🧋",
-  category: "mascot",
-  url: "/avatars/mascots/boba-panda.jpg",
-  previewUrl: decorativeAssetUrl("/avatars/mascots/boba-panda.jpg"),
-};
-
-export const MECHA_DRAGON_AVATAR: PresetAvatar = {
-  id: "mascot_mecha_dragon",
-  name: "Rồng Pha Lê 🐉",
-  category: "mascot",
-  url: "/avatars/mascots/mecha-dragon.jpg",
-  previewUrl: decorativeAssetUrl("/avatars/mascots/mecha-dragon.jpg"),
-};
-
-export const CYBER_BUNNY_AVATAR: PresetAvatar = {
-  id: "mascot_cyber_bunny",
-  name: "Thỏ Neon 🐰",
-  category: "mascot",
-  url: "/avatars/mascots/cyber-bunny.jpg",
-  previewUrl: decorativeAssetUrl("/avatars/mascots/cyber-bunny.jpg"),
-};
-
-// ─────────────────────────────────────────────────────────────────────
 // Bottts Futuristic Mascot Robots (DiceBear)
 // ─────────────────────────────────────────────────────────────────────
 const BOT_CYBER_01 = "https://api.dicebear.com/9.x/bottts/svg?seed=flex_cyber_bot_01&backgroundColor=0a0f2e&backgroundType=solid&radius=50&size=200";
@@ -115,22 +64,15 @@ const BOT_EMERALD_04 = "https://api.dicebear.com/9.x/bottts/svg?seed=flex_emeral
 const BOT_CRIMSON_05 = "https://api.dicebear.com/9.x/bottts/svg?seed=flex_crimson_unit_05&backgroundColor=1f0005&backgroundType=solid&radius=50&size=200";
 const BOT_COSMO_06 = "https://api.dicebear.com/9.x/bottts/svg?seed=flex_cosmo_scout_06&backgroundColor=001824&backgroundType=solid&radius=50&size=200";
 
-export const ADMIN_RISO_FOX_AVATAR: PresetAvatar = {
-  id: "admin_riso_fox",
-  name: "Mascot Riso Cáo (Admin)",
+export const ADMIN_GOLD_MECHA_AVATAR: PresetAvatar = {
+  id: "admin_gold_mecha",
+  name: "Admin Gold Mecha 👑",
   category: "system",
-  url: "/avatars/admin-mascot-riso.png",
-  previewUrl: decorativeAssetUrl("/avatars/admin-mascot-riso.png"),
+  url: BOT_GOLD_03,
 };
 
 export const PRESET_AVATARS: PresetAvatar[] = [
-  ADMIN_RISO_FOX_AVATAR,
-  CINEMA_POPCORN_AVATAR,
-  SPACE_CAT_AVATAR,
-  CYBER_SHIBA_AVATAR,
-  BOBA_PANDA_AVATAR,
-  MECHA_DRAGON_AVATAR,
-  CYBER_BUNNY_AVATAR,
+  ADMIN_GOLD_MECHA_AVATAR,
   { id: "mascot_bot_01", name: "Cyber Bot 🤖", category: "robot", url: BOT_CYBER_01 },
   { id: "mascot_bot_02", name: "Neon Droid ⚡", category: "robot", url: BOT_NEON_02 },
   { id: "mascot_bot_03", name: "Gold Mecha 👑", category: "robot", url: BOT_GOLD_03 },

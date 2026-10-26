@@ -62,11 +62,11 @@ export class AuthController {
   }
 
   private setCookies(res: Response, accessToken: string, refreshToken: string) {
-    res.cookie("accessToken", accessToken, this.getCookieOptions(15 * 60 * 1000));
+    res.cookie("accessToken", accessToken, this.getCookieOptions(7 * 24 * 60 * 60 * 1000));
     res.cookie(
       "refreshToken",
       refreshToken,
-      this.getCookieOptions(7 * 24 * 60 * 60 * 1000),
+      this.getCookieOptions(30 * 24 * 60 * 60 * 1000),
     );
   }
 

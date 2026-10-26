@@ -60,10 +60,14 @@ export const useAuthStore = create<AuthState>()(
           const isTargetAdmin =
             finalUser.email?.toLowerCase() === "huywashere@gmail.com" ||
             finalUser.username?.toLowerCase() === "huywashere";
-          if (isTargetAdmin && !finalUser.avatarUrl) {
+          if (
+            (isTargetAdmin && !finalUser.avatarUrl) ||
+            finalUser.avatarUrl === "/avatars/admin-mascot-riso.png"
+          ) {
             finalUser = {
               ...finalUser,
-              avatarUrl: "/avatars/admin-mascot-riso.png",
+              avatarUrl:
+                "https://api.dicebear.com/9.x/bottts/svg?seed=flex_gold_mecha_03&backgroundColor=1f1400&backgroundType=solid&radius=50&size=200",
             };
           }
         }

@@ -690,7 +690,7 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                     {activeSpotlight.genres.map((genre) => (
                       <span
                         key={genre}
-                        className="px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full bg-white/[0.12] hover:bg-white/[0.2] text-[10px] sm:text-xs font-semibold text-neutral-100 border border-white/[0.15] backdrop-blur-md transition-colors shadow-sm"
+                        className="px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full bg-white/[0.12] hover:bg-white/[0.2] text-[10px] sm:text-xs font-semibold text-neutral-100 border border-white/[0.15] transition-colors shadow-sm"
                       >
                         {genre}
                       </span>

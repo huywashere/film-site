@@ -2072,8 +2072,8 @@ export default function HeroBanner({
         aria-label="Đang tải banner nổi bật"
         className="relative mt-16 h-[52svh] min-h-[380px] max-h-[460px] w-full overflow-hidden bg-[#141414] sm:mt-0 sm:h-auto sm:min-h-[100dvh] sm:max-h-none"
       >
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_62%_34%,rgba(57,64,77,0.3),transparent_44%),linear-gradient(135deg,#101318_0%,#171b22_52%,#101216_100%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_24%,rgba(10,12,16,0.54)_70%,rgba(10,12,16,0.94)_100%),linear-gradient(to_top,#14181c_0%,rgba(20,24,28,0.78)_28%,transparent_62%),linear-gradient(to_bottom,rgba(10,12,16,0.76)_0%,transparent_30%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_62%_34%,rgba(57,64,77,0.3),transparent_44%),linear-gradient(135deg,#141414_0%,#1c1c1c_52%,#141414_100%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_24%,rgba(20,20,20,0.54)_70%,rgba(20,20,20,0.94)_100%),linear-gradient(to_top,#141414_0%,rgba(20,20,20,0.78)_28%,transparent_62%),linear-gradient(to_bottom,rgba(20,20,20,0.76)_0%,transparent_30%)]" />
 
         <div
           aria-hidden="true"
@@ -2249,9 +2249,9 @@ export default function HeroBanner({
         className="absolute inset-0 z-10 pointer-events-none"
         style={{
           background: `
-            radial-gradient(circle at center, transparent 25%, rgba(10, 12, 16, 0.45) 70%, rgba(10, 12, 16, 0.92) 100%),
-            linear-gradient(to top, #0c0d14 0%, rgba(12, 13, 20, 0.95) 24%, rgba(12, 13, 20, 0.5) 45%, transparent 68%),
-            linear-gradient(to bottom, rgba(10, 12, 16, 0.85) 0%, rgba(10, 12, 16, 0.25) 15%, transparent 28%)
+            radial-gradient(circle at center, transparent 25%, rgba(20, 20, 20, 0.45) 70%, rgba(20, 20, 20, 0.92) 100%),
+            linear-gradient(to top, #141414 0%, rgba(20, 20, 20, 0.95) 24%, rgba(20, 20, 20, 0.5) 45%, transparent 68%),
+            linear-gradient(to bottom, rgba(20, 20, 20, 0.85) 0%, rgba(20, 20, 20, 0.25) 15%, transparent 28%)
           `,
         }}
       />
@@ -2318,7 +2318,7 @@ export default function HeroBanner({
                       className="fan-card-image h-full w-full object-cover transition-transform duration-500 ease-out"
                     />
 
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#080a0f] via-[#080a0f]/82 to-transparent px-3 pb-3 pt-10 text-left">
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#141414] via-[#141414]/85 to-transparent px-3 pb-3 pt-10 text-left">
                       <p className="text-[11px] font-extrabold text-white leading-snug line-clamp-1">
                         {cardFilm.origin_name || cardFilm.name}
                       </p>

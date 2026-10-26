@@ -21,7 +21,7 @@ import { RedisCacheModule } from '../redis/redis.module';
       imports: [ConfigModule],
       useFactory: (config: ConfigService) => ({
         secret: config.get('JWT_SECRET'),
-        signOptions: { expiresIn: config.get('JWT_EXPIRES_IN') || '15m' },
+        signOptions: { expiresIn: config.get('JWT_EXPIRES_IN') || '7d' },
       }),
       inject: [ConfigService],
     }),
