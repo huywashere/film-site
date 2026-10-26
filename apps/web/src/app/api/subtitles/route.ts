@@ -88,6 +88,19 @@ export async function GET(req: NextRequest) {
   const id2 = searchParams.get('id2');
   const mode = searchParams.get('mode'); // 'single' | 'dual'
 
+  const cfWorkerUrl = (
+    process.env.NEXT_PUBLIC_CF_MEDIA_WORKER_URL ||
+    process.env.CF_MEDIA_WORKER_URL ||
+    process.env.SUBTITLES_CLOUDFLARE_WORKER_URL ||
+    ""
+  ).trim().replace(/\/$/, "");
+
+  // If worker is configured and request is single subtitle URL, offload directly to worker
+  if (cfWorkerUrl && url1 && !url2 && mode !== 'dual') {
+    const target = `${cfWorkerUrl}/subtitles?${searchParams.toString()}`;
+    return NextResponse.redirect(target, 307);
+  }
+
   let targetUrl1 = url1;
   if (!targetUrl1 && id1) {
     targetUrl1 = `https://tophim.top/api/subtitles/play?id=${id1}`;

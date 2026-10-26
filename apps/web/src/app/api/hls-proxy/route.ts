@@ -191,6 +191,18 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Thiếu tham số url" }, { status: 400 });
   }
 
+  const cfWorkerUrl = (
+    process.env.NEXT_PUBLIC_CF_MEDIA_WORKER_URL ||
+    process.env.CF_MEDIA_WORKER_URL ||
+    process.env.HLS_CLOUDFLARE_WORKER_URL ||
+    ""
+  ).trim().replace(/\/$/, "");
+
+  if (cfWorkerUrl) {
+    const target = `${cfWorkerUrl}/hls?${request.nextUrl.searchParams.toString()}`;
+    return NextResponse.redirect(target, 307);
+  }
+
   try {
     if (
       !verifySignedHlsProxyUrl(

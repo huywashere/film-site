@@ -311,6 +311,18 @@ export async function GET(request: NextRequest) {
     return new NextResponse("Missing url parameter", { status: 400 });
   }
 
+  const cfWorkerUrl = (
+    process.env.NEXT_PUBLIC_CF_MEDIA_WORKER_URL ||
+    process.env.CF_MEDIA_WORKER_URL ||
+    process.env.IMAGE_CLOUDFLARE_WORKER_URL ||
+    ""
+  ).trim().replace(/\/$/, "");
+
+  if (cfWorkerUrl) {
+    const target = `${cfWorkerUrl}/image?${searchParams.toString()}`;
+    return NextResponse.redirect(target, 307);
+  }
+
   const primaryCandidates = generateCandidateUrls(rawUrl).slice(0, 8);
   const fallbackCandidates = fallbackUrl
     ? generateCandidateUrls(fallbackUrl).slice(0, 4)

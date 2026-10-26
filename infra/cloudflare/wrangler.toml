@@ -1,0 +1,12 @@
+name = "flexphim-media-worker"
+main = "media-worker.js"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+ENVIRONMENT = "production"
+
+# Optional: Uncomment and configure custom domain or routes if desired
+# routes = [
+#   { pattern = "media.flexphim.top/*", zone_name = "flexphim.top" }
+# ]
