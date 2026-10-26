@@ -75,7 +75,7 @@ export const HUBS: HubCard[] = [
     slug: 'dc',
     title: 'Vũ Trụ DC',
     href: '/universe/dc',
-    image: '/Folder-Background/DC/dc-hub-batman.webp',
+    image: '/Folder-Background/DC/dc-hub-solo-batman.webp',
     objectPosition: 'center',
   },
   // ── 7 Thể Loại Đặc Sắc Được Bổ Sung (Đang chờ ảnh từ người dùng) ──
@@ -83,14 +83,14 @@ export const HUBS: HubCard[] = [
     slug: 'phim-gia-tuong',
     title: 'Phim Giả Tưởng',
     href: '/genre/gia-tuong',
-    image: '/Folder-Background/dune-2/dune-hub-ensemble.webp',
+    image: '/Folder-Background/dune-2/dune-hub-solo-paul.webp',
     objectPosition: 'center',
   },
   {
     slug: 'khoa-hoc-vu-tru',
     title: 'Khoa Học Vũ Trụ',
     href: '/universe/khoa-hoc-vu-tru',
-    image: '/Folder-Background/starwar/starwars-hub-vader-full.webp',
+    image: '/Folder-Background/starwar/starwars-hub-solo-vader.webp',
     objectPosition: 'center',
   },
   {
