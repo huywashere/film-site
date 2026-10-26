@@ -413,7 +413,7 @@ function BrowseFilmsContent({
         description="Khám phá kho phim điện ảnh, phim bộ và hoạt hình chọn lọc với hệ thống lọc đa tầng chuyên sâu."
         imageSrc="/img-backtop/tab-films.webp"
         objectPosition="center 10%"
-        contentClassName="pt-24 sm:pt-28 md:pt-32 pb-6 sm:pb-8 md:pb-10"
+        contentClassName="pb-14 sm:pb-18 md:pb-22 lg:pb-26"
       />
 
       {/* ── Ambient Studio Lighting (Đồng bộ trang chủ) ── */}

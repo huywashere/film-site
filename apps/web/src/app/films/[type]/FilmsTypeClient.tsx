@@ -35,6 +35,7 @@ import {
   Flame,
   Star,
   Film,
+  Clock,
 } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, FreeMode } from "swiper/modules";
@@ -428,21 +429,33 @@ function SeriesCrashLandingOnYouHeroBanner() {
 }
 
 const DOOM_BG_PATH =
-  "/Folder-Background/Marvel/dr-doom/avengers-glowing-mist-bg.png";
+  "/Folder-Background/Marvel/dr-doom/avengers-glowing-mist-bg.webp";
 const DOOM_BG_FALLBACK =
-  "/Folder-Background/Marvel/dr-doom/avengers-doomsday-2026-highly-anticipated-movie-kr-1920x1080.jpg";
+  "/Folder-Background/Marvel/dr-doom/avengers-glowing-mist-bg.png";
 const DOOM_CHARS_PATH =
-  "/Folder-Background/Marvel/dr-doom/doom-char-clean.png";
+  "/Folder-Background/Marvel/dr-doom/doom-char-clean.webp";
 const DOOM_CHARS_FALLBACK =
-  "/Folder-Background/Marvel/dr-doom/doctor-doom-avengers-doomsday-4k-62-1920x1080.png";
+  "/Folder-Background/Marvel/dr-doom/doom-char-clean.png";
 const DOOM_LOGO_PATH =
-  "/Folder-Background/Marvel/dr-doom/avengers-doomsday-logo.png";
+  "/Folder-Background/Marvel/dr-doom/avengers-doomsday-logo.webp";
 
 function SingleDoctorDoomHeroBanner() {
   const [bgSrc, setBgSrc] = useState(DOOM_BG_PATH);
   const [charsSrc, setCharsSrc] = useState(DOOM_CHARS_PATH);
   const [logoSrc, setLogoSrc] = useState(DOOM_LOGO_PATH);
   const [logoFailed, setLogoFailed] = useState(false);
+
+  // Pre-decode high priority assets on mount for immediate zero-stutter presentation
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const bgImg = new window.Image();
+    bgImg.src = DOOM_BG_PATH;
+    bgImg.decode?.().catch(() => {});
+
+    const charImg = new window.Image();
+    charImg.src = DOOM_CHARS_PATH;
+    charImg.decode?.().catch(() => {});
+  }, []);
 
   return (
     <section
@@ -477,17 +490,17 @@ function SingleDoctorDoomHeroBanner() {
         }}
       />
 
-      {/* ── Layer 3: Doctor Doom Character Cutout with Smooth Right-to-Left Slide Animation ── */}
+      {/* ── Layer 3: Doctor Doom Character Cutout with Smooth Left-to-Right Slide Animation ── */}
       <div className="absolute inset-0 h-full w-full flex items-end justify-end pointer-events-none z-10 overflow-hidden pr-0 sm:pr-4 md:pr-10 lg:pr-16 xl:pr-24 pb-8 sm:pb-12 md:pb-16 lg:pb-20">
         <motion.div
-          initial={{ opacity: 0, x: 180, scale: 0.96 }}
+          initial={{ opacity: 0, x: -140, scale: 0.96 }}
           animate={{ opacity: 1, x: 0, scale: 1 }}
           whileHover={{
             scale: 1.02,
             y: -4,
             transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] },
           }}
-          transition={{ duration: 1.3, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+          transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1], delay: 0.08 }}
           className="relative h-full flex items-end justify-end pointer-events-auto cursor-pointer group/doom select-none translate-x-3 sm:translate-x-0"
         >
           <img
@@ -566,11 +579,11 @@ function SingleDoctorDoomHeroBanner() {
           {/* CTA Buttons */}
           <div className="flex items-center gap-2.5 sm:gap-3 pt-1.5 sm:pt-3">
             <Link
-              href="/watch/biet-doi-sieu-anh-hung-4-hoi-ket"
-              className="inline-flex items-center gap-2 px-4.5 sm:px-7 py-1.5 sm:py-2.5 rounded-full bg-white hover:bg-neutral-100 text-neutral-950 font-black text-xs sm:text-sm shadow-xl shadow-black/40 transition-all hover:scale-105 active:scale-95"
+              href="/film/biet-doi-sieu-anh-hung-4-hoi-ket"
+              className="inline-flex items-center gap-2 px-4.5 sm:px-7 py-1.5 sm:py-2.5 rounded-full bg-amber-400 hover:bg-amber-300 text-neutral-950 font-black text-xs sm:text-sm shadow-xl shadow-amber-400/25 transition-all hover:scale-105 active:scale-95"
             >
-              <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current text-neutral-950" />
-              <span>Xem Ngay</span>
+              <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" />
+              <span>Sắp Chiếu</span>
             </Link>
 
             <Link

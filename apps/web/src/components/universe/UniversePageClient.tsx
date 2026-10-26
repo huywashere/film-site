@@ -494,6 +494,22 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
         {/* Top subtle fade for navbar readability */}
         <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-[#07080c]/80 to-transparent pointer-events-none z-[1]" />
 
+        {/* ── Top-Right Brand Emblem (DC Universe) ── */}
+        {isDC && (
+          <div className="absolute top-20 sm:top-24 md:top-28 right-6 sm:right-10 md:right-14 lg:right-20 z-20 pointer-events-none select-none">
+            <div className="relative h-14 w-14 sm:h-18 sm:w-18 md:h-22 md:w-22 lg:h-26 lg:w-26 shrink-0 drop-shadow-[0_8px_32px_rgba(35,173,229,0.55)]">
+              <Image
+                src="/images/logos/dc-logo.svg"
+                alt="DC Comics"
+                fill
+                priority
+                sizes="(max-width: 640px) 72px, (max-width: 1024px) 88px, 104px"
+                className="object-contain filter drop-shadow-[0_0_20px_rgba(0,140,255,0.4)]"
+              />
+            </div>
+          </div>
+        )}
+
         {/* ── Layer 2.5: Left Character Cutout with Smooth Slide-In from Left (e.g. Joker for DC) ── */}
         {/* ── Layer 2.5: Left Character Cutout (e.g. Joker for DC / Mandalorian for Space) ── */}
         {activeSpotlight.charLeftImage && (
@@ -511,7 +527,7 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                 <img
                   src={activeSpotlight.charLeftImage}
                   alt=""
-                  className="h-[55%] sm:h-[70%] md:h-[78%] lg:h-[86%] max-h-[660px] w-auto max-w-full object-contain object-bottom select-none filter contrast-[1.06] brightness-[1.0] drop-shadow-[0_20px_50px_rgba(0,0,0,0.9)] opacity-40 sm:opacity-85 lg:opacity-95 transition-all duration-300"
+                  className="h-[60%] sm:h-[75%] md:h-[84%] lg:h-[92%] max-h-[720px] w-auto max-w-full object-contain object-bottom select-none filter contrast-[1.06] brightness-[1.02] drop-shadow-[0_20px_50px_rgba(0,0,0,0.9)] opacity-50 sm:opacity-95 lg:opacity-100 transition-all duration-300"
                   loading="eager"
                 />
               </motion.div>
@@ -555,7 +571,7 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                   src={activeSpotlight.charImage}
                   alt={activeSpotlight.name}
                   className={cn(
-                    "h-[68%] sm:h-[78%] md:h-[84%] lg:h-[92%] max-h-[700px] w-auto max-w-full object-contain object-bottom select-none filter contrast-[1.04] brightness-[1.02] drop-shadow-[0_20px_50px_rgba(0,0,0,0.85)] transition-all duration-300",
+                    "h-[70%] sm:h-[80%] md:h-[86%] lg:h-[94%] max-h-[740px] w-auto max-w-full object-contain object-bottom select-none filter contrast-[1.04] brightness-[1.02] drop-shadow-[0_20px_50px_rgba(0,0,0,0.85)] transition-all duration-300",
                     activeSpotlight.charImageSecondary ? "relative z-10" : ""
                   )}
                   loading="eager"
@@ -576,51 +592,45 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 30 }}
                 transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
-                className="max-w-xl xl:max-w-2xl 2xl:max-w-3xl space-y-3.5 sm:space-y-4 relative z-10"
+                className={cn(
+                  "space-y-3 sm:space-y-3.5 relative z-10",
+                  activeSpotlight.charLeftImage
+                    ? "max-w-xl md:max-w-lg lg:max-w-xl xl:max-w-2xl md:ml-[340px] lg:ml-[420px] xl:ml-[480px] 2xl:ml-[540px]"
+                    : "max-w-xl xl:max-w-2xl 2xl:max-w-3xl"
+                )}
               >
-                {/* Universe Official Brand Logo (Original Logo, no custom container wrapper) */}
-                <div className="flex items-center select-none ml-0.5 sm:ml-1">
-                  {isMarvel && (
-                    // Official Marvel Brand Logo
-                    <div className="relative h-7 sm:h-9 md:h-10 w-20 sm:w-24 md:w-28 shrink-0">
-                      <Image
-                        src="/images/logos/marvel-logo.svg"
-                        alt="Marvel"
-                        fill
-                        priority
-                        sizes="(max-width: 640px) 80px, 112px"
-                        className="object-contain object-left"
-                      />
-                    </div>
-                  )}
-                  {isDC && (
-                    // Official DC Comics Vector Logo
-                    <div className="relative h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 shrink-0">
-                      <Image
-                        src="/images/logos/dc-logo.svg"
-                        alt="DC Comics"
-                        fill
-                        priority
-                        sizes="(max-width: 640px) 48px, 56px"
-                        className="object-contain object-left"
-                      />
-                    </div>
-                  )}
-                  {isSpace && (
-                    // Official Star Wars Logo Banner
-                    <div className="relative h-8 sm:h-10 md:h-11 w-28 sm:w-36 md:w-40 shrink-0">
-                      <Image
-                        src="/Folder-Background/starwar/star-wars-logo.svg"
-                        alt="Star Wars"
-                        fill
-                        priority
-                        unoptimized
-                        sizes="(max-width: 640px) 112px, 160px"
-                        className="object-contain object-left"
-                      />
-                    </div>
-                  )}
-                </div>
+                {/* Universe Official Brand Logo for Marvel & Space (DC is positioned on the top-right) */}
+                {(isMarvel || isSpace) && (
+                  <div className="flex items-center select-none ml-0.5 sm:ml-1">
+                    {isMarvel && (
+                      // Official Marvel Brand Logo
+                      <div className="relative h-7 sm:h-9 md:h-10 w-20 sm:w-24 md:w-28 shrink-0">
+                        <Image
+                          src="/images/logos/marvel-logo.svg"
+                          alt="Marvel"
+                          fill
+                          priority
+                          sizes="(max-width: 640px) 80px, 112px"
+                          className="object-contain object-left"
+                        />
+                      </div>
+                    )}
+                    {isSpace && (
+                      // Official Star Wars Logo Banner
+                      <div className="relative h-8 sm:h-10 md:h-11 w-28 sm:w-36 md:w-40 shrink-0">
+                        <Image
+                          src="/Folder-Background/starwar/star-wars-logo.svg"
+                          alt="Star Wars"
+                          fill
+                          priority
+                          unoptimized
+                          sizes="(max-width: 640px) 112px, 160px"
+                          className="object-contain object-left"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Movie Title or Logo. Keep every small logo mounted so changing
                     slides only crossfades already-painted DOM nodes. */}

@@ -42,7 +42,6 @@ import {
 import { CuratedHeroMovie } from "@/lib/curated-hero-pool";
 import { buildAsianHeroImageCandidates } from "@/lib/curated-asian-hero";
 import { preloadMovieLogo } from "@/lib/movie-logo-cache";
-import { VerticalTabsHeroBanner } from "@/components/layout/VerticalTabsHeroBanner";
 
 const GENRE_NAMES: Record<string, string> = {
   "vien-tuong": "Khoa Học Viễn Tưởng",
@@ -1929,7 +1928,7 @@ export default function GenrePageClient({
   const { data: page2Data } = useQuery({
     queryKey: ["genre-page-2", slug],
     queryFn: () => movieApi.getByGenre(slug, 2).then((r) => r.data),
-    enabled: (isShowcasePage || page === 1) && secondaryReady,
+    enabled: isShowcasePage && secondaryReady,
     staleTime: 30 * 60 * 1000,
     placeholderData: (prev) => prev,
   });
@@ -2403,7 +2402,7 @@ export default function GenrePageClient({
       className={cn(
         cardFont.className,
         "min-h-screen w-full bg-[#0a0b10] text-white",
-        "-mt-20 sm:-mt-24 pb-20",
+        isShowcasePage ? "-mt-20 sm:-mt-24 pb-20" : "pb-20 pl-4 pr-4 pt-20 sm:pt-24 md:pr-10 lg:pl-24",
       )}
     >
       {/* ── CASE 1: SHOWCASE HUBS (Khoa Học Viễn Tưởng & Chiến Tranh) ── */}
@@ -2586,101 +2585,56 @@ export default function GenrePageClient({
           </div>
         </>
       ) : (
-        /* ── CASE 2: ALL OTHER GENRES (Clean Modern Catalog View with Hero Banner & Curated Rows) ── */
+        /* ── CASE 2: ALL OTHER GENRES (Clean Modern Catalog View) ── */
         <div className="w-full">
-          {/* Netflix-Grade Compact Hero Banner */}
-          <VerticalTabsHeroBanner
-            badge="Khám Phá Thể Loại"
-            title={label}
-            highlightText="Tuyển Chọn"
-            description={
-              GENRE_DESCRIPTIONS[slug] ||
-              `Kho phim điện ảnh và truyền hình thể loại ${label} đặc sắc nhất với chất lượng cao và phụ đề/thuyết minh chuẩn.`
-            }
-            imageSrc="/img-backtop/tab-genres.webp"
-            variant="compact"
-            contentClassName="pt-24 sm:pt-28 md:pt-32 pb-6 sm:pb-8 md:pb-10"
-          />
-
-          {/* Content Container (Overlapping Hero Banner) */}
-          <div className="relative z-20 w-full pl-4 sm:pl-12 md:pl-20 lg:pl-24 pr-2 sm:pr-4 md:pr-6 pb-16 space-y-6 -mt-4 sm:-mt-6 md:-mt-8">
-            {/* On Page 1, render Curated Swiper Sections */}
-            {page === 1 && rawFilms.length > 0 && (
-              <>
-                <GenreCategoryRow
-                  title={`Phim ${label} Mới Cập Nhật`}
-                  films={rawFilms.slice(0, 12)}
-                  isLoading={isLoading}
-                />
-
-                {rawFilms.length > 12 && (
-                  <GenreCategoryRow
-                    title={`Phim ${label} Thịnh Hành & Đánh Giá Cao`}
-                    films={rawFilms.slice(12, 24)}
-                    isLoading={isLoading}
-                    defer
-                  />
-                )}
-
-                {rawPage2.length > 0 && (
-                  <GenreCategoryRow
-                    title={`Phim ${label} Tuyển Chọn Đặc Sắc`}
-                    films={rawPage2.slice(0, 12)}
-                    isLoading={false}
-                    defer
-                  />
-                )}
-              </>
-            )}
-
-            {/* Full Catalog Section Header */}
-            <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row md:items-end justify-between gap-2">
-              <div>
-                <h2 className="text-xl md:text-2xl font-bold text-white tracking-tight">
-                  Tất Cả Phim {label}
-                </h2>
-                <p className="text-xs text-neutral-400 font-semibold mt-1">
-                  Danh sách tuyển chọn các bộ phim {label} chất lượng cao phụ đề và thuyết minh chuẩn
-                </p>
-              </div>
-
-              <div className="text-xs font-bold text-neutral-400 bg-white/5 px-3.5 py-1.5 rounded-full border border-white/10 self-start md:self-auto">
-                Trang <span className="text-white font-extrabold">{page}</span> / {totalPages}
-              </div>
+          {/* Page Header — Centered */}
+          <div className="flex flex-col items-center justify-center text-center mb-10 pb-6 border-b border-white/10 gap-2.5 max-w-3xl mx-auto">
+            <span className="text-xs font-bold uppercase tracking-widest text-neutral-400">
+              Khám Phá Thể Loại
+            </span>
+            <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
+              Thể Loại: {label}
+            </h1>
+            <p className="text-xs sm:text-sm text-neutral-400 font-medium">
+              {GENRE_DESCRIPTIONS[slug] ||
+                `Tổng hợp danh sách các bộ phim thuộc thể loại ${label} tuyển chọn hay nhất`}
+            </p>
+            <div className="mt-1 text-xs font-mono font-bold text-neutral-300 bg-white/5 px-4 py-1.5 rounded-full border border-white/10">
+              Trang <span className="text-white font-extrabold">{page}</span> / {totalPages}
             </div>
-
-            {/* Catalog Grid (Standard 7-Cols Desktop) */}
-            {isLoading ? (
-              <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-y-3.5 sm:gap-y-6">
-                {Array.from({ length: 14 }).map((_, i) => (
-                  <FilmCardSkeleton key={i} />
-                ))}
-              </div>
-            ) : rawFilms.length > 0 ? (
-              <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-y-3.5 sm:gap-y-6 cv-grid-auto">
-                {rawFilms.map((f, idx) => (
-                  <FilmCard
-                    key={`${f.slug || f._id || (f as any).id}-${idx}`}
-                    film={f}
-                    priority={idx < 7}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="py-20 text-center text-neutral-500 font-semibold text-sm">
-                Chưa tìm thấy bộ phim nào thuộc thể loại này.
-              </div>
-            )}
-
-            {/* Pagination Controls */}
-            <Pagination
-              currentPage={page}
-              totalPages={totalPages}
-              totalItems={totalItems}
-              onPageChange={handlePageChange}
-              onPrefetchPage={prefetchPage}
-            />
           </div>
+
+          {/* Catalog Grid (Standard 7-Cols Desktop) */}
+          {isLoading ? (
+            <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-y-3.5 sm:gap-y-8">
+              {Array.from({ length: 21 }).map((_, i) => (
+                <FilmCardSkeleton key={i} />
+              ))}
+            </div>
+          ) : rawFilms.length > 0 ? (
+            <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-y-3.5 sm:gap-y-8 cv-grid-auto">
+              {rawFilms.map((f, idx) => (
+                <FilmCard
+                  key={`${f.slug || f._id || (f as any).id}-${idx}`}
+                  film={f}
+                  priority={idx < 7}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="py-20 text-center text-neutral-500 font-semibold text-sm">
+              Chưa tìm thấy bộ phim nào thuộc thể loại này.
+            </div>
+          )}
+
+          {/* Pagination Controls */}
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            onPageChange={handlePageChange}
+            onPrefetchPage={prefetchPage}
+          />
         </div>
       )}
 

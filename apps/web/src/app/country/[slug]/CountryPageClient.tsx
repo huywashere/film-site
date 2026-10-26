@@ -482,24 +482,35 @@ function AsianCuratedHeroBanner({
   const [isPaused, setIsPaused] = useState(false);
   const curatedList = pool || [];
 
-  // Warm only the visible and next slide with resilient CDN candidates.
+  // Preload and hardware pre-decode ALL slides in the pool immediately on mount
   useEffect(() => {
-    if (typeof window !== "undefined" && pool?.length) {
-      const nextIndex = (currentIndex + 1) % pool.length;
-      pool.forEach((item) => {
-        const logoCand = buildAsianHeroImageCandidates(item.logoUrl)[0];
-        if (logoCand) void preloadMovieLogo(logoCand);
-      });
-      [pool[currentIndex], pool[nextIndex]].filter(Boolean).forEach((item) => {
-        const thumbCand = buildAsianHeroImageCandidates(item.thumb_url)[0];
-        if (thumbCand) {
-          const img = new Image();
-          img.referrerPolicy = "strict-origin-when-cross-origin";
-          img.src = thumbCand;
+    if (typeof window === "undefined" || !pool?.length) return;
+    pool.forEach((item) => {
+      // 1. Logos
+      const logoCand = buildAsianHeroImageCandidates(item.logoUrl)[0];
+      if (logoCand) void preloadMovieLogo(logoCand);
+
+      // 2. Backdrops
+      const thumbCand = buildAsianHeroImageCandidates(item.thumb_url)[0];
+      if (thumbCand) {
+        const img = new Image();
+        img.referrerPolicy = "strict-origin-when-cross-origin";
+        img.src = thumbCand;
+        if (img.decode) img.decode().catch(() => {});
+      }
+
+      // 3. Characters (pre-decode bitmap into GPU memory)
+      if (item.charactersUrl) {
+        const charCand = buildAsianHeroImageCandidates(item.charactersUrl)[0];
+        if (charCand) {
+          const charImg = new Image();
+          charImg.referrerPolicy = "strict-origin-when-cross-origin";
+          charImg.src = charCand;
+          if (charImg.decode) charImg.decode().catch(() => {});
         }
-      });
-    }
-  }, [currentIndex, pool]);
+      }
+    });
+  }, [pool]);
 
   // Auto slide every 7 seconds with forward glide
   useEffect(() => {
@@ -559,7 +570,7 @@ function AsianCuratedHeroBanner({
               scale: 0.99,
             }}
             transition={{
-              duration: 0.85,
+              duration: 0.7,
               ease: [0.16, 1, 0.3, 1],
             }}
             className="absolute inset-0 w-full h-full"
@@ -582,24 +593,28 @@ function AsianCuratedHeroBanner({
         }}
       />
 
-      {/* ── Layer 3: Character Cutout with Gentle Slide-in from Right (Căn chìm sâu xuống đáy, khuất hẳn mép cắt) ── */}
+      {/* ── Layer 3: Character Cutout with Synchronized Smooth Crossfade ── */}
       {currentItem.charactersUrl && (
         <div className="absolute right-0 bottom-[-20px] sm:bottom-[-32px] md:bottom-[-44px] top-0 h-[calc(100%+44px)] w-full max-w-2xl sm:max-w-3xl md:max-w-4xl lg:max-w-5xl flex items-end justify-end pointer-events-none z-10 overflow-hidden pr-3 sm:pr-8 md:pr-14 lg:pr-20 xl:pr-28 [mask-image:linear-gradient(to_bottom,black_0%,black_62%,transparent_94%)]">
-          <AnimatePresence mode="wait">
+          <AnimatePresence initial={false} custom={direction}>
             <motion.div
               key={`chars-${currentItem.slug}`}
-              initial={{ opacity: 0, x: 70 }}
+              custom={direction}
+              initial={{ opacity: 0, x: direction > 0 ? 50 : -50 }}
               animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -40 }}
-              transition={{ duration: 1.15, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+              exit={{ opacity: 0, x: direction > 0 ? -40 : 40 }}
+              transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+              style={{ willChange: "transform, opacity", transform: "translateZ(0)" }}
               className="relative h-full flex items-end justify-end"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={currentItem.charactersUrl}
                 alt={currentItem.name}
-                className="h-[80%] sm:h-[88%] md:h-[94%] lg:h-[98%] max-h-[760px] w-auto max-w-full object-contain object-bottom select-none filter contrast-[1.03] brightness-[1.01] drop-shadow-[0_20px_45px_rgba(0,0,0,0.7)]"
+                decoding="async"
+                fetchPriority="high"
                 loading="eager"
+                className="h-[80%] sm:h-[88%] md:h-[94%] lg:h-[98%] max-h-[760px] w-auto max-w-full object-contain object-bottom select-none drop-shadow-[0_20px_45px_rgba(0,0,0,0.65)]"
               />
             </motion.div>
           </AnimatePresence>
@@ -616,24 +631,22 @@ function AsianCuratedHeroBanner({
             key={currentItem.slug || currentItem._id || currentIndex}
             custom={direction}
             initial={{
-              x: direction > 0 ? -50 : 50,
+              x: direction > 0 ? -35 : 35,
               opacity: 0,
-              filter: "blur(4px)",
             }}
             animate={{
               x: 0,
               opacity: 1,
-              filter: "blur(0px)",
             }}
             exit={{
-              x: direction > 0 ? 40 : -40,
+              x: direction > 0 ? 30 : -30,
               opacity: 0,
-              filter: "blur(4px)",
             }}
             transition={{
-              duration: 0.65,
+              duration: 0.55,
               ease: [0.16, 1, 0.3, 1],
             }}
+            style={{ willChange: "transform, opacity", transform: "translateZ(0)" }}
             className="max-w-xl sm:max-w-2xl space-y-2.5 sm:space-y-4 pt-2 sm:pt-4 pointer-events-auto"
           >
             {/* Title Group with Logo Banner */}
