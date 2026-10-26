@@ -44,7 +44,16 @@ compose run --rm --no-deps api sh -c 'cd /app/apps/api && DATABASE_URL="$DIRECT_
 info "Restarting services..."
 compose up -d --no-deps --remove-orphans
 
-# 5. Xóa old images
+# 5. Reload OpenResty để refresh upstream DNS (web/api có thể đổi IP sau deploy)
+# nginx resolve upstream hostname một lần lúc startup - reload để cập nhật IP mới
+info "Reloading OpenResty upstream DNS..."
+if docker ps --filter name=netphim_openresty --filter status=running -q | grep -q .; then
+    docker exec netphim_openresty openresty -s reload 2>/dev/null && log "OpenResty reloaded" || warn "OpenResty reload skipped (container not ready yet)"
+else
+    warn "OpenResty container not running, skipping reload"
+fi
+
+# 6. Xóa old images
 info "Cleaning up old Docker images..."
 docker image prune -f
 
