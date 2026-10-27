@@ -489,6 +489,90 @@ async function handleSubtitles(request, env, ctx) {
   return finalResponse;
 }
 
+// ── 4. Catalog JSON Proxy & Edge Cache (KKPhim / OPhim / NguonC) ────────────
+// Giảm latency cho listing pages từ ~300-800ms → ~5ms khi Cloudflare edge có cache.
+// TTL ngắn (60s) để data không bị cũ quá lâu.
+const CATALOG_ALLOWED_UPSTREAMS = [
+  { host: "phimapi.com", prefix: "/phimapi/" },
+  { host: "ophim1.com", prefix: "/ophim/" },
+  { host: "phim.nguonc.com", prefix: "/nguonc/" },
+];
+
+async function handleCatalog(request, env, ctx) {
+  const url = new URL(request.url);
+  const path = url.pathname; // e.g. /catalog/phimapi/danh-sach/phim-moi?page=1
+
+  // Strip /catalog prefix to get provider prefix
+  const withoutCatalog = path.replace(/^\/catalog/, "");
+
+  let upstream = null;
+  for (const { host, prefix } of CATALOG_ALLOWED_UPSTREAMS) {
+    if (withoutCatalog.startsWith(prefix)) {
+      const apiPath = withoutCatalog.slice(prefix.length);
+      upstream = `https://${host}/${apiPath}${url.search}`;
+      break;
+    }
+  }
+
+  if (!upstream) {
+    return new Response(JSON.stringify({ error: "Unknown catalog provider" }), {
+      status: 400,
+      headers: corsHeaders({ "Content-Type": "application/json" }),
+    });
+  }
+
+  const cache = caches.default;
+  const cacheKey = new Request(request.url, { method: "GET" });
+  const cachedResponse = await cache.match(cacheKey);
+  if (cachedResponse) {
+    const res = new Response(cachedResponse.body, cachedResponse);
+    res.headers.set("X-Worker-Cache", "HIT");
+    res.headers.set("Access-Control-Allow-Origin", "*");
+    return res;
+  }
+
+  let upstreamRes;
+  try {
+    upstreamRes = await fetch(upstream, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; FlexPhimBot/1.0)",
+        Accept: "application/json",
+      },
+      signal: AbortSignal.timeout(5000),
+    });
+  } catch {
+    return new Response(JSON.stringify({ error: "Upstream timeout" }), {
+      status: 504,
+      headers: corsHeaders({ "Content-Type": "application/json" }),
+    });
+  }
+
+  if (!upstreamRes.ok) {
+    return new Response(upstreamRes.body, {
+      status: upstreamRes.status,
+      headers: corsHeaders({ "Content-Type": "application/json" }),
+    });
+  }
+
+  // Listing pages: 60s cache (danh-sach, the-loai, quoc-gia, tim-kiem)
+  // Detail pages: 300s cache (phim/{slug})
+  const isDetail = /\/phim\/[^/?]+$/.test(withoutCatalog);
+  const ttl = isDetail ? 300 : 60;
+
+  const finalResponse = new Response(upstreamRes.body, {
+    status: 200,
+    headers: corsHeaders({
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": `public, max-age=${ttl}, s-maxage=${ttl}`,
+      "X-Worker-Cache": "MISS",
+      "X-Upstream": upstream,
+    }),
+  });
+
+  ctx.waitUntil(cache.put(cacheKey, finalResponse.clone()));
+  return finalResponse;
+}
+
 // ── Main Worker Dispatcher ──────────────────────────────────────────────────
 export default {
   async fetch(request, env, ctx) {
@@ -536,16 +620,22 @@ export default {
       return handleSubtitles(request, env, ctx);
     }
 
+    // 4. Catalog JSON Proxy + Edge Cache (/catalog/...)
+    if (path.startsWith("/catalog/")) {
+      return handleCatalog(request, env, ctx);
+    }
+
     // Default: Documentation / Welcome Screen
     return new Response(
       JSON.stringify(
         {
           name: "FlexPhim Cloudflare Edge Media Gateway",
-          version: "1.0.0",
+          version: "1.1.0",
           endpoints: {
             hls: `${workerUrl}/hls?url={encoded_m3u8_or_ts_url}`,
             image: `${workerUrl}/image?url={encoded_image_url}&fallback={optional_fallback}`,
             subtitles: `${workerUrl}/subtitles?url={encoded_srt_or_vtt_url}`,
+            catalog: `${workerUrl}/catalog/{phimapi|ophim|nguonc}/{api_path}`,
             health: `${workerUrl}/health`,
           },
           docs: "Pass the target URL as query parameter 'url'. All responses are edge-cached and CORS-enabled.",
@@ -560,3 +650,4 @@ export default {
     );
   },
 };
+

@@ -6,7 +6,7 @@ import {
   ensureSixHeroFilms,
   type CuratedHeroMovie,
 } from "@/lib/curated-hero-pool";
-import { localImageProxyUrl } from "@/lib/image-cdn";
+import { wsrvImageUrl, localImageProxyUrl } from "@/lib/image-cdn";
 import {
   preferTmdbBackdropSize,
   preferTmdbPosterSize,
@@ -14,7 +14,8 @@ import {
 import { getMovieTmdbServer } from "@/lib/server/movie-tmdb-server";
 import { getMoviePageData } from "@/lib/server/movie-page-data";
 
-export const revalidate = 60;
+// 300s ISR — giảm cold-miss frequency: trang chủ thay đổi không quá thường
+export const revalidate = 300;
 
 const heroDetailServerCache = new Map<
   string,
@@ -228,23 +229,35 @@ async function getInitialPublicConfiguration(): Promise<PublicSiteConfiguration 
   return cachedPublicConfig;
 }
 
+/**
+ * Resolve a hero image URL preferring wsrv.nl CDN (edge-cached, global) over
+ * the local /api/image-proxy VPS route. Falls back to local proxy if wsrv.nl
+ * cannot be used (e.g. non-http source).
+ */
+function resolveHeroImageUrl(
+  source: string | null | undefined,
+  preset: Parameters<typeof wsrvImageUrl>[1],
+): string | null {
+  if (!source) return null;
+  const wsrv = wsrvImageUrl(source, preset);
+  if (wsrv) return wsrv;
+  return localImageProxyUrl(source, { strict: true });
+}
+
 export default async function HomePage() {
   const initialPublicConfig = await getInitialPublicConfiguration();
   const initialHeroFilms = await resolveInitialHeroFilms(initialPublicConfig?.heroMovieSlugs);
   const initialHero = initialHeroFilms[0];
-  const initialDesktopBackdrop = initialHero?.heroBackdrop
-    ? localImageProxyUrl(preferTmdbBackdropSize(initialHero.heroBackdrop), { strict: true })
-    : null;
+  const initialDesktopBackdrop = resolveHeroImageUrl(
+    preferTmdbBackdropSize(initialHero?.heroBackdrop ?? ""),
+    "backdrop",
+  );
   const rawMobile = initialHero?.poster_url || initialHero?.thumb_url || initialHero?.heroBackdrop;
-  const initialMobileBackdrop = rawMobile
-    ? localImageProxyUrl(
-        preferTmdbPosterSize(rawMobile, "w780"),
-        { strict: true },
-      )
-    : null;
-  const initialTitleLogo = initialHero?.titleLogo
-    ? localImageProxyUrl(initialHero.titleLogo, { strict: true })
-    : null;
+  const initialMobileBackdrop = resolveHeroImageUrl(
+    preferTmdbPosterSize(rawMobile ?? "", "w780"),
+    "poster",
+  );
+  const initialTitleLogo = resolveHeroImageUrl(initialHero?.titleLogo, "titleLogo");
 
   return (
     <>

@@ -554,7 +554,9 @@ function LazySection({
           observer.disconnect();
         }
       },
-      { rootMargin: "1400px 0px" },
+      // 400px pre-fetch margin — đủ để load trước khi scroll đến,
+      // không cần aggressive như 1400px gây fire gần như ngư lập tức
+      { rootMargin: "400px 0px" },
     );
 
     if (containerRef.current) {
@@ -659,14 +661,16 @@ export default function HomePageClient({
           observer.disconnect();
         }
       },
-      { rootMargin: "1400px 0px" },
+      // 800px — vẫn pre-fetch khi user gần đến section mới
+      { rootMargin: "800px 0px" },
     );
 
     observer.observe(el);
 
+    // Tăng lên 2000ms — đủ thời gian cho hero render trước, rồi mới load phần dưới
     const timer = window.setTimeout(() => {
       setShowMoreSections(true);
-    }, 1200);
+    }, 2000);
 
     return () => {
       observer.disconnect();
@@ -682,7 +686,7 @@ export default function HomePageClient({
     queryFn: () => siteConfigApi.getPublic().then((response) => response.data),
     initialData: initialPublicConfig || undefined,
     enabled: true,
-    staleTime: 5_000,
+    staleTime: 60_000, // 60s — config không thay đổi liên tục, tránh refetch mỗi mount
     retry: false,
   });
   useEffect(() => {
@@ -945,7 +949,7 @@ export default function HomePageClient({
     gcTime: 60 * 60 * 1000,
     retry: false,
     refetchOnWindowFocus: false,
-    enabled: true,
+    enabled: isSectionActive("crime"), // lazy: chỉ fetch khi user scroll đến
   });
   const wuxiaData = useMemo(
     () => wuxiaQueryData,
@@ -1156,10 +1160,12 @@ export default function HomePageClient({
       }
       return [];
     },
-    staleTime: 5 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
+    staleTime: 10 * 60 * 1000, // 10 phút — top10 không thay đổi liên tục
+    gcTime: 60 * 60 * 1000,
     refetchOnWindowFocus: false,
     retry: false,
+    // Chỉ gọi API này nếu home-feed-v1 chưa cung cấp top10 data
+    enabled: !homeFeedLoading && !(homeFeedData?.top10?.length),
   });
 
   const trendingData = useMemo(
