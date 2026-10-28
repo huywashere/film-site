@@ -12,11 +12,8 @@ import {
   Star,
   Volume2,
 } from "lucide-react";
-import {
+import type {
   UniverseSpotlightItem,
-  getUniverseSpotlights,
-  MARVEL_SUB_FRANCHISES,
-  DC_SUB_FRANCHISES,
 } from "@/lib/universe-catalog";
 import { cn } from "@/lib/utils";
 
@@ -31,7 +28,19 @@ export function UniverseHeroBanner({
   activeSubFranchise,
   onSelectSubFranchise,
 }: UniverseHeroBannerProps) {
-  const spotlights = useMemo(() => getUniverseSpotlights(universe), [universe]);
+  // Dynamic import: universe-catalog (426KB) only loaded when this component mounts
+  const [spotlights, setSpotlights] = useState<UniverseSpotlightItem[]>([]);
+  const [subFranchises, setSubFranchises] = useState<Array<{ id: string; label: string; icon?: string }>>([]);
+
+  useEffect(() => {
+    import("@/lib/universe-catalog").then((mod) => {
+      setSpotlights(mod.getUniverseSpotlights(universe));
+      setSubFranchises(
+        universe === "marvel" ? mod.MARVEL_SUB_FRANCHISES : mod.DC_SUB_FRANCHISES
+      );
+    });
+  }, [universe]);
+
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isHovering, setIsHovering] = useState(false);
   const [showTrailerModal, setShowTrailerModal] = useState(false);
@@ -52,7 +61,6 @@ export function UniverseHeroBanner({
 
   const current = spotlights[selectedIndex] || spotlights[0];
   const isMarvel = universe === "marvel";
-  const subFranchises = isMarvel ? MARVEL_SUB_FRANCHISES : DC_SUB_FRANCHISES;
 
   // Format YouTube Embed URL with strict security attributes to prevent error 153
   const trailerEmbedUrl = useMemo(() => {

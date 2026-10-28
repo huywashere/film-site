@@ -4,6 +4,9 @@ import { getInitialBrowseCatalog } from "@/lib/server-catalog";
 import { headers } from "next/headers";
 import { buildSeoMetadata } from "@/lib/seo";
 
+// ISR 60s — browse page có nhiều filter tổ hợp, mỗi URL được cache riêng biệt bởi Next.js
+export const revalidate = 60;
+
 type QueryValue = string | string[] | undefined;
 type BrowseFilmsPageProps = {
   searchParams: Promise<Record<string, QueryValue>>;

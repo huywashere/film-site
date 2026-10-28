@@ -59,9 +59,16 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { InteractiveAdminMascot } from "@/components/mascot/InteractiveAdminMascot";
 import { useReliableNavigation } from "@/hooks/useReliableNavigation";
 import { getNameColorProps, getAvatarFrameConfig } from "@/lib/profile-appearance";
+
+const InteractiveAdminMascot = dynamic(
+  () =>
+    import("@/components/mascot/InteractiveAdminMascot").then(
+      (mod) => mod.InteractiveAdminMascot,
+    ),
+  { ssr: false },
+);
 
 const MobileSidebar = dynamic(
   () => import("./MobileSidebar").then((mod) => mod.MobileSidebar),

@@ -1,7 +1,12 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Navbar } from "./Navbar";
+import dynamic from "next/dynamic";
+
+const Navbar = dynamic(
+  () => import("./Navbar").then((mod) => mod.Navbar),
+  { ssr: true },
+);
 
 export function ConditionalNavbar() {
   const pathname = usePathname();

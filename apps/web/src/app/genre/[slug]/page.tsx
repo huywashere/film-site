@@ -5,6 +5,9 @@ import { getInitialGenreCatalog } from "@/lib/server-catalog";
 import { headers } from "next/headers";
 import { buildSeoMetadata } from "@/lib/seo";
 
+// ISR 120s — listing pages thay đổi khi có phim mới, 2 phút là đủ tươi mà giảm được nhiều SSR cold render
+export const revalidate = 120;
+
 type GenrePageProps = {
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ page?: string | string[] }>;

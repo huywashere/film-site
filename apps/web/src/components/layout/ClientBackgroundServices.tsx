@@ -2,11 +2,25 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import dynamic from "next/dynamic";
 import { RegisterSW } from "@/components/layout/RegisterSW";
-import { OfflineDetector } from "@/components/layout/OfflineDetector";
-import { ClientTelemetry } from "@/components/layout/ClientTelemetry";
-import { AntiDevTools } from "@/components/security/AntiDevTools";
-import { ScrollToTopButton } from "@/components/layout/ScrollToTop";
+
+const AntiDevTools = dynamic(
+  () => import("@/components/security/AntiDevTools").then((mod) => mod.AntiDevTools),
+  { ssr: false },
+);
+const ClientTelemetry = dynamic(
+  () => import("@/components/layout/ClientTelemetry").then((mod) => mod.ClientTelemetry),
+  { ssr: false },
+);
+const OfflineDetector = dynamic(
+  () => import("@/components/layout/OfflineDetector").then((mod) => mod.OfflineDetector),
+  { ssr: false },
+);
+const ScrollToTopButton = dynamic(
+  () => import("@/components/layout/ScrollToTop").then((mod) => mod.ScrollToTopButton),
+  { ssr: false },
+);
 
 export function ClientBackgroundServices() {
   const [mounted, setMounted] = useState(false);

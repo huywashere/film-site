@@ -4,6 +4,9 @@ import { getInitialCountryCatalog } from "@/lib/server-catalog";
 import { headers } from "next/headers";
 import { buildSeoMetadata } from "@/lib/seo";
 
+// ISR 180s — country listing ít thay đổi hơn genre, 3 phút là TTL hợp lý
+export const revalidate = 180;
+
 type CountryPageProps = {
   params: Promise<{ slug: string }>;
   searchParams: Promise<{

@@ -56,6 +56,15 @@ const nextConfig = {
       "zustand",
       "clsx",
       "tailwind-merge",
+      // Heavy packages — tree-shake aggressively
+      "firebase",
+      "firebase/app",
+      "firebase/auth",
+      "firebase/firestore",
+      "@radix-ui/react-dialog",
+      "@radix-ui/react-dropdown-menu",
+      "axios",
+      "lucide",
     ],
   },
 
@@ -136,10 +145,13 @@ const nextConfig = {
       { pathname: "/flexphim-logo.png" },
       { pathname: "/flexphim-logo.svg" },
     ],
-    formats: ["image/avif", "image/webp"],
-    qualities: [75, 85, 90],
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    // WebP only: AVIF encoding is CPU-intensive on VPS (5-10x slower than WebP).
+    // Browser support for WebP is 97%+ globally — sufficient without AVIF overhead.
+    formats: ["image/webp"],
+    qualities: [75, 85],
+    // Remove 750 (non-standard) and 828 (only needed for older iPhones)
+    deviceSizes: [640, 828, 1080, 1200, 1920, 2560],
+    imageSizes: [16, 32, 64, 96, 128, 256, 384],
     minimumCacheTTL: 31536000,
     dangerouslyAllowSVG: true,
     contentDispositionType: "attachment",
@@ -157,6 +169,26 @@ const nextConfig = {
             value: "no-cache, no-store, must-revalidate",
           },
           { key: "Service-Worker-Allowed", value: "/" },
+        ],
+      },
+      // JS/CSS chunks are content-hashed by Next.js — safe to cache forever
+      {
+        source: "/_next/static/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      // Next.js image optimizer output — cache 1 year (minimumCacheTTL handles server-side)
+      {
+        source: "/_next/image",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=86400, stale-while-revalidate=604800",
+          },
         ],
       },
       {
