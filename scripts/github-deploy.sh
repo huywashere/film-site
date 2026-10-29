@@ -184,7 +184,8 @@ wait_healthy web || rollback_services "$IMAGE_TAG"
 
 # Khởi động các service còn lại
 info "Khởi động media-gateway, worker, openresty, admin, cloudflared..."
-compose up -d --no-deps --pull never media-gateway media-worker-rs openresty admin cloudflared
+docker rm -f netphim_cloudflared 2>/dev/null || true
+compose up -d --force-recreate --no-deps --pull never media-gateway media-worker-rs openresty admin cloudflared
 wait_healthy media-gateway || rollback_services "$IMAGE_TAG"
 wait_healthy openresty || rollback_services "$IMAGE_TAG"
 wait_healthy admin || warn "Admin container chưa đạt trạng thái healthy"
