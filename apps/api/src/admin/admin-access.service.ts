@@ -34,18 +34,39 @@ export class AdminAccessService {
   ) {
     const clientId = process.env.GITHUB_ADMIN_CLIENT_ID?.trim();
     const clientSecret = process.env.GITHUB_ADMIN_CLIENT_SECRET?.trim();
-    const callbackUrl = (
-      process.env.ADMIN_GITHUB_CALLBACK_URL ||
-      "http://localhost:3002/api/auth/github/callback"
-    ).trim();
+    const configuredCallbackUrl = process.env.ADMIN_GITHUB_CALLBACK_URL?.trim();
     if (!clientId || !clientSecret) {
       throw new ServiceUnavailableException(
         "GitHub Admin OAuth chưa được cấu hình",
       );
     }
-    if (input.redirectUri !== callbackUrl) {
+
+    const isAllowedCallback = (uri: string) => {
+      if (!uri) return false;
+      if (configuredCallbackUrl && uri === configuredCallbackUrl) return true;
+      try {
+        const parsed = new URL(uri);
+        if (parsed.pathname !== "/api/auth/github/callback") return false;
+        const host = parsed.hostname.toLowerCase();
+        return (
+          host === "admin.flexphim.top" ||
+          host.endsWith(".flexphim.top") ||
+          host === "localhost" ||
+          host === "127.0.0.1"
+        );
+      } catch {
+        return false;
+      }
+    };
+
+    if (!isAllowedCallback(input.redirectUri)) {
       throw new UnauthorizedException("GitHub OAuth callback không hợp lệ");
     }
+
+    const effectiveCallbackUrl =
+      input.redirectUri ||
+      configuredCallbackUrl ||
+      "https://admin.flexphim.top/api/auth/github/callback";
 
     const tokenResponse = await fetch(
       "https://github.com/login/oauth/access_token",
@@ -60,7 +81,7 @@ export class AdminAccessService {
           client_id: clientId,
           client_secret: clientSecret,
           code: input.code,
-          redirect_uri: callbackUrl,
+          redirect_uri: effectiveCallbackUrl,
           code_verifier: input.codeVerifier,
         }),
         signal: AbortSignal.timeout(10_000),
@@ -139,18 +160,47 @@ export class AdminAccessService {
         where: { email: { in: verifiedEmails, mode: "insensitive" } },
       });
     }
-    this.assertAdminUser(user);
-    if (user.githubId && user.githubId !== githubId) {
-      throw new UnauthorizedException(
-        "Tài khoản Admin đã liên kết với GitHub khác",
-      );
-    }
-    if (!user.githubId) {
-      user = await this.prisma.user.update({
-        where: { id: user.id },
-        data: { githubId },
+
+    if (!user) {
+      // Auto-create designated Admin user from verified GitHub account
+      let candidateUsername = githubLogin;
+      const existingUsername = await this.prisma.user.findUnique({
+        where: { username: candidateUsername },
       });
+      if (existingUsername) {
+        candidateUsername = `${githubLogin}_admin`;
+      }
+
+      user = await this.prisma.user.create({
+        data: {
+          email: verifiedEmails[0],
+          username: candidateUsername,
+          displayName: profile.login || "Admin",
+          role: "ADMIN",
+          adminAccessEnabled: true,
+          githubId,
+          isEmailVerified: true,
+          passwordHash: "",
+        },
+      });
+    } else {
+      if (user.githubId && user.githubId !== githubId) {
+        throw new UnauthorizedException(
+          "Tài khoản Admin đã liên kết với GitHub khác",
+        );
+      }
+      const updates: { githubId?: string; role?: "ADMIN"; adminAccessEnabled?: boolean } = {};
+      if (!user.githubId) updates.githubId = githubId;
+      if (user.role !== "ADMIN") updates.role = "ADMIN";
+      if (!user.adminAccessEnabled) updates.adminAccessEnabled = true;
+      if (Object.keys(updates).length > 0) {
+        user = await this.prisma.user.update({
+          where: { id: user.id },
+          data: updates,
+        });
+      }
     }
+    this.assertAdminUser(user);
 
     const require2FA = process.env.ADMIN_REQUIRE_2FA === "true";
     if (require2FA && !user.twoFactorEnabled) {

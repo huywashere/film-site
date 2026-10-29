@@ -12,33 +12,21 @@ export function hasAdminSession(request: { cookies: { get(name: string): { value
 export function adminApiBaseUrl() {
   const configured =
     process.env.NETPHIM_API_URL ||
+    process.env.API_INTERNAL_URL ||
+    process.env.INTERNAL_API_URL ||
     process.env.CINEVERSE_API_URL ||
     process.env.NEXT_PUBLIC_API_URL ||
-    "http://127.0.0.1:3001/api/v1";
+    "http://127.0.0.1:4000/api/v1";
   try {
     const parsed = new URL(configured);
     if (parsed.protocol === "http:" || parsed.protocol === "https:") {
       return parsed.toString().replace(/\/$/, "");
     }
   } catch {}
-  return "http://127.0.0.1:3001/api/v1";
-}
-
-export function adminGithubCallbackUrl(origin: string) {
-  return (
-    process.env.ADMIN_GITHUB_CALLBACK_URL ||
-    `${origin.replace(/\/$/, "")}/api/auth/github/callback`
-  );
-}
-
-export function safeAdminNext(value: string | null | undefined) {
-  return value?.startsWith("/") && !value.startsWith("//") ? value : "/";
+  return "http://127.0.0.1:4000/api/v1";
 }
 
 export function adminPublicOrigin(request?: { headers: { get(name: string): string | null } }) {
-  if (process.env.ADMIN_PUBLIC_URL) {
-    return process.env.ADMIN_PUBLIC_URL.replace(/\/$/, "");
-  }
   if (request) {
     const host = request.headers.get("x-forwarded-host") || request.headers.get("host");
     const proto = request.headers.get("x-forwarded-proto") || "https";
@@ -46,7 +34,25 @@ export function adminPublicOrigin(request?: { headers: { get(name: string): stri
       return `${proto}://${host}`;
     }
   }
+  if (process.env.ADMIN_PUBLIC_URL) {
+    return process.env.ADMIN_PUBLIC_URL.replace(/\/$/, "");
+  }
   return "https://admin.flexphim.top";
+}
+
+export function adminGithubCallbackUrl(origin: string) {
+  const configured = process.env.ADMIN_GITHUB_CALLBACK_URL?.trim();
+  if (configured && origin) {
+    if (!origin.includes("localhost") && !origin.includes("127.0.0.1") && configured.includes("localhost")) {
+      return `${origin.replace(/\/$/, "")}/api/auth/github/callback`;
+    }
+    return configured;
+  }
+  return `${(origin || "https://admin.flexphim.top").replace(/\/$/, "")}/api/auth/github/callback`;
+}
+
+export function safeAdminNext(value: string | null | undefined) {
+  return value?.startsWith("/") && !value.startsWith("//") ? value : "/";
 }
 
 export function isAllowedAdminOrigin(

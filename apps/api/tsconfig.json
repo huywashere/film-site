@@ -10,6 +10,7 @@
     "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": "./",
+    "ignoreDeprecations": "5.0",
     "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": false,
@@ -18,5 +19,5 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false
   },
-  "exclude": ["node_modules", "dist", "media", "uploads", "transcode"]
+  "exclude": ["node_modules", "dist", "media", "uploads", "transcode", "**/*.spec.ts"]
 }
