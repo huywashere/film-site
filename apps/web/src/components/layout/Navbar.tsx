@@ -469,12 +469,43 @@ export function Navbar() {
           queryFn: () => movieApi.getSeries(1).then((r) => r.data),
           staleTime: 15 * 60 * 1000,
         });
+        if (typeof window !== "undefined") {
+          [
+            "/Folder-Background/Korea/ha-canh-noi-anh/cloy-bg.webp",
+            "/Folder-Background/Korea/ha-canh-noi-anh/cloy-couple-chars.webp",
+            "/Folder-Background/Korea/ha-canh-noi-anh/cloy-logo-hd.webp",
+          ].forEach((src) => {
+            const img = new window.Image();
+            img.src = src;
+          });
+        }
       } else if (href === "/films/single") {
         void queryClient.prefetchQuery({
           queryKey: ["films-type", "single", 1],
           queryFn: () => movieApi.getSingle(1).then((r) => r.data),
           staleTime: 15 * 60 * 1000,
         });
+        if (typeof window !== "undefined") {
+          [
+            "/Folder-Background/Marvel/dr-doom/avengers-glowing-mist-bg.webp",
+            "/Folder-Background/Marvel/dr-doom/doom-char-clean.webp",
+            "/Folder-Background/Marvel/dr-doom/avengers-doomsday-logo.webp",
+          ].forEach((src) => {
+            const img = new window.Image();
+            img.src = src;
+          });
+        }
+      } else if (href === "/song-ngu") {
+        if (typeof window !== "undefined") {
+          [
+            "/Folder-Background/China/tuoc-cot/tuoc-cot-bg.webp",
+            "/Folder-Background/China/tuoc-cot/tuoc-cot-couple-chars.webp",
+            "/Folder-Background/China/tuoc-cot/tuoc-cot-logo.webp",
+          ].forEach((src) => {
+            const img = new window.Image();
+            img.src = src;
+          });
+        }
       } else if (href === "/films/anime") {
         void queryClient.prefetchQuery({
           queryKey: ["films-type", "anime", 1],

@@ -291,16 +291,32 @@ function ResilientAnimeHeroLogo({
 
 const CDN_BASE = process.env.NEXT_PUBLIC_CDN_ASSETS_URL?.replace(/\/$/, "") || "";
 const CLOY_BG_PATH =
+  "/Folder-Background/Korea/ha-canh-noi-anh/cloy-bg.webp";
+const CLOY_BG_FALLBACK =
   "/Folder-Background/Korea/ha-canh-noi-anh/Dr.Watermark_Gemini_1792687885412.jpg";
 const CLOY_CHARS_PATH =
+  "/Folder-Background/Korea/ha-canh-noi-anh/cloy-couple-chars.webp";
+const CLOY_CHARS_FALLBACK =
   "/Folder-Background/Korea/ha-canh-noi-anh/cloy-couple-chars.png";
 const CLOY_LOGO_PATH =
+  "/Folder-Background/Korea/ha-canh-noi-anh/cloy-logo-hd.webp";
+const CLOY_LOGO_FALLBACK =
   "/Folder-Background/Korea/ha-canh-noi-anh/cloy-logo-hd.png";
 
 function SeriesCrashLandingOnYouHeroBanner() {
   const [bgSrc, setBgSrc] = useState(CLOY_BG_PATH);
   const [charsSrc, setCharsSrc] = useState(CLOY_CHARS_PATH);
   const [logoSrc, setLogoSrc] = useState(CLOY_LOGO_PATH);
+
+  // Pre-decode high priority assets on mount for immediate zero-stutter presentation
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    [CLOY_BG_PATH, CLOY_CHARS_PATH, CLOY_LOGO_PATH].forEach((src) => {
+      const img = new window.Image();
+      img.src = src;
+      img.decode?.().catch(() => {});
+    });
+  }, []);
 
   return (
     <section
@@ -313,7 +329,9 @@ function SeriesCrashLandingOnYouHeroBanner() {
           src={bgSrc}
           alt="Hạ Cánh Nơi Anh - Bối cảnh Thụy Sĩ"
           onError={() => {
-            if (CDN_BASE && bgSrc !== `${CDN_BASE}${CLOY_BG_PATH}`) {
+            if (bgSrc !== CLOY_BG_FALLBACK) {
+              setBgSrc(CLOY_BG_FALLBACK);
+            } else if (CDN_BASE && bgSrc !== `${CDN_BASE}${CLOY_BG_PATH}`) {
               setBgSrc(`${CDN_BASE}${CLOY_BG_PATH}`);
             }
           }}
@@ -345,7 +363,9 @@ function SeriesCrashLandingOnYouHeroBanner() {
             src={charsSrc}
             alt="Hạ Cánh Nơi Anh - Son Ye-jin & Hyun Bin"
             onError={() => {
-              if (CDN_BASE && charsSrc !== `${CDN_BASE}${CLOY_CHARS_PATH}`) {
+              if (charsSrc !== CLOY_CHARS_FALLBACK) {
+                setCharsSrc(CLOY_CHARS_FALLBACK);
+              } else if (CDN_BASE && charsSrc !== `${CDN_BASE}${CLOY_CHARS_PATH}`) {
                 setCharsSrc(`${CDN_BASE}${CLOY_CHARS_PATH}`);
               }
             }}
@@ -371,7 +391,9 @@ function SeriesCrashLandingOnYouHeroBanner() {
                 src={logoSrc}
                 alt="Crash Landing on You"
                 onError={() => {
-                  if (CDN_BASE && logoSrc !== `${CDN_BASE}${CLOY_LOGO_PATH}`) {
+                  if (logoSrc !== CLOY_LOGO_FALLBACK) {
+                    setLogoSrc(CLOY_LOGO_FALLBACK);
+                  } else if (CDN_BASE && logoSrc !== `${CDN_BASE}${CLOY_LOGO_PATH}`) {
                     setLogoSrc(`${CDN_BASE}${CLOY_LOGO_PATH}`);
                   }
                 }}

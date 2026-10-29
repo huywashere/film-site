@@ -26,10 +26,16 @@ import { cn } from "@/lib/utils";
 
 const CDN_BASE = process.env.NEXT_PUBLIC_CDN_ASSETS_URL?.replace(/\/$/, "") || "";
 const TUOC_COT_BG_PATH =
+  "/Folder-Background/China/tuoc-cot/tuoc-cot-bg.webp";
+const TUOC_COT_BG_FALLBACK =
   "/Folder-Background/China/tuoc-cot/tuoc-cot-bg.png";
 const TUOC_COT_CHARS_PATH =
+  "/Folder-Background/China/tuoc-cot/tuoc-cot-couple-chars.webp";
+const TUOC_COT_CHARS_FALLBACK =
   "/Folder-Background/China/tuoc-cot/tuoc-cot-couple-chars.png";
 const TUOC_COT_LOGO_PATH =
+  "/Folder-Background/China/tuoc-cot/tuoc-cot-logo.webp";
+const TUOC_COT_LOGO_FALLBACK =
   "/Folder-Background/China/tuoc-cot/tuoc-cot-logo.png";
 
 function SongNguTuocCotHeroBanner() {
@@ -37,6 +43,16 @@ function SongNguTuocCotHeroBanner() {
   const [charsSrc, setCharsSrc] = useState(TUOC_COT_CHARS_PATH);
   const [logoSrc, setLogoSrc] = useState(TUOC_COT_LOGO_PATH);
   const [logoFailed, setLogoFailed] = useState(false);
+
+  // Pre-decode high priority assets on mount for immediate zero-stutter presentation
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    [TUOC_COT_BG_PATH, TUOC_COT_CHARS_PATH, TUOC_COT_LOGO_PATH].forEach((src) => {
+      const img = new window.Image();
+      img.src = src;
+      img.decode?.().catch(() => {});
+    });
+  }, []);
 
   return (
     <section
@@ -49,7 +65,9 @@ function SongNguTuocCotHeroBanner() {
           src={bgSrc}
           alt="Tước Cốt - Bối cảnh cung điện đỏ son"
           onError={() => {
-            if (CDN_BASE && bgSrc !== `${CDN_BASE}${TUOC_COT_BG_PATH}`) {
+            if (bgSrc !== TUOC_COT_BG_FALLBACK) {
+              setBgSrc(TUOC_COT_BG_FALLBACK);
+            } else if (CDN_BASE && bgSrc !== `${CDN_BASE}${TUOC_COT_BG_PATH}`) {
               setBgSrc(`${CDN_BASE}${TUOC_COT_BG_PATH}`);
             }
           }}
@@ -86,7 +104,9 @@ function SongNguTuocCotHeroBanner() {
             src={charsSrc}
             alt="Tước Cốt - Đinh Vũ Hề & Chu Khiết Quỳnh"
             onError={() => {
-              if (CDN_BASE && charsSrc !== `${CDN_BASE}${TUOC_COT_CHARS_PATH}`) {
+              if (charsSrc !== TUOC_COT_CHARS_FALLBACK) {
+                setCharsSrc(TUOC_COT_CHARS_FALLBACK);
+              } else if (CDN_BASE && charsSrc !== `${CDN_BASE}${TUOC_COT_CHARS_PATH}`) {
                 setCharsSrc(`${CDN_BASE}${TUOC_COT_CHARS_PATH}`);
               }
             }}
@@ -112,7 +132,9 @@ function SongNguTuocCotHeroBanner() {
                   src={logoSrc}
                   alt="Tước Cốt (Que Gu)"
                   onError={() => {
-                    if (CDN_BASE && logoSrc !== `${CDN_BASE}${TUOC_COT_LOGO_PATH}`) {
+                    if (logoSrc !== TUOC_COT_LOGO_FALLBACK) {
+                      setLogoSrc(TUOC_COT_LOGO_FALLBACK);
+                    } else if (CDN_BASE && logoSrc !== `${CDN_BASE}${TUOC_COT_LOGO_PATH}`) {
                       setLogoSrc(`${CDN_BASE}${TUOC_COT_LOGO_PATH}`);
                     } else {
                       setLogoFailed(true);
