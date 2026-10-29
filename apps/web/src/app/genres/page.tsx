@@ -376,9 +376,10 @@ export default function GenresPage() {
     >
       {/* ── Top Hero Banner ── */}
       <VerticalTabsHeroBanner
-        title="Chủ Đề"
-        highlightText="& Tuyển Tập"
+        title="Chủ Đề & Tuyển Tập"
+        titleClassName="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-extrabold text-white tracking-tight"
         description="Khám phá các vũ trụ điện ảnh và tuyển tập phim đặc sắc nhất được tuyển chọn riêng cho bạn."
+        descriptionClassName="text-xs sm:text-sm text-neutral-300 font-normal max-w-xl"
         imageSrc="/Folder-Background/starwar/1140629.jpg"
         objectPosition="center 30%"
         contentClassName="pb-5 sm:pb-6 md:pb-7"

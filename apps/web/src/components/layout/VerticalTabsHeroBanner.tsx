@@ -118,7 +118,7 @@ function VerticalTabsHeroBannerComponent({
 
       {/* Atmospheric ambient studio glow */}
       <div
-        className="pointer-events-none absolute -bottom-10 left-1/4 w-[500px] h-[250px] bg-sky-500/10 blur-[130px] rounded-full z-10"
+        className="pointer-events-none absolute -bottom-10 left-1/4 w-[500px] h-[250px] bg-white/[0.03] blur-[130px] rounded-full z-10"
         aria-hidden="true"
       />
 
@@ -162,7 +162,7 @@ function VerticalTabsHeroBannerComponent({
               <h1
                 className={cn(
                   cardFont.className,
-                  'text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight drop-shadow-[0_4px_24px_rgba(0,0,0,0.95)]',
+                  'text-xl sm:text-2xl md:text-3xl lg:text-4xl font-extrabold tracking-tight text-white leading-tight drop-shadow-[0_4px_24px_rgba(0,0,0,0.95)]',
                   titleClassName,
                 )}
               >
@@ -171,7 +171,7 @@ function VerticalTabsHeroBannerComponent({
                   <span
                     className={
                       highlightClassName ||
-                      'bg-gradient-to-r from-white via-sky-100 to-sky-300 bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(35,173,229,0.35)]'
+                      'text-white'
                     }
                   >
                     {highlightText}
