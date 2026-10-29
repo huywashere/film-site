@@ -17,6 +17,7 @@ import {
   unwrapImageUrl,
   wsrvImageUrl,
 } from '@/lib/image-cdn';
+import { isImagePreloaded, markImagePreloaded } from '@/lib/image-preload-cache';
 
 interface TmdbArtworkProps {
   film: FilmItem;
@@ -330,7 +331,8 @@ export function TmdbArtwork({
     providerPrimary ||
     candidates[0];
   const src = shouldAttemptArtwork ? effectiveCandidate : undefined;
-  const loaded = Boolean(src && loadedSrc === src);
+  const isPreloaded = Boolean(src && isImagePreloaded(src));
+  const loaded = Boolean(src && (loadedSrc === src || isPreloaded));
   const exhaustedCandidates = candidateIndex >= candidates.length;
   const lookupSettledWithoutArtwork = artworkQuery.isFetched && !tmdbUrl;
   const terminalFailure =
@@ -362,7 +364,7 @@ export function TmdbArtwork({
       height: kind === 'backdrop' ? (preferOriginal ? 1080 : 720) : 750,
       sizes: responsiveSizes,
       quality: kind === 'backdrop' ? 90 : 85,
-      loading: priority ? 'eager' : 'lazy',
+      loading: priority || nearViewport ? 'eager' : 'lazy',
       fetchPriority: priority ? 'high' : nearViewport ? 'auto' : 'low',
       unoptimized: alreadySized,
     }).props;
@@ -411,18 +413,28 @@ export function TmdbArtwork({
   useEffect(() => {
     if (tmdbUrl && tmdbUrl !== prevTmdbUrlRef.current) {
       prevTmdbUrlRef.current = tmdbUrl;
-      setCandidateIndex(0);
-      setFailedSrc(null);
+      // Do NOT replace an already loaded valid artwork with a new TMDB candidate
+      // unless preferTmdb is explicitly requested! This prevents posters from
+      // disappearing mid-scroll after they've already painted cleanly.
+      if (!loadedSrc || preferTmdb) {
+        setCandidateIndex(0);
+        setFailedSrc(null);
+      }
     }
-  }, [tmdbUrl]);
+  }, [tmdbUrl, loadedSrc, preferTmdb]);
 
   // Sync loaded state when src changes or when image is already cached/decoded in DOM
   useEffect(() => {
     if (!src) {
       return;
     }
+    if (isImagePreloaded(src)) {
+      setLoadedSrc(src);
+      return;
+    }
     const img = imgRef.current;
     if (img?.complete && img.naturalWidth > 0) {
+      markImagePreloaded(src);
       setLoadedSrc(src);
     }
   }, [src]);
@@ -432,6 +444,11 @@ export function TmdbArtwork({
     const timer = window.setTimeout(() => {
       const image = imgRef.current;
       if (image?.complete && image.naturalWidth > 0) {
+        if (src) markImagePreloaded(src);
+        setLoadedSrc(src);
+        return;
+      }
+      if (src && isImagePreloaded(src)) {
         setLoadedSrc(src);
         return;
       }
@@ -447,14 +464,14 @@ export function TmdbArtwork({
         return next;
       });
     }, src.startsWith('/api/image-proxy?')
-      ? 10_000
+      ? 12_000
       : isWsrvImageUrl(src)
-        ? 6_000
+        ? 8_000
         : loadImmediately || priority
           ? 8_000
           : nearViewport
-            ? 10_000
-            : 12_000);
+            ? 12_000
+            : 15_000);
     return () => window.clearTimeout(timer);
   }, [
     autoRecovery,
@@ -483,6 +500,9 @@ export function TmdbArtwork({
           draggable={false}
           style={objectPosition ? { objectPosition } : undefined}
           onLoad={() => {
+            if (src) {
+              markImagePreloaded(src);
+            }
             setFailedSrc(null);
             setLoadedSrc(src);
           }}
