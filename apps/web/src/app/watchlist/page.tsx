@@ -93,8 +93,8 @@ export default function WatchlistPage() {
   ).length;
   const totalPages = user ? watchlistData?.totalPages || 1 : 1;
 
-  // Unauthenticated guard: Tủ phim requires login
-  if (!user) {
+  // Unauthenticated guard: show login prompt only when guest has no saved items
+  if (!user && guestItems.length === 0) {
     return (
       <div
         className={cn(cardFont.className, "min-h-[calc(100dvh+5rem)] sm:min-h-[calc(100dvh+6rem)] flex flex-col bg-[#0a0b10] text-white pb-24 sm:pb-28 -mt-20 sm:-mt-24 select-none")}
