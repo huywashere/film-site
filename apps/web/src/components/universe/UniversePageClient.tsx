@@ -20,11 +20,16 @@ import { Pagination } from '@/components/film/Pagination';
 import { LandscapeSpotlightRow } from '@/components/film/LandscapeSpotlightRow';
 import { DeferredSection } from '@/components/layout/DeferredSection';
 import { UniverseTimelineSection } from '@/components/universe/UniverseTimelineSection';
-import type {
-  getUniverseFilms as GetUniverseFilmsFn,
-  getUniverseSpotlights as GetUniverseSpotlightsFn,
-  UniverseSpotlightItem,
-  UniverseType,
+import {
+  getUniverseFilms,
+  getUniverseSpotlights,
+  MARVEL_SUB_FRANCHISES,
+  DC_SUB_FRANCHISES,
+  DORAEMON_SUB_FRANCHISES,
+  CONAN_SUB_FRANCHISES,
+  SPACE_SUB_FRANCHISES,
+  type UniverseSpotlightItem,
+  type UniverseType,
 } from '@/lib/universe-catalog';
 import { cn } from '@/lib/utils';
 import { buildArtworkCandidates, isTmdbImageUrl, isWsrvImageUrl } from '@/lib/image-cdn';
@@ -260,18 +265,8 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
   const isConan = universe === 'conan';
   const isSpace = universe === 'khoa-hoc-vu-tru' || universe === 'star-wars';
 
-  // Dynamic import: universe-catalog is 426KB — only load when this page mounts
-  type UniverseCatalogModule = typeof import('@/lib/universe-catalog');
-  const [catalogMod, setCatalogMod] = useState<UniverseCatalogModule | null>(null);
-  useEffect(() => {
-    import('@/lib/universe-catalog').then(setCatalogMod);
-  }, []);
-
   // Data & Spotlights
-  const spotlights = useMemo(
-    () => catalogMod ? catalogMod.getUniverseSpotlights(universe) : [],
-    [catalogMod, universe],
-  );
+  const spotlights = useMemo(() => getUniverseSpotlights(universe), [universe]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const slideActivationRequest = useRef(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -280,14 +275,15 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
   );
 
   // Sub-franchise filter for full catalog
-  const subFranchises = useMemo(() => {
-    if (!catalogMod) return [];
-    if (isMarvel) return catalogMod.MARVEL_SUB_FRANCHISES;
-    if (isDC) return catalogMod.DC_SUB_FRANCHISES;
-    if (isDoraemon) return catalogMod.DORAEMON_SUB_FRANCHISES;
-    if (isConan) return catalogMod.CONAN_SUB_FRANCHISES;
-    return catalogMod.SPACE_SUB_FRANCHISES;
-  }, [catalogMod, isMarvel, isDC, isDoraemon, isConan]);
+  const subFranchises = isMarvel
+    ? MARVEL_SUB_FRANCHISES
+    : isDC
+      ? DC_SUB_FRANCHISES
+      : isDoraemon
+        ? DORAEMON_SUB_FRANCHISES
+        : isConan
+          ? CONAN_SUB_FRANCHISES
+          : SPACE_SUB_FRANCHISES;
   const [selectedSub, setSelectedSub] = useState('all');
   const [page, setPage] = useState(1);
   const [contentTab, setContentTab] = useState<'collection' | 'timeline'>('collection');
@@ -400,7 +396,8 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
   }, [currentIdx, isHeroVisible, spotlights]);
 
   // Convert spotlight to FilmItem for trailer modal
-  const activeFilmItem: FilmItem & { trailer_url?: string } = useMemo(() => {
+  const activeFilmItem: (FilmItem & { trailer_url?: string }) | null = useMemo(() => {
+    if (!activeSpotlight) return null;
     return {
       _id: activeSpotlight.id,
       slug: activeSpotlight.slug,
@@ -424,9 +421,9 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
     else if (isDoraemon) sub = 'movies';
     else if (isConan) sub = 'movies';
     else if (isSpace) sub = 'star-wars';
-    const raw = catalogMod ? catalogMod.getUniverseFilms(universe, { subFranchise: sub }) : [];
+    const raw = getUniverseFilms(universe, { subFranchise: sub });
     return mapRawToFilmItems(raw);
-  }, [catalogMod, universe, isDC, isDoraemon, isConan, isSpace]);
+  }, [universe, isDC, isDoraemon, isConan, isSpace]);
 
   const rail2 = useMemo(() => {
     let sub = 'spiderman';
@@ -434,9 +431,9 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
     else if (isDoraemon) sub = '3d';
     else if (isConan) sub = 'black-org';
     else if (isSpace) sub = 'series';
-    const raw = catalogMod ? catalogMod.getUniverseFilms(universe, { subFranchise: sub }) : [];
+    const raw = getUniverseFilms(universe, { subFranchise: sub });
     return mapRawToFilmItems(raw);
-  }, [catalogMod, universe, isDC, isDoraemon, isConan, isSpace]);
+  }, [universe, isDC, isDoraemon, isConan, isSpace]);
 
   const rail3 = useMemo(() => {
     let sub = 'xmen';
@@ -444,9 +441,9 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
     else if (isDoraemon) sub = 'adventure';
     else if (isConan) sub = 'kaito-kid';
     else if (isSpace) sub = 'movies';
-    const raw = catalogMod ? catalogMod.getUniverseFilms(universe, { subFranchise: sub }) : [];
+    const raw = getUniverseFilms(universe, { subFranchise: sub });
     return mapRawToFilmItems(raw);
-  }, [catalogMod, universe, isDC, isDoraemon, isConan, isSpace]);
+  }, [universe, isDC, isDoraemon, isConan, isSpace]);
 
   const rail4 = useMemo(() => {
     let sub = 'disneyplus';
@@ -454,15 +451,15 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
     else if (isDoraemon) sub = 'classic';
     else if (isConan) sub = 'series';
     else if (isSpace) sub = 'all';
-    const raw = catalogMod ? catalogMod.getUniverseFilms(universe, { subFranchise: sub }) : [];
+    const raw = getUniverseFilms(universe, { subFranchise: sub });
     return mapRawToFilmItems(raw);
-  }, [catalogMod, universe, isDC, isDoraemon, isConan, isSpace]);
+  }, [universe, isDC, isDoraemon, isConan, isSpace]);
 
   // Catalog filtered items
   const catalogFilms = useMemo(() => {
-    const raw = catalogMod ? catalogMod.getUniverseFilms(universe, { subFranchise: selectedSub }) : [];
+    const raw = getUniverseFilms(universe, { subFranchise: selectedSub });
     return mapRawToFilmItems(raw);
-  }, [catalogMod, universe, selectedSub]);
+  }, [universe, selectedSub]);
 
   const totalPages = Math.ceil(catalogFilms.length / pageSize);
   const pagedFilms = useMemo(() => {

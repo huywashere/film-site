@@ -207,7 +207,6 @@ export function LandscapeSpotlightRow({
                   film={film}
                   kind="backdrop"
                   allowTitleLookup
-                  preferTmdb
                   className="h-full w-full transition-transform duration-500 group-hover:scale-[1.025] motion-reduce:transform-none"
                   alt={film.name}
                 />

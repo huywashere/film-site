@@ -175,7 +175,7 @@ export function TmdbArtwork({
     needsTmdbArtwork,
   );
   const { backdropUrl, posterUrl } = artworkQuery;
-  const tmdbUrl = kind === 'backdrop' ? backdropUrl : posterUrl || backdropUrl;
+  const tmdbUrl = kind === 'backdrop' ? (backdropUrl || posterUrl) : (posterUrl || backdropUrl);
 
   const candidates = useMemo(() => {
     const list: string[] = [];
@@ -280,10 +280,10 @@ export function TmdbArtwork({
     if (
       secondaryUrl &&
       secondaryUrl !== providerPrimary &&
-      secondaryUrl !== providerFallback &&
-      (kind !== 'backdrop' || isTmdbImageUrl(secondaryUrl))
+      secondaryUrl !== providerFallback
     ) {
-      add(isTmdbImageUrl(secondaryUrl) ? secondaryUrl : localImageProxyUrl(secondaryUrl));
+      add(secondaryUrl);
+      add(localImageProxyUrl(secondaryUrl));
     }
 
     if (list.length > 0) return list;
@@ -444,14 +444,14 @@ export function TmdbArtwork({
         return next;
       });
     }, src.startsWith('/api/image-proxy?')
-      ? 4_000
+      ? 5_000
       : isWsrvImageUrl(src)
-        ? 1_800
+        ? 3_000
         : loadImmediately || priority
-          ? 1_500
+          ? 3_000
           : nearViewport
-            ? 2_200
-            : 5_000);
+            ? 4_500
+            : 6_000);
     return () => window.clearTimeout(timer);
   }, [
     autoRecovery,
