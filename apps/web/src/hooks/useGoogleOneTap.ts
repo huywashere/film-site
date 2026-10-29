@@ -45,7 +45,7 @@ export function useGoogleOneTap(options: UseGoogleOneTapOptions = {}) {
     const clientId =
       process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ||
       process.env.NEXT_PUBLIC_FIREBASE_CLIENT_ID ||
-      "";
+      "1072309032788-8a365c3dnfoq1slcmcqpbi2s8lp73lg1.apps.googleusercontent.com";
 
     if (!clientId) {
       // Client ID not yet configured in .env, exit silently

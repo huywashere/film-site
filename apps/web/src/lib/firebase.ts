@@ -24,19 +24,29 @@ import {
 const isBrowser = typeof window !== "undefined";
 
 const getAuthDomain = (): string => {
-  if (isBrowser && window.location.hostname.includes("flexphim.top")) {
-    return "flexphim.top";
-  }
-  return process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "flexphim.top";
+  return (
+    process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ||
+    "flexphim-1.firebaseapp.com"
+  );
 };
 
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "",
+  apiKey:
+    process.env.NEXT_PUBLIC_FIREBASE_API_KEY ||
+    "AIzaSyB1R7zywKQutoHXg8oAsfOKXt11kZeSY7I",
   authDomain: getAuthDomain(),
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "",
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "",
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "",
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "",
+  projectId:
+    process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ||
+    "flexphim-1",
+  storageBucket:
+    process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ||
+    "flexphim-1.firebasestorage.app",
+  messagingSenderId:
+    process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID ||
+    "1072309032788",
+  appId:
+    process.env.NEXT_PUBLIC_FIREBASE_APP_ID ||
+    "1:1072309032788:web:5dd1a252f1ea97e8775ac1",
 };
 
 export const isFirebaseConfigured =
