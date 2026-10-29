@@ -170,8 +170,8 @@ compose exec -T postgres psql -U "${POSTGRES_USER:-netphim}" -d "${POSTGRES_DB:-
 # ── Bước 6: Database migration ────────────────────────────────
 header "Bước 6: Prisma Migrations"
 info "Chạy Prisma migrate deploy trực tiếp qua PostgreSQL port 5432..."
-compose run --rm --no-deps -e DATABASE_URL="postgresql://${POSTGRES_USER:-netphim}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-netphim_db}?schema=public" api sh -c \
-    'cd /app/apps/api && npx prisma migrate deploy' \
+compose run --rm --no-deps api sh -c \
+    'DATABASE_URL="$DIRECT_DATABASE_URL" cd /app/apps/api && npx prisma migrate deploy' \
     || error "Migration thất bại — dừng deploy để bảo vệ dữ liệu"
 log "Migrations hoàn tất"
 

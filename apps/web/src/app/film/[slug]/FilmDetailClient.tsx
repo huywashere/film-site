@@ -1698,136 +1698,19 @@ export default function FilmDetailPage({
     }
   }, [film, isNotFound, watchLink, router]);
 
-  if (isLoading) return <FilmDetailSkeleton />;
-
-  if (isNotFound || !film) return <FilmNotFound querySlug={slug} />;
-
-  const handleWatchlist = async () => {
-    if (watchlistPending) return;
-    if (!user) {
-      toast(t('toast.loginToWatchlist', 'Vui lòng đăng nhập để lưu phim vào Tủ Phim.'), 'warning');
-      useAuthModalStore.getState().openModal('login');
-      return;
-    }
-    const previous = inWatchlist;
-    const next = !previous;
-    const movieData = {
-      title: film?.name || film?.title || slug,
-      titleEn: film?.origin_name,
-      posterUrl,
-      thumbUrl: backdropUrl,
-      type: film?.type,
-      year: film?.year,
-    };
-
-    setInWatchlist(next);
-    setWatchlistPending(true);
-    try {
-      if (!next) {
-        await watchlistApi.remove(slug);
-      } else {
-        await watchlistApi.add(slug, movieData);
-      }
-
-      window.dispatchEvent(
-        new CustomEvent('netphim_watchlist_changed', {
-          detail: { movieId: slug, action: next ? 'add' : 'remove' },
-        }),
-      );
-
-      await queryClient.invalidateQueries({ queryKey: ['watchlist'] });
-      await queryClient.invalidateQueries({ queryKey: ['user-watchlist'] });
-      toast(next ? 'Đã thêm vào Tủ Phim' : 'Đã xóa khỏi Tủ Phim', 'success');
-    } catch {
-      setInWatchlist(previous);
-      toast('Chưa thể cập nhật Tủ Phim, vui lòng thử lại', 'error');
-    } finally {
-      setWatchlistPending(false);
-    }
-  };
-
-  const handleStarHoverAuth = (star: number) => {
-    if (!user) {
-      const now = Date.now();
-      if (now - lastRatingPromptRef.current > 2500) {
-        lastRatingPromptRef.current = now;
-        toast('Vui lòng đăng nhập để đánh giá phim.', 'warning');
-        useAuthModalStore.getState().openModal('login');
-      }
-      return;
-    }
-    setHoverRatingScore(star);
-  };
-
-  const handleRate = async (score: number) => {
-    if (!user) {
-      toast('Vui lòng đăng nhập để đánh giá phim.', 'warning');
-      useAuthModalStore.getState().openModal('login');
-      return;
-    }
-    try {
-      await ratingsApi.rate(slug, score);
-      setMyRating(score);
-      toast(`Đã đánh giá ${score} sao!`, 'success');
-    } catch {
-      toast('Không thể gửi đánh giá', 'error');
-    }
-  };
-
-  const genres = Array.isArray(film?.category) ? film.category : [];
-  const episodeCount = episodes.reduce(
-    (total: number, server: any) => Math.max(total, server?.server_data?.length || 0),
-    0,
+  const genres = useMemo(
+    () => (Array.isArray(film?.category) ? film.category : []),
+    [film?.category],
   );
-  const tmdbRating = Number(film?.tmdb?.vote_average || film?.vote_average || film?.rating || 0);
-  const tmdbVoteCount = Number(film?.tmdb?.vote_count || film?.vote_count || 0);
-  // Prefer OMDB real IMDb rating over provider-provided one
-  const imdbRating = Number(
-    omdb?.imdbRating || film?.imdb?.vote_average || film?.imdb_rating || film?.imdb?.rating || 0,
+  const episodeCount = useMemo(
+    () =>
+      episodes.reduce(
+        (total: number, server: any) =>
+          Math.max(total, server?.server_data?.length || 0),
+        0,
+      ),
+    [episodes],
   );
-  const imdbVoteCount = Number(omdb?.imdbVotes?.replace(/,/g, '') || film?.imdb?.vote_count || 0);
-  const tmdbRatingLabel = formatRating(tmdbRating);
-  const imdbRatingLabel = formatRating(imdbRating);
-  const tmdbVoteLabel = formatVoteCount(tmdbVoteCount);
-  const imdbVoteLabel = formatVoteCount(imdbVoteCount);
-
-  const displayFilm = (isMobileViewport && activeMobileFilm) ? activeMobileFilm : film;
-  const displayTmdbScore = isViewingOriginalFilm
-    ? tmdbRatingLabel
-    : (displayFilm.tmdb?.vote_average
-        ? Number(displayFilm.tmdb.vote_average).toFixed(1)
-        : (displayFilm.vote_average ? Number(displayFilm.vote_average).toFixed(1) : null));
-  const displayImdbScore = isViewingOriginalFilm
-    ? imdbRatingLabel
-    : (displayFilm.imdb?.vote_average
-        ? Number(displayFilm.imdb.vote_average).toFixed(1)
-        : (displayFilm.imdb_rating ? Number(displayFilm.imdb_rating).toFixed(1) : null));
-
-
-  const statusLabel =
-    film?.status === 'completed' ||
-    String(film?.episode_current || '')
-      .toLowerCase()
-      .includes('full')
-      ? lang === 'en'
-        ? 'Completed'
-        : 'Đã hoàn thành'
-      : film?.episode_current || (lang === 'en' ? 'Updating' : 'Đang cập nhật');
-  const typeLabel =
-    film?.type === 'series' || film?.type === 'tv'
-      ? lang === 'en'
-        ? 'TV Series'
-        : 'Phim Bộ'
-      : film?.type === 'hoat-hinh'
-        ? lang === 'en'
-          ? 'Animation'
-          : 'Hoạt Hình'
-        : lang === 'en'
-          ? 'Movie'
-          : 'Phim Lẻ';
-
-  const filmName = film?.name || film?.title || slug;
-  const originName = film?.origin_name || '';
 
   // Xây dựng danh sách từ khóa chuẩn xác cho từng phim theo nội dung & thể loại
   const movieKeywords = useMemo(() => {
@@ -1915,6 +1798,132 @@ export default function FilmDetailPage({
 
     return list;
   }, [film, genres, countries, episodeCount, tmdbCast, actors, t]);
+
+  if (isLoading) return <FilmDetailSkeleton />;
+
+  if (isNotFound || !film) return <FilmNotFound querySlug={slug} />;
+
+  const handleWatchlist = async () => {
+    if (watchlistPending) return;
+    if (!user) {
+      toast(t('toast.loginToWatchlist', 'Vui lòng đăng nhập để lưu phim vào Tủ Phim.'), 'warning');
+      useAuthModalStore.getState().openModal('login');
+      return;
+    }
+    const previous = inWatchlist;
+    const next = !previous;
+    const movieData = {
+      title: film?.name || film?.title || slug,
+      titleEn: film?.origin_name,
+      posterUrl,
+      thumbUrl: backdropUrl,
+      type: film?.type,
+      year: film?.year,
+    };
+
+    setInWatchlist(next);
+    setWatchlistPending(true);
+    try {
+      if (!next) {
+        await watchlistApi.remove(slug);
+      } else {
+        await watchlistApi.add(slug, movieData);
+      }
+
+      window.dispatchEvent(
+        new CustomEvent('netphim_watchlist_changed', {
+          detail: { movieId: slug, action: next ? 'add' : 'remove' },
+        }),
+      );
+
+      await queryClient.invalidateQueries({ queryKey: ['watchlist'] });
+      await queryClient.invalidateQueries({ queryKey: ['user-watchlist'] });
+      toast(next ? 'Đã thêm vào Tủ Phim' : 'Đã xóa khỏi Tủ Phim', 'success');
+    } catch {
+      setInWatchlist(previous);
+      toast('Chưa thể cập nhật Tủ Phim, vui lòng thử lại', 'error');
+    } finally {
+      setWatchlistPending(false);
+    }
+  };
+
+  const handleStarHoverAuth = (star: number) => {
+    if (!user) {
+      const now = Date.now();
+      if (now - lastRatingPromptRef.current > 2500) {
+        lastRatingPromptRef.current = now;
+        toast('Vui lòng đăng nhập để đánh giá phim.', 'warning');
+        useAuthModalStore.getState().openModal('login');
+      }
+      return;
+    }
+    setHoverRatingScore(star);
+  };
+
+  const handleRate = async (score: number) => {
+    if (!user) {
+      toast('Vui lòng đăng nhập để đánh giá phim.', 'warning');
+      useAuthModalStore.getState().openModal('login');
+      return;
+    }
+    try {
+      await ratingsApi.rate(slug, score);
+      setMyRating(score);
+      toast(`Đã đánh giá ${score} sao!`, 'success');
+    } catch {
+      toast('Không thể gửi đánh giá', 'error');
+    }
+  };
+
+  const tmdbRating = Number(film?.tmdb?.vote_average || film?.vote_average || film?.rating || 0);
+  const tmdbVoteCount = Number(film?.tmdb?.vote_count || film?.vote_count || 0);
+  // Prefer OMDB real IMDb rating over provider-provided one
+  const imdbRating = Number(
+    omdb?.imdbRating || film?.imdb?.vote_average || film?.imdb_rating || film?.imdb?.rating || 0,
+  );
+  const imdbVoteCount = Number(omdb?.imdbVotes?.replace(/,/g, '') || film?.imdb?.vote_count || 0);
+  const tmdbRatingLabel = formatRating(tmdbRating);
+  const imdbRatingLabel = formatRating(imdbRating);
+  const tmdbVoteLabel = formatVoteCount(tmdbVoteCount);
+  const imdbVoteLabel = formatVoteCount(imdbVoteCount);
+
+  const displayFilm = (isMobileViewport && activeMobileFilm) ? activeMobileFilm : film;
+  const displayTmdbScore = isViewingOriginalFilm
+    ? tmdbRatingLabel
+    : (displayFilm.tmdb?.vote_average
+        ? Number(displayFilm.tmdb.vote_average).toFixed(1)
+        : (displayFilm.vote_average ? Number(displayFilm.vote_average).toFixed(1) : null));
+  const displayImdbScore = isViewingOriginalFilm
+    ? imdbRatingLabel
+    : (displayFilm.imdb?.vote_average
+        ? Number(displayFilm.imdb.vote_average).toFixed(1)
+        : (displayFilm.imdb_rating ? Number(displayFilm.imdb_rating).toFixed(1) : null));
+
+
+  const statusLabel =
+    film?.status === 'completed' ||
+    String(film?.episode_current || '')
+      .toLowerCase()
+      .includes('full')
+      ? lang === 'en'
+        ? 'Completed'
+        : 'Đã hoàn thành'
+      : film?.episode_current || (lang === 'en' ? 'Updating' : 'Đang cập nhật');
+  const typeLabel =
+    film?.type === 'series' || film?.type === 'tv'
+      ? lang === 'en'
+        ? 'TV Series'
+        : 'Phim Bộ'
+      : film?.type === 'hoat-hinh'
+        ? lang === 'en'
+          ? 'Animation'
+          : 'Hoạt Hình'
+        : lang === 'en'
+          ? 'Movie'
+          : 'Phim Lẻ';
+
+  const filmName = film?.name || film?.title || slug;
+  const originName = film?.origin_name || '';
 
   const jsonLd = {
     '@context': 'https://schema.org',
