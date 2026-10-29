@@ -40,6 +40,18 @@ const PREPAINT_SCRIPT = `
       sessionStorage.setItem(splashKey, "1");
       localStorage.setItem(splashKey, "1");
     }
+    setTimeout(() => {
+      try {
+        root.dataset.entrySplash = "skip";
+        const splash = document.getElementById("netphim-entry-splash");
+        if (splash) {
+          splash.style.transition = "opacity 0.4s ease-out";
+          splash.style.opacity = "0";
+          splash.style.pointerEvents = "none";
+          setTimeout(() => splash.remove(), 450);
+        }
+      } catch {}
+    }, 1200);
   } catch {
     root.dataset.entrySplash = "skip";
   }

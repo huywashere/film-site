@@ -101,6 +101,26 @@ html[data-entry-splash='skip'] #netphim-entry-splash {
   display: none !important;
 }
 
+@keyframes netphim-splash-auto-dismiss {
+  0%, 70% {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  90% {
+    opacity: 0;
+    pointer-events: none;
+  }
+  100% {
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+  }
+}
+
+#netphim-entry-splash {
+  animation: netphim-splash-auto-dismiss 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 .netphim-splash-brand {
   animation: netphim-splash-brand-reveal 540ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
