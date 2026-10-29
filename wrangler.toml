@@ -7,4 +7,4 @@ compatibility_flags = ["nodejs_compat"]
 ENVIRONMENT = "production"
 
 [build]
-command = "node -e 'console.log(\"Media worker ready\")'"
+command = "echo Media worker ready"

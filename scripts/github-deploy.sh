@@ -125,17 +125,7 @@ else
 fi
 log "Environment cập nhật thành công (IMAGE_TAG=$IMAGE_TAG)"
 
-# ── Bước 5: Database migration ────────────────────────────────
-header "Bước 5: Prisma Migrations"
-info "Chạy Prisma migrate deploy..."
-compose run --rm --no-deps api sh -c \
-    'cd /app/apps/api && npx prisma migrate deploy' \
-    || error "Migration thất bại — dừng deploy để bảo vệ dữ liệu"
-log "Migrations hoàn tất"
-
-# ── Bước 6: Restart services (rolling update) ─────────────────
-header "Bước 6: Khởi động services"
-
+# ── Helper functions ──────────────────────────────────────────
 wait_healthy() {
     local service=$1
     local max_wait=90
@@ -168,9 +158,25 @@ rollback_services() {
     error "Deploy thất bại; đã rollback về $PREV_TAG"
 }
 
-# Đảm bảo các service nền (DB, Redis, RabbitMQ, Typesense) đang chạy
-info "Khởi động các dịch vụ nền..."
+# ── Bước 5: Khởi động dịch vụ nền ─────────────────────────────
+header "Bước 5: Khởi động dịch vụ nền"
+info "Khởi động postgres, pgbouncer, redis, rabbitmq, typesense, recommendation-engine..."
 compose up -d --remove-orphans postgres pgbouncer redis rabbitmq typesense recommendation-engine
+wait_healthy postgres || error "PostgreSQL không đạt trạng thái healthy"
+
+# Giải phóng bất kỳ advisory lock tồn đọng từ lần chạy trước nếu có
+compose exec -T postgres psql -U "${POSTGRES_USER:-netphim}" -d "${POSTGRES_DB:-netphim_db}" -c "SELECT pg_advisory_unlock_all();" 2>/dev/null || true
+
+# ── Bước 6: Database migration ────────────────────────────────
+header "Bước 6: Prisma Migrations"
+info "Chạy Prisma migrate deploy trực tiếp qua PostgreSQL port 5432..."
+compose run --rm --no-deps -e DATABASE_URL="postgresql://${POSTGRES_USER:-netphim}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-netphim_db}?schema=public" api sh -c \
+    'cd /app/apps/api && npx prisma migrate deploy' \
+    || error "Migration thất bại — dừng deploy để bảo vệ dữ liệu"
+log "Migrations hoàn tất"
+
+# ── Bước 7: Khởi động application services (rolling update) ────
+header "Bước 7: Khởi động application services"
 
 # Restart API trước
 info "Khởi động container API mới..."
@@ -190,11 +196,11 @@ wait_healthy media-gateway || rollback_services "$IMAGE_TAG"
 wait_healthy openresty || rollback_services "$IMAGE_TAG"
 wait_healthy admin || warn "Admin container chưa đạt trạng thái healthy"
 
-# ── Bước 7: Lưu tag đã deploy ─────────────────────────────────
+# ── Bước 8: Lưu tag đã deploy ─────────────────────────────────
 echo "$IMAGE_TAG" > "$PREV_TAG_FILE"
 
-# ── Bước 8: Dọn dẹp Docker images cũ ──────────────────────────
-header "Bước 7: Cleanup"
+# ── Bước 9: Dọn dẹp Docker images cũ ──────────────────────────
+header "Bước 8: Cleanup"
 docker image prune -f --filter "label!=netphim.keep=true" || true
 log "Dọn dẹp image cũ hoàn tất"
 
