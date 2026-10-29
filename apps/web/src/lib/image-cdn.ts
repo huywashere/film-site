@@ -210,13 +210,13 @@ export function buildArtworkCandidates(
   };
 
   if (options.preferEdge) {
-    directCandidates.forEach(add);
     edgeCandidates.forEach(add);
+    directCandidates.forEach(add);
     localCandidates.forEach(add);
   } else {
     directCandidates.forEach(add);
-    localCandidates.forEach(add);
     edgeCandidates.forEach(add);
+    localCandidates.forEach(add);
   }
 
   return result;

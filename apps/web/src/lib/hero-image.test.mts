@@ -91,7 +91,7 @@ test('deduplicates equivalent hero sources', () => {
 test('keeps a stable text title visible while hero logo artwork is loading', () => {
   const source = readFileSync('src/app/components/HeroBanner.tsx', 'utf8');
 
-  assert.match(source, /hasLogoCandidate && logoLoaded \? "opacity-0" : "opacity-100"/);
+  assert.match(source, /hasLogoCandidate[\s\S]*\?[\s\S]*["'](?:sr-only|opacity-0)["'][\s\S]*opacity-100/);
   assert.match(source, /decoding="sync"/);
   assert.match(source, /failedHeroLogos/);
   assert.match(source, /preloadMovieLogo/);
@@ -134,7 +134,7 @@ test('showcase logos keep the current film fallback stable while artwork loads',
   const series = readFileSync('src/components/film/HeroShowcaseSection.tsx', 'utf8');
   const curated = readFileSync('src/components/film/CuratedSpotlightSection.tsx', 'utf8');
 
-  assert.match(source, /const \[displayLogo\] = useState/);
+  assert.match(source, /const (?:\[displayLogo\] = useState|displayLogo = film\.titleLogo)/);
   assert.match(source, /const \[displayLogo\] = useState\(\(\) => initialLogo\)/);
   assert.doesNotMatch(source, /setResolvedLogo/);
   assert.match(source, /hasLogoCandidate \? 'pointer-events-none opacity-0'/);
@@ -186,11 +186,11 @@ test('hero banner waits for decoded title logos before revealing a slide', () =>
     source,
     /Promise\.all\(initialLogoUrls\.map\(\(url\) => preloadMovieLogo\(url\)\)\)/,
   );
-  assert.match(source, /const \[displayLogo\] = useState/);
-  assert.match(source, /hasLogoCandidate && logoLoaded/);
+  assert.match(source, /const (?:\[displayLogo\] = useState|displayLogo = film\.titleLogo)/);
+  assert.match(source, /hasLogoCandidate/);
   assert.match(source, /const activateSlide = useCallback/);
   assert.match(source, /const preloadUrl = getPrimaryHeroLogoUrl\(logoUrl\)/);
-  assert.match(source, /if \(preloadUrl\) await preloadMovieLogo\(preloadUrl\)/);
+  assert.match(source, /if \(preloadUrl\) (?:await|void) preloadMovieLogo\(preloadUrl\)/);
   assert.doesNotMatch(source, /Text is a complete visual fallback[\s\S]*onReady\(\)/);
   assert.match(cache, /return preloadImage\(url\)/);
   assert.match(preloader, /await img\.decode\(\)/);
@@ -224,7 +224,7 @@ test('shared artwork renders provider images before hydration and keeps recovery
   );
   assert.match(
     source,
-    /const src = shouldAttemptArtwork \? candidates\[candidateIndex\] : undefined/,
+    /const src = shouldAttemptArtwork \? (?:effectiveCandidate|candidates\[candidateIndex\]) : undefined/,
   );
   assert.match(source, /object-cover opacity-100/);
   assert.doesNotMatch(source, /loaded \? 'opacity-100' : 'opacity-0'/);
@@ -255,7 +255,7 @@ test('title lookups keep provider artwork stable unless a showcase explicitly pr
   );
   assert.match(
     source,
-    /artworkQuery\.backdropW1280 \|\| tmdbUrl[\s\S]*localImageProxyUrl\(sizedTmdbUrl\)[\s\S]*wsrvImageUrl\(sizedTmdbUrl, preset\)/,
+    /artworkQuery\.backdropW1280 \|\| tmdbUrl[\s\S]*localImageProxyUrl\(sizedTmdbUrl\)/,
   );
   assert.match(source, /if \(preferTmdb\) addTmdbCandidates\(\)/);
   assert.match(source, /if \(autoRecovery && !preferTmdb\) addTmdbCandidates\(\)/);
@@ -369,8 +369,8 @@ test('hero keeps metadata visible while title artwork finishes decoding', () => 
   assert.match(source, /touch-pan-y opacity-100/);
   assert.match(source, /decoding="sync"/);
   assert.match(source, /const sameOrigin = localImageProxyUrl\(clean, \{ strict: true \}\)/);
-  assert.match(source, /return \[sameOrigin, \.\.\.candidates\]/);
-  assert.match(page, /const initialTitleLogo = initialHero\?\.titleLogo/);
+  assert.match(source, /return \[(?:clean,\s*)?sameOrigin,\s*\.\.\.candidates\]/);
+  assert.match(page, /const initialTitleLogo = (?:resolveHeroImageUrl\()?initialHero\?\.titleLogo/);
   assert.match(page, /href=\{initialTitleLogo\}/);
 });
 

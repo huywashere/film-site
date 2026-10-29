@@ -8,7 +8,7 @@
     "dev:all": "start-all.bat",
     "stop:all": "stop-all.bat",
     "dev:admin": "pnpm --filter @netphim/admin-cms dev",
-    "build": "turbo run build",
+    "build": "node scripts/build.mjs",
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint:fix",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,scss,md}\"",

@@ -21,8 +21,11 @@ test('player no longer renders skip intro controls', () => {
 });
 
 test('stream health control uses a stream health icon and explicit label', () => {
-  assert.match(artPlayer, /createLucideElement\((?:gaugeIconNode|activityIconNode)/);
-  assert.match(artPlayer, /tooltip: 'Đo sức khỏe luồng'/);
+  assert.match(
+    artPlayer,
+    /(?:createLucideElement\((?:gaugeIconNode|activityIconNode)|ARTPLAYER_SERVER_STREAM_SVG)/,
+  );
+  assert.match(artPlayer, /tooltip: '(?:Đo sức khỏe luồng|Máy chủ & Luồng phát)'/);
   assert.match(healthPanel, /<(?:Gauge|Activity)[\s\S]*Sức khỏe luồng phát/);
 });
 

@@ -166,7 +166,7 @@ test('topic pages keep quick navigation visible and use title-only topic cards',
   const mobileNav = readFileSync('src/components/layout/MobileBottomNav.tsx', 'utf8');
 
   assert.doesNotMatch(genres, /Top10RankedRow|ai-top10-recommendations/);
-  assert.match(genres, /title="Chủ Đề"|>\s*Chủ Đề\s*<\/h1>/);
+  assert.match(genres, /title="Chủ Đề(?: & Tuyển Tập)?"|>\s*Chủ Đề\s*<\/h1>/);
   assert.doesNotMatch(genres, /Chọn nhanh thế giới phim bạn muốn khám phá/);
   assert.doesNotMatch(genres, /hub\.(?:tagline|highlight|countBadge)/);
   assert.match(sidebar, /const isUniversePage = pathname\.startsWith\(["']\/universe\/["']\)/);
