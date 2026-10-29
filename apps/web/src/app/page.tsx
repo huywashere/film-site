@@ -127,7 +127,7 @@ async function fetchConfigFromEndpoint(
 ): Promise<PublicSiteConfiguration | null> {
   try {
     const clean = baseUrl.replace(/\/$/, "");
-    const timeoutMs = process.env.NODE_ENV === "development" ? 250 : 600;
+    const timeoutMs = process.env.NODE_ENV === "development" ? 500 : 2500;
     const res = await fetch(`${clean}/config/public`, {
       cache: "no-store",
       signal: AbortSignal.timeout(timeoutMs),

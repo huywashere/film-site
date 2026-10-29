@@ -104,7 +104,7 @@ const HERO_MARKETS = [
 ] as const;
 
 const HERO_MIN_RELEASE_YEAR = 2024;
-const HERO_ROTATION_MS = 14_000;
+const HERO_ROTATION_MS = 8_000;
 const RETIRED_TMDB_HERO_IDS = new Set([
   155, 157336, 27205, 299534, 299536, 361743, 414906, 447365, 453395, 475557,
   49521, 533535, 634649, 693134, 76600, 791373, 872585,
@@ -1272,6 +1272,7 @@ export default function HeroBanner({
   randomizeCuratedPool = false,
 }: HeroBannerProps) {
   const LAST_HERO_SLUGS_KEY = "flexphim.last-hero-slugs.v1";
+const LAST_HERO_PLAYLIST_KEY = "flexphim.last-hero-playlist.v2";
   let activePinnedSlugs = (initialConfig?.heroMovieSlugs || [])
     .map((slug) => slug.trim())
     .filter(Boolean);
@@ -1327,6 +1328,27 @@ export default function HeroBanner({
   // empty initial list made production wait for /config/public before the LCP
   // image and title even existed in the DOM.
   const [featured, setFeatured] = useState<HeroFilm[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = window.localStorage.getItem(LAST_HERO_PLAYLIST_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored) as HeroFilm[];
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            if (pinnedSlugs.length > 0) {
+              const matches = pinnedSlugs.every((slug) =>
+                parsed.some(
+                  (f) => f.slug === slug || CURATED_HERO_SLUG_ALIASES[slug] === f.slug,
+                ),
+              );
+              if (matches) return ensureSixHeroFilms(parsed) as HeroFilm[];
+            } else {
+              return ensureSixHeroFilms(parsed) as HeroFilm[];
+            }
+          }
+        }
+      } catch {}
+    }
+
     if (pinnedSlugs.length > 0) {
       const mapped = pinnedSlugs
         .map((slug) => {
@@ -1341,7 +1363,24 @@ export default function HeroBanner({
         })
         .filter((film): film is HeroFilm => Boolean(film));
       if (mapped.length > 0) return ensureSixHeroFilms(mapped) as HeroFilm[];
-      if (films && films.length > 0) return ensureSixHeroFilms(films as HeroFilm[]) as HeroFilm[];
+
+      const stubs: HeroFilm[] = pinnedSlugs.map((slug) => {
+        const fromFilms = films?.find((f) => f.slug === slug);
+        if (fromFilms) return fromFilms as HeroFilm;
+        const name = slug
+          .split("-")
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(" ");
+        return {
+          _id: slug,
+          slug,
+          name,
+          origin_name: name,
+          type: "single",
+          quality: "FHD",
+        } as HeroFilm;
+      });
+      return ensureSixHeroFilms(stubs) as HeroFilm[];
     }
     if (films && films.length > 0) return ensureSixHeroFilms(films as HeroFilm[]) as HeroFilm[];
     if (cachedHeroPlaylist?.length && cachedHeroPlaylist.length >= 6) return cachedHeroPlaylist.slice(0, 6);
@@ -1626,6 +1665,14 @@ export default function HeroBanner({
       setFeatured(initialPlaylist);
       setCurrent(selectedIndex);
       storeHeroPlaylist(initialPlaylist);
+      if (typeof window !== "undefined") {
+        try {
+          window.localStorage.setItem(
+            LAST_HERO_PLAYLIST_KEY,
+            JSON.stringify(initialPlaylist),
+          );
+        } catch {}
+      }
       initialPaintFilm.current = target || null;
 
       if (outgoing && outgoing.slug !== target?.slug) {
@@ -1765,7 +1812,7 @@ export default function HeroBanner({
   }, [current, featured]);
 
   const activateSlide = useCallback(
-    async (requestedIndex: number) => {
+    (requestedIndex: number) => {
       if (!featured.length) return;
       const nextIndex =
         (requestedIndex + featured.length) % featured.length;
@@ -1773,6 +1820,9 @@ export default function HeroBanner({
       const target = featured[nextIndex];
       let prepared = target;
       let logoUrl = target.titleLogo || getMovieLogo(target.slug);
+
+      // Instantly switch slide index with 0ms click latency
+      setCurrent(nextIndex);
 
       if (
         (!logoUrl && !target.titleLogoResolved) ||
@@ -1805,8 +1855,7 @@ export default function HeroBanner({
       }
 
       const preloadUrl = getPrimaryHeroLogoUrl(logoUrl);
-      if (preloadUrl) await preloadMovieLogo(preloadUrl);
-      if (requestId !== slideActivationRequest.current) return;
+      if (preloadUrl) void preloadMovieLogo(preloadUrl);
 
       const usesPortraitArtwork = typeof window !== "undefined" && window.matchMedia(
         "(max-width: 767px), (max-width: 1023px) and (orientation: portrait)",
@@ -1822,27 +1871,17 @@ export default function HeroBanner({
             thumbUrl: target.thumb_url,
             posterUrl: target.poster_url,
           });
-      const readyBackdrop = await preloadHeroBackdropCandidates(
-        backdropCandidates,
-      );
-      if (requestId !== slideActivationRequest.current) return;
 
-      const preference = preferredHeroBackdrops.get(target.slug) || {};
-      preferredHeroBackdrops.set(target.slug, {
-        ...preference,
-        [usesPortraitArtwork ? "portrait" : "landscape"]:
-          readyBackdrop || backdropCandidates[0] || (usesPortraitArtwork ? target.poster_url : target.heroBackdrop) || "",
+      void preloadHeroBackdropCandidates(backdropCandidates).then((readyBackdrop) => {
+        if (requestId !== slideActivationRequest.current) return;
+        const preference = preferredHeroBackdrops.get(target.slug) || {};
+        preferredHeroBackdrops.set(target.slug, {
+          ...preference,
+          [usesPortraitArtwork ? "portrait" : "landscape"]:
+            readyBackdrop || backdropCandidates[0] || (usesPortraitArtwork ? target.poster_url : target.heroBackdrop) || "",
+        });
+        markVisualReady(target.slug, "backdrop");
       });
-      markVisualReady(target.slug, "backdrop");
-
-      if (prepared !== target) {
-        setFeatured((playlist) =>
-          playlist.map((item, index) =>
-            index === nextIndex ? prepared : item,
-          ),
-        );
-      }
-      setCurrent(nextIndex);
     },
     [featured, markVisualReady],
   );
@@ -2198,7 +2237,7 @@ export default function HeroBanner({
               key={`backdrop-${item.slug || idx}-${idx}`}
               data-hero-slide-active={isActive ? "true" : "false"}
               className={cn(
-                "absolute inset-0 w-full h-full transition-all duration-1000 [transition-timing-function:cubic-bezier(0.25,1,0.5,1)] will-change-[opacity,transform] pointer-events-none",
+                "absolute inset-0 w-full h-full transition-all duration-700 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] will-change-[opacity,transform] pointer-events-none",
                 isActive
                   ? "opacity-100 scale-100 z-10"
                   : "opacity-0 scale-[1.02] z-0",
@@ -2220,7 +2259,7 @@ export default function HeroBanner({
           <div
             aria-hidden="true"
             className={cn(
-              "pointer-events-none absolute inset-0 z-20 h-full w-full transition-opacity duration-1000 ease-out",
+              "pointer-events-none absolute inset-0 z-20 h-full w-full transition-opacity duration-700 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]",
               departingVisible ? "opacity-100" : "opacity-0",
             )}
           >

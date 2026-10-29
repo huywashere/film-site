@@ -285,6 +285,7 @@ services:
       PORT: 3000
       HOSTNAME: 0.0.0.0
       # Server-side env vars (runtime, không cần bake)
+      REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
       NEXT_PUBLIC_SCRUBBER_PREVIEW_BASE_URL: ${NEXT_PUBLIC_SCRUBBER_PREVIEW_BASE_URL:-}
       NEXT_PUBLIC_GA_ID: ${NEXT_PUBLIC_GA_ID:-G-N09XDT8QNQ}

@@ -91,6 +91,7 @@ async function fetchVodphimPayload(slug: string): Promise<MoviePagePayload> {
 
 async function fetchInternalApiMovie(slug: string): Promise<MoviePagePayload | null> {
   const apiBase =
+    process.env.API_INTERNAL_URL?.trim() ||
     process.env.INTERNAL_API_URL?.trim() ||
     process.env.NEXT_PUBLIC_API_URL?.trim();
   if (!apiBase) return null;
@@ -139,7 +140,11 @@ export const getMoviePageData = cache(async (slug: string) => {
 
   const candidates: Promise<MoviePagePayload>[] = [];
 
-  if (process.env.INTERNAL_API_URL?.trim() || process.env.NEXT_PUBLIC_API_URL?.trim()) {
+  if (
+    process.env.API_INTERNAL_URL?.trim() ||
+    process.env.INTERNAL_API_URL?.trim() ||
+    process.env.NEXT_PUBLIC_API_URL?.trim()
+  ) {
     candidates.push(
       fetchInternalApiMovie(rawSlug).then((payload) => {
         if (!payload) throw new Error("internal:empty");
