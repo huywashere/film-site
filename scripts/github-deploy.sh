@@ -26,9 +26,14 @@ header() { echo -e "\n${CYAN}══ $1 ══${NC}"; }
 
 # ── Environment Defaults ───────────────────────────────────────
 CI_REGISTRY="${CI_REGISTRY:-ghcr.io}"
-APP_DIR="${VPS_APP_DIR:-/root/netphim}"
-if [[ ! -d "$APP_DIR" && -d "/opt/netphim" ]]; then
-    APP_DIR="/opt/netphim"
+APP_DIR="${VPS_APP_DIR:-/root/flexphim}"
+if [[ ! -d "$APP_DIR" || ! -f "$APP_DIR/infra/docker/docker-compose.yml" ]]; then
+    for cand in "/root/flexphim" "$HOME/flexphim" "/root/netphim" "$HOME/netphim" "/opt/flexphim" "/opt/netphim"; do
+        if [[ -d "$cand" && -f "$cand/infra/docker/docker-compose.yml" ]]; then
+            APP_DIR="$cand"
+            break
+        fi
+    done
 fi
 
 : "${REGISTRY_IMAGE:?REGISTRY_IMAGE chưa được set (VD: ghcr.io/huywashere/film-site)}"

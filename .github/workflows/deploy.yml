@@ -171,10 +171,21 @@ jobs:
             export CI_REGISTRY="ghcr.io"
             export CI_REGISTRY_USER="${{ github.actor }}"
             export CI_REGISTRY_PASSWORD="${{ secrets.GHCR_PAT || secrets.GITHUB_TOKEN }}"
-            export VPS_APP_DIR="${{ secrets.VPS_APP_DIR || '/root/netphim' }}"
+            
+            # Auto-detect application directory on VPS
+            APP_DIR="${{ secrets.VPS_APP_DIR }}"
+            if [ -z "$APP_DIR" ] || [ ! -f "$APP_DIR/scripts/github-deploy.sh" ]; then
+              for cand in "/root/flexphim" "$HOME/flexphim" "/root/netphim" "$HOME/netphim" "/opt/flexphim" "/opt/netphim"; do
+                if [ -f "$cand/scripts/github-deploy.sh" ]; then
+                  APP_DIR="$cand"
+                  break
+                fi
+              done
+            fi
+            export VPS_APP_DIR="${APP_DIR:-/root/flexphim}"
             
             # Đảm bảo script có quyền execute
-            chmod +x $VPS_APP_DIR/scripts/github-deploy.sh 2>/dev/null || true
+            chmod +x "$VPS_APP_DIR/scripts/github-deploy.sh" 2>/dev/null || true
             
             # Chạy deploy
-            bash $VPS_APP_DIR/scripts/github-deploy.sh
+            bash "$VPS_APP_DIR/scripts/github-deploy.sh"

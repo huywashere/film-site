@@ -218,10 +218,8 @@ export function TmdbArtwork({
     // Movie-provider CDNs are fastest when reachable. Keep the same-origin
     // relay immediately behind them so a blocked CDN cannot leave a shelf blank.
     if (providerPrimary && !isTmdbImageUrl(providerPrimary)) {
-      if ((!preferTmdb && kind !== 'backdrop') || (artworkQuery.isFetched && !tmdbUrl)) {
-        add(providerPrimary);
-        add(providerProxy);
-      }
+      add(providerPrimary);
+      add(providerProxy);
     }
     if (providerPrimary && isTmdbImageUrl(providerPrimary)) {
       const sizedProvider =
@@ -326,7 +324,12 @@ export function TmdbArtwork({
   // hydration; the observer is still used to bound TMDB lookups and recovery.
   const shouldAttemptArtwork =
     enabled && (priority || nearViewport || Boolean(providerPrimary));
-  const src = shouldAttemptArtwork ? candidates[candidateIndex] : undefined;
+  const effectiveCandidate =
+    candidates[candidateIndex] ||
+    candidates.find((c) => c && c !== failedSrc) ||
+    providerPrimary ||
+    candidates[0];
+  const src = shouldAttemptArtwork ? effectiveCandidate : undefined;
   const loaded = Boolean(src && loadedSrc === src);
   const exhaustedCandidates = candidateIndex >= candidates.length;
   const lookupSettledWithoutArtwork = artworkQuery.isFetched && !tmdbUrl;
@@ -444,14 +447,14 @@ export function TmdbArtwork({
         return next;
       });
     }, src.startsWith('/api/image-proxy?')
-      ? 5_000
+      ? 10_000
       : isWsrvImageUrl(src)
-        ? 3_000
+        ? 6_000
         : loadImmediately || priority
-          ? 3_000
+          ? 8_000
           : nearViewport
-            ? 4_500
-            : 6_000);
+            ? 10_000
+            : 12_000);
     return () => window.clearTimeout(timer);
   }, [
     autoRecovery,
@@ -509,10 +512,10 @@ export function TmdbArtwork({
             src === tmdbUrl || /image\.tmdb\.org\/t\/p\//i.test(src) ? 'tmdb' : 'fallback'
           }
         />
-      ) : terminalFailure ? (
-        <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-b from-neutral-800 via-neutral-900 to-black p-2 text-center">
+      ) : terminalFailure || !src ? (
+        <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-b from-neutral-800 via-neutral-900 to-[#101218] p-2 text-center select-none">
           <Clapperboard className="mb-1 h-5 w-5 text-neutral-600" />
-          <p className="line-clamp-2 text-[10px] font-bold text-neutral-300">
+          <p className="line-clamp-2 text-[10px] font-bold text-neutral-400">
             {film.name || film.title}
           </p>
         </div>
