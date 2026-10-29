@@ -311,6 +311,60 @@ export async function GET(request: NextRequest) {
     return new NextResponse("Missing url parameter", { status: 400 });
   }
 
+  // 1. If Media Gateway (Golang) is available, delegate image streaming directly for zero-copy high performance
+  const mediaGatewayUrl = (
+    process.env.MEDIA_GATEWAY_INTERNAL_URL || ""
+  ).trim().replace(/\/$/, "");
+
+  if (mediaGatewayUrl) {
+    try {
+      const target = `${mediaGatewayUrl}/api/image-proxy?${searchParams.toString()}`;
+      const clientEtag = request.headers.get("if-none-match");
+      const headers: Record<string, string> = {
+        Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      };
+      if (clientEtag) headers["if-none-match"] = clientEtag;
+
+      const goResp = await fetch(target, {
+        headers,
+        signal: AbortSignal.timeout(6000),
+      });
+
+      if (goResp.status === 304) {
+        return new NextResponse(null, {
+          status: 304,
+          headers: {
+            "Cache-Control": "public, max-age=31536000, s-maxage=31536000, immutable",
+            "CDN-Cache-Control": "public, max-age=31536000, immutable",
+            "Cloudflare-CDN-Cache-Control": "public, max-age=31536000, immutable",
+            ETag: goResp.headers.get("etag") || "",
+            "X-Source": "MediaGateway-Go",
+          },
+        });
+      }
+
+      if (goResp.ok && goResp.body) {
+        const respHeaders = new Headers();
+        respHeaders.set("Content-Type", goResp.headers.get("content-type") || "image/webp");
+        respHeaders.set("Cache-Control", "public, max-age=31536000, s-maxage=31536000, immutable");
+        respHeaders.set("CDN-Cache-Control", "public, max-age=31536000, immutable");
+        respHeaders.set("Cloudflare-CDN-Cache-Control", "public, max-age=31536000, immutable");
+        if (goResp.headers.get("etag")) {
+          respHeaders.set("ETag", goResp.headers.get("etag")!);
+        }
+        respHeaders.set("X-Source", "MediaGateway-Go");
+        respHeaders.set("X-Content-Type-Options", "nosniff");
+
+        return new NextResponse(goResp.body, {
+          status: 200,
+          headers: respHeaders,
+        });
+      }
+    } catch {
+      // Media Gateway Go offline or timed out; seamlessly fall through to Next.js TypeScript fallback
+    }
+  }
+
   const cfWorkerUrl = (
     process.env.NEXT_PUBLIC_CF_MEDIA_WORKER_URL ||
     process.env.CF_MEDIA_WORKER_URL ||
@@ -366,12 +420,29 @@ export async function GET(request: NextRequest) {
           ),
         ),
       );
+      const etag = `W/"${Buffer.from(rawUrl).toString("base64").slice(0, 28)}"`;
+      const clientEtag = request.headers.get("if-none-match");
+      if (clientEtag && clientEtag === etag) {
+        return new NextResponse(null, {
+          status: 304,
+          headers: {
+            "Cache-Control": "public, max-age=31536000, s-maxage=31536000, immutable",
+            "CDN-Cache-Control": "public, max-age=31536000, immutable",
+            "Cloudflare-CDN-Cache-Control": "public, max-age=31536000, immutable",
+            "ETag": etag,
+          },
+        });
+      }
+
       return new NextResponse(winner.buffer, {
         headers: {
           "Content-Type": winner.contentType,
-          "Cache-Control": "public, max-age=31536000, immutable",
+          "Cache-Control": "public, max-age=31536000, s-maxage=31536000, immutable",
           "CDN-Cache-Control": "public, max-age=31536000, immutable",
+          "Cloudflare-CDN-Cache-Control": "public, max-age=31536000, immutable",
           "Vercel-CDN-Cache-Control": "public, max-age=31536000, immutable",
+          "ETag": etag,
+          "Vary": "Accept",
           "X-Content-Type-Options": "nosniff",
           "Content-Security-Policy":
             "default-src 'none'; style-src 'unsafe-inline'",

@@ -82,13 +82,6 @@ const PROVIDERS: ProviderProbe[] = [
     validate: hasCatalogItems,
   },
   {
-    id: 'ophim',
-    name: 'OPhim',
-    role: 'Nguồn phim Việt Nam',
-    path: '/api/ophim/danh-sach/phim-moi-cap-nhat?page=1',
-    validate: hasCatalogItems,
-  },
-  {
     id: 'nguonc',
     name: 'NguonC',
     role: 'Nguồn phim Việt Nam',

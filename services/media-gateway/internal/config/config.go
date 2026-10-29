@@ -79,6 +79,11 @@ type Config struct {
 	// CatalogEnrichmentWindow is how long collectProviders waits for slower
 	// providers after the first usable result arrives.
 	CatalogEnrichmentWindow time.Duration
+	TypesenseURL            string
+	TypesenseAPIKey         string
+	TypesenseCollection     string
+	TypesenseTimeout        time.Duration
+	SearchBatchSize         int
 	MeiliURL                string
 	MeiliAPIKey             string
 	MeiliIndex              string
@@ -146,23 +151,28 @@ func Load() (Config, error) {
 		CatalogMaxBytes:         int64(intEnv("MEDIA_CATALOG_MAX_BYTES", 8*1024*1024)),
 		TMDBAPIKey:              strings.TrimSpace(os.Getenv("TMDB_API_KEY")),
 		TMDBAccessToken:         strings.TrimSpace(os.Getenv("TMDB_ACCESS_TOKEN")),
-		TMDBBaseURL:             strings.TrimRight(env("TMDB_API_BASE_URL", "https://api.themoviedb.org/3"), "/"),
+		TMDBBaseURL:             strings.TrimRight(env("TMDB_API_BASE_URL", "https://api.tmdb.org/3"), "/"),
 		TMDBArtworkTTL:          durationEnv("TMDB_ARTWORK_TTL", 30*24*time.Hour),
 		TMDBArtworkMissTTL:      durationEnv("TMDB_ARTWORK_MISS_TTL", 7*24*time.Hour),
 		TMDBArtworkTimeout:      durationEnv("TMDB_ARTWORK_TIMEOUT", 2500*time.Millisecond),
 		TMDBArtworkConcurrency:  boundedIntEnv("TMDB_ARTWORK_CONCURRENCY", 8, 1, 24),
 		CatalogEnrichmentWindow: durationEnv("MEDIA_CATALOG_ENRICHMENT_WINDOW_MS", 650*time.Millisecond),
+		TypesenseURL:            strings.TrimRight(strings.TrimSpace(env("TYPESENSE_URL", "")), "/"),
+		TypesenseAPIKey:         strings.TrimSpace(env("TYPESENSE_API_KEY", "")),
+		TypesenseCollection:     env("TYPESENSE_COLLECTION", "movies"),
+		TypesenseTimeout:        durationEnv("TYPESENSE_TIMEOUT", 1200*time.Millisecond),
+		SearchBatchSize:         boundedIntEnv("TYPESENSE_BATCH_SIZE", boundedIntEnv("MEILI_BATCH_SIZE", 200, 10, 1000), 10, 1000),
 		MeiliURL:                strings.TrimRight(strings.TrimSpace(os.Getenv("MEILI_URL")), "/"),
 		MeiliAPIKey:             strings.TrimSpace(os.Getenv("MEILI_MASTER_KEY")),
 		MeiliIndex:              env("MEILI_MOVIES_INDEX", "movies"),
 		MeiliTimeout:            durationEnv("MEILI_TIMEOUT", 1200*time.Millisecond),
-		MeiliSyncInterval:       durationEnv("MEILI_SYNC_INTERVAL", 15*time.Minute),
-		MeiliWarmPages:          boundedIntEnv("MEILI_WARM_PAGES", 5, 1, 20),
-		MeiliSyncPages:          boundedIntEnv("MEILI_SYNC_PAGES", 12, 3, 100),
-		MeiliFullSyncInterval:   durationEnv("MEILI_FULL_SYNC_INTERVAL", 24*time.Hour),
-		MeiliFullSyncPages:      boundedIntEnv("MEILI_FULL_SYNC_PAGES", 500, 20, 2000),
-		MeiliPruneStale:         boolEnv("MEILI_PRUNE_STALE", true),
-		MeiliSyncPause:          durationEnv("MEILI_SYNC_PAUSE", 250*time.Millisecond),
+		MeiliSyncInterval:       durationEnv("TYPESENSE_SYNC_INTERVAL", durationEnv("MEILI_SYNC_INTERVAL", 15*time.Minute)),
+		MeiliWarmPages:          boundedIntEnv("TYPESENSE_WARM_PAGES", boundedIntEnv("MEILI_WARM_PAGES", 5, 1, 20), 1, 20),
+		MeiliSyncPages:          boundedIntEnv("TYPESENSE_SYNC_PAGES", boundedIntEnv("MEILI_SYNC_PAGES", 12, 3, 100), 3, 100),
+		MeiliFullSyncInterval:   durationEnv("TYPESENSE_FULL_SYNC_INTERVAL", durationEnv("MEILI_FULL_SYNC_INTERVAL", 24*time.Hour)),
+		MeiliFullSyncPages:      boundedIntEnv("TYPESENSE_FULL_SYNC_PAGES", boundedIntEnv("MEILI_FULL_SYNC_PAGES", 500, 20, 2000), 20, 2000),
+		MeiliPruneStale:         boolEnv("TYPESENSE_PRUNE_STALE", boolEnv("MEILI_PRUNE_STALE", true)),
+		MeiliSyncPause:          durationEnv("TYPESENSE_SYNC_PAUSE", durationEnv("MEILI_SYNC_PAUSE", 250*time.Millisecond)),
 		MeiliBatchSize:          boundedIntEnv("MEILI_BATCH_SIZE", 200, 10, 1000),
 		AnalysisEnabled:         boolEnv("HLS_ANALYZER_ENABLED", true),
 		AnalysisJobStream:       env("HLS_ANALYZER_JOB_STREAM", "netphim:hls:analysis:jobs"),

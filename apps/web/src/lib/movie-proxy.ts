@@ -258,6 +258,52 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
       });
     }
 
+    // 1. If Media Gateway (Golang) is available, delegate provider proxying for hedged racing requests and ultra-low latency
+    const mediaGatewayUrl = (
+      process.env.MEDIA_GATEWAY_INTERNAL_URL || ""
+    ).trim().replace(/\/$/, "");
+
+    if (mediaGatewayUrl) {
+      try {
+        const goTarget = `${mediaGatewayUrl}/v1/proxy/${config.cachePrefix}/${path}${searchParams ? `?${searchParams}` : ""}`;
+        const goResp = await fetch(goTarget, {
+          headers: { Accept: "application/json" },
+          signal: AbortSignal.timeout(Math.min(timeoutMs, 5000)),
+          cache: "no-store",
+        });
+
+        if (goResp.ok) {
+          const rawData = await goResp.json();
+          const transformed = config.transform
+            ? config.transform(rawData, path)
+            : rawData;
+          const payload = responsePayload(transformed);
+          const cacheHeader =
+            goResp.headers.get("x-netphim-cache") === "HIT"
+              ? "HIT-GO-GATEWAY"
+              : "MISS-GO-GATEWAY";
+
+          // Save to local Redis/Memory for subsequent fast hits
+          if (client && client.status === "ready") {
+            client.set(cacheKey, JSON.stringify(transformed), "EX", ttlSeconds).catch(() => {});
+          }
+          evictStaleMemoryEntries();
+          if (memoryCache.size < maxMemoryEntries) {
+            memoryCache.set(cacheKey, {
+              data: transformed,
+              expiry: Date.now() + Math.min(ttlSeconds * 1000, memoryTtlMs),
+            });
+          }
+
+          return NextResponse.json(payload, {
+            headers: headers(cacheHeader, ttlSeconds),
+          });
+        }
+      } catch {
+        // Media Gateway Go offline or timed out; fall through seamlessly to local TypeScript fetch
+      }
+    }
+
     try {
       let pending = inflightRequests.get(cacheKey);
       if (!pending) {

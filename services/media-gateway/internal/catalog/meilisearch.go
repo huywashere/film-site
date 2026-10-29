@@ -56,30 +56,18 @@ type meiliMutation struct {
 	deleteID string
 }
 
-type meiliStatus struct {
-	Enabled             bool   `json:"enabled"`
-	Ready               bool   `json:"ready"`
-	QueueDepth          int    `json:"queueDepth"`
-	QueueCapacity       int    `json:"queueCapacity"`
-	Indexed             int64  `json:"indexed"`
-	Deleted             int64  `json:"deleted"`
-	Dropped             int64  `json:"notIndexedQueueDrops"`
-	Failures            int64  `json:"failures"`
-	Documents           int    `json:"documents"`
-	LastWriteAt         int64  `json:"lastWriteAt"`
-	SyncRunning         bool   `json:"syncRunning"`
-	LastSyncStartedAt   int64  `json:"lastSyncStartedAt"`
-	LastSyncCompletedAt int64  `json:"lastSyncCompletedAt"`
-	LastSyncItems       int64  `json:"lastSyncItems"`
-	LastSyncDeleted     int64  `json:"lastSyncDeleted"`
-	LastSyncError       string `json:"lastSyncError,omitempty"`
+type meiliStatus = searchStatus
+type meiliSearchResponse = searchResponse
+
+func (m *meiliSearchIndex) Engine() string {
+	return "meilisearch"
 }
 
-type meiliSearchResponse struct {
-	Hits               []map[string]any `json:"hits"`
-	EstimatedTotalHits int              `json:"estimatedTotalHits"`
-	TotalHits          int              `json:"totalHits"`
-	ProcessingTimeMS   int              `json:"processingTimeMs"`
+func (m *meiliSearchIndex) IsReady() bool {
+	if m == nil {
+		return false
+	}
+	return m.ready.Load()
 }
 
 func newMeiliSearchIndex(cfg config.Config) *meiliSearchIndex {
@@ -597,7 +585,7 @@ func movieQualityScore(movie map[string]any) int {
 }
 
 func (m *meiliSearchIndex) Status(ctx context.Context) meiliStatus {
-	status := meiliStatus{Enabled: m != nil}
+	status := meiliStatus{Enabled: m != nil, Engine: "meilisearch"}
 	if m == nil {
 		return status
 	}

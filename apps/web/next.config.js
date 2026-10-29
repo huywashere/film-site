@@ -201,6 +201,33 @@ const nextConfig = {
         ],
       },
       {
+        source: "/brand/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
+        source: "/artplayer/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
+        source: "/avatars/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
         source: "/Folder-Background/:path*",
         headers: [
           {
@@ -214,13 +241,25 @@ const nextConfig = {
         headers: [
           {
             key: "Cache-Control",
-            value: "public, max-age=604800, s-maxage=2592000, stale-while-revalidate=86400",
+            value: "public, max-age=31536000, s-maxage=31536000, immutable",
+          },
+          {
+            key: "CDN-Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+          {
+            key: "Cloudflare-CDN-Cache-Control",
+            value: "public, max-age=31536000, immutable",
           },
         ],
       },
       {
         source: "/:path*",
         headers: [
+          {
+            key: "Link",
+            value: "<https://image.tmdb.org>; rel=preconnect; crossorigin, <https://api.tmdb.org>; rel=preconnect; crossorigin, <https://wsrv.nl>; rel=preconnect; crossorigin",
+          },
           {
             key: "X-Content-Type-Options",
             value: "nosniff",

@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from 'react';
 import Artplayer from 'artplayer';
 import vi from 'artplayer/i18n/vi';
 import Hls from 'hls.js';
-import { Gauge as gaugeIconNode, createElement as createLucideElement } from 'lucide';
 import { useSettingsStore } from '@/store/settingsStore';
 import { detectExplicitHlsAdRanges, inspectHlsAdRanges } from '@/lib/hls-ad-filter';
 import { isTerminalHlsHttpStatus, selectInitialHlsTransport } from '@/lib/player-source-routing';
@@ -23,6 +22,7 @@ import {
   ARTPLAYER_INDICATOR_SVG,
   ARTPLAYER_AMBIENT_ON_SVG,
   ARTPLAYER_AMBIENT_OFF_SVG,
+  ARTPLAYER_SERVER_STREAM_SVG,
 } from './artplayer-editor-assets';
 import { attachNightModeAudio, isNightModeEnabled, setNightMode } from '@/lib/audio-effects';
 import { setupScrubberPreview } from './scrubber-preview';
@@ -836,13 +836,6 @@ export default function ArtPlayer({
       return blobUrl;
     };
 
-    const serverHealthIconMarkup = createLucideElement(gaugeIconNode, {
-      width: 22,
-      height: 22,
-      'stroke-width': 2,
-      'aria-hidden': 'true',
-    }).outerHTML;
-
     const player = new Artplayer({
       container: containerRef.current,
       url: isHls ? hlsTransport.primary : url,
@@ -955,8 +948,8 @@ export default function ArtPlayer({
                 name: 'server-health',
                 position: 'right',
                 index: 19,
-                html: `<span class="art-icon netphim-server-health-btn" style="display:inline-flex;align-items:center;justify-content:center;cursor:pointer;">${serverHealthIconMarkup}</span>`,
-                tooltip: 'Đo sức khỏe luồng',
+                html: `<span class="art-icon netphim-server-health-btn" style="display:inline-flex;align-items:center;justify-content:center;cursor:pointer;">${ARTPLAYER_SERVER_STREAM_SVG}</span>`,
+                tooltip: 'Máy chủ & Luồng phát',
                 click: function () {
                   toggleServerPanelRef.current();
                 },

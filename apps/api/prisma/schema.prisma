@@ -460,6 +460,7 @@ model MoviePlaybackSource {
 
   @@unique([movieId, provider, providerSlug, episodeKey, serverName])
   @@index([movieId, episodeKey, priority])
+  @@index([movieId, healthStatus])
   @@index([provider, healthStatus])
   @@map("movie_playback_sources")
 }

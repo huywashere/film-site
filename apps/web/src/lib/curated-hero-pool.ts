@@ -2497,12 +2497,16 @@ export const CURATED_HERO_SLUG_ALIASES: Record<string, string> = {
   "top-gun-maverick": "phi-cong-sieu-dang-maverick",
   "inception": "ke-danh-cap-giac-mo",
   "interstellar": "ho-den-tu-than",
-  "avatar-2": "avatar-2-dong-chay-cua-nuoc",
+  "avatar-2": "avatar-dong-chay-cua-nuoc",
+  "avatar-2-dong-chay-cua-nuoc": "avatar-dong-chay-cua-nuoc",
   "spider-man-no-way-home": "nguoi-nhen-khong-con-nha",
-  "dune-2": "dune-hanh-tinh-cat-2",
+  "dune-2": "hanh-tinh-cat-phan-hai",
+  "dune-hanh-tinh-cat-2": "hanh-tinh-cat-phan-hai",
+  "dune-phan-hai": "hanh-tinh-cat-phan-hai",
   "the-wolf-of-wall-street": "soi-gia-pho-wall",
   "the-revenant": "nguoi-ve-tu-coi-chet",
   "once-upon-a-time-in-hollywood": "chuyen-ngay-xua-o-hollywood",
+  "ready-player-one": "dau-truong-ao",
 };
 
 /**

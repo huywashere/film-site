@@ -35,8 +35,8 @@ class RecommendationEngine:
             year = str(row.get("release_year") or "")
             overview = clean_text(str(row.get("overview", "")))
 
-            # Emphasize title/origin and slug semantics, genre tokens, type, and year
-            feature_str = f"{slug_words} {slug_words} {title} {title} {origin} {origin} {genres} {genres} {countries} {m_type} {m_type} {year} {actors} {directors} {overview}".strip()
+            # Emphasize title/origin and slug semantics, genre tokens (4x), type, and year
+            feature_str = f"{slug_words} {slug_words} {title} {title} {origin} {origin} {genres} {genres} {genres} {genres} {countries} {m_type} {m_type} {year} {actors} {directors} {overview}".strip()
             corpus.append(feature_str)
         return corpus
 
@@ -137,7 +137,8 @@ class RecommendationEngine:
 
     def get_similar(self, slug: str, limit: int = 12) -> list[dict]:
         """
-        Computes top content-based + co-watch similar movies for a given movie slug.
+        Computes top content-based + co-watch similar movies for a given movie slug,
+        prioritizing same genre, high view momentum (trending), and high ratings (hot).
         """
         if not self.is_trained or self.movies_df.empty:
             self.train()
@@ -150,8 +151,33 @@ class RecommendationEngine:
 
         target_idx = self.slug_to_idx[slug]
         sim_scores = self.cosine_sim[target_idx].copy()
+        target_genres = set(self.movies_df.iloc[target_idx].get("genres") or [])
 
-        # Co-watch boost: Check if other movies were watched in the same sessions
+        # 1. Prioritize Same Genre & Trending/Hotness momentum
+        for idx in range(len(self.movies_df)):
+            if idx == target_idx:
+                continue
+
+            movie_genres = set(self.movies_df.iloc[idx].get("genres") or [])
+            overlap = len(target_genres.intersection(movie_genres))
+            if overlap > 0:
+                # Strong genre affinity boost
+                sim_scores[idx] += 0.18 * overlap
+            else:
+                # Moderate penalty for zero genre overlap
+                sim_scores[idx] -= 0.10
+
+            # Hotness / Trending boost (views + rating)
+            views = pd.to_numeric(self.movies_df.iloc[idx].get("view_count"), errors="coerce")
+            views = 0.0 if pd.isna(views) else float(views)
+            rating = pd.to_numeric(self.movies_df.iloc[idx].get("rating_score"), errors="coerce")
+            rating = 8.5 if pd.isna(rating) else float(rating)
+
+            views_boost = min(np.log1p(views) * 0.025, 0.12)
+            rating_boost = max((rating - 6.0) * 0.015, 0.0)
+            sim_scores[idx] += views_boost + rating_boost
+
+        # 2. Co-watch boost: Check if other movies were watched in the same sessions
         hist_df = fetch_watch_history_df()
         if not hist_df.empty:
             user_sessions = hist_df[hist_df["movie_id"].isin([slug, str(self.movies_df.iloc[target_idx]["id"])])]["user_id"].unique()

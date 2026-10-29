@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const baseUrl = (process.env.SEARCH_BASE_URL || "http://127.0.0.1:8081").replace(/\/$/, "");
-const requireMeili = process.env.REQUIRE_MEILI === "1";
+const requireEngine = process.env.REQUIRE_ENGINE || (process.env.REQUIRE_TYPESENSE === "1" ? "typesense" : (process.env.REQUIRE_MEILI === "1" ? "meilisearch" : ""));
 const p50Budget = Number(process.env.SEARCH_P50_BUDGET_MS || 100);
 const p95Budget = Number(process.env.SEARCH_P95_BUDGET_MS || 250);
 
@@ -77,8 +77,8 @@ const p50 = percentile(latencies, 0.5);
 const p95 = percentile(latencies, 0.95);
 if (p50 > p50Budget) failures.push(`p50 ${p50.toFixed(1)}ms exceeds ${p50Budget}ms`);
 if (p95 > p95Budget) failures.push(`p95 ${p95.toFixed(1)}ms exceeds ${p95Budget}ms`);
-if (requireMeili && (engines.size !== 1 || !engines.has("meilisearch"))) {
-  failures.push(`expected only meilisearch, observed: ${[...engines].join(", ")}`);
+if (requireEngine && (engines.size !== 1 || !engines.has(requireEngine))) {
+  failures.push(`expected only ${requireEngine}, observed: ${[...engines].join(", ")}`);
 }
 
 console.log(JSON.stringify({

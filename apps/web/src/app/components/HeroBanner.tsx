@@ -576,12 +576,9 @@ function buildHeroLogoCandidates(url?: string | null): string[] {
     includeWsrvForTmdb: clean.includes("image.tmdb.org"),
     strictProxy: true,
   });
-  // Production timing showed the already-cached same-origin relay reaching
-  // first byte substantially sooner than a new browser connection to TMDB.
-  // Put the relay first so the preload and visible logo share one request;
-  // direct TMDB and wsrv remain exact-artwork fallbacks.
   const sameOrigin = localImageProxyUrl(clean, { strict: true });
-  return [sameOrigin, ...candidates]
+  // Include direct CDN clean URL and sameOrigin relay
+  return [clean, sameOrigin, ...candidates]
     .filter((src): src is string => Boolean(src))
     .filter((src, index, items) => items.indexOf(src) === index)
     .filter((src) => !failedHeroLogos.has(src));
@@ -599,41 +596,21 @@ function HeroMovieTitle({
   film: HeroFilm;
   onReady: () => void;
 }) {
-  const rawLogo = film.titleLogo || getMovieLogo(film.slug);
-  const [displayLogo] = useState(() => rawLogo || null);
+  const displayLogo = film.titleLogo || getMovieLogo(film.slug) || null;
   const candidateLogos = useMemo(() => {
     if (!displayLogo) return [];
     return buildHeroLogoCandidates(displayLogo);
   }, [displayLogo]);
 
   const [candidateIdx, setCandidateIdx] = useState(0);
-  const currentLogoSrc = candidateLogos[candidateIdx];
-  const isPreloaded = Boolean(
-    currentLogoSrc &&
-      (preloadedHeroLogos.has(currentLogoSrc) ||
-        isMovieLogoPreloaded(currentLogoSrc)),
-  );
-  const [logoLoaded, setLogoLoaded] = useState(isPreloaded);
   const [hasError, setHasError] = useState(false);
+  const currentLogoSrc = candidateLogos[candidateIdx] || null;
   const imgRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
     setCandidateIdx(0);
     setHasError(false);
   }, [film.slug, displayLogo]);
-
-  useEffect(() => {
-    if (
-      currentLogoSrc &&
-      (preloadedHeroLogos.has(currentLogoSrc) ||
-        isMovieLogoPreloaded(currentLogoSrc))
-    ) {
-      setLogoLoaded(true);
-      onReady();
-    } else {
-      setLogoLoaded(false);
-    }
-  }, [currentLogoSrc, onReady]);
 
   // Check if browser already has image in cache
   useEffect(() => {
@@ -644,27 +621,41 @@ function HeroMovieTitle({
     ) {
       preloadedHeroLogos.add(currentLogoSrc);
       markMovieLogoPreloaded(currentLogoSrc);
-      setLogoLoaded(true);
       onReady();
     }
   }, [currentLogoSrc, onReady]);
 
-  const title = film.origin_name || film.name;
+  const vietnameseTitle = film.name || film.origin_name || "";
   const hasLogoCandidate = Boolean(currentLogoSrc) && !hasError;
+  const filmOriginName = film.origin_name?.trim().toLowerCase();
+  const filmName = film.name?.trim().toLowerCase();
+  const isDifferentTitle =
+    Boolean(filmName && filmOriginName && filmName !== filmOriginName);
+
   useEffect(() => {
     if (film.titleLogoResolved && !hasLogoCandidate) onReady();
   }, [film.titleLogoResolved, hasLogoCandidate, onReady]);
 
   return (
     <div
-      className="relative flex min-h-12 sm:min-h-24 md:min-h-28 w-full items-center justify-center overflow-visible"
+      className="relative flex flex-col min-h-12 sm:min-h-24 md:min-h-28 w-full items-center justify-center overflow-visible"
     >
+      {/* 
+        Accessibility & SEO Title:
+        Always keep h1 for search engines and screen readers.
+        When a graphic logo candidate exists, visually hide text (sr-only) so standard text never flashes or clashes.
+        Only display text visually if there is no graphic logo at all or all logo candidates failed.
+      */}
       <h1
         data-hero-title-text={film.slug}
-        className={`absolute inset-x-0 text-center mx-auto max-w-xl sm:max-w-2xl line-clamp-2 text-xl sm:text-4xl md:text-5xl lg:text-6xl font-black uppercase leading-[1.2] sm:leading-[1.15] tracking-tight text-white drop-shadow-[0_10px_35px_rgba(0,0,0,0.95)] pt-1 sm:pt-2 pb-1 overflow-visible transition-opacity duration-300 ${hasLogoCandidate && logoLoaded ? "opacity-0" : "opacity-100"}`}
+        className={
+          hasLogoCandidate
+            ? "sr-only"
+            : "text-center mx-auto max-w-xl sm:max-w-2xl line-clamp-2 text-xl sm:text-4xl md:text-5xl lg:text-6xl font-black uppercase leading-[1.2] sm:leading-[1.15] tracking-tight text-white drop-shadow-[0_10px_35px_rgba(0,0,0,0.95)] pt-1 sm:pt-2 pb-1 overflow-visible opacity-100"
+        }
         style={{ fontFamily: "'Be Vietnam Pro', 'Inter', sans-serif" }}
       >
-        {title}
+        {vietnameseTitle}
       </h1>
       {hasLogoCandidate ? (
         /* eslint-disable-next-line @next/next/no-img-element */
@@ -672,8 +663,8 @@ function HeroMovieTitle({
           data-hero-title-logo={film.slug}
           ref={imgRef}
           key={`${film.slug}-${candidateIdx}`}
-          src={currentLogoSrc}
-          alt=""
+          src={currentLogoSrc!}
+          alt={vietnameseTitle}
           aria-hidden="true"
           referrerPolicy="strict-origin-when-cross-origin"
           decoding="sync"
@@ -684,7 +675,6 @@ function HeroMovieTitle({
               preloadedHeroLogos.add(currentLogoSrc);
               markMovieLogoPreloaded(currentLogoSrc);
             }
-            setLogoLoaded(true);
             onReady();
           }}
           onError={() => {
@@ -693,13 +683,22 @@ function HeroMovieTitle({
               setCandidateIdx((i) => i + 1);
             } else {
               setHasError(true);
-              setLogoLoaded(false);
               onReady();
             }
           }}
-          className={`h-auto max-h-14 sm:max-h-24 md:max-h-28 lg:max-h-36 w-auto max-w-[78vw] sm:max-w-[28rem] md:max-w-[34rem] lg:max-w-[40rem] object-contain object-center mx-auto drop-shadow-[0_12px_30px_rgba(0,0,0,0.85)] transition-opacity duration-200 ${logoLoaded ? "opacity-100" : "opacity-0"}`}
+          className="h-auto max-h-14 sm:max-h-24 md:max-h-28 lg:max-h-36 w-auto max-w-[78vw] sm:max-w-[28rem] md:max-w-[34rem] lg:max-w-[40rem] object-contain object-center mx-auto drop-shadow-[0_12px_30px_rgba(0,0,0,0.85)] opacity-100 select-none pointer-events-none"
         />
       ) : null}
+
+      {/* Prominent Vietnamese Title Subtitle beneath foreign graphic logo */}
+      {hasLogoCandidate && isDifferentTitle && (
+        <p
+          className="mt-1 sm:mt-1.5 text-center text-xs sm:text-sm md:text-base font-extrabold tracking-widest uppercase text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-white to-amber-100 drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)] select-none pointer-events-none"
+          style={{ fontFamily: "'Be Vietnam Pro', 'Inter', sans-serif" }}
+        >
+          {film.name}
+        </p>
+      )}
     </div>
   );
 }
@@ -1328,28 +1327,35 @@ const LAST_HERO_PLAYLIST_KEY = "flexphim.last-hero-playlist.v2";
   // empty initial list made production wait for /config/public before the LCP
   // image and title even existed in the DOM.
   const [featured, setFeatured] = useState<HeroFilm[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const stored = window.localStorage.getItem(LAST_HERO_PLAYLIST_KEY);
-        if (stored) {
-          const parsed = JSON.parse(stored) as HeroFilm[];
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            if (pinnedSlugs.length > 0) {
+    if (pinnedSlugs.length > 0) {
+      if (films && films.length > 0) {
+        const matches = pinnedSlugs.every((slug) =>
+          films.some(
+            (f) => f.slug === slug || CURATED_HERO_SLUG_ALIASES[slug] === f.slug,
+          ),
+        );
+        if (matches) {
+          return films.slice(0, pinnedSlugs.length) as HeroFilm[];
+        }
+      }
+
+      if (typeof window !== "undefined") {
+        try {
+          const stored = window.localStorage.getItem(LAST_HERO_PLAYLIST_KEY);
+          if (stored) {
+            const parsed = JSON.parse(stored) as HeroFilm[];
+            if (Array.isArray(parsed) && parsed.length > 0) {
               const matches = pinnedSlugs.every((slug) =>
                 parsed.some(
                   (f) => f.slug === slug || CURATED_HERO_SLUG_ALIASES[slug] === f.slug,
                 ),
               );
-              if (matches) return ensureSixHeroFilms(parsed) as HeroFilm[];
-            } else {
-              return ensureSixHeroFilms(parsed) as HeroFilm[];
+              if (matches) return parsed.slice(0, pinnedSlugs.length);
             }
           }
-        }
-      } catch {}
-    }
+        } catch {}
+      }
 
-    if (pinnedSlugs.length > 0) {
       const mapped = pinnedSlugs
         .map((slug) => {
           const alias = CURATED_HERO_SLUG_ALIASES[slug] || slug;
@@ -1362,7 +1368,7 @@ const LAST_HERO_PLAYLIST_KEY = "flexphim.last-hero-playlist.v2";
           );
         })
         .filter((film): film is HeroFilm => Boolean(film));
-      if (mapped.length > 0) return ensureSixHeroFilms(mapped) as HeroFilm[];
+      if (mapped.length > 0) return mapped;
 
       const stubs: HeroFilm[] = pinnedSlugs.map((slug) => {
         const fromFilms = films?.find((f) => f.slug === slug);
@@ -1380,10 +1386,24 @@ const LAST_HERO_PLAYLIST_KEY = "flexphim.last-hero-playlist.v2";
           quality: "FHD",
         } as HeroFilm;
       });
-      return ensureSixHeroFilms(stubs) as HeroFilm[];
+      return stubs;
     }
-    if (films && films.length > 0) return ensureSixHeroFilms(films as HeroFilm[]) as HeroFilm[];
-    if (cachedHeroPlaylist?.length && cachedHeroPlaylist.length >= 6) return cachedHeroPlaylist.slice(0, 6);
+
+    if (films && films.length > 0) return films as HeroFilm[];
+
+    if (typeof window !== "undefined") {
+      try {
+        const stored = window.localStorage.getItem(LAST_HERO_PLAYLIST_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored) as HeroFilm[];
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed;
+          }
+        }
+      } catch {}
+    }
+
+    if (cachedHeroPlaylist?.length) return cachedHeroPlaylist;
     return CURATED_HERO_FRANCHISE_POOL.slice(0, 6) as HeroFilm[];
   });
   const [trailerModalFilm, setTrailerModalFilm] = useState<FilmItem | null>(
@@ -1447,7 +1467,7 @@ const LAST_HERO_PLAYLIST_KEY = "flexphim.last-hero-playlist.v2";
           })
           .filter(Boolean) as HeroFilm[];
         if (immediate.length > 0) {
-          setFeatured(ensureSixHeroFilms(immediate) as HeroFilm[]);
+          setFeatured(immediate);
         }
       }
     }
@@ -1518,7 +1538,7 @@ const LAST_HERO_PLAYLIST_KEY = "flexphim.last-hero-playlist.v2";
         restoredIndex = 0;
         try {
           const resolved = await Promise.all(
-            requestedSlugs.slice(0, 6).map(async (slug) => {
+            requestedSlugs.map(async (slug) => {
               const mapped = CURATED_HERO_SLUG_ALIASES[slug] || slug;
 
               // 1. Check if film is already passed in films prop (from SSR)
@@ -1558,18 +1578,20 @@ const LAST_HERO_PLAYLIST_KEY = "flexphim.last-hero-playlist.v2";
         } catch {
           playlist = [];
         }
-      } else if (!randomizeCuratedPool && films && films.length > 0) {
-        playlist = (films as HeroFilm[]).slice(0, 6);
-      } else if (cachedHeroPlaylist?.length && cachedHeroPlaylist.length >= 6) {
-        playlist = cachedHeroPlaylist.slice(0, 6);
+      } else if (films && films.length > 0) {
+        playlist = films as HeroFilm[];
+      } else if (!randomizeCuratedPool && cachedHeroPlaylist?.length) {
+        playlist = cachedHeroPlaylist;
         restoredIndex = Math.min(cachedHeroIndex, playlist.length - 1);
       } else {
         playlist = selectCuratedHeroPlaylist(readStoredHeroPlaylist());
       }
 
-      playlist = ensureSixHeroFilms(playlist) as HeroFilm[];
-      if (!playlist.length) {
-        playlist = selectCuratedHeroPlaylist(null);
+      if (!requestedSlugs.length && (!films || films.length === 0)) {
+        playlist = ensureSixHeroFilms(playlist) as HeroFilm[];
+        if (!playlist.length) {
+          playlist = selectCuratedHeroPlaylist(null);
+        }
       }
 
       if (!active) return;
@@ -1756,25 +1778,26 @@ const LAST_HERO_PLAYLIST_KEY = "flexphim.last-hero-playlist.v2";
     };
   }, [current, featured, markVisualReady]);
 
-  // Keep only the visible and next title logo warm. Loading the whole playlist
-  // competes with the current LCP image on a cold/mobile connection.
+  // Aggressively preload ALL slide logo images in browser memory for instant 0ms transition
   useEffect(() => {
     if (typeof window === "undefined" || !featured.length) return;
-    const nextIndex = featured.length > 1 ? (current + 1) % featured.length : current;
-    [featured[current], featured[nextIndex]].filter(Boolean).forEach((item) => {
+    featured.filter(Boolean).forEach((item) => {
       const logoUrl = item.titleLogo || getMovieLogo(item.slug);
       if (logoUrl) {
         if (item.slug) setMovieLogo(item.slug, logoUrl);
         const candidates = buildHeroLogoCandidates(logoUrl);
-        const primary = candidates[0] || logoUrl;
-        if (!preloadedHeroLogos.has(primary) && !isMovieLogoPreloaded(primary)) {
-          void preloadMovieLogo(primary).then((ready) => {
-            if (ready) preloadedHeroLogos.add(primary);
-          });
-        }
+        candidates.forEach((src) => {
+          if (!preloadedHeroLogos.has(src) && !isMovieLogoPreloaded(src)) {
+            const img = new Image();
+            img.decoding = "sync";
+            img.src = src;
+            preloadedHeroLogos.add(src);
+            markMovieLogoPreloaded(src);
+          }
+        });
       }
     });
-  }, [current, featured]);
+  }, [featured]);
 
   // Warm only the visible and next backdrop. Preloading every w1280 backdrop at
   // once starved the small, above-the-fold card artwork on cold production loads.
@@ -2296,8 +2319,9 @@ const LAST_HERO_PLAYLIST_KEY = "flexphim.last-hero-playlist.v2";
       />
 
       {/* 🎴 3-Card Cascading Cinema Deck (Left side desktop) */}
-      <div
-        className={`${cardFont.className} absolute left-6 top-1/2 z-30 hidden w-[420px] h-[300px] -translate-y-1/2 xl:block 2xl:left-14 pointer-events-none`}
+      {fanCards.length > 0 && (
+        <div
+          className={`${cardFont.className} absolute left-6 top-1/2 z-30 hidden w-[420px] h-[300px] -translate-y-1/2 xl:block 2xl:left-14 pointer-events-none`}
       >
         <div
           ref={fanCardsRef}
@@ -2383,6 +2407,7 @@ const LAST_HERO_PLAYLIST_KEY = "flexphim.last-hero-playlist.v2";
             })}
         </div>
       </div>
+      )}
 
 
 
@@ -2635,7 +2660,8 @@ const LAST_HERO_PLAYLIST_KEY = "flexphim.last-hero-playlist.v2";
       </div>
 
       {/* Widescreen Movie Card Bar + Progress & Counter Indicator (Bottom Right) */}
-      <div className="absolute right-4 sm:right-8 md:right-12 bottom-6 z-30 hidden sm:flex flex-col items-end gap-2 max-w-[calc(100vw-2rem)]">
+      {featured.length > 1 && (
+        <div className="absolute right-4 sm:right-8 md:right-12 bottom-6 z-30 hidden sm:flex flex-col items-end gap-2 max-w-[calc(100vw-2rem)]">
         {/* Indicator Row: 01 / 06 Counter & Thin Progress Bar (More Transparent) */}
         <div className="flex items-center gap-2.5 bg-black/25 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 text-[11px] font-mono font-bold text-neutral-300/90 shadow-lg">
           <span className="text-white font-extrabold tracking-wider">
@@ -2715,6 +2741,7 @@ const LAST_HERO_PLAYLIST_KEY = "flexphim.last-hero-playlist.v2";
             })}
         </div>
       </div>
+      )}
 
       {/* Official Trailer Modal */}
       {trailerModalFilm && (

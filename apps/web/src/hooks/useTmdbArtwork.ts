@@ -204,11 +204,28 @@ async function resolveArtwork(film: FilmItem): Promise<TmdbMovie | null> {
   return null;
 }
 
+function extractTmdbPathFromUrl(url?: unknown): string | null {
+  if (typeof url !== 'string' || !url) return null;
+  const match = url.match(/image\.tmdb\.org\/t\/p\/[^/]+(\/[^?#]+)/i);
+  return match ? match[1] : null;
+}
+
 export function useTmdbArtwork(film: FilmItem, enabled = true) {
   const extracted = extractTmdbInfo(film);
   const embeddedMovie = useMemo<TmdbMovie | null>(() => {
-    const posterPath = film.artwork?.poster_path || film.poster_path || film.tmdb?.poster_path;
-    const backdropPath = film.artwork?.backdrop_path || film.backdrop_path || film.tmdb?.backdrop_path;
+    const posterPath =
+      film.artwork?.poster_path ||
+      film.poster_path ||
+      film.tmdb?.poster_path ||
+      extractTmdbPathFromUrl(film.poster_url) ||
+      (film._posterCandidates?.map(extractTmdbPathFromUrl).find(Boolean) as string | undefined);
+    const backdropPath =
+      film.artwork?.backdrop_path ||
+      film.backdrop_path ||
+      film.tmdb?.backdrop_path ||
+      extractTmdbPathFromUrl(film.thumb_url) ||
+      extractTmdbPathFromUrl(film.heroBackdrop) ||
+      (film._thumbCandidates?.map(extractTmdbPathFromUrl).find(Boolean) as string | undefined);
     const rawId = film.artwork?.tmdbId || film.tmdbId || film.tmdb?.id;
     const id = Number(rawId);
     if (!posterPath && !backdropPath) return null;

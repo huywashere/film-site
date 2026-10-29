@@ -9,10 +9,12 @@ set PORT=8081
 set CORE_API_URL=http://127.0.0.1:3001/api/v1
 set HLS_ANALYZER_ENABLED=false
 set MEDIA_CATALOG_ENABLED=true
-set MEILI_URL=http://127.0.0.1:7700
+set TYPESENSE_URL=http://127.0.0.1:8108
 set REDIS_URL=redis://127.0.0.1:6379
-for /f "tokens=1,* delims==" %%A in ('findstr /B "MEILI_MASTER_KEY=" "..\..\.env" 2^>nul') do if not defined MEILI_MASTER_KEY set "MEILI_MASTER_KEY=%%B"
-if not defined MEILI_MASTER_KEY set MEILI_MASTER_KEY=netphim-local-meili-master-key-32chars
+for /f "tokens=1,* delims==" %%A in ('findstr /B "TYPESENSE_API_KEY=" "..\..\.env" 2^>nul') do if not defined TYPESENSE_API_KEY set "TYPESENSE_API_KEY=%%B"
+if not defined TYPESENSE_API_KEY set TYPESENSE_API_KEY=netphim-local-typesense-api-key-32chars
+for /f "tokens=1,* delims==" %%A in ('findstr /B "TMDB_API_KEY=" "..\..\.env" 2^>nul') do if not defined TMDB_API_KEY set "TMDB_API_KEY=%%B"
+for /f "tokens=1,* delims==" %%A in ('findstr /B "TMDB_ACCESS_TOKEN=" "..\..\.env" 2^>nul') do if not defined TMDB_ACCESS_TOKEN set "TMDB_ACCESS_TOKEN=%%B"
 
 echo [INFO] Starting FlexPhim Media Gateway on http://localhost:8081
 go run cmd/server/main.go

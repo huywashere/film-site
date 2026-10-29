@@ -162,6 +162,13 @@ export class AuthService {
       },
     });
 
+    void this.sendTelegramNewUserAlert({
+      email: user.email,
+      username: user.username,
+      displayName: user.displayName,
+      provider: "Email / Mật khẩu",
+    });
+
     // Create Verification Token
     const verifyRecord = await this.prisma.verificationToken.create({
       data: {
@@ -590,6 +597,13 @@ export class AuthService {
       },
     });
 
+    void this.sendTelegramNewUserAlert({
+      email: user.email,
+      username: user.username,
+      displayName: user.displayName,
+      provider: "Google OAuth",
+    });
+
     return this.signTokens(
       user.id,
       user.email,
@@ -732,6 +746,13 @@ export class AuthService {
           googleId: providerId,
           isEmailVerified: Boolean(profile.emailVerified),
         },
+      });
+
+      void this.sendTelegramNewUserAlert({
+        email: user.email,
+        username: user.username,
+        displayName: user.displayName,
+        provider: "OAuth",
       });
     }
 
@@ -1223,5 +1244,55 @@ export class AuthService {
         },
       },
     });
+  }
+
+  private async sendTelegramNewUserAlert(user: {
+    email: string;
+    username: string;
+    displayName?: string | null;
+    provider?: string;
+  }) {
+    const token =
+      this.config.get<string>("TELEGRAM_BOT_TOKEN") ||
+      process.env.TELEGRAM_BOT_TOKEN;
+    const chatId =
+      this.config.get<string>("TELEGRAM_ALERT_CHAT_ID") ||
+      this.config.get<string>("TELEGRAM_CHAT_ID") ||
+      process.env.TELEGRAM_ALERT_CHAT_ID ||
+      process.env.TELEGRAM_CHAT_ID;
+
+    if (!token || !chatId) {
+      return;
+    }
+
+    const timeStr = new Date().toLocaleString("vi-VN", {
+      timeZone: "Asia/Ho_Chi_Minh",
+    });
+    const providerStr = user.provider || "Email";
+    const text =
+      `🎉 <b>NGƯỜI DÙNG MỚI ĐĂNG KÝ!</b>\n\n` +
+      `👤 <b>Username:</b> <code>${user.username}</code>\n` +
+      `📧 <b>Email:</b> <code>${user.email}</code>\n` +
+      (user.displayName && user.displayName !== user.username
+        ? `🏷️ <b>Tên hiển thị:</b> ${user.displayName}\n`
+        : "") +
+      `🔐 <b>Phương thức:</b> ${providerStr}\n` +
+      `⏰ <b>Thời gian:</b> ${timeStr}\n` +
+      `🌐 <b>Hệ thống:</b> FlexPhim`;
+
+    try {
+      await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          parse_mode: "HTML",
+          text,
+        }),
+        signal: AbortSignal.timeout(5000),
+      });
+    } catch (err: any) {
+      this.logger.warn(`Failed to send new user Telegram alert: ${err?.message}`);
+    }
   }
 }

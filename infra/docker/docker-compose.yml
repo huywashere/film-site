@@ -87,21 +87,26 @@ services:
       timeout: 5s
       retries: 5
 
-  # ── Meilisearch (derived movie index; provider search remains fallback) ──
-  meilisearch:
-    image: getmeili/meilisearch:v1.53.1
-    container_name: netphim_meilisearch
+  # ── Typesense (high-performance movie search index; provider search remains fallback) ──
+  typesense:
+    image: typesense/typesense:27.1
+    container_name: netphim_typesense
     restart: unless-stopped
     environment:
-      MEILI_ENV: production
-      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:?MEILI_MASTER_KEY is required}
-      MEILI_NO_ANALYTICS: 'true'
+      TYPESENSE_DATA_DIR: /data
+      TYPESENSE_API_KEY: ${TYPESENSE_API_KEY:?TYPESENSE_API_KEY is required}
+      TYPESENSE_ENABLE_CORS: 'true'
     volumes:
-      - meilisearch_data:/meili_data
+      - typesense_data:/data
     expose:
-      - '7700'
+      - '8108'
     networks:
       - netphim_net
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8108/health']
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   rabbitmq:
     image: rabbitmq:4-management-alpine
@@ -222,8 +227,9 @@ services:
       S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
       S3_PUBLIC_URL: ${S3_PUBLIC_URL:-}
       ADMIN_ALERT_WEBHOOK_URL: ${ADMIN_ALERT_WEBHOOK_URL}
-      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
-      TELEGRAM_ALERT_CHAT_ID: ${TELEGRAM_ALERT_CHAT_ID}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+      TELEGRAM_ALERT_CHAT_ID: ${TELEGRAM_ALERT_CHAT_ID:-${TELEGRAM_CHAT_ID:-}}
       # Frontend URL (for CORS)
       FRONTEND_URL: ${FRONTEND_URL:-https://localhost}
     depends_on:
@@ -418,18 +424,18 @@ services:
       TMDB_ARTWORK_MISS_TTL: ${TMDB_ARTWORK_MISS_TTL:-168h}
       TMDB_ARTWORK_TIMEOUT: ${TMDB_ARTWORK_TIMEOUT:-2500ms}
       TMDB_ARTWORK_CONCURRENCY: ${TMDB_ARTWORK_CONCURRENCY:-8}
-      MEILI_URL: http://meilisearch:7700
-      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:?MEILI_MASTER_KEY is required}
-      MEILI_MOVIES_INDEX: ${MEILI_MOVIES_INDEX:-movies}
-      MEILI_TIMEOUT: ${MEILI_TIMEOUT:-1200ms}
-      MEILI_SYNC_INTERVAL: ${MEILI_SYNC_INTERVAL:-15m}
-      MEILI_WARM_PAGES: ${MEILI_WARM_PAGES:-5}
-      MEILI_SYNC_PAGES: ${MEILI_SYNC_PAGES:-12}
-      MEILI_FULL_SYNC_INTERVAL: ${MEILI_FULL_SYNC_INTERVAL:-24h}
-      MEILI_FULL_SYNC_PAGES: ${MEILI_FULL_SYNC_PAGES:-500}
-      MEILI_PRUNE_STALE: ${MEILI_PRUNE_STALE:-true}
-      MEILI_SYNC_PAUSE: ${MEILI_SYNC_PAUSE:-250ms}
-      MEILI_BATCH_SIZE: ${MEILI_BATCH_SIZE:-200}
+      TYPESENSE_URL: http://typesense:8108
+      TYPESENSE_API_KEY: ${TYPESENSE_API_KEY:?TYPESENSE_API_KEY is required}
+      TYPESENSE_COLLECTION: ${TYPESENSE_COLLECTION:-movies}
+      TYPESENSE_TIMEOUT: ${TYPESENSE_TIMEOUT:-1200ms}
+      TYPESENSE_SYNC_INTERVAL: ${TYPESENSE_SYNC_INTERVAL:-15m}
+      TYPESENSE_WARM_PAGES: ${TYPESENSE_WARM_PAGES:-5}
+      TYPESENSE_SYNC_PAGES: ${TYPESENSE_SYNC_PAGES:-12}
+      TYPESENSE_FULL_SYNC_INTERVAL: ${TYPESENSE_FULL_SYNC_INTERVAL:-24h}
+      TYPESENSE_FULL_SYNC_PAGES: ${TYPESENSE_FULL_SYNC_PAGES:-500}
+      TYPESENSE_PRUNE_STALE: ${TYPESENSE_PRUNE_STALE:-true}
+      TYPESENSE_SYNC_PAUSE: ${TYPESENSE_SYNC_PAUSE:-250ms}
+      TYPESENSE_BATCH_SIZE: ${TYPESENSE_BATCH_SIZE:-200}
       CORE_API_URL: http://api:4000/api/v1
       KKPHIM_API_ORIGINS: ${KKPHIM_API_ORIGINS:-https://phimapi.com}
       OPHIM_API_ORIGINS: ${OPHIM_API_ORIGINS:-https://ophim1.com,https://ophim17.cc,https://ophim3.cc}
@@ -531,18 +537,17 @@ services:
     container_name: netphim_cloudflared
     restart: unless-stopped
     command: tunnel --no-autoupdate run --token ${TUNNEL_TOKEN:?TUNNEL_TOKEN is required}
+    network_mode: host
     depends_on:
       openresty:
         condition: service_healthy
-    networks:
-      - netphim_net
 
 volumes:
   postgres_data:
     driver: local
   redis_data:
     driver: local
-  meilisearch_data:
+  typesense_data:
     driver: local
   nginx_cache:
     driver: local

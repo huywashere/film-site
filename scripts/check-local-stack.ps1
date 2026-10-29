@@ -31,7 +31,7 @@ function Test-HttpEndpoint {
 $checks = @(
   @{ Name = "PostgreSQL"; Test = { Test-TcpPort "127.0.0.1" 5433 } },
   @{ Name = "Redis"; Test = { Test-TcpPort "127.0.0.1" 6379 } },
-  @{ Name = "Meilisearch"; Test = { Test-HttpEndpoint "http://127.0.0.1:7700/health" } },
+  @{ Name = "Typesense"; Test = { Test-HttpEndpoint "http://127.0.0.1:8108/health" } },
   @{ Name = "RabbitMQ"; Test = { Test-TcpPort "127.0.0.1" 5672 } }
 )
 

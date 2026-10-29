@@ -377,7 +377,7 @@ export const kkphimApi = {
 };
 
 // ── Feature Flag: Bật lại OPhim làm Server 4 dự phòng ──────
-export const ENABLE_OPHIM = true;
+export const ENABLE_OPHIM = false;
 
 // ── OPhim, NguonC & VSMOV Proxies ──────────────────────────────
 const fetchOphim = async (endpoint: string) => {
@@ -1132,7 +1132,7 @@ async function getMergedCatalogPage(
     items: settled[index].status === 'fulfilled' ? extractFilmItems(settled[index].value) : [],
   }));
   const merged = dedupeFilmsBySource(groups);
-  const sourceOrder: MovieSource[] = ['kkphim', 'xink', 'nguonc', 'vsmov', 'ophim'];
+  const sourceOrder: MovieSource[] = ['kkphim', 'xink', 'nguonc', 'vsmov'];
   const buckets = new Map<MovieSource, typeof merged>();
 
   for (const film of merged) {

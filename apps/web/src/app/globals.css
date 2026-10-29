@@ -916,19 +916,23 @@ html[data-pure-black='true'] .netflix-home-page {
   overflow: visible;
 }
 
-/* Server Health Control Button & Icon (Pure purple, no glow) */
-.netphim-server-health-btn {
-  color: rgba(255, 255, 255, 0.85);
+/* Server Health & Stream Source Button (Consistent pure white with native ArtPlayer) */
+.netphim-server-health-btn,
+.art-video-player .art-control-server-health {
+  color: #ffffff !important;
+  opacity: 1 !important;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .netphim-server-health-btn:hover,
-.netphim-server-health-btn.is-active {
-  color: #a855f7 !important;
+.netphim-server-health-btn.is-active,
+.art-video-player .art-control-server-health:hover {
+  color: #23ade5 !important;
   transform: scale(1.08);
 }
 
-.netphim-server-health-btn svg {
+.netphim-server-health-btn svg,
+.art-video-player .art-control-server-health svg {
   display: block;
   stroke: currentColor !important;
   fill: none !important;
@@ -936,8 +940,12 @@ html[data-pure-black='true'] .netflix-home-page {
   box-shadow: none !important;
 }
 
+.netphim-server-health-btn svg rect,
+.netphim-server-health-btn svg line,
 .netphim-server-health-btn svg path,
-.netphim-server-health-btn svg polyline {
+.art-video-player .art-control-server-health svg rect,
+.art-video-player .art-control-server-health svg line,
+.art-video-player .art-control-server-health svg path {
   fill: none !important;
   stroke: currentColor !important;
   stroke-width: 2 !important;

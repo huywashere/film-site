@@ -18,9 +18,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/netphim/media-gateway/internal/catalog"
 	"github.com/netphim/media-gateway/internal/config"
+	"github.com/netphim/media-gateway/internal/crawler"
 	"github.com/netphim/media-gateway/internal/hls"
+	"github.com/netphim/media-gateway/internal/party"
+	"github.com/netphim/media-gateway/internal/recommender"
 	"github.com/netphim/media-gateway/internal/security"
 	"github.com/netphim/media-gateway/internal/store"
+	"github.com/netphim/media-gateway/internal/subtitles"
 )
 
 type Gateway struct {
@@ -35,6 +39,10 @@ type Gateway struct {
 	searchLimiter *RateLimiter
 	manifests     manifestFlightGroup
 	catalog       *catalog.Service
+	crawler       *crawler.Engine
+	party         *party.Hub
+	subtitles     *subtitles.Service
+	recommender   *recommender.Service
 	analysis      store.AnalysisQueue
 	results       store.AnalysisResultStore
 }
@@ -130,6 +138,10 @@ func New(cfg config.Config, manifestStore store.ManifestStore, analysisQueues ..
 		limiter:       NewRateLimiter(cfg.RatePerSecond, cfg.RateBurst),
 		searchLimiter: NewRateLimiter(cfg.SearchRatePerSecond, cfg.SearchRateBurst),
 		catalog:       catalog.New(cfg),
+		crawler:       crawler.NewEngine(16),
+		party:         party.NewHub(),
+		subtitles:     subtitles.NewService(),
+		recommender:   recommender.NewService(),
 		analysis:      analysisQueue,
 	}
 	client.CheckRedirect = gateway.checkRedirect
@@ -165,8 +177,25 @@ func (g *Gateway) Register(router *gin.Engine) {
 	})
 	router.POST("/v1/streams/resolve", g.requireInternalToken(), g.resolveStream)
 	router.GET("/api/hls-proxy", g.rateLimit(), g.proxy)
+	router.GET("/api/image-proxy", g.rateLimit(), g.imageProxy)
+	router.GET("/image-proxy", g.rateLimit(), g.imageProxy)
 	if g.cfg.CatalogEnabled && g.catalog != nil {
 		g.catalog.Register(router, g.rateLimitCatalog())
+	}
+	if g.crawler != nil {
+		g.crawler.RegisterRoutes(router)
+	}
+	if g.party != nil {
+		g.party.RegisterRoutes(router)
+	}
+	if g.subtitles != nil {
+		router.GET("/v1/subtitles", g.subtitles.HandleGetSubtitles)
+		router.GET("/api/subtitles", g.subtitles.HandleGetSubtitles)
+	}
+	if g.recommender != nil {
+		router.GET("/v1/recommendations/top10", g.recommender.HandleGetTop10)
+		router.GET("/v1/recommendations/similar/:slug", g.recommender.HandleGetSimilar)
+		router.POST("/v1/recommendations/sync", g.requireInternalToken(), g.recommender.HandleSyncCatalog)
 	}
 	// Analysis endpoints (all require internal token, wired inside helper).
 	g.registerAnalysisRoutes(router)

@@ -9,7 +9,7 @@ function databaseUrlWithPoolSettings() {
     if (!url.searchParams.has("connection_limit")) {
       url.searchParams.set(
         "connection_limit",
-        process.env.DATABASE_CONNECTION_LIMIT || "10",
+        process.env.DATABASE_CONNECTION_LIMIT || "20",
       );
     }
     if (!url.searchParams.has("pool_timeout")) {
@@ -17,6 +17,9 @@ function databaseUrlWithPoolSettings() {
         "pool_timeout",
         process.env.DATABASE_POOL_TIMEOUT_SECONDS || "10",
       );
+    }
+    if (!url.searchParams.has("connect_timeout")) {
+      url.searchParams.set("connect_timeout", "10");
     }
     return url.toString();
   } catch {

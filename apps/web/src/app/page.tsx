@@ -1,3 +1,5 @@
+import fs from "fs";
+import path from "path";
 import HomePageClient from "./HomePageClient";
 import { movieApi, type PublicSiteConfiguration } from "@/lib/api";
 import {
@@ -22,10 +24,64 @@ const heroDetailServerCache = new Map<
   { film: CuratedHeroMovie; expiresAt: number }
 >();
 
+function readLocalDevConfig(): PublicSiteConfiguration | null {
+  try {
+    const candidates = [
+      path.resolve(process.cwd(), ".local-data/dev-site-config.json"),
+      path.resolve(process.cwd(), "../../.local-data/dev-site-config.json"),
+      path.resolve(process.cwd(), "../.local-data/dev-site-config.json"),
+    ];
+    for (const file of candidates) {
+      if (fs.existsSync(file)) {
+        const raw = fs.readFileSync(file, "utf8");
+        const parsed = JSON.parse(raw);
+        if (parsed && Array.isArray(parsed.heroMovieSlugs)) {
+          return {
+            maintenanceMode: Boolean(parsed.maintenanceMode),
+            maintenanceNotice: parsed.maintenanceNotice,
+            announcementText: parsed.announcementText,
+            announcementLink: parsed.announcementLink,
+            homePopupEnabled: Boolean(parsed.homePopupEnabled),
+            homePopupTitle: parsed.homePopupTitle,
+            homePopupBody: parsed.homePopupBody,
+            homePopupLink: parsed.homePopupLink,
+            homePopupLinkLabel: parsed.homePopupLinkLabel,
+            homePopupDismissLabel: parsed.homePopupDismissLabel,
+            homePopupVersion: parsed.homePopupVersion,
+            heroMovieSlugs: parsed.heroMovieSlugs,
+            providerPriority: parsed.providerPriority,
+            autoSkipIntro: parsed.autoSkipIntro,
+            watchPartyEnabled: parsed.watchPartyEnabled,
+            homeTop10Slugs: parsed.homeTop10Slugs,
+            homeSectionOrder: parsed.homeSectionOrder,
+            homeHiddenSections: parsed.homeHiddenSections,
+            homeFeaturedRows: parsed.homeFeaturedRows,
+            seoTitle: parsed.seoTitle,
+            seoDescription: parsed.seoDescription,
+            cacheVersion: parsed.cacheVersion,
+          };
+        }
+      }
+    }
+  } catch {}
+  return null;
+}
+
 function getDefaultHeroFilms(): CuratedHeroMovie[] {
-  // Keep the server paint identical across hard reloads. Browsers retain the
-  // previous document while the next response is loading, so a randomized
-  // playlist made the old banner visibly flash before the new page appeared.
+  // If local dev or offline config exists with heroMovieSlugs, prioritize those over blind Oppenheimer default
+  const localConfig = readLocalDevConfig();
+  if (localConfig?.heroMovieSlugs && localConfig.heroMovieSlugs.length > 0) {
+    const resolved = localConfig.heroMovieSlugs
+      .map((slug) => {
+        const cleanSlug = slug.trim();
+        const mappedSlug = CURATED_HERO_SLUG_ALIASES[cleanSlug] || cleanSlug;
+        return CURATED_HERO_FRANCHISE_POOL.find(
+          (film) => film.slug === mappedSlug || film.slug === cleanSlug,
+        );
+      })
+      .filter((film): film is CuratedHeroMovie => Boolean(film));
+    if (resolved.length > 0) return resolved;
+  }
   return CURATED_HERO_FRANCHISE_POOL.slice(0, 6);
 }
 
@@ -33,7 +89,7 @@ async function resolveInitialHeroFilms(heroSlugs?: string[]): Promise<CuratedHer
   if (!heroSlugs || !heroSlugs.length) return getDefaultHeroFilms();
 
   const resolved = await Promise.all(
-    heroSlugs.slice(0, 6).map(async (slug) => {
+    heroSlugs.slice(0, 12).map(async (slug) => {
       const cleanSlug = slug.trim();
       if (!cleanSlug) return null;
       const mappedSlug = CURATED_HERO_SLUG_ALIASES[cleanSlug] || cleanSlug;
@@ -116,7 +172,7 @@ async function resolveInitialHeroFilms(heroSlugs?: string[]): Promise<CuratedHer
   );
 
   const valid = resolved.filter((film): film is CuratedHeroMovie => Boolean(film));
-  return ensureSixHeroFilms(valid) as CuratedHeroMovie[];
+  return valid.length > 0 ? valid : getDefaultHeroFilms();
 }
 
 let cachedPublicConfig: PublicSiteConfiguration | null = null;
@@ -205,6 +261,7 @@ async function getInitialPublicConfiguration(): Promise<PublicSiteConfiguration 
     "http://127.0.0.1:4000/api/v1",
     "http://localhost:4000/api/v1",
     process.env.NEXT_PUBLIC_API_URL,
+    "https://flexphim.top/api/v1",
   ].filter((url): url is string => typeof url === "string" && /^https?:\/\//i.test(url));
 
   const dedupedCandidates = [...new Set(candidates)];
@@ -218,10 +275,28 @@ async function getInitialPublicConfiguration(): Promise<PublicSiteConfiguration 
         res.value &&
         Array.isArray(res.value.heroMovieSlugs)
       ) {
-        cachedPublicConfig = res.value;
-        lastConfigFetch = now;
-        return cachedPublicConfig;
+        if (res.value.heroMovieSlugs.length > 0) {
+          cachedPublicConfig = res.value;
+          lastConfigFetch = now;
+          return cachedPublicConfig;
+        }
+        if (!cachedPublicConfig) {
+          cachedPublicConfig = res.value;
+        }
       }
+    }
+  }
+
+  // 3. Fallback to local dev configuration if available
+  if (!cachedPublicConfig || !cachedPublicConfig.heroMovieSlugs?.length) {
+    const devFallback = readLocalDevConfig();
+    if (devFallback?.heroMovieSlugs?.length) {
+      cachedPublicConfig = {
+        ...(cachedPublicConfig || {}),
+        ...devFallback,
+      };
+      lastConfigFetch = now;
+      return cachedPublicConfig;
     }
   }
 

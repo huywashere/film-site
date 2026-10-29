@@ -1,3 +1,5 @@
+import fs from "fs";
+import path from "path";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -45,16 +47,58 @@ function responseHeaders(available: boolean): HeadersInit {
   };
 }
 
+function readLocalDevConfig(): any | null {
+  try {
+    const candidates = [
+      path.resolve(process.cwd(), ".local-data/dev-site-config.json"),
+      path.resolve(process.cwd(), "../../.local-data/dev-site-config.json"),
+      path.resolve(process.cwd(), "../.local-data/dev-site-config.json"),
+    ];
+    for (const file of candidates) {
+      if (fs.existsSync(file)) {
+        const raw = fs.readFileSync(file, "utf8");
+        const parsed = JSON.parse(raw);
+        if (parsed && Array.isArray(parsed.heroMovieSlugs)) {
+          return {
+            ...DEFAULT_PUBLIC_CONFIGURATION,
+            ...parsed,
+          };
+        }
+      }
+    }
+  } catch {}
+  return null;
+}
+
 export async function GET() {
+  const localDev = readLocalDevConfig();
+
   const url = upstreamUrl();
   if (url) {
     try {
       const response = await fetch(url, {
         signal: AbortSignal.timeout(1_500),
-        next: { revalidate: 60, tags: ["public-site-configuration"] },
+        cache: "no-store",
       });
       if (response.ok) {
-        return NextResponse.json(await response.json(), {
+        const data = await response.json();
+        if (Array.isArray(data.heroMovieSlugs) && data.heroMovieSlugs.length > 0) {
+          return NextResponse.json(data, {
+            headers: responseHeaders(true),
+          });
+        }
+        if (localDev?.heroMovieSlugs?.length > 0) {
+          return NextResponse.json(
+            {
+              ...data,
+              heroMovieSlugs: localDev.heroMovieSlugs,
+            },
+            {
+              headers: responseHeaders(true),
+            },
+          );
+        }
+        return NextResponse.json(data, {
           headers: responseHeaders(true),
         });
       }
@@ -62,6 +106,12 @@ export async function GET() {
       // Public configuration is optional. The explicit defaults keep the site
       // usable while the API wakes up without producing a browser-visible 5xx.
     }
+  }
+
+  if (localDev) {
+    return NextResponse.json(localDev, {
+      headers: responseHeaders(true),
+    });
   }
 
   return NextResponse.json(DEFAULT_PUBLIC_CONFIGURATION, {

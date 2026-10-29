@@ -196,17 +196,14 @@ export function TmdbArtwork({
         kind === 'backdrop'
           ? (preferOriginal && artworkQuery.backdropOriginal) || artworkQuery.backdropW1280 || tmdbUrl
           : artworkQuery.posterW500 || tmdbUrl;
+      // Direct TMDB Edge CDN is fastest globally (Fastly/Cloudflare edge)
       add(sizedTmdbUrl);
-
-      // The same-origin relay is more predictable than waiting on a second
-      // remote CDN when a user's network cannot reach TMDB directly.
-      add(localImageProxyUrl(sizedTmdbUrl));
-
-      const wsrv = wsrvImageUrl(sizedTmdbUrl, preset);
-      if (wsrv) add(wsrv);
+      add(tmdbUrl);
       if (kind === 'backdrop' && preferOriginal) add(artworkQuery.backdropOriginal);
       if (kind === 'backdrop' && artworkQuery.backdropW780) add(artworkQuery.backdropW780);
-      add(tmdbUrl);
+
+      // Local proxy with Cloudflare permanent edge cache as secondary fallback
+      add(localImageProxyUrl(sizedTmdbUrl));
     };
 
     // High-visibility showcases can explicitly request TMDB first. Keep this
@@ -227,10 +224,8 @@ export function TmdbArtwork({
         tmdbImageVariant(providerPrimary, kind === 'backdrop' ? 'w1280' : 'w500') ||
         providerPrimary;
       add(sizedProvider);
-      add(localImageProxyUrl(sizedProvider));
-      const wsrv = wsrvImageUrl(sizedProvider, preset);
-      if (wsrv) add(wsrv);
       add(providerPrimary);
+      add(localImageProxyUrl(sizedProvider));
     }
     // Once the relay reports a real upstream failure, put the asynchronously
     // resolved TMDB image directly behind it. Otherwise a dead provider URL

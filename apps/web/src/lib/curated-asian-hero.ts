@@ -100,8 +100,8 @@ export const CURATED_CHINESE_HERO_POOL: AsianHeroItem[] = [
     genres: ["Cổ Trang", "Chính Kịch", "Tâm Lý", "Tình Cảm"],
     poster_url: "https://phimimg.com/upload/vod/20260307-1/7e5b11b1d5ce3514f6d62787d164b816.jpg",
     thumb_url: "/Folder-Background/China/truc-ngoc/truc-ngoc-backdrop.webp",
-    logoUrl: "/Folder-Background/China/truc-ngoc/truc-ngoc-logo-hd.png",
-    titleLogo: "/Folder-Background/China/truc-ngoc/truc-ngoc-logo-hd.png",
+    logoUrl: "/Folder-Background/China/truc-ngoc/truc-ngoc-logo-vi.png",
+    titleLogo: "/Folder-Background/China/truc-ngoc/truc-ngoc-logo-vi.png",
     charactersUrl: "/Folder-Background/China/truc-ngoc/truc-ngoc-chars.webp",
     content:
       "Cô nàng bán thịt Phàn Trường Ngọc có cuộc gặp gỡ định mệnh với hầu gia lưu lạc Tạ Chinh trong đêm tuyết rơi. Một người quyết chí tự lập làm chủ gia môn, một kẻ ẩn nhẫn gầy dựng lại cơ đồ, cùng viết nên thiên tình sử hào hùng.",
@@ -149,8 +149,8 @@ export const CURATED_KOREAN_HERO_POOL: AsianHeroItem[] = [
     genres: ["Tình Cảm", "Hài Hước", "Tâm Lý", "Chính Kịch"],
     poster_url: "https://phimimg.com/uploads/movies/20260807/keo-ngot-tinh-yeu-poster.webp",
     thumb_url: "/Folder-Background/Korea/keo-ngot-tinh-yeu/our-sticky-love-backdrop.webp",
-    logoUrl: "/Folder-Background/Korea/keo-ngot-tinh-yeu/our-sticky-love-logo-hd.png",
-    titleLogo: "/Folder-Background/Korea/keo-ngot-tinh-yeu/our-sticky-love-logo-hd.png",
+    logoUrl: "/Folder-Background/Korea/keo-ngot-tinh-yeu/love-next-door-logo-vi.png",
+    titleLogo: "/Folder-Background/Korea/keo-ngot-tinh-yeu/love-next-door-logo-vi.png",
     charactersUrl: "/Folder-Background/Korea/keo-ngot-tinh-yeu/our-sticky-love-chars.webp",
     content:
       "Một công tố viên đầy tham vọng bị mất trí nhớ và chuyển đến sống cùng một huấn luyện viên quyền Anh tự nhận là bạn trai cô. Liệu tình huống éo le này có dẫn đến tình yêu đích thực?",
@@ -172,8 +172,8 @@ export const CURATED_KOREAN_HERO_POOL: AsianHeroItem[] = [
     genres: ["Lãng Mạn", "Kỳ Ảo", "Xuyên Không", "Thanh Xuân"],
     poster_url: "https://phimimg.com/upload/vod/20260509-1/ca355fb74afa0dbfa2717e91fd7be5c4.jpg",
     thumb_url: "/Folder-Background/Korea/cong-anh-ma-chay/lovely-runner-backdrop.webp",
-    logoUrl: "/Folder-Background/Korea/cong-anh-ma-chay/lovely-runner-logo-hd.png",
-    titleLogo: "/Folder-Background/Korea/cong-anh-ma-chay/lovely-runner-logo-hd.png",
+    logoUrl: "/Folder-Background/Korea/cong-anh-ma-chay/lovely-runner-logo-vi.png",
+    titleLogo: "/Folder-Background/Korea/cong-anh-ma-chay/lovely-runner-logo-vi.png",
     charactersUrl: "/Folder-Background/Korea/cong-anh-ma-chay/lovely-runner-chars.webp",
     content:
       "Im Sol, một người hâm mộ cuồng nhiệt vô tình xuyên không về 15 năm trước để cứu thần tượng Ryu Sun-jae khỏi định mệnh bi kịch, từ đó mở ra mối lương duyên ngọt ngào vượt thời gian.",

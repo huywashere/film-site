@@ -14,7 +14,7 @@ Tài liệu này mô tả backend đang tồn tại trong source code FlexPhim, 
 | `apps/admin/src/app/api` | Next.js Route Handlers | 3002 | BFF bảo vệ phiên quản trị và chuyển tiếp yêu cầu tới NestJS API |
 | PostgreSQL | PostgreSQL 16 | 5433 local | Nguồn dữ liệu bền vững chính |
 | Redis/RediSearch | Redis Stack | 6379 | Cache, rate limit, lock, Socket.IO adapter, HLS analysis streams và tìm kiếm phụ trợ |
-| Meilisearch | Meilisearch | 7700 | Chỉ mục tìm kiếm catalog chịu lỗi chính tả, có thể tái tạo |
+| Typesense | Typesense | 8108 | Chỉ mục tìm kiếm catalog chịu lỗi chính tả, in-memory hiệu năng cao |
 | RabbitMQ | RabbitMQ | 5672/15672 | Job crawl và sự kiện xóa cache phân tán |
 | Object storage | Local hoặc S3-compatible/R2 | — | Lưu HLS do quản trị viên tự tải lên |
 | OpenResty/Cloudflare | Nginx Lua/Tunnel | 80/443 | Ingress, cache cạnh, bảo vệ origin và định tuyến production |
@@ -28,8 +28,8 @@ Prefix HTTP chính của NestJS là `/api/v1`. File media tự lưu local đư�
 1. Web gọi Go Media Gateway qua `/v1/home-feed`, `/v1/catalog`, `/v1/search` hoặc `/v1/movies/:slug/bootstrap`.
 2. Gateway ưu tiên dữ liệu phim tự phát hành từ NestJS Core API rồi gọi song song KKPhim, OPhim, NguonC, VSMov và ViCDN.
 3. Kết quả được chuẩn hóa, gộp bản trùng nhưng vẫn giữ `_sources` và `_sourceSlugs` để chuyển nguồn khi phát.
-4. Gateway bổ sung artwork TMDB, cache Redis và cập nhật chỉ mục Meilisearch.
-5. Khi Meilisearch chưa sẵn sàng, tìm kiếm quay về đường tổng hợp provider thay vì trả rỗng.
+4. Gateway bổ sung artwork TMDB, cache Redis và cập nhật chỉ mục Typesense.
+5. Khi Typesense chưa sẵn sàng, tìm kiếm quay về đường tổng hợp provider thay vì trả rỗng.
 
 ### 2.2 Tự tải phim riêng
 
@@ -250,7 +250,7 @@ Mọi đường dẫn dưới đây có prefix `/api/v1`.
 | --- | --- |
 | `GET /v1/home-feed` | Snapshot trang chủ đã cache; có stale fallback |
 | `GET /v1/catalog` | Catalog theo `kind`, `value`, page, limit và filter |
-| `GET /v1/search` | Tìm kiếm chuẩn hóa/deduplicate; Meilisearch rồi provider fallback |
+| `GET /v1/search` | Tìm kiếm chuẩn hóa/deduplicate; Typesense rồi provider fallback |
 | `GET /v1/top10` | View analytics từ Core API và catalog fallback |
 | `GET /v1/movies/:slug/bootstrap` | Một response chứa detail, episode server, source slug và playback bootstrap |
 | `GET /v1/catalog/providers/health` | Circuit state và độ trễ từng provider |
@@ -384,9 +384,9 @@ Các enum chính: `Role`, `BackupStatus`, `IncidentStatus`, `IssueStatus`, `Issu
 - Manifest cache và Redis Streams cho HLS analysis.
 - Dữ liệu Redis được xem là có thể tái tạo; PostgreSQL vẫn là nguồn dữ liệu bền vững.
 
-### Meilisearch
+### Typesense
 
-- Index `movies`, typo tolerance, Vietnamese/original/compact aliases.
+- Collection `movies`, typo tolerance, Vietnamese/original/compact aliases.
 - Warmup, incremental sync và full sync định kỳ.
 - Chỉ prune stale khi scan catalog hoàn chỉnh để provider lỗi không làm mất dữ liệu hợp lệ.
 
@@ -399,7 +399,7 @@ Các enum chính: `Role`, `BackupStatus`, `IncidentStatus`, `IssueStatus`, `Issu
 
 ## 10. Hạ tầng triển khai
 
-Production Compose gồm PostgreSQL, PgBouncer, Redis, Meilisearch, RabbitMQ, Recommendation Engine, NestJS API, Web, Go Gateway, Rust Worker, OpenResty và Cloudflare Tunnel.
+Production Compose gồm PostgreSQL, PgBouncer, Redis, Typesense, RabbitMQ, Recommendation Engine, NestJS API, Web, Go Gateway, Rust Worker, OpenResty và Cloudflare Tunnel.
 
 - PgBouncer giới hạn connection fan-out tới PostgreSQL.
 - OpenResty là reverse proxy/cache/security layer; media gateway không nên public trực tiếp.
@@ -440,7 +440,7 @@ Các URL local:
 - Admin: `http://localhost:3002`
 - Recommendation: `http://localhost:8000/health`
 - Gateway: `http://localhost:8081/readyz`
-- Meilisearch: `http://localhost:7700/health`
+- Typesense: `http://localhost:8108/health`
 - RabbitMQ management: `http://localhost:15672`
 
 Các lệnh kiểm tra quan trọng:

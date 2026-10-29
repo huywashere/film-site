@@ -39,7 +39,7 @@ k6 run -e BASE_URL=http://127.0.0.1:8081 \
   source-specific slugs and provider payloads in one request.
 - `GET /v1/catalog?kind=...`: cached, deduplicated multi-source catalogue.
 - `GET /v1/home-feed`: Redis-backed homepage snapshot with stale-while-revalidate fallback.
-- `GET /v1/search?q=...`: Meilisearch typo-tolerant index with automatic
+- `GET /v1/search?q=...`: Typesense high-performance typo-tolerant index with automatic
   multi-source provider fallback and deterministic ranking.
 - `GET /v1/top10`: real view analytics from NestJS with catalogue fallback.
 - `GET /v1/catalog/providers/health`: provider circuit state and latency.
@@ -52,23 +52,23 @@ The production Compose stack exposes the service only on the internal Docker
 network. Nginx sends a stable 10% canary to Gin and transparently retries the
 existing Next.js route handler on 502/503/504.
 
-## Meilisearch index
+## Typesense search index
 
-Meilisearch is a derived, disposable index: provider/PostgreSQL records remain
+Typesense is a derived, disposable in-memory index: provider/PostgreSQL records remain
 authoritative. Catalog and provider-search responses feed a bounded asynchronous
 queue, while a periodic warmup indexes recent series, single movies and anime.
-If Meilisearch is unavailable, empty or still warming, `/v1/search` immediately
+If Typesense is unavailable, empty or still warming, `/v1/search` immediately
 uses the existing multi-provider search path. Source alternatives and
 `_sourceSlugs` are stored in each indexed document so playback fallback is not
 lost after a search hit.
 
-The Compose service exposes port `7700` only inside the Docker network. Set a
-unique `MEILI_MASTER_KEY` (minimum 32 random characters) on every environment;
+The Compose service exposes port `8108` only inside the Docker network. Set a
+unique `TYPESENSE_API_KEY` (minimum 32 random characters) on every environment;
 never use it in a `NEXT_PUBLIC_*` variable. Relevant tuning variables are
-`MEILI_MOVIES_INDEX`, `MEILI_TIMEOUT`, `MEILI_SYNC_INTERVAL`,
-`MEILI_WARM_PAGES`, `MEILI_SYNC_PAGES`, `MEILI_FULL_SYNC_INTERVAL`,
-`MEILI_FULL_SYNC_PAGES`, `MEILI_PRUNE_STALE`, `MEILI_SYNC_PAUSE`, and
-`MEILI_BATCH_SIZE`. Startup warms a small recent window; incremental sync keeps
+`TYPESENSE_COLLECTION`, `TYPESENSE_TIMEOUT`, `TYPESENSE_SYNC_INTERVAL`,
+`TYPESENSE_WARM_PAGES`, `TYPESENSE_SYNC_PAGES`, `TYPESENSE_FULL_SYNC_INTERVAL`,
+`TYPESENSE_FULL_SYNC_PAGES`, `TYPESENSE_PRUNE_STALE`, `TYPESENSE_SYNC_PAUSE`, and
+`TYPESENSE_BATCH_SIZE`. Startup warms a small recent window; incremental sync keeps
 new releases fresh, while the daily bounded full snapshot covers the complete
 provider catalogue. Stale documents are removed only after every catalogue
 section reports a complete scan, so a provider outage cannot erase valid data.
@@ -78,7 +78,7 @@ timestamps, indexed item count, stale deletions, and the last sync error. After
 deployment, run the repeatable quality and latency audit from this directory:
 
 ```bash
-SEARCH_BASE_URL=https://media.example.com REQUIRE_MEILI=1 node scripts/audit-search-quality.mjs
+SEARCH_BASE_URL=https://media.example.com REQUIRE_TYPESENSE=1 node scripts/audit-search-quality.mjs
 ```
 
 The audit covers Vietnamese, original, compact and franchise queries, rejects

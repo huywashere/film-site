@@ -1212,16 +1212,18 @@ function ReportStreamModal({
   );
 }
 
-// ── Recommendation Item Component with Bulletproof Artwork & Direct CDN ──
+// ── Recommendation Item Component with Rounded Borders & Bulletproof Artwork ──
 function RecMovieItem({ item, index = 0 }: { item: any; index?: number }) {
   const rating = Number(item?.tmdb?.vote_average || item?.vote_average || item?.rating || 0);
+  const matchScore = item?.ai_match_score ? Number(item.ai_match_score) : null;
+  const quality = item?.quality || (item?.type === 'series' ? 'Phim bộ' : item?.type === 'single' ? 'Phim lẻ' : null);
 
   return (
     <Link
       href={`/film/${item.slug}`}
-      className="flex gap-3 group p-2 rounded-xl hover:bg-white/[0.04] transition-colors duration-150 cursor-pointer select-none"
+      className="group relative flex items-center gap-3 p-2 rounded-xl border border-transparent hover:border-white/10 bg-white/[0.02] hover:bg-white/[0.06] transition-all duration-200 cursor-pointer select-none overflow-hidden"
     >
-      <div className="relative w-16 h-24 rounded-lg bg-neutral-900/90 flex-shrink-0 overflow-hidden border border-white/[0.08] group-hover:border-purple-400/30 shadow-md">
+      <div className="relative w-[60px] sm:w-[64px] h-[86px] sm:h-[92px] rounded-lg bg-neutral-900/60 flex-shrink-0 overflow-hidden ring-1 ring-white/10 group-hover:ring-purple-400/40 shadow-sm transition-all duration-200">
         <TmdbArtwork
           film={item}
           kind="poster"
@@ -1229,33 +1231,62 @@ function RecMovieItem({ item, index = 0 }: { item: any; index?: number }) {
           loadImmediately={index < 8}
           allowTitleLookup={true}
           sizes="64px"
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 rounded-lg"
           alt={item.name || 'Phim'}
         />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none rounded-lg" />
       </div>
 
-      <div className="flex-1 min-w-0 py-0.5 flex flex-col justify-between">
-        <div className="space-y-0.5">
-          <h4 className="text-xs sm:text-sm font-bold text-white group-hover:text-purple-300 line-clamp-1 transition-colors">
+      <div className="flex-1 min-w-0 py-0.5 flex flex-col justify-between h-[90px]">
+        <div className="space-y-1">
+          <h4 className="text-xs sm:text-[13px] font-semibold text-white/95 group-hover:text-purple-300 line-clamp-1 leading-snug transition-colors">
             {item.name}
           </h4>
           {item.origin_name && (
-            <p className="text-[11px] text-neutral-400 truncate">{item.origin_name}</p>
+            <p className="text-[11px] text-neutral-400/80 truncate leading-tight">{item.origin_name}</p>
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 pt-1">
+        <div className="flex flex-wrap items-center gap-1.5 pt-1">
           {item.year && (
-            <span className="text-[11px] text-neutral-400 font-medium">{item.year}</span>
+            <span className="text-[10px] text-neutral-300 font-medium bg-white/[0.06] px-1.5 py-0.5 rounded-md border border-white/[0.06]">
+              {item.year}
+            </span>
           )}
           {rating > 0 && (
-            <span className="flex items-center gap-1 text-[10px] font-extrabold text-amber-400 bg-amber-400/10 px-1.5 py-0.5 rounded border border-amber-400/20">
+            <span className="flex items-center gap-0.5 text-[10px] font-bold text-amber-300 bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/25 shadow-xs">
               ★ {rating.toFixed(1)}
             </span>
           )}
+          {matchScore ? (
+            <span className="text-[9px] font-semibold text-emerald-300 bg-emerald-500/15 px-1.5 py-0.5 rounded-md border border-emerald-500/25">
+              {matchScore}% hợp
+            </span>
+          ) : quality ? (
+            <span className="text-[9px] font-semibold text-purple-300/90 bg-purple-500/10 px-1.5 py-0.5 rounded-md border border-purple-500/20">
+              {quality}
+            </span>
+          ) : null}
         </div>
       </div>
     </Link>
+  );
+}
+
+// ── Recommendation Skeleton Placeholder with Matching Rounded Borders ──
+function RecMovieSkeleton() {
+  return (
+    <div className="flex items-center gap-3 p-2 rounded-xl border border-transparent bg-white/[0.02] animate-pulse">
+      <div className="w-[60px] sm:w-[64px] h-[86px] sm:h-[92px] rounded-lg bg-white/[0.05] flex-shrink-0" />
+      <div className="flex-1 space-y-2 py-1">
+        <div className="h-3.5 bg-white/[0.08] rounded-md w-3/4" />
+        <div className="h-2.5 bg-white/[0.04] rounded-md w-1/2" />
+        <div className="flex gap-2 pt-1.5">
+          <div className="h-4 w-10 bg-white/[0.05] rounded-md" />
+          <div className="h-4 w-12 bg-amber-400/10 rounded-full" />
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -1455,7 +1486,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     return true;
   });
   const [autoPlayConfig, setAutoPlayConfig] = useState(true);
-  const [providerPriority, setProviderPriority] = useState(['kkphim', 'xink', 'nguonc', 'vsmov', 'ophim']);
+  const [providerPriority, setProviderPriority] = useState(['kkphim', 'xink', 'nguonc', 'vsmov']);
   const [watchPartyEnabled, setWatchPartyEnabled] = useState(true);
   const [secondaryDataSlug, setSecondaryDataSlug] = useState('');
   const secondaryDataReady = secondaryDataSlug === slug;
@@ -1478,24 +1509,13 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
   }, [primaryPlayerReady, slug]);
 
   useEffect(() => {
-    // Recommendations are below the player and must not compete with manifest,
-    // subtitle and first-segment requests. A no-player fallback still makes
-    // them available on films with unavailable streams.
-    let timer: number | undefined;
-    const schedule = () => {
-      timer = window.setTimeout(
-        () => setRecommendationsSlug(slug),
-        primaryPlayerReady ? 800 : 3_000,
-      );
-    };
-
-    if (document.readyState === 'complete') schedule();
-    else window.addEventListener('load', schedule, { once: true });
-    return () => {
-      if (timer) window.clearTimeout(timer);
-      window.removeEventListener('load', schedule);
-    };
-  }, [primaryPlayerReady, slug]);
+    // Non-blocking trigger: start recommendations loading almost immediately
+    // with a tiny delay (60ms) to ensure video player initialization isn't delayed.
+    const timer = window.setTimeout(() => {
+      setRecommendationsSlug(slug);
+    }, 60);
+    return () => window.clearTimeout(timer);
+  }, [slug]);
 
   const [tabsPrefetchReady, setTabsPrefetchReady] = useState(false);
 
@@ -1988,8 +2008,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       (!bootstrapProviders.kkphim ||
         !bootstrapProviders.xink ||
         !bootstrapProviders.nguonc ||
-        !bootstrapProviders.vsmov ||
-        !bootstrapProviders.ophim),
+        !bootstrapProviders.vsmov),
     staleTime: 1000 * 60 * 30,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
@@ -2127,18 +2146,8 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     refetchOnWindowFocus: false,
     retry: 1,
   });
-  const { data: ophimFetchedData, isFetching: isOPhimFetching } = useQuery({
-    queryKey: ['film-ophim', ophimSlug],
-    queryFn: () => movieApi.getDetailFromSource('ophim', ophimSlug).then((r) => r.data),
-    enabled:
-      secondaryDataReady &&
-      Boolean(ophimSlug) &&
-      primarySource !== 'ophim' &&
-      !bootstrapProviders.ophim,
-    staleTime: 1000 * 60 * 10,
-    refetchOnWindowFocus: false,
-    retry: 1,
-  });
+  const ophimFetchedData = null;
+  const isOPhimFetching = false;
   const { data: nguoncFetchedData, isFetching: isNguonCFetching } = useQuery({
     queryKey: ['film-nguonc', nguoncSlug],
     queryFn: () => movieApi.getDetailFromSource('nguonc', nguoncSlug).then((r) => r.data),
@@ -2168,8 +2177,7 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     bootstrapProviders.kkphim || (primarySource === 'kkphim' ? data : kkphimFetchedData);
   const xinkData =
     bootstrapProviders.xink || (primarySource === 'xink' ? data : xinkFetchedData);
-  const ophimData =
-    bootstrapProviders.ophim || (primarySource === 'ophim' ? data : ophimFetchedData);
+  const ophimData = null;
   const nguoncData =
     bootstrapProviders.nguonc || (primarySource === 'nguonc' ? data : nguoncFetchedData);
   const vsmovData =
@@ -2251,129 +2259,81 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
     return kws.find((kw) => rawTitle.includes(kw));
   }, [rawTitle]);
 
-  // ── TMDB Smart Recommendations Engine (AI & Graph-Based) ──
+  // ── Smart AI Recommendations Engine (Python AI Engine + Same Genre & Hot Trending Fallback) ──
   const effectiveTmdbId = film?.tmdb?.id || film?.tmdbId;
   const effectiveMediaType = film?.tmdb?.type || (film?.type === 'series' ? 'tv' : 'movie');
 
-  const { data: recsData } = useQuery({
-    queryKey: ['smart-recs-v2', slug, effectiveTmdbId, effectiveMediaType, filmCategory],
+  const { data: recsData, isLoading: recsLoading } = useQuery<{ items: any[] }>({
+    queryKey: ['smart-recs-v3', slug, effectiveTmdbId, effectiveMediaType, filmCategory],
     queryFn: async () => {
       const items: any[] = [];
       const seenSlugs = new Set<string>();
       if (slug) seenSlugs.add(slug);
 
-      // Render provider-native recommendations first. These already have a
-      // valid FlexPhim slug and only need one cached catalogue request.
+      // 1. Cấp độ 1: Python AI Recommendation Engine (/recommendations/similar/:slug)
+      // Sử dụng TF-IDF Cosine Similarity với trọng số thể loại cao (4x), đạo diễn, diễn viên,
+      // cùng điểm Bayesian rating và xung lượng view velocity
       try {
-        const { searchLocalFilms } = await import('@/lib/smart-search');
-        const titleKeywords = (film?.name || film?.origin_name || slug || '').split(' ')[0] || '';
-        for (const item of searchLocalFilms(titleKeywords)) {
-          if (item?.slug && !seenSlugs.has(item.slug)) {
-            seenSlugs.add(item.slug);
-            items.push(item);
+        const aiRecs = await recommendationApi.getSimilar(slug, 12);
+        if (Array.isArray(aiRecs?.items) && aiRecs.items.length > 0) {
+          for (const item of aiRecs.items) {
+            if (item?.slug && !seenSlugs.has(item.slug)) {
+              seenSlugs.add(item.slug);
+              items.push(item);
+            }
           }
         }
       } catch {
-        // Continue with the provider catalogue.
+        // Tiếp tục fallback song song siêu tốc
       }
 
-      if (filmCategory && items.length < 8) {
+      // 2. Cấp độ 2: Phim cùng thể loại (Same Genre) & Phim đang chiếu thịnh hành (Trending Hot)
+      // Tải song song siêu tốc từ cache Media Gateway mà không qua crawler chậm
+      if (items.length < 8) {
         try {
-          const response: any = await movieApi.getByGenre(filmCategory, 1);
-          const genreItems = response?.data?.data?.items || response?.data?.items || [];
+          const fetchGenre = filmCategory
+            ? movieApi.getByGenre(filmCategory, 1).catch(() => null)
+            : Promise.resolve(null);
+          const fetchHot = movieApi.getDangChieu(1).catch(() => null);
+
+          const [genreRes, hotRes] = await Promise.all([fetchGenre, fetchHot]);
+
+          const genreItems = extractFilmItems(genreRes) as any[];
           for (const item of genreItems) {
+            if (items.length >= 10) break;
+            if (item?.slug && !seenSlugs.has(item.slug)) {
+              seenSlugs.add(item.slug);
+              items.push(item);
+            }
+          }
+
+          const hotItems = extractFilmItems(hotRes) as any[];
+          for (const item of hotItems) {
+            if (items.length >= 10) break;
             if (item?.slug && !seenSlugs.has(item.slug)) {
               seenSlugs.add(item.slug);
               items.push(item);
             }
           }
         } catch {
-          // TMDB resolution below remains the final fallback.
+          // Bỏ qua lỗi và tiếp tục fallback local
         }
       }
 
-      // 1. Cấp độ 1: TMDB Intelligent Recommendation API (AI graph-based recommendation)
-      if (effectiveTmdbId && items.length < 8) {
+      // 3. Cấp độ 3: In-memory catalogue instant search fallback
+      if (items.length < 8) {
         try {
-          const tmdbEndpoint = `/api/tmdb/${effectiveMediaType === 'tv' ? 'tv' : 'movie'}/${effectiveTmdbId}/recommendations`;
-          const res = await fetch(tmdbEndpoint);
-          if (res.ok) {
-            const tmdbJson = await res.json();
-            // TMDB has metadata but does not know the provider slug consumed
-            // by /film and /watch. Only render recommendations that resolve to
-            // a real catalogue entry, otherwise the generated English slug
-            // leads to a guaranteed "Không tìm thấy phim" page.
-            const tmdbRecs = (tmdbJson?.results || []).slice(0, 5);
-            const resolved = await Promise.allSettled(
-              tmdbRecs.map(async (tmdbItem: any) => {
-                const title =
-                  tmdbItem.original_title ||
-                  tmdbItem.original_name ||
-                  tmdbItem.title ||
-                  tmdbItem.name ||
-                  '';
-                if (!title) return null;
-
-                const response = await kkphimApi.search(title, 1, 10);
-                const candidates = extractFilmItems(response) as any[];
-                const tmdbId = String(tmdbItem.id);
-                const year = String(tmdbItem.release_date || tmdbItem.first_air_date || '').slice(
-                  0,
-                  4,
-                );
-                const normalizedTitles = new Set(
-                  [tmdbItem.title, tmdbItem.name, tmdbItem.original_title, tmdbItem.original_name]
-                    .filter(Boolean)
-                    .map((value) => normalizeText(String(value))),
-                );
-                const exact = candidates.find(
-                  (candidate) => String(candidate?.tmdb?.id || '') === tmdbId,
-                );
-                const titleMatch = candidates.find((candidate) => {
-                  const sameTitle = [candidate?.name, candidate?.origin_name]
-                    .filter(Boolean)
-                    .map((value) => normalizeText(String(value)))
-                    .some((value) => normalizedTitles.has(value));
-                  return (
-                    sameTitle && (!year || !candidate?.year || String(candidate.year) === year)
-                  );
-                });
-                const providerItem = exact || titleMatch;
-                if (!providerItem?.slug) return null;
-
-                return {
-                  ...providerItem,
-                  poster_url:
-                    providerItem.poster_url ||
-                    (tmdbItem.poster_path
-                      ? `https://image.tmdb.org/t/p/w342${tmdbItem.poster_path}`
-                      : undefined),
-                  thumb_url:
-                    providerItem.thumb_url ||
-                    (tmdbItem.backdrop_path
-                      ? `https://image.tmdb.org/t/p/w780${tmdbItem.backdrop_path}`
-                      : undefined),
-                  vote_average: providerItem.vote_average || tmdbItem.vote_average,
-                  tmdb: {
-                    ...(providerItem.tmdb || {}),
-                    id: tmdbId,
-                    vote_average: tmdbItem.vote_average,
-                    type: effectiveMediaType,
-                  },
-                };
-              }),
-            );
-
-            for (const result of resolved) {
-              const item = result.status === 'fulfilled' ? result.value : null;
-              if (item?.slug && !seenSlugs.has(item.slug)) {
-                seenSlugs.add(item.slug);
-                items.push(item);
-              }
+          const { searchLocalFilms } = await import('@/lib/smart-search');
+          const titleKeywords = (film?.name || film?.origin_name || slug || '').split(' ')[0] || '';
+          for (const item of searchLocalFilms(titleKeywords)) {
+            if (items.length >= 10) break;
+            if (item?.slug && !seenSlugs.has(item.slug)) {
+              seenSlugs.add(item.slug);
+              items.push(item);
             }
           }
         } catch {
-          // TMDB error fallback
+          // Bỏ qua
         }
       }
 
@@ -2382,11 +2342,17 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
       };
     },
     enabled: recommendationsReady && !!slug,
-    staleTime: 1000 * 60 * 30, // 30 phút cache
+    staleTime: 1000 * 60 * 15, // 15 phút cache
+    gcTime: 1000 * 60 * 60, // 60 phút
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     retry: 1,
   });
+
+  const recItems = useMemo<any[]>(
+    () => (recsData && Array.isArray(recsData.items) ? recsData.items : []),
+    [recsData],
+  );
 
   // Intelligent AI Recommendations powered by Python Engine with resilient multi-tier fallback
   const { data: discoveryData, isLoading: discoveryLoading } = useQuery({
@@ -5831,15 +5797,21 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
             </div>
 
             {/* Recommendations */}
-            {recsData?.items && recsData.items.length > 0 && (
+            {(recsLoading || recItems.length > 0) && (
               <div className="space-y-3 pt-2">
-                <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-wider px-1">
-                  {matchedKeyword ? `Thêm về "${matchedKeyword}"` : 'Phim tương tự'}
-                </h3>
-                <div className="space-y-1">
-                  {recsData.items.slice(0, 8).map((item: any, index: number) => (
-                    <RecMovieItem key={item._id || item.slug} item={item} index={index} />
-                  ))}
+                <div className="flex items-center justify-between px-1">
+                  <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                    {matchedKeyword ? `Thêm về "${matchedKeyword}"` : 'Phim tương tự'}
+                  </h3>
+                </div>
+                <div className="space-y-1.5">
+                  {recsLoading && recItems.length === 0 ? (
+                    Array.from({ length: 4 }).map((_, i) => <RecMovieSkeleton key={i} />)
+                  ) : (
+                    recItems.slice(0, 8).map((item: any, index: number) => (
+                      <RecMovieItem key={item._id || item.slug || index} item={item} index={index} />
+                    ))
+                  )}
                 </div>
               </div>
             )}

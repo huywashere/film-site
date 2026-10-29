@@ -199,8 +199,8 @@ export function sortTmdbImages(images: TmdbImage[] = []): TmdbImage[] {
     .sort((a, b) => {
       const getLangScore = (lang?: string | null) => {
         const l = (lang || "").toLowerCase().trim();
-        if (l === "vi") return 100; // Vietnamese highest
-        if (l === "en") return 80;  // English
+        if (l === "vi" || l.startsWith("vi")) return 100; // Vietnamese highest
+        if (l === "en" || l.startsWith("en")) return 80;  // English
         if (!l) return 70;          // Clean textless poster
         if (l === "ja") return 40;  // Japanese
         if (l === "ko") return 40;  // Korean
@@ -216,11 +216,11 @@ export function sortTmdbImages(images: TmdbImage[] = []): TmdbImage[] {
 export function sortTmdbLogos(logos: TmdbImage[] = []): TmdbImage[] {
   const languagePriority = (language?: string | null) => {
     const l = (language || "").toLowerCase().trim();
-    if (l === "vi") return 4;
-    if (l === "en") return 3;
-    if (l === "ko" || l === "ja") return 2;
-    if (!l) return 1;
-    return 0;
+    if (l === "vi" || l.startsWith("vi")) return 100; // Vietnamese highest priority
+    if (l === "en" || l.startsWith("en")) return 50;  // English
+    if (l === "ko" || l === "ja") return 30;          // Asian original
+    if (!l) return 20;                                // Clean textless
+    return 10;
   };
 
   return [...logos]

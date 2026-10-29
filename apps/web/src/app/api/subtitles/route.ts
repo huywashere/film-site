@@ -101,6 +101,33 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(target, 307);
   }
 
+  // 1. Offload to Go Media Gateway if online (Zero-allocation high performance parser)
+  const mediaGatewayUrl = (
+    process.env.MEDIA_GATEWAY_INTERNAL_URL ||
+    process.env.MEDIA_GATEWAY_URL ||
+    'http://127.0.0.1:8081'
+  ).replace(/\/$/, '');
+
+  try {
+    const goGatewayRes = await fetch(`${mediaGatewayUrl}/v1/subtitles?${searchParams.toString()}`, {
+      signal: AbortSignal.timeout(3000),
+      headers: { Accept: 'text/vtt' },
+    });
+    if (goGatewayRes.ok) {
+      const vtt = await goGatewayRes.text();
+      return new NextResponse(vtt, {
+        headers: {
+          'Content-Type': 'text/vtt; charset=utf-8',
+          'Cache-Control': 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800',
+          'Access-Control-Allow-Origin': '*',
+          'X-Source': 'Go-Media-Gateway',
+        },
+      });
+    }
+  } catch {
+    // Go gateway unavailable, fallback smoothly to local TypeScript parser
+  }
+
   let targetUrl1 = url1;
   if (!targetUrl1 && id1) {
     targetUrl1 = `https://tophim.top/api/subtitles/play?id=${id1}`;

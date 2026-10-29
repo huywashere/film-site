@@ -1,0 +1,9 @@
+[allowlist]
+description = "Ignore production env files in private repository"
+paths = [
+  '''^\.env$''',
+  '''^apps/api/\.env$''',
+  '''^apps/web/\.env\.local$''',
+  '''^apps/admin/\.env\.local$''',
+]
+

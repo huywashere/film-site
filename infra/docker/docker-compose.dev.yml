@@ -61,34 +61,34 @@ services:
       HLS_ANALYZER_ENABLED: ${HLS_ANALYZER_ENABLED:-true}
       HLS_ANALYZER_JOB_STREAM: ${HLS_ANALYZER_JOB_STREAM:-netphim:hls:analysis:jobs}
       MEDIA_INTERNAL_TOKEN: ${MEDIA_INTERNAL_TOKEN:-netphim-development-media-token-change-me}
-      MEILI_URL: http://meilisearch:7700
-      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:-netphim-local-meili-master-key-32chars}
-      MEILI_SYNC_INTERVAL: ${MEILI_SYNC_INTERVAL:-15m}
-      MEILI_WARM_PAGES: ${MEILI_WARM_PAGES:-5}
-      MEILI_SYNC_PAGES: ${MEILI_SYNC_PAGES:-12}
-      MEILI_FULL_SYNC_INTERVAL: ${MEILI_FULL_SYNC_INTERVAL:-24h}
-      MEILI_FULL_SYNC_PAGES: ${MEILI_FULL_SYNC_PAGES:-500}
-      MEILI_PRUNE_STALE: ${MEILI_PRUNE_STALE:-true}
-      MEILI_SYNC_PAUSE: ${MEILI_SYNC_PAUSE:-250ms}
-      MEILI_BATCH_SIZE: ${MEILI_BATCH_SIZE:-200}
+      TYPESENSE_URL: http://typesense:8108
+      TYPESENSE_API_KEY: ${TYPESENSE_API_KEY:-netphim-local-typesense-api-key-32chars}
+      TYPESENSE_SYNC_INTERVAL: ${TYPESENSE_SYNC_INTERVAL:-15m}
+      TYPESENSE_WARM_PAGES: ${TYPESENSE_WARM_PAGES:-5}
+      TYPESENSE_SYNC_PAGES: ${TYPESENSE_SYNC_PAGES:-12}
+      TYPESENSE_FULL_SYNC_INTERVAL: ${TYPESENSE_FULL_SYNC_INTERVAL:-24h}
+      TYPESENSE_FULL_SYNC_PAGES: ${TYPESENSE_FULL_SYNC_PAGES:-500}
+      TYPESENSE_PRUNE_STALE: ${TYPESENSE_PRUNE_STALE:-true}
+      TYPESENSE_SYNC_PAUSE: ${TYPESENSE_SYNC_PAUSE:-250ms}
+      TYPESENSE_BATCH_SIZE: ${TYPESENSE_BATCH_SIZE:-200}
     ports:
       - '8081:8081'
     depends_on:
       - redis
-      - meilisearch
+      - typesense
 
-  meilisearch:
-    image: getmeili/meilisearch:v1.53.1
-    container_name: netphim_meilisearch
+  typesense:
+    image: typesense/typesense:27.1
+    container_name: netphim_typesense
     restart: unless-stopped
     environment:
-      MEILI_ENV: development
-      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:-netphim-local-meili-master-key-32chars}
-      MEILI_NO_ANALYTICS: 'true'
+      TYPESENSE_DATA_DIR: /data
+      TYPESENSE_API_KEY: ${TYPESENSE_API_KEY:-netphim-local-typesense-api-key-32chars}
+      TYPESENSE_ENABLE_CORS: 'true'
     ports:
-      - '127.0.0.1:7700:7700'
+      - '127.0.0.1:8108:8108'
     volumes:
-      - meilisearch_dev_data:/meili_data
+      - typesense_dev_data:/data
 
   media-worker-rs:
     profiles: ['media-analysis']
@@ -128,5 +128,5 @@ services:
 volumes:
   netphim_postgres_dev_data:
   redis_dev_data:
-  meilisearch_dev_data:
+  typesense_dev_data:
   rabbitmq_dev_data:

@@ -1,0 +1,30 @@
+# ══════════════════════════════════════════════════════════════
+# Uptime Kuma - Self-hosted Monitoring & Telegram Alerting
+# ══════════════════════════════════════════════════════════════
+# Khởi động: docker compose -f infra/docker/docker-compose.monitoring.yml up -d
+# Giao diện: http://<IP-VPS>:3005 (hoặc http://localhost:3005)
+
+services:
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    container_name: netphim_uptime_kuma
+    restart: unless-stopped
+    ports:
+      - "3005:3001"
+    volumes:
+      - uptime_kuma_data:/app/data
+    networks:
+      - netphim_net
+    deploy:
+      resources:
+        limits:
+          memory: 200M
+
+volumes:
+  uptime_kuma_data:
+    driver: local
+
+networks:
+  netphim_net:
+    external: true
+

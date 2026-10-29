@@ -276,39 +276,55 @@ func (s *Service) fetchTMDBArtwork(ctx context.Context, mediaType string, id int
 
 func (s *Service) fetchTMDBJSON(ctx context.Context, path string, params url.Values, target any) error {
 	base := strings.TrimRight(s.cfg.TMDBBaseURL, "/")
-	requestURL, err := url.Parse(base + "/" + strings.TrimLeft(path, "/"))
-	if err != nil {
-		return err
+	hosts := []string{base}
+	if strings.Contains(base, "themoviedb.org") && !strings.Contains(base, "api.tmdb.org") {
+		hosts = []string{"https://api.tmdb.org/3", base}
+	} else if strings.Contains(base, "api.tmdb.org") {
+		hosts = []string{base, "https://api.themoviedb.org/3"}
 	}
-	query := requestURL.Query()
-	for key, values := range params {
-		for _, value := range values {
-			query.Add(key, value)
+
+	var lastErr error
+	for _, host := range hosts {
+		requestURL, err := url.Parse(host + "/" + strings.TrimLeft(path, "/"))
+		if err != nil {
+			return err
 		}
+		query := requestURL.Query()
+		for key, values := range params {
+			for _, value := range values {
+				query.Add(key, value)
+			}
+		}
+		if s.cfg.TMDBAccessToken == "" {
+			query.Set("api_key", s.cfg.TMDBAPIKey)
+		}
+		requestURL.RawQuery = query.Encode()
+		request, err := http.NewRequestWithContext(ctx, http.MethodGet, requestURL.String(), nil)
+		if err != nil {
+			return err
+		}
+		request.Header.Set("Accept", "application/json")
+		request.Header.Set("User-Agent", "FlexPhim-Catalog-Gateway/1.0")
+		if s.cfg.TMDBAccessToken != "" {
+			request.Header.Set("Authorization", "Bearer "+s.cfg.TMDBAccessToken)
+		}
+		response, err := s.tmdbClient.Do(request)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+		defer response.Body.Close()
+		if response.StatusCode < 200 || response.StatusCode >= 300 {
+			_, _ = io.CopyN(io.Discard, response.Body, 8*1024)
+			lastErr = fmt.Errorf("TMDB status %d", response.StatusCode)
+			continue
+		}
+		return json.NewDecoder(io.LimitReader(response.Body, 2*1024*1024)).Decode(target)
 	}
-	if s.cfg.TMDBAccessToken == "" {
-		query.Set("api_key", s.cfg.TMDBAPIKey)
+	if lastErr != nil {
+		return lastErr
 	}
-	requestURL.RawQuery = query.Encode()
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, requestURL.String(), nil)
-	if err != nil {
-		return err
-	}
-	request.Header.Set("Accept", "application/json")
-	request.Header.Set("User-Agent", "FlexPhim-Catalog-Gateway/1.0")
-	if s.cfg.TMDBAccessToken != "" {
-		request.Header.Set("Authorization", "Bearer "+s.cfg.TMDBAccessToken)
-	}
-	response, err := s.tmdbClient.Do(request)
-	if err != nil {
-		return err
-	}
-	defer response.Body.Close()
-	if response.StatusCode < 200 || response.StatusCode >= 300 {
-		_, _ = io.CopyN(io.Discard, response.Body, 8*1024)
-		return fmt.Errorf("TMDB status %d", response.StatusCode)
-	}
-	return json.NewDecoder(io.LimitReader(response.Body, 2*1024*1024)).Decode(target)
+	return errors.New("TMDB request failed on all hosts")
 }
 
 func movieTMDBIdentity(movie map[string]any) (string, int) {
@@ -424,16 +440,17 @@ func bestTMDBLogo(logos []tmdbImage) string {
 		if language == nil {
 			return 2
 		}
-		switch strings.ToLower(strings.TrimSpace(*language)) {
-		case "vi":
+		lang := strings.ToLower(strings.TrimSpace(*language))
+		if lang == "vi" || strings.HasPrefix(lang, "vi") {
 			return 0
-		case "en":
-			return 1
-		case "ja", "ko":
-			return 3
-		default:
-			return 4
 		}
+		if lang == "en" || strings.HasPrefix(lang, "en") {
+			return 1
+		}
+		if lang == "ja" || lang == "ko" {
+			return 3
+		}
+		return 4
 	}
 	sort.SliceStable(logos, func(i, j int) bool {
 		left, right := languageRank(logos[i].Language), languageRank(logos[j].Language)

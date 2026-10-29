@@ -175,7 +175,6 @@ export default function RootLayout({
         <link rel="preconnect" href="https://phimimg.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://phimimg.com" />
         <link rel="dns-prefetch" href="https://img.phimapi.com" />
-        <link rel="dns-prefetch" href="https://img.ophim.live" />
         <link rel="dns-prefetch" href="https://images.nguonc.com" />
         <link rel="dns-prefetch" href="https://vsmov.com" />
         <link rel="dns-prefetch" href="https://vip.opstream16.com" />

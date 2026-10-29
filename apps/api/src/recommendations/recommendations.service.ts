@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { RedisCacheService } from '../redis/redis.service';
 
 const PYTHON_ENGINE_URL = process.env.RECOMMENDATION_ENGINE_URL || 'http://127.0.0.1:8000';
+const GO_GATEWAY_URL = (process.env.MEDIA_GATEWAY_URL || process.env.MEDIA_GATEWAY_INTERNAL_URL || 'http://127.0.0.1:8081').replace(/\/$/, '');
 const TOP10_CACHE_PREFIX = 'recommendations:top10:';
 const SIMILAR_CACHE_PREFIX = 'recommendations:similar:';
 
@@ -26,7 +27,22 @@ export class RecommendationsService {
       return { items: cached, source: 'cache' };
     }
 
-    // Attempt to query Python Recommendation Engine
+    // 1. Attempt to query high-speed Golang Recommendation Engine
+    try {
+      const goUrl = `${GO_GATEWAY_URL}/v1/recommendations/top10?limit=10${userId ? `&userId=${encodeURIComponent(userId)}` : ''}`;
+      const goRes = await fetch(goUrl, { signal: AbortSignal.timeout(1500) });
+      if (goRes.ok) {
+        const goData = await goRes.json();
+        if (Array.isArray(goData?.items) && goData.items.length > 0) {
+          await this.cache.setJson(cacheKey, goData.items, 300).catch(() => undefined);
+          return { items: goData.items, source: 'go-recommender-engine' };
+        }
+      }
+    } catch {
+      // Go engine unavailable, try Python or DB fallback
+    }
+
+    // 2. Attempt to query Python Recommendation Engine (Legacy)
     try {
       const url = `${PYTHON_ENGINE_URL}/recommendations/top10?limit=10${userId ? `&userId=${encodeURIComponent(userId)}` : ''}`;
       const controller = new AbortController();
@@ -92,7 +108,22 @@ export class RecommendationsService {
       return { items: cached, source: 'cache' };
     }
 
-    // Attempt to query Python Recommendation Engine
+    // 1. Attempt to query high-speed Golang Recommendation Engine
+    try {
+      const goUrl = `${GO_GATEWAY_URL}/v1/recommendations/similar/${encodeURIComponent(slug)}?limit=${limit}`;
+      const goRes = await fetch(goUrl, { signal: AbortSignal.timeout(1500) });
+      if (goRes.ok) {
+        const goData = await goRes.json();
+        if (Array.isArray(goData?.items) && goData.items.length > 0) {
+          await this.cache.setJson(cacheKey, goData.items, 600).catch(() => undefined);
+          return { items: goData.items, source: 'go-recommender-engine' };
+        }
+      }
+    } catch {
+      // Go engine unavailable, try Python or DB fallback
+    }
+
+    // 2. Attempt to query Python Recommendation Engine (Legacy)
     try {
       const url = `${PYTHON_ENGINE_URL}/recommendations/similar/${encodeURIComponent(slug)}?limit=${limit}`;
       const controller = new AbortController();

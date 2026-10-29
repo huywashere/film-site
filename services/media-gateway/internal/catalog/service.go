@@ -29,7 +29,7 @@ type Service struct {
 	cache      Cache
 	flights    jsonFlightGroup
 	signer     *security.Signer
-	search     *meiliSearchIndex
+	search     searchIndex
 	searchCtx  context.Context
 	searchEnd  context.CancelFunc
 	searchWG   sync.WaitGroup
@@ -103,7 +103,6 @@ func New(cfg config.Config) *Service {
 	}
 	providers := []Provider{
 		{Source: "kkphim", Origins: cfg.KKPhimOrigins},
-		{Source: "ophim", Origins: cfg.OPhimOrigins},
 		{Source: "nguonc", Origins: cfg.NguonCOrigins, Headers: map[string]string{"Referer": "https://phim.nguonc.com/", "Origin": "https://phim.nguonc.com"}},
 		{Source: "vsmov", Origins: cfg.VSMovOrigins, Headers: map[string]string{"Referer": "https://vsmov.com/"}},
 		{Source: "vicdn", Origins: cfg.ViCDNOrigins, Headers: map[string]string{"Referer": "https://vicdn.cc/", "Origin": "https://vicdn.cc"}},
@@ -118,7 +117,7 @@ func New(cfg config.Config) *Service {
 		cfg: cfg, providers: providers,
 		client: newProviderClient(cfg.CatalogTimeout, cfg.CatalogMaxBytes, providers),
 		cache:  cache, signer: security.NewSigner(cfg.SigningSecret),
-		search:     newMeiliSearchIndex(cfg),
+		search:     newSearchIndex(cfg),
 		tmdbClient: &http.Client{Timeout: cfg.TMDBArtworkTimeout},
 		tmdbSlots:  make(chan struct{}, tmdbConcurrency),
 	}
@@ -151,6 +150,7 @@ func (s *Service) Register(router *gin.Engine, middleware ...gin.HandlerFunc) {
 	group.GET("/search", s.searchHandler)
 	group.GET("/top10", s.top10Handler)
 	group.GET("/catalog/providers/health", s.healthHandler)
+	group.GET("/proxy/:provider/*path", s.providerProxyHandler)
 	group.GET("/search/status", s.searchStatusHandler)
 	group.POST("/search/documents/delete", s.deleteSearchDocumentsHandler)
 }
@@ -236,16 +236,23 @@ func (s *Service) top10Handler(c *gin.Context) {
 func (s *Service) healthHandler(c *gin.Context) {
 	search := gin.H{"engine": "providers", "enabled": false, "ready": false}
 	if s.search != nil {
-		search = gin.H{"engine": "meilisearch", "enabled": true, "ready": s.search.ready.Load(), "fallback": "providers"}
+		search = gin.H{"engine": s.search.Engine(), "enabled": true, "ready": s.search.IsReady(), "fallback": "providers"}
 	}
 	c.JSON(http.StatusOK, gin.H{"providers": s.client.health(), "search": search})
 }
 
 func (s *Service) searchStatusHandler(c *gin.Context) {
-	ctx, cancel := context.WithTimeout(c.Request.Context(), s.cfg.MeiliTimeout)
+	searchTimeout := s.cfg.TypesenseTimeout
+	if searchTimeout <= 0 {
+		searchTimeout = s.cfg.MeiliTimeout
+	}
+	if searchTimeout <= 0 {
+		searchTimeout = 1200 * time.Millisecond
+	}
+	ctx, cancel := context.WithTimeout(c.Request.Context(), searchTimeout)
 	defer cancel()
 	if s.search == nil {
-		c.JSON(http.StatusOK, meiliStatus{Enabled: false})
+		c.JSON(http.StatusOK, searchStatus{Enabled: false, Engine: "none"})
 		return
 	}
 	c.JSON(http.StatusOK, s.search.Status(ctx))
@@ -253,7 +260,7 @@ func (s *Service) searchStatusHandler(c *gin.Context) {
 
 func (s *Service) deleteSearchDocumentsHandler(c *gin.Context) {
 	if s.search == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "meilisearch is disabled"})
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "search is disabled"})
 		return
 	}
 	provided := c.GetHeader("X-Internal-Token")
@@ -715,9 +722,9 @@ func (s *Service) searchIndexed(ctx context.Context, cacheKey, query string, pag
 	result := map[string]any{
 		"status":       "success",
 		"data":         map[string]any{"items": mapsToAny(items), "params": map[string]any{"pagination": pagination}},
-		"_sources":     []map[string]any{{"source": "meilisearch", "count": len(items)}},
+		"_sources":     []map[string]any{{"source": s.search.Engine(), "count": len(items)}},
 		"_totalMerged": len(items), "_query": map[string]any{"original": query, "filters": filters},
-		"_engine": "meilisearch", "_processingTimeMs": response.ProcessingTimeMS,
+		"_engine": s.search.Engine(), "_processingTimeMs": response.ProcessingTimeMS,
 	}
 	encoded, err := s.encodeAndCache(cacheKey, result, s.cfg.CatalogSearchTTL)
 	return encoded, err == nil

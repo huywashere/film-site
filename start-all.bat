@@ -8,14 +8,14 @@ echo       FLEXPHIM - KHOI DONG TOAN BO HE THONG LOCAL
 echo =========================================================
 echo.
 
-echo [1/7] Khoi dong PostgreSQL, Redis, Meilisearch va RabbitMQ...
+echo [1/7] Khoi dong PostgreSQL, Redis, Typesense va RabbitMQ...
 docker info >nul 2>&1
 if errorlevel 1 (
   echo [FAIL] Docker Desktop chua san sang. Hay bat Docker Desktop roi chay lai.
   exit /b 1
 )
 
-for %%S in (netphim_postgres_dev movie_demo_redis_dev netphim_meilisearch netphim_rabbitmq_dev) do (
+for %%S in (netphim_postgres_dev movie_demo_redis_dev netphim_typesense netphim_rabbitmq_dev) do (
   docker inspect %%S >nul 2>&1
   if not errorlevel 1 docker start %%S >nul 2>&1
 )
@@ -24,8 +24,8 @@ docker inspect netphim_postgres_dev >nul 2>&1
 if errorlevel 1 docker compose -f infra/docker/docker-compose.dev.yml up -d postgres
 docker inspect movie_demo_redis_dev >nul 2>&1
 if errorlevel 1 docker compose -f infra/docker/docker-compose.dev.yml up -d redis
-docker inspect netphim_meilisearch >nul 2>&1
-if errorlevel 1 docker compose -f infra/docker/docker-compose.dev.yml up -d meilisearch
+docker inspect netphim_typesense >nul 2>&1
+if errorlevel 1 docker compose -f infra/docker/docker-compose.dev.yml up -d typesense
 docker inspect netphim_rabbitmq_dev >nul 2>&1
 if errorlevel 1 docker compose -f infra/docker/docker-compose.dev.yml up -d rabbitmq
 
