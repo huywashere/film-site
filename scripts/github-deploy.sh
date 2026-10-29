@@ -58,8 +58,8 @@ info "App dir:  $APP_DIR"
 header "Bước 1: Cập nhật mã nguồn cấu hình"
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     git fetch origin main || warn "Không thể fetch origin main, sử dụng file hiện tại"
-    git checkout main || true
-    git pull --ff-only origin main || warn "Git pull không thể ff-only, giữ nguyên file local"
+    git checkout -f main 2>/dev/null || true
+    git reset --hard origin/main || git pull --ff-only origin main || warn "Git pull không thể ff-only, giữ nguyên file local"
 fi
 
 if [[ -f "$APP_DIR/.env" ]] && ! grep -q "^TYPESENSE_API_KEY=" "$APP_DIR/.env"; then

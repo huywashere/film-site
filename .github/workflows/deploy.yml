@@ -184,6 +184,11 @@ jobs:
             fi
             export VPS_APP_DIR="${APP_DIR:-/root/flexphim}"
             
+            # Reset local changes on VPS so git sync cleanly matches origin
+            git -C "$VPS_APP_DIR" checkout -f . 2>/dev/null || true
+            git -C "$VPS_APP_DIR" fetch origin main 2>/dev/null || true
+            git -C "$VPS_APP_DIR" reset --hard origin/main 2>/dev/null || true
+            
             # Đảm bảo script có quyền execute
             chmod +x "$VPS_APP_DIR/scripts/github-deploy.sh" 2>/dev/null || true
             
