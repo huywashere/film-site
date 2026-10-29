@@ -29,7 +29,7 @@
   - Áp dụng chuẩn 7 card trên màn hình lớn (`2xl:grid-cols-7`) cho cả Trang Chủ và Trang Duyệt Tìm.
 - **Thanh Tab Dọc (Sidebar)**:
   - **Trang chủ (`/`) & Các trang duyệt phim/thể loại/vũ trụ (`/genre/...`, `/country/...`, `/films/...`, `/genres`)**: Ẩn ở đầu trang khi xem Hero Banner; chỉ hiển thị (trượt vào) khi người dùng cuộn xuống phần thân trang (`body content`, `scrollY > ~380px`).
-  - **Trang Xem phim (`/watch/...`) & Giới thiệu phim (`/film/...`)**: Luôn luôn hiển thị cố định.
+  - **Trang Xem phim (/watch/...), Giới thiệu phim (/film/...), Duyệt tìm (/films), Chủ đề (/genres), Lịch sử (/history), Bộ sưu tập (/watchlist)**: Luôn luôn hiển thị cố định (ghim ở trên ngay).
 
 ## Content & Media Standards
 - **Mô tả phim**: Bắt buộc giải mã triệt để HTML entities qua `cleanMovieDescription`, tách đoạn rõ ràng (`\n\n`), fallback sang TMDB overview + tagline nếu nguồn phim thiếu hoặc placeholder.

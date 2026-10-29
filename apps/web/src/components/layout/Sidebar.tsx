@@ -114,9 +114,12 @@ export function Sidebar() {
     isWatchPage ||
     isUserActivityPage ||
     isGenresPage ||
-    optimisticPath === '/genres';
+    isFilmsPage ||
+    optimisticPath === '/genres' ||
+    optimisticPath === '/films' ||
+    Boolean(optimisticPath?.startsWith('/films/'));
   const isAlwaysPinnedPage = isPinnedPage;
-  const isHeroBannerPage = isHomePage || isCountryPage || isGenrePage || isFilmsPage || isUniversePage;
+  const isHeroBannerPage = isHomePage || isCountryPage || isGenrePage || isUniversePage;
   const shouldShowSidebar = isPinnedPage || isHeroBannerPage;
 
   useEffect(() => {
