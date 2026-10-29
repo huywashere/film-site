@@ -140,7 +140,8 @@ export function AuthModal({
   }, []);
 
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const turnstileEnabled = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
+  const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "0x4AAAAAAFW8CtvaCQBVROTp";
+  const turnstileEnabled = Boolean(turnstileSiteKey);
   const handleTurnstileChange = useCallback((token: string | null) => {
     setTurnstileToken(token);
   }, []);

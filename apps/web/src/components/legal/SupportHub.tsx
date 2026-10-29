@@ -115,7 +115,7 @@ export function SupportHub({ initialTab = 'report' }: SupportHubProps) {
   const [isSubmittingContact, setIsSubmittingContact] = useState(false);
   const [contactSubmitted, setContactSubmitted] = useState(false);
   const [contactTurnstileToken, setContactTurnstileToken] = useState<string | null>(null);
-  const turnstileEnabled = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
+  const turnstileEnabled = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "0x4AAAAAAFW8CtvaCQBVROTp");
 
   // Auto-detect device for Report form
   useEffect(() => {

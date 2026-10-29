@@ -56,7 +56,7 @@ export function TurnstileWidget({ action, onTokenChange }: TurnstileWidgetProps)
   const onTokenChangeRef = useRef(onTokenChange);
   onTokenChangeRef.current = onTokenChange;
 
-  const configuredSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  const configuredSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '0x4AAAAAAFW8CtvaCQBVROTp';
 
   // On local HTTP dev, use Cloudflare's official test site key so verification never fails.
   // On production or preview domains (e.g. vercel.app, domain.com), use the configured real key.
@@ -65,7 +65,7 @@ export function TurnstileWidget({ action, onTokenChange }: TurnstileWidgetProps)
     (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
   const siteKey =
-    !isLocalDev && process.env.NODE_ENV === 'production' && configuredSiteKey
+    !isLocalDev && configuredSiteKey
       ? configuredSiteKey
       : TURNSTILE_TEST_SITE_KEY;
 

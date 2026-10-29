@@ -45,7 +45,7 @@ export function ContactClient() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const turnstileEnabled = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
+  const turnstileEnabled = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "0x4AAAAAAFW8CtvaCQBVROTp");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
