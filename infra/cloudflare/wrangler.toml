@@ -6,6 +6,9 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 ENVIRONMENT = "production"
 
+[build]
+command = "node -e 'console.log(\"Media worker ready\")'"
+
 # Optional: Uncomment and configure custom domain or routes if desired
 # routes = [
 #   { pattern = "media.flexphim.top/*", zone_name = "flexphim.top" }

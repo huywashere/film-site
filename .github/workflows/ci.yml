@@ -95,6 +95,7 @@ jobs:
           MEDIA_INTERNAL_TOKEN: ci-media-internal-token
           API_PUBLIC_URL: https://api.example.test
           TUNNEL_TOKEN: ci-tunnel-token
+          TYPESENSE_API_KEY: ci-typesense-api-key
 
       - name: Validate Terraform infrastructure
         run: |
