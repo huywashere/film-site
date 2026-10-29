@@ -168,9 +168,9 @@ rollback_services() {
     error "Deploy thất bại; đã rollback về $PREV_TAG"
 }
 
-# Đảm bảo các service nền (DB, Redis, RabbitMQ, Meili) đang chạy
+# Đảm bảo các service nền (DB, Redis, RabbitMQ, Typesense) đang chạy
 info "Khởi động các dịch vụ nền..."
-compose up -d postgres pgbouncer redis rabbitmq meilisearch recommendation-engine
+compose up -d --remove-orphans postgres pgbouncer redis rabbitmq typesense recommendation-engine
 
 # Restart API trước
 info "Khởi động container API mới..."
