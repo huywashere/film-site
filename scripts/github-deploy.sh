@@ -62,6 +62,11 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     git pull --ff-only origin main || warn "Git pull không thể ff-only, giữ nguyên file local"
 fi
 
+if [[ -f "$APP_DIR/.env" ]] && ! grep -q "^TYPESENSE_API_KEY=" "$APP_DIR/.env"; then
+    info "Khởi tạo TYPESENSE_API_KEY cho production .env..."
+    echo "TYPESENSE_API_KEY=$(openssl rand -hex 24 2>/dev/null || echo flexphim-typesense-api-key-2026)" >> "$APP_DIR/.env"
+fi
+
 info "Kiểm tra cấu hình .env sản xuất..."
 compose config --quiet || error "Production .env thiếu biến bắt buộc hoặc compose config không hợp lệ"
 

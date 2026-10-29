@@ -94,7 +94,7 @@ services:
     restart: unless-stopped
     environment:
       TYPESENSE_DATA_DIR: /data
-      TYPESENSE_API_KEY: ${TYPESENSE_API_KEY:?TYPESENSE_API_KEY is required}
+      TYPESENSE_API_KEY: ${TYPESENSE_API_KEY:-flexphim-typesense-api-key-2026}
       TYPESENSE_ENABLE_CORS: 'true'
     volumes:
       - typesense_data:/data
@@ -425,7 +425,7 @@ services:
       TMDB_ARTWORK_TIMEOUT: ${TMDB_ARTWORK_TIMEOUT:-2500ms}
       TMDB_ARTWORK_CONCURRENCY: ${TMDB_ARTWORK_CONCURRENCY:-8}
       TYPESENSE_URL: http://typesense:8108
-      TYPESENSE_API_KEY: ${TYPESENSE_API_KEY:?TYPESENSE_API_KEY is required}
+      TYPESENSE_API_KEY: ${TYPESENSE_API_KEY:-flexphim-typesense-api-key-2026}
       TYPESENSE_COLLECTION: ${TYPESENSE_COLLECTION:-movies}
       TYPESENSE_TIMEOUT: ${TYPESENSE_TIMEOUT:-1200ms}
       TYPESENSE_SYNC_INTERVAL: ${TYPESENSE_SYNC_INTERVAL:-15m}
