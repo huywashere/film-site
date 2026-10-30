@@ -445,6 +445,24 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
+  // Idle prefetch SpotlightSearchModal after window load for 0ms instant search popup
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const idleCallback =
+      (window as any).requestIdleCallback ||
+      ((cb: () => void) => setTimeout(cb, 1800));
+    const handle = idleCallback(() => {
+      void import("@/components/search/SpotlightSearchModal");
+    });
+    return () => {
+      if ((window as any).cancelIdleCallback) {
+        (window as any).cancelIdleCallback(handle);
+      } else {
+        clearTimeout(handle);
+      }
+    };
+  }, []);
+
   const prefetchNav = useCallback(
     (href: string) => {
       try {

@@ -253,29 +253,29 @@ export function SpotlightSearchModal({
 
   // Session cache để phục hồi kết quả 0ms khi backspace hoặc gõ lại từ khóa
   const searchCacheRef = useRef<Map<string, FilmItem[]>>(new Map());
-  const parsedIntent = useMemo(
-    () => parseSearchIntent(deferredQuery),
-    [deferredQuery],
-  );
-
-  // Debounce for remote queries: 200ms Latin, 260ms IME
-  // Tối ưu phản hồi gõ chữ tức thì, không spam remote API khi đang gõ
+  // Debounce for remote & local queries: 160ms Latin, 220ms IME
+  // Tối ưu phản hồi gõ chữ tức thì, không spam CPU và remote API khi đang gõ
   useEffect(() => {
-    const trimmed = deferredQuery.trim();
+    const trimmed = query.trim();
     if (!trimmed) {
       setDebouncedQuery("");
       return;
     }
-    const debounceDelay = isIMEQuery(deferredQuery) ? 260 : 200;
-    const t = setTimeout(() => setDebouncedQuery(deferredQuery), debounceDelay);
+    const debounceDelay = isIMEQuery(query) ? 220 : 160;
+    const t = setTimeout(() => setDebouncedQuery(query), debounceDelay);
     return () => clearTimeout(t);
-  }, [deferredQuery]);
+  }, [query]);
+
+  const parsedIntent = useMemo(
+    () => parseSearchIntent(debouncedQuery),
+    [debouncedQuery],
+  );
 
   // 0ms Instant Local Pre-Search (Immediate response while remote fetch is running)
   const instantLocalResults = useMemo(() => {
-    if (deferredQuery.trim().length < 1) return [];
-    return searchLocalFilms(deferredQuery, suggestions);
-  }, [deferredQuery, suggestions]);
+    if (debouncedQuery.trim().length < 1) return [];
+    return searchLocalFilms(debouncedQuery, suggestions);
+  }, [debouncedQuery, suggestions]);
 
   // Movie Search API (Remote fetch)
   const { data: searchData, isFetching: isSearchingMovies } = useQuery({
@@ -351,7 +351,7 @@ export function SpotlightSearchModal({
 
   // Seamless merge of remote, session cache and instant local results with intelligent deduplication
   const rawResults: FilmItem[] = useMemo(() => {
-    const trimmed = deferredQuery.trim().toLowerCase();
+    const trimmed = debouncedQuery.trim().toLowerCase();
     if (!trimmed) return [];
     const seenIdentities = new Set<string>();
     const seenSlugs = new Set<string>();
@@ -395,11 +395,11 @@ export function SpotlightSearchModal({
     }
 
     return merged;
-  }, [remoteResults, instantLocalResults, deferredQuery, parsedIntent.baseQuery]);
+  }, [remoteResults, instantLocalResults, debouncedQuery, parsedIntent.baseQuery]);
 
   // Apply filters in expanded mode
   const sortedAndFilteredResults = useMemo(() => {
-    if (!deferredQuery.trim() || activeTypeFilter === "actor") {
+    if (!debouncedQuery.trim() || activeTypeFilter === "actor") {
       return [];
     }
 

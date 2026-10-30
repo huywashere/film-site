@@ -165,6 +165,8 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           password: ${{ secrets.VPS_PASSWORD }}
           port: ${{ secrets.VPS_PORT || 22 }}
+          command_timeout: 30m
+          timeout: 60s
           script: |
             export REGISTRY_IMAGE="ghcr.io/${{ env.REPO_LOWER }}"
             export IMAGE_TAG="${{ github.sha }}"
