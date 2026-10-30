@@ -278,7 +278,8 @@ async function getInitialPublicConfiguration(): Promise<PublicSiteConfiguration 
           return cachedPublicConfig;
         }
       }
-    } catch {
+    }
+  } catch {
       // Redis fallback to HTTP
     }
   }
