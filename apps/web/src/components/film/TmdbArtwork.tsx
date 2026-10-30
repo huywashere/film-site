@@ -68,7 +68,7 @@ function getSharedArtworkObserver(): IntersectionObserver | null {
           }
         }
       },
-      { rootMargin: '800px 0px', threshold: 0.01 },
+      { rootMargin: '800px 600px', threshold: 0.01 },
     );
   }
   return sharedArtworkObserver;
@@ -450,14 +450,11 @@ export function TmdbArtwork({
       if (providerPrimary && !isTmdbImageUrl(providerPrimary)) {
         setAutoRecovery(true);
       }
-      setFailedSrc(src);
-      setCandidateIndex((index) => {
-        const next = index + 1;
-        if (next >= candidates.length && !autoRecovery) {
-          setAutoRecovery(true);
-        }
-        return next;
-      });
+      if (candidates.length > candidateIndex + 1) {
+        setCandidateIndex((index) => index + 1);
+      } else if (!autoRecovery) {
+        setAutoRecovery(true);
+      }
     }, src.startsWith('/api/image-proxy?')
       ? 12_000
       : isWsrvImageUrl(src)
@@ -527,7 +524,7 @@ export function TmdbArtwork({
             src === tmdbUrl || /image\.tmdb\.org\/t\/p\//i.test(src) ? 'tmdb' : 'fallback'
           }
         />
-      ) : terminalFailure || !src ? (
+      ) : terminalFailure || !src || (failedSrc === src && candidates.length <= 1) ? (
         <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-b from-neutral-800 via-neutral-900 to-[#101218] p-2 text-center select-none">
           <Clapperboard className="mb-1 h-5 w-5 text-neutral-600" />
           <p className="line-clamp-2 text-[10px] font-bold text-neutral-400">

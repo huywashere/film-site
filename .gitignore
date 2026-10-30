@@ -51,3 +51,16 @@ services/recommendation-engine/__pycache__/
 
 # Scratch directory
 scratch/
+
+# Master & Backup env files (KHONG commit len git)
+.env.master
+.env.*.master
+.env.vps.master
+*.backup
+.env.*.backup
+
+# Private user sync & backups
+docs/firebase-users-backup.json
+scripts/sync-firebase-users.js
+scripts/sync-users.js
+

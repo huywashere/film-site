@@ -20,6 +20,7 @@ import {
   ARTPLAYER_FULLSCREEN_ON_SVG,
   ARTPLAYER_FULLSCREEN_OFF_SVG,
   ARTPLAYER_INDICATOR_SVG,
+  ARTPLAYER_NEXT_EPISODE_SVG,
   ARTPLAYER_AMBIENT_ON_SVG,
   ARTPLAYER_AMBIENT_OFF_SVG,
   ARTPLAYER_SERVER_STREAM_SVG,
@@ -947,11 +948,25 @@ export default function ArtPlayer({
               {
                 name: 'server-health',
                 position: 'right',
-                index: 19,
+                index: 15,
                 html: `<span class="art-icon netphim-server-health-btn" style="display:inline-flex;align-items:center;justify-content:center;cursor:pointer;">${ARTPLAYER_SERVER_STREAM_SVG}</span>`,
                 tooltip: 'Máy chủ & Luồng phát',
                 click: function () {
                   toggleServerPanelRef.current();
+                },
+              },
+            ]
+          : []),
+        ...(onNextEpisode
+          ? [
+              {
+                name: 'next-episode',
+                position: 'right',
+                index: 18,
+                html: `<span class="art-icon" style="display:inline-flex;align-items:center;justify-content:center;cursor:pointer;">${ARTPLAYER_NEXT_EPISODE_SVG}</span>`,
+                tooltip: 'Tập kế tiếp',
+                click: function () {
+                  onNextEpisodeRef.current?.();
                 },
               },
             ]

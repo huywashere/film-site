@@ -1034,9 +1034,23 @@ html[data-pure-black='true'] .netflix-home-page {
   display: inline-flex !important;
 }
 
-/* Hide auto quality badge completely */
+/* Auto / Quality badge on settings button (onflix.lat standard) */
 .art-video-player .art-quality-badge {
-  display: none !important;
+  display: inline-block !important;
+  position: absolute;
+  top: -4px;
+  right: -8px;
+  background: #16a34a;
+  color: #ffffff;
+  font-size: 7.5px;
+  font-weight: 800;
+  line-height: 1;
+  padding: 2px 3.5px;
+  border-radius: 9999px;
+  letter-spacing: -0.2px;
+  pointer-events: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  font-family: system-ui, -apple-system, sans-serif;
 }
 
 .art-video-player .art-loading-mascot {

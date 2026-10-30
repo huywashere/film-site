@@ -484,6 +484,7 @@ function FilmSection({
                       <FilmCard
                         film={film}
                         variant={effectiveCardVariant}
+                        loadImmediately={idx < 7}
                         preferHighQuality={
                           title === "Phim Mới Cập Nhật" && idx < 4
                         }
@@ -556,7 +557,7 @@ function LazySection({
       },
       // 400px pre-fetch margin — đủ để load trước khi scroll đến,
       // không cần aggressive như 1400px gây fire gần như ngư lập tức
-      { rootMargin: "400px 0px" },
+      { rootMargin: "800px 0px" },
     );
 
     if (containerRef.current) {

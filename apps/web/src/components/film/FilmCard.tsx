@@ -83,6 +83,7 @@ interface FilmCardProps {
   variant?: 'standard' | 'landscape' | 'poster-pill';
   hideDetails?: boolean;
   priority?: boolean;
+  loadImmediately?: boolean;
   preferHighQuality?: boolean;
 }
 
@@ -95,6 +96,7 @@ function FilmCardComponent({
   variant,
   hideDetails = false,
   priority = false,
+  loadImmediately = false,
   preferHighQuality = false,
 }: FilmCardProps) {
   const globalCardLayout = useSettingsStore((s) => s.cardLayout);
@@ -349,6 +351,7 @@ function FilmCardComponent({
               kind={effectiveVariant === 'landscape' ? 'backdrop' : 'poster'}
               alt={title}
               priority={priority}
+              loadImmediately={loadImmediately || priority}
               allowTitleLookup={preferHighQuality}
               className="absolute inset-0 h-full w-full transition-transform duration-700 ease-out motion-safe:group-hover/card:scale-[1.035]"
             />

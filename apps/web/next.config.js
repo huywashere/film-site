@@ -298,6 +298,37 @@ const nextConfig = {
       },
     ];
   },
+  async rewrites() {
+    const cdnUrl =
+      process.env.NEXT_PUBLIC_CDN_URL ||
+      "https://pub-47e070c7a48e4c1091d1f838e4270a38.r2.dev";
+    return [
+      {
+        source: "/Folder-Background/:path*",
+        destination: `${cdnUrl}/Folder-Background/:path*`,
+      },
+      {
+        source: "/img-backtop/:path*",
+        destination: `${cdnUrl}/img-backtop/:path*`,
+      },
+      {
+        source: "/images/:path*",
+        destination: `${cdnUrl}/images/:path*`,
+      },
+      {
+        source: "/mascots/:path*",
+        destination: `${cdnUrl}/mascots/:path*`,
+      },
+      {
+        source: "/og-img/:path*",
+        destination: `${cdnUrl}/og-img/:path*`,
+      },
+      {
+        source: "/avatars/:path*",
+        destination: `${cdnUrl}/avatars/:path*`,
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;
