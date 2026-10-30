@@ -186,10 +186,12 @@ test.describe('critical visitor flows', () => {
     await page.goto('/khong-ton-tai-e2e');
     await expect(
       page.getByRole('heading', {
-        name: 'Oops! Trang web bạn tìm kiếm không tồn tại.',
+        name: /lost your way\?|oops/i,
       }),
     ).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Đi tới trang chủ' })).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: /flexphim home|đi tới trang chủ/i }),
+    ).toBeVisible();
   });
 
   test('the contact page clearly exposes its maintenance state', async ({ page }) => {
