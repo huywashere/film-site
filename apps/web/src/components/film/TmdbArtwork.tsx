@@ -41,6 +41,11 @@ type ObserverCallback = () => void;
 let sharedArtworkObserver: IntersectionObserver | null = null;
 const artworkObserverCallbacks = new WeakMap<Element, ObserverCallback>();
 
+// Global in-memory cache of resolved artwork URLs per film slug and kind.
+// Retains loaded artwork across client route navigations so cards paint instantly
+// without skeleton flicker on revisit.
+const resolvedArtworkCache = new Map<string, string>();
+
 function imageHostname(value?: string | null): string | null {
   if (!value) return null;
   try {
@@ -280,6 +285,12 @@ export function TmdbArtwork({
       add(localImageProxyUrl(secondaryUrl));
     }
 
+    const cacheKey = `${film.slug}:${kind}`;
+    const cachedSrc = resolvedArtworkCache.get(cacheKey);
+    if (cachedSrc) {
+      add(cachedSrc);
+    }
+
     if (list.length > 0) return list;
 
     return buildArtworkCandidates(
@@ -310,7 +321,9 @@ export function TmdbArtwork({
   ]);
 
   const [candidateIndex, setCandidateIndex] = useState(0);
-  const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
+  const [loadedSrc, setLoadedSrc] = useState<string | null>(
+    () => resolvedArtworkCache.get(`${film.slug}:${kind}`) || null,
+  );
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
 
@@ -398,8 +411,9 @@ export function TmdbArtwork({
   // Reset only when the card identity changes. Resetting when recovery finds a
   // TMDB URL would retry the already-failed provider relay before using it.
   useEffect(() => {
+    const cached = resolvedArtworkCache.get(`${film.slug}:${kind}`);
     setCandidateIndex(0);
-    setLoadedSrc(null);
+    setLoadedSrc(cached || null);
     setFailedSrc(null);
     setAutoRecovery(false);
   }, [film.slug, kind]);
@@ -494,6 +508,7 @@ export function TmdbArtwork({
           onLoad={() => {
             if (src) {
               markImagePreloaded(src);
+              resolvedArtworkCache.set(`${film.slug}:${kind}`, src);
             }
             setFailedSrc(null);
             setLoadedSrc(src);

@@ -981,12 +981,15 @@ function HeroBackdropImage({
   const [candidateIndex, setCandidateIndex] = useState(0);
   const [portraitCandidateIndex, setPortraitCandidateIndex] = useState(0);
   const [exhausted, setExhausted] = useState(false);
-  const [decoded, setDecoded] = useState(false);
+  const initialKnownSource = preferredLandscapeSrc || preferredPortraitSrc || "";
+  const [lastGoodSource, setLastGoodSource] = useState(initialKnownSource);
+  const [decoded, setDecoded] = useState(() =>
+    Boolean(initialKnownSource && preloadedHeroBackdrops.has(initialKnownSource)),
+  );
   // Keep the last decoded bitmap mounted underneath the candidate currently
   // being tried. Responsive <picture> sources can be replaced after a resize,
   // hydration or CDN retry; without this layer a late error removed artwork
   // that the visitor had already seen and left the whole hero black.
-  const [lastGoodSource, setLastGoodSource] = useState("");
   const imageRef = useRef<HTMLImageElement>(null);
   const onReadyRef = useRef(onReady);
   onReadyRef.current = onReady;
@@ -1003,8 +1006,14 @@ function HeroBackdropImage({
     setCandidateIndex(0);
     setPortraitCandidateIndex(0);
     setExhausted(false);
-    setDecoded(false);
-  }, [film.slug, candidates, portraitCandidates]);
+    const known = preferredLandscapeSrc || preferredPortraitSrc || "";
+    if (known && preloadedHeroBackdrops.has(known)) {
+      setLastGoodSource(known);
+      setDecoded(true);
+    } else {
+      setDecoded(false);
+    }
+  }, [film.slug, candidates, portraitCandidates, preferredLandscapeSrc, preferredPortraitSrc]);
 
   useEffect(() => {
     const image = imageRef.current;
