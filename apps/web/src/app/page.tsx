@@ -177,6 +177,39 @@ async function resolveInitialHeroFilms(heroSlugs?: string[]): Promise<CuratedHer
 
 let cachedPublicConfig: PublicSiteConfiguration | null = null;
 let lastConfigFetch = 0;
+let sharedRedisClient: any = null;
+let isRedisUnavailable = false;
+
+async function getSharedRedisClient(redisUrl: string): Promise<any> {
+  if (isRedisUnavailable) return null;
+  if (sharedRedisClient && sharedRedisClient.status === "ready") return sharedRedisClient;
+  if (
+    sharedRedisClient &&
+    (sharedRedisClient.status === "connecting" || sharedRedisClient.status === "connect")
+  ) {
+    return sharedRedisClient;
+  }
+
+  try {
+    const Redis = (await import("ioredis")).default;
+    const client = new Redis(redisUrl, {
+      lazyConnect: true,
+      connectTimeout: 2000,
+      maxRetriesPerRequest: 1,
+      enableOfflineQueue: false,
+    });
+    client.on("error", () => {
+      isRedisUnavailable = true;
+    });
+    await client.connect();
+    sharedRedisClient = client;
+    isRedisUnavailable = false;
+    return client;
+  } catch {
+    isRedisUnavailable = true;
+    return null;
+  }
+}
 
 export function clearServerConfigCache() {
   cachedPublicConfig = null;
@@ -207,23 +240,14 @@ async function getInitialPublicConfiguration(): Promise<PublicSiteConfiguration 
     return cachedPublicConfig;
   }
 
-  // 1. Try Redis directly if available
+  // 1. Try Redis directly if available via singleton connection
   const redisUrl = process.env.REDIS_URL?.trim();
   if (redisUrl) {
     try {
-      const Redis = (await import("ioredis")).default;
-      const client = new Redis(redisUrl, {
-        lazyConnect: true,
-        connectTimeout: 2000,
-        maxRetriesPerRequest: 1,
-      });
-      // Must attach error handler BEFORE connect() to prevent unhandled
-      // 'error' event from crashing the Node.js process on ETIMEDOUT.
-      client.on("error", () => {});
-      await client.connect();
-      const raw = await client.get("site-config:primary");
-      await client.quit().catch(() => {});
-      if (raw) {
+      const client = await getSharedRedisClient(redisUrl);
+      if (client) {
+        const raw = await client.get("site-config:primary");
+        if (raw) {
         const parsed = JSON.parse(raw);
         if (parsed && Array.isArray(parsed.heroMovieSlugs)) {
           cachedPublicConfig = {
