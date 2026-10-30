@@ -4368,19 +4368,6 @@ export default function WatchPage({ initialData }: { initialData?: any }) {
                   );
                 })()}
               </div>
-
-              {/* Kiểm tra Máy Chủ (Admin Only) */}
-              {isAdmin && (
-                <button
-                  type="button"
-                  onClick={() => setShowServerHealthModal(true)}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 hover:text-amber-300 transition-colors text-xs font-semibold border border-amber-500/25 cursor-pointer shadow-sm select-none"
-                  title="Kiểm tra sức khỏe & tốc độ máy chủ (Chỉ dành cho Quản trị viên)"
-                >
-                  <Activity size={13} className="text-amber-400" />
-                  <span>Kiểm tra</span>
-                </button>
-              )}
             </div>
           </div>
 

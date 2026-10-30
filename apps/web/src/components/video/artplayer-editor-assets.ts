@@ -44,8 +44,7 @@ export const ARTPLAYER_SCREENSHOT_SVG =
 export const ARTPLAYER_SETTING_SVG =
   '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><polygon points="12,2.5 20.2,7.25 20.2,16.75 12,21.5 3.8,16.75 3.8,7.25" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="12" cy="12" r="3.4" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
 
-export const ARTPLAYER_SETTING_WITH_BADGE_HTML =
-  `<span class="art-setting-wrapper" style="position:relative;display:inline-flex;align-items:center;justify-content:center;">${ARTPLAYER_SETTING_SVG}<span class="art-quality-badge" style="position:absolute;top:-4px;right:-8px;background:#16a34a;color:#ffffff;font-size:7.5px;font-weight:800;line-height:1;padding:2px 3.5px;border-radius:9999px;letter-spacing:-0.2px;pointer-events:none;box-shadow:0 1px 3px rgba(0,0,0,0.5);font-family:system-ui,-apple-system,sans-serif;">Auto</span></span>`;
+export const ARTPLAYER_SETTING_WITH_BADGE_HTML = ARTPLAYER_SETTING_SVG;
 
 export const ARTPLAYER_PIP_SVG =
   '<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" width="22" height="22"><path fill="currentColor" d="M844.8 219.648h-665.6c-6.144 0-10.24 4.608-10.24 10.752v563.2c0 5.632 4.096 10.24 10.24 10.24h256v92.16h-256a102.4 102.4 0 0 1-102.4-102.4v-563.2c0-56.832 45.568-102.4 102.4-102.4h665.6a102.4 102.4 0 0 1 102.4 102.4v204.8h-92.16v-204.8c0-6.144-4.608-10.752-10.24-10.752zM614.4 588.8c-28.672 0-51.2 22.528-51.2 51.2v204.8c0 28.16 22.528 51.2 51.2 51.2h281.6c28.16 0 51.2-23.04 51.2-51.2v-204.8c0-28.672-23.04-51.2-51.2-51.2H614.4z"></path></svg>';

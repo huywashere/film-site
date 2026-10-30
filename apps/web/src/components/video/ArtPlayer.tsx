@@ -943,20 +943,6 @@ export default function ArtPlayer({
               },
             ]
           : []),
-        ...(servers && servers.length > 0
-          ? [
-              {
-                name: 'server-health',
-                position: 'right',
-                index: 15,
-                html: `<span class="art-icon netphim-server-health-btn" style="display:inline-flex;align-items:center;justify-content:center;cursor:pointer;">${ARTPLAYER_SERVER_STREAM_SVG}</span>`,
-                tooltip: 'Máy chủ & Luồng phát',
-                click: function () {
-                  toggleServerPanelRef.current();
-                },
-              },
-            ]
-          : []),
         ...(onNextEpisode
           ? [
               {

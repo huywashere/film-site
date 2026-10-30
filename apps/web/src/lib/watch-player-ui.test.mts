@@ -20,13 +20,9 @@ test('player no longer renders skip intro controls', () => {
   assert.doesNotMatch(artPlayer, /netphim-skip-intro|Bỏ qua giới thiệu|Tự động bỏ qua mở đầu/);
 });
 
-test('stream health control uses a stream health icon and explicit label', () => {
-  assert.match(
-    artPlayer,
-    /(?:createLucideElement\((?:gaugeIconNode|activityIconNode)|ARTPLAYER_SERVER_STREAM_SVG)/,
-  );
-  assert.match(artPlayer, /tooltip: '(?:Đo sức khỏe luồng|Máy chủ & Luồng phát)'/);
-  assert.match(healthPanel, /<(?:Gauge|Activity)[\s\S]*Sức khỏe luồng phát/);
+test('player control bar and watch page adhere to minimal clean controls without extraneous stream health icons', () => {
+  assert.doesNotMatch(artPlayer, /tooltip: '(?:Đo sức khỏe luồng|Máy chủ & Luồng phát)'/);
+  assert.doesNotMatch(watchPage, /Kiểm tra sức khỏe & tốc độ máy chủ/);
 });
 
 test('watch player hydrates eagerly and shows loading feedback before HLS mounts', () => {
