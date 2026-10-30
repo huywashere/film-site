@@ -50,14 +50,24 @@ export default async function BrowseFilmsPage({
   const [query, requestHeaders] = await Promise.all([searchParams, headers()]);
   const page = normalizePage(query.page);
   const keyword = first(query.q) || first(query.search);
-  const initialData = keyword || requestHeaders.get("rsc") === "1"
-    ? null
-    : await getInitialBrowseCatalog(
+
+  let initialData: any = null;
+  if (!keyword && requestHeaders.get("rsc") !== "1") {
+    try {
+      const catalogPromise = getInitialBrowseCatalog(
         first(query.type),
         first(query.genre) || first(query.category),
         first(query.country),
         page,
       );
+      const timeoutPromise = new Promise<null>((resolve) =>
+        setTimeout(() => resolve(null), 1500),
+      );
+      initialData = await Promise.race([catalogPromise, timeoutPromise]);
+    } catch {
+      initialData = null;
+    }
+  }
 
   return (
     <BrowseFilmsClient

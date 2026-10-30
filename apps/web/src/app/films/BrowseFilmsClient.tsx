@@ -100,6 +100,13 @@ function BrowseFilmsContent({
     return Number.isInteger(value) && value > 0 ? value : 1;
   });
 
+  // Reset stuck recovery counter once page mounts successfully
+  useEffect(() => {
+    try {
+      sessionStorage.removeItem("flexphim_stuck_nav_" + window.location.pathname);
+    } catch {}
+  }, []);
+
   // Đồng bộ tiêu chí lọc từ URL query params
   useEffect(() => {
     const u = searchParams.get("universe");

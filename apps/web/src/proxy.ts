@@ -66,6 +66,36 @@ export function proxy(request: NextRequest) {
 
   const response = NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set("Content-Security-Policy", csp);
+
+  const isRsc =
+    request.headers.get("rsc") === "1" ||
+    request.headers.has("next-router-state-tree") ||
+    request.headers.has("next-router-prefetch");
+
+  // Prevent Edge CDNs (especially Cloudflare Free/Pro tiers) from caching HTML/RSC
+  // under the same URL cache key. Since Cloudflare lacks Vary: RSC support on standard plans,
+  // edge-caching HTML causes Cloudflare to return raw HTML for Next.js App Router client-side
+  // RSC flight requests, locking pages into skeleton loading states forever.
+  if (isRsc) {
+    response.headers.set(
+      "Cache-Control",
+      "private, no-cache, no-store, max-age=0, must-revalidate",
+    );
+    response.headers.set("Cloudflare-CDN-Cache-Control", "no-store");
+    response.headers.set("CDN-Cache-Control", "no-store");
+    response.headers.set(
+      "Vary",
+      "RSC, Next-Router-State-Tree, Next-Router-Prefetch, Accept-Encoding",
+    );
+  } else {
+    response.headers.set("Cloudflare-CDN-Cache-Control", "no-store");
+    response.headers.set("CDN-Cache-Control", "no-store");
+    response.headers.set(
+      "Vary",
+      "RSC, Next-Router-State-Tree, Next-Router-Prefetch, Accept-Encoding",
+    );
+  }
+
   return response;
 }
 
@@ -74,10 +104,6 @@ export const config = {
     {
       source:
         "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico)$).*)",
-      missing: [
-        { type: "header", key: "next-router-prefetch" },
-        { type: "header", key: "purpose", value: "prefetch" },
-      ],
     },
   ],
 };

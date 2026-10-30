@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react';
 import { FilmCardSkeleton } from '@/components/film/FilmCard';
 import { cardFont } from '@/lib/fonts';
 import { cn } from '@/lib/utils';
+import { StuckNavigationRecovery } from './StuckNavigationRecovery';
 
 function SkeletonBlock({ className, style }: { className?: string; style?: CSSProperties }) {
   return (
@@ -23,6 +24,7 @@ export function BrowseFilmsSkeleton() {
         'relative min-h-[100dvh] select-none bg-[#0a0b10] pb-24 pt-16 text-white sm:pb-28 sm:pt-20',
       )}
     >
+      <StuckNavigationRecovery />
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div className="absolute -top-32 left-1/2 h-[500px] w-[1200px] -translate-x-1/2 rounded-full bg-gradient-to-b from-white/[0.025] to-transparent blur-[140px]" />
       </div>
@@ -110,6 +112,7 @@ export function FilmTypeSkeleton() {
         'min-h-screen w-full bg-[#0a0b10] pb-20 pl-4 pr-4 pt-20 text-white sm:pt-24 md:pr-10 lg:pl-24 select-none',
       )}
     >
+      <StuckNavigationRecovery />
       <div className="w-full">
         {/* Page Header — Centered */}
         <div className="mx-auto mb-10 flex max-w-3xl flex-col items-center justify-center gap-2.5 border-b border-white/10 pb-6 text-center">
@@ -154,6 +157,7 @@ export function CenteredCatalogSkeleton({
         'min-h-screen w-full bg-[#0a0b10] pb-20 pl-4 pr-4 pt-20 text-white sm:pt-24 md:pr-10 lg:pl-24 select-none',
       )}
     >
+      <StuckNavigationRecovery />
       <div className="w-full">
         <div className="mx-auto mb-10 flex max-w-3xl flex-col items-center justify-center gap-2.5 border-b border-white/10 pb-6 text-center">
           {eyebrow && <SkeletonBlock className="h-3.5 w-36 rounded" />}
@@ -195,6 +199,7 @@ export function CinematicTopicSkeleton({ background = '#0a0b10' }: { background?
       className={cn(cardFont.className, '-mt-20 min-h-[100dvh] w-full pb-20 sm:-mt-24 select-none')}
       style={{ backgroundColor: background }}
     >
+      <StuckNavigationRecovery />
       {/* ── 1. NETFLIX-GRADE HERO BANNER SKELETON ── */}
       <section className="relative h-[68svh] min-h-[500px] max-h-[620px] w-full overflow-hidden bg-[#141414] sm:h-[96vh] sm:min-h-[760px] sm:max-h-[1080px] lg:h-[100vh] lg:min-h-[840px]">
         {/* Subtle Ambient Pulse */}
@@ -325,6 +330,7 @@ export function UniversePageSkeleton() {
       aria-label="Đang tải vũ trụ điện ảnh"
       className={cn(cardFont.className, 'relative min-h-[100dvh] bg-[#07080c] text-white select-none')}
     >
+      <StuckNavigationRecovery />
       {/* ── 1. UNIVERSE HERO BANNER SKELETON ── */}
       <section className="relative h-[100dvh] min-h-[640px] max-h-[1020px] w-full overflow-hidden bg-[#07080c]">
         <div className="absolute inset-0 animate-pulse bg-white/[0.02]" />
@@ -446,6 +452,7 @@ export function TopicsIndexSkeleton() {
         'relative min-h-[100dvh] bg-[#0a0b10] pb-24 pt-16 text-white sm:pb-28 sm:pt-20 select-none',
       )}
     >
+      <StuckNavigationRecovery />
       <div className="relative z-10 mx-auto w-full max-w-[1720px] space-y-8 sm:space-y-10 px-3.5 sm:px-6 md:pl-20 md:pr-6 lg:pl-24 lg:pr-10 xl:pl-28 xl:pr-12">
         <section className="space-y-4" aria-hidden="true">
           <SkeletonBlock className="h-8 w-28 rounded-lg sm:h-9 sm:w-36" />
@@ -477,6 +484,7 @@ export function SongNguSkeleton() {
       aria-label="Đang tải phim song ngữ"
       className={cn('min-h-screen bg-[#101012] text-white pt-20 pb-28 select-none', cardFont.className)}
     >
+      <StuckNavigationRecovery />
       {/* Hero Banner Section */}
       <div className="relative overflow-hidden border-b border-cyan-500/20 bg-gradient-to-b from-cyan-950/40 via-violet-950/20 to-[#101012] py-12 px-4 sm:px-8">
         <div className="mx-auto max-w-[1300px] relative z-10 space-y-4">

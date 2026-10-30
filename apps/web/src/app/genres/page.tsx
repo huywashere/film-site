@@ -344,6 +344,13 @@ export default function GenresPage() {
     [queryClient],
   );
 
+  // Reset stuck recovery counter once page mounts successfully
+  useEffect(() => {
+    try {
+      sessionStorage.removeItem('flexphim_stuck_nav_' + window.location.pathname);
+    } catch {}
+  }, []);
+
   // Background idle prefetch for top hubs
   useEffect(() => {
     if (typeof window === 'undefined') return;

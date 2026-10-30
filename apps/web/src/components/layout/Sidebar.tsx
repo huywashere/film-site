@@ -52,27 +52,6 @@ const SIDEBAR_ITEMS = [
 
 const W = 60; // Slim width in px
 
-const MOVIE_WORLD_PREFETCH: Array<{
-  slug: string;
-  discover: TmdbDiscoverOptions;
-}> = [
-  {
-    slug: 'hanh-dong',
-    discover: { with_genres: '28', sort_by: 'popularity.desc' },
-  },
-  {
-    slug: 'vien-tuong',
-    discover: { with_genres: '878', sort_by: 'popularity.desc' },
-  },
-  {
-    slug: 'kinh-di',
-    discover: { with_genres: '27', sort_by: 'popularity.desc' },
-  },
-  {
-    slug: 'tinh-cam',
-    discover: { with_genres: '10749', sort_by: 'popularity.desc' },
-  },
-];
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -268,20 +247,6 @@ export function Sidebar() {
       if (href === '/watch-party' && typeof window !== 'undefined') {
         const img = new window.Image();
         img.src = '/img-backtop/tab-watch-party.webp';
-      }
-
-      if (href === '/genres') {
-        for (const topic of MOVIE_WORLD_PREFETCH) {
-          void queryClient.prefetchQuery({
-            queryKey: ['movie-world-topic', topic.slug, topic.discover],
-            queryFn: async () => {
-              const response = await tmdbApi.discoverMovies(topic.discover);
-              return response?.results || [];
-            },
-            staleTime: 1000 * 60 * 60,
-            gcTime: 1000 * 60 * 60 * 6,
-          });
-        }
       }
     },
     [queryClient, router],

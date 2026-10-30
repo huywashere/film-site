@@ -253,6 +253,23 @@ const nextConfig = {
           },
         ],
       },
+      // Page routes must NEVER be cached at Cloudflare Edge CDN because Cloudflare Free/Pro
+      // lacks Vary: RSC support. Caching page HTML under URL key poisons Next.js App Router
+      // client-side RSC flight navigation, causing infinite skeleton loading.
+      {
+        source:
+          "/((?!api|_next/static|_next/image|Folder-Background|images|brand|artplayer|avatars|img-backtop|img-cut|mascots|og-img|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico)$).*)",
+        headers: [
+          {
+            key: "Cloudflare-CDN-Cache-Control",
+            value: "no-store",
+          },
+          {
+            key: "CDN-Cache-Control",
+            value: "no-store",
+          },
+        ],
+      },
       {
         source: "/:path*",
         headers: [
