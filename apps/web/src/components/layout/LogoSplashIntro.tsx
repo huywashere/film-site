@@ -5,9 +5,9 @@ import { useEffect, useState } from 'react';
 import { logoFont } from '@/lib/fonts';
 import { cn } from '@/lib/utils';
 
-const MIN_VISIBLE_MS = 600;
+const MIN_VISIBLE_MS = 250;
 const MAX_VISIBLE_MS = 950;
-const EXIT_DURATION_MS = 450;
+const EXIT_DURATION_MS = 300;
 
 export function LogoSplashIntro() {
   const [visible, setVisible] = useState(true);

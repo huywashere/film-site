@@ -166,19 +166,22 @@ export function TmdbArtwork({
     ? localImageProxyUrl(providerPrimary, { fallback: providerFallback })
     : null;
 
-  const effectivePreferTmdb = preferTmdb || kind === 'backdrop';
+  const effectivePreferTmdb = preferTmdb;
 
+  const hasExplicitTmdbId = Boolean(film.artwork?.tmdbId || film.tmdbId || film.tmdb?.id);
   const needsTmdbArtwork =
     enabled &&
     nearViewport &&
-    ((effectivePreferTmdb && !providerIsTmdb) ||
-      (preferOriginal && kind === 'backdrop' && (!providerIsTmdb || !film.thumb_url)) ||
-      ((!providerIsTmdb || autoRecovery) &&
-        (!providerPrimary || allowTitleLookup || autoRecovery)));
+    (hasExplicitTmdbId ||
+      !providerPrimary ||
+      allowTitleLookup ||
+      autoRecovery ||
+      (effectivePreferTmdb && !providerIsTmdb));
 
   const artworkQuery = useTmdbArtwork(
     film,
     needsTmdbArtwork,
+    allowTitleLookup,
   );
   const { backdropUrl, posterUrl } = artworkQuery;
   const tmdbUrl = kind === 'backdrop' ? (backdropUrl || posterUrl) : (posterUrl || backdropUrl);

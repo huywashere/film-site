@@ -69,39 +69,22 @@ async function fetchCatalogGateway(endpoint: string): Promise<any> {
     throw new Error('Catalog Gateway unavailable');
   }
 
-  if (catalogGatewayAvailableUntil <= now) {
-    catalogGatewayProbe ||= trackedMovieFetch('/api/catalog-gateway/catalog/providers/health')
-      .then((response) => {
-        if (!response.ok || response.headers.get('x-netphim-catalog-available') === '0') {
-          catalogGatewayUnavailableUntil = Date.now() + CATALOG_GATEWAY_RECHECK_MS;
-          return false;
-        }
-        catalogGatewayAvailableUntil = Date.now() + CATALOG_GATEWAY_RECHECK_MS;
-        catalogGatewayUnavailableUntil = 0;
-        return true;
-      })
-      .catch(() => {
+  try {
+    const response = await trackedMovieFetch(`/api/catalog-gateway${endpoint}`);
+    if (!response.ok) {
+      if (response.status >= 500) {
+        catalogGatewayAvailableUntil = 0;
         catalogGatewayUnavailableUntil = Date.now() + CATALOG_GATEWAY_RECHECK_MS;
-        return false;
-      })
-      .finally(() => {
-        catalogGatewayProbe = null;
-      });
-
-    if (!(await catalogGatewayProbe)) {
-      throw new Error('Catalog Gateway unavailable');
+      }
+      throw new Error(`Catalog Gateway Error: ${response.status}`);
     }
+    catalogGatewayAvailableUntil = Date.now() + CATALOG_GATEWAY_RECHECK_MS;
+    catalogGatewayUnavailableUntil = 0;
+    return await response.json();
+  } catch (error) {
+    catalogGatewayUnavailableUntil = Date.now() + CATALOG_GATEWAY_RECHECK_MS;
+    throw error;
   }
-
-  const response = await trackedMovieFetch(`/api/catalog-gateway${endpoint}`);
-  if (!response.ok) {
-    if (response.status >= 500) {
-      catalogGatewayAvailableUntil = 0;
-      catalogGatewayUnavailableUntil = Date.now() + CATALOG_GATEWAY_RECHECK_MS;
-    }
-    throw new Error(`Catalog Gateway Error: ${response.status}`);
-  }
-  return response.json();
 }
 
 // Helper function to handle API calls

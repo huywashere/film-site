@@ -210,7 +210,7 @@ function extractTmdbPathFromUrl(url?: unknown): string | null {
   return match ? match[1] : null;
 }
 
-export function useTmdbArtwork(film: FilmItem, enabled = true) {
+export function useTmdbArtwork(film: FilmItem, enabled = true, allowTitleLookup = false) {
   const extracted = extractTmdbInfo(film);
   const embeddedMovie = useMemo<TmdbMovie | null>(() => {
     const posterPath =
@@ -248,13 +248,16 @@ export function useTmdbArtwork(film: FilmItem, enabled = true) {
   const query = useQuery({
     queryKey: ['tmdb-artwork', identity],
     queryFn: async () => {
+      if (!extracted.tmdbId && !extracted.imdbId && !allowTitleLookup) {
+        return null;
+      }
       const cached = readArtworkCache(identity);
       if (cached) return cached;
       const movie = await resolveArtwork(film);
       writeArtworkCache(identity, movie);
       return movie;
     },
-    enabled: enabled && !embeddedMovie && Boolean(extracted.tmdbId || extracted.imdbId || title),
+    enabled: enabled && !embeddedMovie && Boolean(extracted.tmdbId || extracted.imdbId || (allowTitleLookup && title)),
     staleTime: 1000 * 60 * 60 * 24 * 7,
     // Browser timers top out at roughly 24.8 days. A 30-day timeout overflows
     // to 1ms in Node/browser runtimes and defeats the artwork cache entirely.

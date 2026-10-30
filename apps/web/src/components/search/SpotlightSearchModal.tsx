@@ -29,6 +29,7 @@ import { VoiceSearchButton } from "@/components/search/VoiceSearchButton";
 import { cardFont } from "@/lib/fonts";
 import { searchLocalFilms } from "@/lib/smart-search";
 import { parseSearchIntent } from "@/lib/search-query-parser";
+import { dedupeFilmItems } from "@/lib/movie-normalizer";
 import { isIMEQuery, normalizeForSearch } from "@/lib/text-utils";
 import { useReliableNavigation } from "@/hooks/useReliableNavigation";
 
@@ -107,6 +108,7 @@ const SearchCardImage = React.memo(function SearchCardImage({
       film={film}
       kind="poster"
       priority={priority}
+      allowTitleLookup={false}
       className="absolute inset-0 h-full w-full transition-transform duration-300 group-hover:scale-105"
       alt={film.name || film.title || "Poster"}
     />
@@ -349,52 +351,24 @@ export function SpotlightSearchModal({
     }
   }, [debouncedQuery, remoteResults]);
 
-  // Seamless merge of remote, session cache and instant local results with intelligent deduplication
+  // Seamless merge of remote, session cache and instant local results with intelligent multi-source deduplication
   const rawResults: FilmItem[] = useMemo(() => {
     const trimmed = debouncedQuery.trim().toLowerCase();
     if (!trimmed) return [];
-    const seenIdentities = new Set<string>();
-    const seenSlugs = new Set<string>();
-    const merged: FilmItem[] = [];
 
-    const appendUnique = (item: FilmItem) => {
-      if (!item?.slug) return;
-      const identity = filmIdentity(item);
-      const slugIdentity = filmSlugIdentity(item);
-      if (
-        seenIdentities.has(identity) ||
-        (slugIdentity && seenSlugs.has(slugIdentity))
-      ) {
-        return;
-      }
-      seenIdentities.add(identity);
-      if (slugIdentity) seenSlugs.add(slugIdentity);
-      merged.push(item);
-    };
-
-    // 1. Ưu tiên kết quả từ Remote API của debounced query hiện tại
-    for (const item of remoteResults) {
-      appendUnique(item);
-    }
-
-    // 2. Tra cứu cache phiên tức thì nếu có (0ms phản hồi)
     const cached =
       searchCacheRef.current.get(trimmed) ||
       (parsedIntent.baseQuery
         ? searchCacheRef.current.get(parsedIntent.baseQuery.toLowerCase())
         : undefined);
-    if (cached) {
-      for (const item of cached) {
-        appendUnique(item);
-      }
-    }
 
-    // 3. Hợp nhất kho kết quả tức thì (0ms)
-    for (const item of instantLocalResults) {
-      appendUnique(item);
-    }
+    const candidates = [
+      ...remoteResults,
+      ...(cached || []),
+      ...instantLocalResults,
+    ];
 
-    return merged;
+    return dedupeFilmItems(candidates) as unknown as FilmItem[];
   }, [remoteResults, instantLocalResults, debouncedQuery, parsedIntent.baseQuery]);
 
   // Apply filters in expanded mode
@@ -681,14 +655,14 @@ export function SpotlightSearchModal({
                     </p>
                   ) : (
                     <div className="space-y-1">
-                      {uniqueSearchResults.slice(0, 6).map((film) => (
+                      {uniqueSearchResults.slice(0, 6).map((film, idx) => (
                         <div
                           key={filmIdentity(film)}
                           onClick={() => handleSelectMovie(film.slug)}
                           className="group flex items-center gap-3 rounded-xl p-2 transition-colors hover:bg-white/[0.06] cursor-pointer"
                         >
                           <div className="relative w-11 h-16 shrink-0 overflow-hidden rounded-lg border border-white/[0.08] bg-neutral-900">
-                            <SearchCardImage film={film} />
+                            <SearchCardImage film={film} priority={idx < 4} />
                           </div>
                           <div className="min-w-0 flex-1">
                             <h4 className="truncate text-xs sm:text-sm font-bold text-neutral-200 group-hover:text-white transition-colors">
@@ -1166,7 +1140,7 @@ export function SpotlightSearchModal({
               ) : uniqueSearchResults.length > 0 ? (
                 /* Rich Scrollable Cards Grid */
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 pb-4">
-                  {uniqueSearchResults.map((film) => (
+                  {uniqueSearchResults.map((film, idx) => (
                     <div
                       key={filmIdentity(film)}
                       onClick={() => handleSelectMovie(film.slug)}
@@ -1174,7 +1148,7 @@ export function SpotlightSearchModal({
                     >
                       {/* Strictly bound Poster Image Container */}
                       <div className="relative aspect-[2/3] w-full overflow-hidden rounded-t-xl bg-neutral-900">
-                        <SearchCardImage film={film} />
+                        <SearchCardImage film={film} priority={idx < 6} />
 
                         {/* Episode / Quality Badges */}
                         <div className="absolute top-2 left-2 flex flex-col items-start gap-1 z-10">

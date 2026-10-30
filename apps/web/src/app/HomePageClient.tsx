@@ -556,9 +556,8 @@ function LazySection({
           observer.disconnect();
         }
       },
-      // 400px pre-fetch margin — đủ để load trước khi scroll đến,
-      // không cần aggressive như 1400px gây fire gần như ngư lập tức
-      { rootMargin: "800px 0px" },
+      // 350px pre-fetch margin — mượt mà tải trước khi cuộn tới mà không làm nghẽn mạng ban đầu
+      { rootMargin: "350px 0px" },
     );
 
     if (containerRef.current) {
@@ -663,8 +662,8 @@ export default function HomePageClient({
           observer.disconnect();
         }
       },
-      // 800px — vẫn pre-fetch khi user gần đến section mới
-      { rootMargin: "800px 0px" },
+      // 350px — pre-fetch khi người dùng thực sự cuộn tới gần chân trang
+      { rootMargin: "350px 0px" },
     );
 
     observer.observe(el);
@@ -794,9 +793,8 @@ export default function HomePageClient({
     gcTime: 60 * 60 * 1000,
     refetchOnWindowFocus: false,
     retry: false,
-    // This enrichment used to launch two more catalogue requests during the
-    // hero/LCP window. The home feed already provides a useful first render.
-    enabled: secondaryCatalogReady && Boolean(homeFeedSections?.series?.length),
+    // Chỉ fetch bổ sung khi người dùng cuộn đến hàng Series Âu-Mỹ, tránh kẹt mạng lúc tải trang đầu
+    enabled: isSectionActive("usuk-series") && Boolean(homeFeedSections?.series?.length),
   });
 
   const usUkSeriesData = useMemo(() => {
@@ -1830,7 +1828,7 @@ export default function HomePageClient({
       </LazySection>
     ),
     wuxia: (
-      <LazySection initiallyVisible>
+      <LazySection title={t("sections.wuxia", "Phim Hình Sự & Tội Phạm")} href="/genre/hinh-su" onVisible={() => markSectionLoaded("wuxia")}>
         <FilmSection
           title={t("sections.wuxia", "Phim Hình Sự & Tội Phạm")}
           films={wuxiaRowList}
@@ -1840,7 +1838,7 @@ export default function HomePageClient({
       </LazySection>
     ),
     crime: (
-      <LazySection initiallyVisible>
+      <LazySection title={t("sections.crime", "Phim Hình Sự & Tội Phạm")} href="/genre/hinh-su" onVisible={() => markSectionLoaded("crime")}>
         <FilmSection
           title={t("sections.crime", "Phim Hình Sự & Tội Phạm")}
           films={wuxiaRowList}

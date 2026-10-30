@@ -45,13 +45,13 @@ const PREPAINT_SCRIPT = `
         root.dataset.entrySplash = "skip";
         const splash = document.getElementById("netphim-entry-splash");
         if (splash) {
-          splash.style.transition = "opacity 0.4s ease-out";
+          splash.style.transition = "opacity 0.3s ease-out";
           splash.style.opacity = "0";
           splash.style.pointerEvents = "none";
-          setTimeout(() => splash.remove(), 450);
+          setTimeout(() => splash.remove(), 350);
         }
       } catch {}
-    }, 1200);
+    }, 450);
   } catch {
     root.dataset.entrySplash = "skip";
   }
