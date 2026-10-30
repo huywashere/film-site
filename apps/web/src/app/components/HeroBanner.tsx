@@ -2224,7 +2224,7 @@ const LAST_HERO_PLAYLIST_KEY = "flexphim.last-hero-playlist.v2";
         data-hero-banner="true"
         aria-busy="true"
         aria-label="Đang tải banner nổi bật"
-        className="relative mt-16 h-[52svh] min-h-[380px] max-h-[460px] w-full overflow-hidden bg-[#141414] sm:mt-0 sm:h-auto sm:min-h-[100dvh] sm:max-h-none"
+        className="relative mt-0 h-[68svh] min-h-[480px] max-h-[620px] w-full overflow-hidden bg-[#141414] sm:h-auto sm:min-h-[560px] sm:max-h-[720px] md:h-[100dvh] md:min-h-[680px] md:max-h-none lg:h-[100dvh] lg:min-h-[720px] lg:max-h-none xl:h-[100dvh] xl:max-h-none"
       >
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_62%_34%,rgba(57,64,77,0.3),transparent_44%),linear-gradient(135deg,#141414_0%,#1c1c1c_52%,#141414_100%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_24%,rgba(20,20,20,0.54)_70%,rgba(20,20,20,0.94)_100%),linear-gradient(to_top,#141414_0%,rgba(20,20,20,0.78)_28%,transparent_62%),linear-gradient(to_bottom,rgba(20,20,20,0.76)_0%,transparent_30%)]" />
@@ -2331,7 +2331,7 @@ const LAST_HERO_PLAYLIST_KEY = "flexphim.last-hero-playlist.v2";
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       onTouchCancel={handleTouchCancel}
-      className="font-cinema relative mt-0 h-[68svh] min-h-[480px] max-h-[620px] sm:h-auto sm:min-h-[560px] sm:max-h-[720px] md:h-[80vh] md:min-h-[580px] md:max-h-[760px] lg:h-[82vh] lg:min-h-[620px] lg:max-h-[800px] xl:h-[85vh] xl:max-h-[820px] w-full overflow-hidden bg-[#0c0d14] transform-gpu contain-paint select-none touch-pan-y"
+      className="font-cinema relative mt-0 h-[68svh] min-h-[480px] max-h-[620px] sm:h-auto sm:min-h-[560px] sm:max-h-[720px] md:h-[100dvh] md:min-h-[680px] md:max-h-none lg:h-[100dvh] lg:min-h-[720px] lg:max-h-none xl:h-[100dvh] xl:max-h-none w-full overflow-hidden bg-[#0c0d14] transform-gpu contain-paint select-none touch-pan-y"
     >
       <TrailerModal
         film={trailerModalFilm}
