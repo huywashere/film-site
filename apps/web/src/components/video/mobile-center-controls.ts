@@ -53,6 +53,11 @@ export function setupMobileCenterControls({
   const playIcon = controls.querySelector<HTMLElement>('.is-play');
   const pauseIcon = controls.querySelector<HTMLElement>('.is-pause');
 
+  if (player.option.isLive) {
+    if (backwardBtn) backwardBtn.style.display = 'none';
+    if (forwardBtn) forwardBtn.style.display = 'none';
+  }
+
   let autoHideTimer: ReturnType<typeof setTimeout> | null = null;
 
   const clearAutoHide = () => {

@@ -7,6 +7,7 @@ export const vi = {
     bilingual: "Song Ngữ",
     anime: "Hoạt Hình",
     tvshows: "TV Shows",
+    tv: "Truyền Hình",
     actors: "Diễn viên",
     genres: "Thể Loại",
     country: "Quốc Gia",

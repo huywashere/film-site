@@ -326,10 +326,10 @@ const MORE_NAV_ITEMS = [
     icon: CalendarDays,
   },
   {
-    href: "/films/tv-shows",
-    key: "nav.tvshows",
-    label: "TV Shows",
-    labelEn: "TV Shows",
+    href: "/tv",
+    key: "nav.tv",
+    label: "Truyền Hình",
+    labelEn: "Live TV",
     icon: Tv,
   },
   {
@@ -430,6 +430,7 @@ export function Navbar() {
     pathname.startsWith("/watch-party") ||
     pathname.startsWith("/actors") ||
     pathname.startsWith("/schedule") ||
+    pathname.startsWith("/tv") ||
     pathname.startsWith("/films/tv-shows") ||
     pathname.startsWith("/films/shows");
 

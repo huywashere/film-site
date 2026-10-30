@@ -516,8 +516,8 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                     icon: CalendarDays,
                   },
                   {
-                    title: t("nav.tvshows", "TV Shows"),
-                    href: "/films/tv-shows",
+                    title: t("nav.tv", "Truyền Hình"),
+                    href: "/tv",
                     icon: Tv,
                   },
                   {

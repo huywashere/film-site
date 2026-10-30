@@ -7,6 +7,7 @@ export const en = {
     bilingual: "Bilingual",
     anime: "Anime",
     tvshows: "TV Shows",
+    tv: "Live TV",
     actors: "Actors",
     genres: "Genres",
     country: "Countries",

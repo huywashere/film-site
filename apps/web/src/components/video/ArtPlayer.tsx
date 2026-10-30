@@ -54,6 +54,7 @@ export interface ArtPlayerProps {
   url: string;
   fallbackUrl?: string;
   type?: 'hls' | 'mp4' | 'auto';
+  isLive?: boolean;
   poster?: string;
   title?: string;
   subtitle?: string;
@@ -96,6 +97,7 @@ export default function ArtPlayer({
   url,
   fallbackUrl,
   type = 'auto',
+  isLive = false,
   poster,
   title,
   subtitle,
@@ -857,6 +859,7 @@ export default function ArtPlayer({
       },
       poster,
       title,
+      isLive: Boolean(isLive),
       volume: 1,
       autoplay,
       autoSize: false,
@@ -890,36 +893,40 @@ export default function ArtPlayer({
         indicator: ARTPLAYER_INDICATOR_SVG,
       },
       controls: [
-        {
-          name: 'backward-10',
-          position: 'left',
-          index: 11,
-          html: `<span class="art-icon" style="display:inline-flex;align-items:center;justify-content:center;">${ARTPLAYER_SEEK_BACKWARD_10_SVG}</span>`,
-          tooltip: 'Tua lại 10s',
-          click: function () {
-            if (triggerSeekRippleRef.current) {
-              triggerSeekRippleRef.current(true);
-            } else if (playerRef.current) {
-              const art = playerRef.current;
-              art.seek = Math.max(0, art.currentTime - 10);
-            }
-          },
-        },
-        {
-          name: 'forward-10',
-          position: 'left',
-          index: 12,
-          html: `<span class="art-icon" style="display:inline-flex;align-items:center;justify-content:center;">${ARTPLAYER_SEEK_FORWARD_10_SVG}</span>`,
-          tooltip: 'Tua tới 10s',
-          click: function () {
-            if (triggerSeekRippleRef.current) {
-              triggerSeekRippleRef.current(false);
-            } else if (playerRef.current) {
-              const art = playerRef.current;
-              art.seek = Math.min(art.duration || Infinity, art.currentTime + 10);
-            }
-          },
-        },
+        ...(!isLive
+          ? [
+              {
+                name: 'backward-10',
+                position: 'left',
+                index: 11,
+                html: `<span class="art-icon" style="display:inline-flex;align-items:center;justify-content:center;">${ARTPLAYER_SEEK_BACKWARD_10_SVG}</span>`,
+                tooltip: 'Tua lại 10s',
+                click: function () {
+                  if (triggerSeekRippleRef.current) {
+                    triggerSeekRippleRef.current(true);
+                  } else if (playerRef.current) {
+                    const art = playerRef.current;
+                    art.seek = Math.max(0, art.currentTime - 10);
+                  }
+                },
+              },
+              {
+                name: 'forward-10',
+                position: 'left',
+                index: 12,
+                html: `<span class="art-icon" style="display:inline-flex;align-items:center;justify-content:center;">${ARTPLAYER_SEEK_FORWARD_10_SVG}</span>`,
+                tooltip: 'Tua tới 10s',
+                click: function () {
+                  if (triggerSeekRippleRef.current) {
+                    triggerSeekRippleRef.current(false);
+                  } else if (playerRef.current) {
+                    const art = playerRef.current;
+                    art.seek = Math.min(art.duration || Infinity, art.currentTime + 10);
+                  }
+                },
+              },
+            ]
+          : []),
         ...(effectiveSubtitles.length > 0
           ? [
               {

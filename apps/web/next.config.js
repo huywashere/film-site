@@ -315,6 +315,20 @@ const nextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      {
+        source: "/films/tv-shows",
+        destination: "/tv",
+        permanent: true,
+      },
+      {
+        source: "/tvshows",
+        destination: "/tv",
+        permanent: true,
+      },
+    ];
+  },
   async rewrites() {
     const cdnUrl =
       process.env.NEXT_PUBLIC_CDN_URL ||
