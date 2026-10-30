@@ -1,6 +1,6 @@
 # Rules for this Workspace
 
-- **Không tự động push code:** Tuyệt đối không chạy lệnh `git push` tự động. Chỉ thực hiện push code lên GitHub khi có yêu cầu hoặc sự đồng ý rõ ràng từ người dùng.
+- **Không tự động commit hay push code:** Tuyệt đối không tự ý chạy lệnh `git commit` hoặc `git push` khi chưa có yêu cầu hay sự đồng ý rõ ràng từ người dùng. Mọi thay đổi code chỉ giữ ở working tree/staging để người dùng xem xét và xác nhận trước.
 - **Không tự ý mở trình duyệt / chụp ảnh:** Tuyệt đối không tự ý mở trình duyệt (headless/DevTools) hoặc chụp ảnh màn hình khi chưa có yêu cầu hay sự cho phép rõ ràng từ người dùng.
 - **Tối ưu UI & Layout trên điện thoại (Mobile First):** Luôn kiểm tra và đảm bảo giao diện, layout hiển thị mượt mà, chuẩn chỉ trên mobile; tính toán kỹ lưỡng typography, spacing, flex/grid để không xảy ra tình trạng lệch ảnh, đè chữ hay tràn viền trên các kích cỡ màn hình hẹp.
 

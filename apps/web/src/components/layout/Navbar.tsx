@@ -1577,6 +1577,8 @@ export function Navbar() {
                 <button
                   type="button"
                   onClick={() => openAuthModal("login")}
+                  onMouseEnter={() => { void import("@/components/auth/AuthModal"); }}
+                  onTouchStart={() => { void import("@/components/auth/AuthModal"); }}
                   aria-label="Đăng nhập"
                   title="Đăng nhập"
                   className="hidden lg:flex items-center justify-center p-1.5 text-neutral-300 hover:text-white transition-colors cursor-pointer active:scale-95"

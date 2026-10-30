@@ -195,13 +195,15 @@ export function AuthModal({
   useEffect(() => {
     if (!isFirebaseConfigured) return;
 
-    getRedirectResult(getFirebaseAuth())
+    // Defer redirect check to unblock initial render
+    const runCheck = () => getRedirectResult(getFirebaseAuth())
       .then(async (res) => {
         if (res?.user) {
           await handleFirebaseUserSuccess(res.user);
         }
       })
       .catch((e) => console.warn("Redirect result check:", e));
+    if ("requestIdleCallback" in window) { window.requestIdleCallback(runCheck, { timeout: 2500 }); } else { setTimeout(runCheck, 1500); }
 
     return undefined;
   }, [handleFirebaseUserSuccess]);
@@ -429,7 +431,7 @@ export function AuthModal({
         ease: [0.16, 1, 0.3, 1],
       }}
       className={cn(
-        "relative w-full max-w-[390px] overflow-hidden bg-gradient-to-b from-[#181a2e]/85 via-[#101222]/80 to-[#0b0d18]/90 backdrop-blur-2xl border border-white/[0.14] rounded-2xl sm:rounded-3xl shadow-[0_25px_70px_rgba(0,0,0,0.85),0_0_50px_-10px_rgba(139,92,246,0.22),inset_0_1px_0_0_rgba(255,255,255,0.18)] p-5 sm:p-6 sm:px-7 text-white z-10 font-primary",
+        "relative w-full max-w-[390px] overflow-hidden bg-gradient-to-b from-[#181a2e]/85 via-[#101222]/80 to-[#0b0d18]/90 backdrop-blur-md border border-white/[0.14] rounded-2xl sm:rounded-3xl shadow-[0_25px_70px_rgba(0,0,0,0.85),0_0_50px_-10px_rgba(139,92,246,0.22),inset_0_1px_0_0_rgba(255,255,255,0.18)] p-5 sm:p-6 sm:px-7 text-white z-10 font-primary",
       )}
     >
       {/* Decorative Ambient Glass Tint on Card Top */}
@@ -460,7 +462,7 @@ export function AuthModal({
           className="inline-flex items-center gap-2 select-none group"
         >
           <NextImage
-            src="/flexphim-logo.svg"
+            src="/icon-192.png"
             alt="FlexPhim Logo"
             width={32}
             height={32}

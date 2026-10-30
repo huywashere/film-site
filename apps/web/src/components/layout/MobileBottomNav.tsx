@@ -294,6 +294,8 @@ export function MobileBottomNav() {
           <button
             type="button"
             onClick={() => useAuthModalStore.getState().openModal('login')}
+            onPointerDown={() => { void import("@/components/auth/AuthModal"); }}
+            onTouchStart={() => { void import("@/components/auth/AuthModal"); }}
             title="Đăng nhập"
             aria-label="Đăng nhập"
             className="relative flex h-12 w-12 sm:h-[50px] sm:w-[50px] shrink-0 cursor-pointer items-center justify-center rounded-full border border-purple-400/40 text-white shadow-[0_8px_25px_rgba(147,51,234,0.5),inset_0_1px_1px_rgba(255,255,255,0.35)] bg-gradient-to-tr from-purple-700 via-purple-600 to-indigo-500 hover:from-purple-600 hover:to-indigo-400 active:scale-90 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 touch-manipulation select-none"

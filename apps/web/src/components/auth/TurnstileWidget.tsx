@@ -126,21 +126,24 @@ export function TurnstileWidget({ action, onTokenChange }: TurnstileWidgetProps)
     };
 
     let script: HTMLScriptElement | null = null;
-    if (window.turnstile) {
-      render();
-    } else {
-      script = getTurnstileScript();
-      script.addEventListener('load', render, { once: true });
-      script.addEventListener(
-        'error',
-        () => {
-          setStatus('error');
-          setErrorCode('script-load-failed');
-          onTokenChangeRef.current(null);
-        },
-        { once: true },
-      );
-    }
+    const startTimer = setTimeout(() => {
+      if (disposed) return;
+      if (window.turnstile) {
+        render();
+      } else {
+        script = getTurnstileScript();
+        script.addEventListener('load', render, { once: true });
+        script.addEventListener(
+          'error',
+          () => {
+            setStatus('error');
+            setErrorCode('script-load-failed');
+            onTokenChangeRef.current(null);
+          },
+          { once: true },
+        );
+      }
+    }, 200);
 
     const readinessTimer = window.setInterval(() => {
       if (window.turnstile) {
@@ -159,6 +162,7 @@ export function TurnstileWidget({ action, onTokenChange }: TurnstileWidgetProps)
 
     return () => {
       disposed = true;
+      clearTimeout(startTimer);
       script?.removeEventListener('load', render);
       window.clearInterval(readinessTimer);
       window.clearTimeout(timeoutTimer);
