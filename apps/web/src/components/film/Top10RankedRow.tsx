@@ -192,7 +192,7 @@ function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
             film={film}
             kind="poster"
             alt={filmTitle}
-            priority={rank <= 3}
+            priority={false}
             loadImmediately={rank <= 6}
             allowTitleLookup
             className="absolute inset-0 h-full w-full transition-transform duration-500 group-hover/item:scale-105"

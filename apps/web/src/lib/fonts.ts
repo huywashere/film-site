@@ -15,7 +15,7 @@ export const logoFont = Oswald({
   weight: ["700"],
   display: "swap",
   variable: "--font-logo",
-  preload: true,
+  preload: false,
 });
 
 export const heroSerifFont = cardFont;
