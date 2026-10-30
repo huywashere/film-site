@@ -405,7 +405,7 @@ function FilmSection({
   };
 
   const hasFilms = Boolean(films && films.length > 0);
-  const showSkeleton = isLoading || !hasFilms;
+  const showSkeleton = isLoading && !hasFilms;
 
   return (
     <div
@@ -669,14 +669,8 @@ export default function HomePageClient({
 
     observer.observe(el);
 
-    // Tăng lên 2000ms — đủ thời gian cho hero render trước, rồi mới load phần dưới
-    const timer = window.setTimeout(() => {
-      setShowMoreSections(true);
-    }, 2000);
-
     return () => {
       observer.disconnect();
-      window.clearTimeout(timer);
     };
   }, [showMoreSections]);
 

@@ -50,36 +50,6 @@ function getRankColorStyle(rank: number) {
 }
 
 function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
-  const itemRef = useRef<HTMLAnchorElement>(null);
-  const [resolveHighQualityArtwork, setResolveHighQualityArtwork] =
-    useState(false);
-  const posterUrl = resolveImageUrl(film.poster_url, film.thumb_url);
-  const alreadyUsesTmdbPoster = Boolean(
-    posterUrl &&
-    /image\.tmdb\.org\/t\/p\/(?:w500|w780|w1280|original)\//i.test(posterUrl),
-  );
-
-  useEffect(() => {
-    const element = itemRef.current;
-    if (!element) return;
-
-    if (!("IntersectionObserver" in window)) {
-      setResolveHighQualityArtwork(true);
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry?.isIntersecting) return;
-        setResolveHighQualityArtwork(true);
-        observer.disconnect();
-      },
-      { rootMargin: "320px 0px", threshold: 0.01 },
-    );
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
-
   const filmTitle = film.name || film.title || "Phim Top 10";
 
   // Extract top-left badge (Priority: Thuyết Minh -> Lồng Tiếng -> Vietsub -> Engsub)
@@ -198,7 +168,6 @@ function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
 
   return (
     <Link
-      ref={itemRef}
       href={`/film/${film.slug}`}
       prefetch={false}
       onMouseEnter={handlePrefetch}
@@ -223,7 +192,8 @@ function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
             film={film}
             kind="poster"
             alt={filmTitle}
-            enabled={resolveHighQualityArtwork}
+            priority={rank <= 3}
+            loadImmediately={rank <= 6}
             allowTitleLookup
             className="absolute inset-0 h-full w-full transition-transform duration-500 group-hover/item:scale-105"
           />
