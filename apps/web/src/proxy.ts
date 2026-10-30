@@ -88,6 +88,7 @@ export function proxy(request: NextRequest) {
       "RSC, Next-Router-State-Tree, Next-Router-Prefetch, Accept-Encoding",
     );
   } else {
+    response.headers.set("Cache-Control", "public, max-age=0, must-revalidate");
     response.headers.set("Cloudflare-CDN-Cache-Control", "no-store");
     response.headers.set("CDN-Cache-Control", "no-store");
     response.headers.set(

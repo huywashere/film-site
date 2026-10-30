@@ -183,18 +183,25 @@ info "Khởi động container API mới..."
 compose up -d --no-deps --pull never api
 wait_healthy api || rollback_services "$IMAGE_TAG"
 
-# Sau đó restart Web
+# Zero-Downtime: Khởi động container Web mới và đợi đạt trạng thái Healthy trước khi chuyển traffic
 info "Khởi động container Web mới..."
 compose up -d --no-deps --pull never web
 wait_healthy web || rollback_services "$IMAGE_TAG"
 
-# Khởi động các service còn lại
-info "Khởi động media-gateway, worker, openresty, admin, cloudflared..."
-docker rm -f netphim_cloudflared 2>/dev/null || true
-compose up -d --force-recreate --no-deps --pull never media-gateway media-worker-rs openresty admin cloudflared
+# Khởi động các service ứng dụng
+info "Khởi động media-gateway, worker, admin..."
+compose up -d --no-deps --pull never media-gateway media-worker-rs admin
 wait_healthy media-gateway || rollback_services "$IMAGE_TAG"
-wait_healthy openresty || rollback_services "$IMAGE_TAG"
 wait_healthy admin || warn "Admin container chưa đạt trạng thái healthy"
+
+# OpenResty: Reload mượt mà không drop kết nối hiện tại (Zero-Downtime reload)
+info "Nạp cấu hình mới cho OpenResty..."
+docker exec netphim_openresty openresty -s reload 2>/dev/null || compose up -d --no-deps --pull never openresty
+wait_healthy openresty || rollback_services "$IMAGE_TAG"
+
+# Cloudflared Tunnel: Chỉ khởi động nếu chưa chạy, tuyệt đối không ngắt tunnel đang kết nối
+info "Đảm bảo Cloudflare Tunnel luôn hoạt động 24/7..."
+compose up -d --no-deps --pull never cloudflared
 
 # ── Bước 8: Lưu tag đã deploy ─────────────────────────────────
 echo "$IMAGE_TAG" > "$PREV_TAG_FILE"

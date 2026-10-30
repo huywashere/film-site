@@ -332,11 +332,11 @@ services:
     networks:
       - netphim_net
     healthcheck:
-      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:3000 || exit 1']
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 90s
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:3000/api/health || exit 1']
+      interval: 8s
+      timeout: 5s
+      retries: 4
+      start_period: 15s
 
   # ── Admin CMS Control Room ─────────────────────────────────
   admin:
@@ -514,6 +514,7 @@ services:
       - ./infra/docker/nginx.conf:/usr/local/openresty/nginx/conf/nginx.conf:ro
       - ./ssl:/etc/openresty/ssl
       - nginx_cache:/var/cache/nginx
+      - nginx_static_cache:/var/cache/nginx/static
     depends_on:
       web:
         condition: service_healthy
@@ -550,6 +551,8 @@ volumes:
   typesense_data:
     driver: local
   nginx_cache:
+    driver: local
+  nginx_static_cache:
     driver: local
   backup_data:
   media_data:

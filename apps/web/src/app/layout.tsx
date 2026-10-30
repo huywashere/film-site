@@ -72,6 +72,14 @@ const PREPAINT_SCRIPT = `
     root.dataset.theme = "dark";
     root.classList.add("dark");
   }
+  try {
+    if (window.location.search.includes("__netphim_chunk_reload")) {
+      const u = new URL(window.location.href);
+      u.searchParams.delete("__netphim_chunk_reload");
+      const clean = u.pathname + (u.search ? u.search : "") + u.hash;
+      window.history.replaceState(null, "", clean);
+    }
+  } catch {}
 })();`;
 
 export const viewport: Viewport = {
