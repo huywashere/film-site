@@ -86,6 +86,8 @@ jobs:
             NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${{ vars.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'flexphim-1.firebasestorage.app' }}
             NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${{ vars.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '1072309032788' }}
             NEXT_PUBLIC_FIREBASE_APP_ID=${{ vars.NEXT_PUBLIC_FIREBASE_APP_ID || '1:1072309032788:web:5dd1a252f1ea97e8775ac1' }}
+            NEXT_PUBLIC_CDN_URL=${{ vars.NEXT_PUBLIC_CDN_URL || 'https://pub-47e070c7a48e4c1091d1f838e4270a38.r2.dev' }}
+            NEXT_PUBLIC_CDN_ASSETS_URL=${{ vars.NEXT_PUBLIC_CDN_ASSETS_URL || 'https://pub-47e070c7a48e4c1091d1f838e4270a38.r2.dev' }}
           cache-from: type=gha,scope=web
           cache-to: type=gha,mode=max,scope=web
 

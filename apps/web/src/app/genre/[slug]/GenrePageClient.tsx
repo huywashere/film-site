@@ -430,9 +430,9 @@ function ResilientGenreHeroLogo({
 }
 
 // ── SCI-FI TRANSFORMERS CINEMATIC HERO BANNER COMPONENT ──
-const CDN_BASE = process.env.NEXT_PUBLIC_CDN_ASSETS_URL?.replace(/\/$/, "") || "";
-const TF_BG_PATH = "/Folder-Background/transformers/transformers-bg.png";
-const TF_LOGO_PATH = "/Folder-Background/transformers/tf-logo.png";
+const CDN_BASE = (process.env.NEXT_PUBLIC_CDN_ASSETS_URL || process.env.NEXT_PUBLIC_CDN_URL || "https://pub-47e070c7a48e4c1091d1f838e4270a38.r2.dev").replace(/\/$/, "");
+const TF_BG_PATH = "/Folder-Background/transformers/transformers-bg.webp";
+const TF_LOGO_PATH = "/Folder-Background/transformers/tf-logo.webp";
 
 interface TransformersSlide {
   id: string;
@@ -465,7 +465,7 @@ const TRANSFORMERS_SLIDES: TransformersSlide[] = [
     genres: ["Robot Biến Hình", "Kỹ Xảo Đỉnh Cao", "Khoa Học Viễn Tưởng", "Hành Động"],
     overview:
       "Optimus Prime bị tẩy não biến thành Nemesis Prime đối đầu với người đồng đội trung thành Bumblebee và Megatron trong trận chiến định đoạt số phận Trái Đất và hành tinh mẹ Cybertron.",
-    charImage: "/Folder-Background/transformers/tf-char-trio.png",
+    charImage: "/Folder-Background/transformers/tf-char-trio.webp",
     charAlt: "Nemesis Prime, Megatron và Bumblebee",
     slug: "transformers-quai-thu-troi-day",
     trailer_url: "https://www.youtube.com/watch?v=6Vtf0MszgHE",
@@ -483,7 +483,7 @@ const TRANSFORMERS_SLIDES: TransformersSlide[] = [
     genres: ["Robot Biến Hình", "Quái Thú Cơ Khí", "Khoa Học Viễn Tưởng", "Chiến Tranh"],
     overview:
       "Khi loài người quay lưng săn lùng các Autobots, Optimus Prime giải phóng các chiến binh Dinobot huyền thoại dẫn đầu bởi T-Rex Grimlock để đẩy lùi hiểm họa diệt vong.",
-    charImage: "/Folder-Background/transformers/tf-char-grimlock.png",
+    charImage: "/Folder-Background/transformers/tf-char-grimlock.webp",
     charAlt: "Optimus Prime cưỡi bạo long Grimlock",
     slug: "transformers-quai-thu-troi-day",
     trailer_url: "https://www.youtube.com/watch?v=dYDGqmxMZFI",
@@ -501,7 +501,7 @@ const TRANSFORMERS_SLIDES: TransformersSlide[] = [
     genres: ["Robot Biến Hình", "Khoa Học Viễn Tưởng", "Du Hành Vũ Trụ", "Hành Động"],
     overview:
       "Cuộc chạy đua không gian bí mật đưa con người đến phi thuyền Cybertron rơi trên vùng tối Mặt Trăng, đánh thức Sentinel Prime cùng công nghệ Trụ Không Gian hủy diệt.",
-    charImage: "/Folder-Background/transformers/tf-char-sentinel.png",
+    charImage: "/Folder-Background/transformers/tf-char-sentinel.webp",
     charAlt: "Thủ lĩnh tiền nhiệm Sentinel Prime",
     slug: "transformers-quai-thu-troi-day",
     trailer_url: "https://www.youtube.com/watch?v=kHRf01Gjosk",
@@ -519,7 +519,7 @@ const TRANSFORMERS_SLIDES: TransformersSlide[] = [
     genres: ["Robot Biến Hình", "Maximals", "Khoa Học Viễn Tưởng", "Hành Động"],
     overview:
       "Thủ lĩnh Terrorcon tàn bạo Scourge săn lùng chìa khóa Transwarp mở cổng thời không cho Unicron, buộc Autobots và Maximals phải hợp nhất sức mạnh chống lại kẻ thù diệt thế.",
-    charImage: "/Folder-Background/transformers/tf-char-scourge.png",
+    charImage: "/Folder-Background/transformers/tf-char-scourge.webp",
     charAlt: "Thủ lĩnh Terrorcon Scourge",
     slug: "transformers-quai-thu-troi-day",
     trailer_url: "https://www.youtube.com/watch?v=itnqEauWQZM",
@@ -537,7 +537,7 @@ const TRANSFORMERS_SLIDES: TransformersSlide[] = [
     genres: ["Robot Biến Hình", "Vũ Khí Tối Thượng", "Khoa Học Viễn Tưởng", "Săn Đuổi"],
     overview:
       "Mang theo phi thuyền khổng lồ và khẩu đại pháo biến hình từ khuôn mặt, Lockdown lùng sục khắp dải ngân hà để bắt sống Optimus Prime trao trả cho Đấng Sáng Tạo.",
-    charImage: "/Folder-Background/transformers/tf-char-lockdown.png",
+    charImage: "/Folder-Background/transformers/tf-char-lockdown.webp",
     charAlt: "Thợ săn tiền thưởng Cybertron Lockdown",
     slug: "transformers-quai-thu-troi-day",
     trailer_url: "https://www.youtube.com/watch?v=dYDGqmxMZFI",
@@ -550,11 +550,16 @@ function SciFiTransformersHeroBanner({
 }: {
   onOpenTrailer: (name: string, url?: string) => void;
 }) {
+  const getAssetUrl = (p: string) => {
+    if (!p) return "";
+    return CDN_BASE ? `${CDN_BASE}${p}` : p;
+  };
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(1);
   const [isPaused, setIsPaused] = useState(false);
-  const [bgSrc, setBgSrc] = useState(TF_BG_PATH);
-  const [logoSrc, setLogoSrc] = useState(TF_LOGO_PATH);
+  const [bgSrc, setBgSrc] = useState(() => getAssetUrl(TF_BG_PATH));
+  const [logoSrc, setLogoSrc] = useState(() => getAssetUrl(TF_LOGO_PATH));
 
   const currentSlide = TRANSFORMERS_SLIDES[currentIndex];
 
@@ -611,12 +616,13 @@ function SciFiTransformersHeroBanner({
           src={bgSrc}
           alt="Transformers - Bối cảnh Cybertron và vòng đai băng giá"
           onError={() => {
-            if (CDN_BASE && bgSrc !== `${CDN_BASE}${TF_BG_PATH}`) {
-              setBgSrc(`${CDN_BASE}${TF_BG_PATH}`);
+            if (bgSrc !== TF_BG_PATH) {
+              setBgSrc(TF_BG_PATH);
             }
           }}
           className="w-full h-full object-cover object-[center_28%] scale-[1.01] filter brightness-[0.95] contrast-[1.05]"
           loading="eager"
+          decoding="async"
         />
       </div>
 
@@ -650,13 +656,20 @@ function SciFiTransformersHeroBanner({
             className="absolute right-0 bottom-0 h-full flex items-end justify-end pointer-events-auto cursor-pointer group/tf-char"
           >
             <img
-              src={currentSlide.charImage}
+              src={getAssetUrl(currentSlide.charImage)}
               alt={currentSlide.charAlt}
+              onError={(e) => {
+                const target = e.currentTarget;
+                if (!target.src.endsWith(currentSlide.charImage)) {
+                  target.src = currentSlide.charImage;
+                }
+              }}
               className={cn(
                 currentSlide.charHeightClass || "h-[74%] sm:h-[82%] md:h-[88%] lg:h-[94%] max-h-[700px]",
                 "w-auto max-w-full object-contain object-bottom select-none filter contrast-[1.03] brightness-[1.02] drop-shadow-[0_20px_45px_rgba(0,0,0,0.8)] transition-all duration-500 group-hover/tf-char:drop-shadow-[0_25px_65px_rgba(56,189,248,0.45)] group-hover/tf-char:brightness-[1.06]",
               )}
               loading="eager"
+              decoding="async"
             />
           </motion.div>
         </AnimatePresence>
@@ -700,12 +713,13 @@ function SciFiTransformersHeroBanner({
                   src={logoSrc}
                   alt="Transformers"
                   onError={() => {
-                    if (CDN_BASE && logoSrc !== `${CDN_BASE}${TF_LOGO_PATH}`) {
-                      setLogoSrc(`${CDN_BASE}${TF_LOGO_PATH}`);
+                    if (logoSrc !== TF_LOGO_PATH) {
+                      setLogoSrc(TF_LOGO_PATH);
                     }
                   }}
                   className="h-full w-auto object-contain object-left drop-shadow-[0_8px_25px_rgba(0,0,0,0.95)]"
                   loading="eager"
+                  decoding="async"
                 />
               </div>
 
@@ -821,7 +835,7 @@ function SciFiTransformersHeroBanner({
 }
 
 // ── WAR & HISTORY THE ODYSSEY CINEMATIC HERO BANNER COMPONENT ──
-const ODYSSEY_BG_PATH = "/Folder-Background/the odysey/odyssey-bg.jpg";
+const ODYSSEY_BG_PATH = "/Folder-Background/the odysey/odyssey-bg.webp";
 
 interface WarOdysseySlide {
   id: string;
@@ -854,7 +868,7 @@ const WAR_ODYSSEY_SLIDES: WarOdysseySlide[] = [
     genres: ["Chiến Tranh Cổ Đại", "Sử Thi", "Hy Lạp & La Mã", "Hành Động"],
     overview:
       "Hành trình sử thi bi tráng về cuộc vây hãm thành Troy huyền thoại và chuyến hải trình trở về đầy bão táp của Odysseus qua những đại dương kỳ bí và thử thách thần linh tàn khốc.",
-    charImage: "/Folder-Background/the odysey/odyssey-warrior-achilles.png",
+    charImage: "/Folder-Background/the odysey/odyssey-warrior-achilles.webp",
     charAlt: "Dũng tướng Achilles xuất trận thành Troy",
     slug: "cuoc-chien-thanh-troy",
     trailer_url: "https://www.youtube.com/watch?v=znTLzRJbgCA",
@@ -872,7 +886,7 @@ const WAR_ODYSSEY_SLIDES: WarOdysseySlide[] = [
     genres: ["Chiến Tranh Cổ Đại", "Đế Chế Ba Tư", "Sinh Tử Vực Thẳm", "Hào Hùng"],
     overview:
       "Trận đánh huyền thoại tại hẻm núi Thermopylae, nơi 300 dũng sĩ Sparta kiên cường đối đầu với hàng triệu quân xâm lược Ba Tư để bảo vệ nền văn minh và tự do của Hy Lạp.",
-    charImage: "/Folder-Background/the odysey/odyssey-warrior-spartan.png",
+    charImage: "/Folder-Background/the odysey/odyssey-warrior-spartan.webp",
     charAlt: "Chiến binh thống lĩnh Sparta",
     slug: "300-chien-binh",
     trailer_url: "https://www.youtube.com/watch?v=UrIbxk7idYA",
@@ -890,7 +904,7 @@ const WAR_ODYSSEY_SLIDES: WarOdysseySlide[] = [
     genres: ["Chiến Tranh Cổ Đại", "Đấu Sĩ La Mã", "Lịch Sử & Dã Sử", "Kiệt Tác"],
     overview:
       "Từ một đại tướng quân bách chiến bách thắng của Đế chế La Mã bị phản bội, Maximus trở thành dũng sĩ giác đấu huyền thoại khuynh đảo đấu trường Colosseum để trả thù bạo chúa.",
-    charImage: "/Folder-Background/the odysey/odyssey-warrior-helmet.png",
+    charImage: "/Folder-Background/the odysey/odyssey-warrior-helmet.webp",
     charAlt: "Mũ chiến binh giác đấu La Mã",
     slug: "vo-si-giac-dau",
     trailer_url: "https://www.youtube.com/watch?v=4rgYUipGJNo",
@@ -903,10 +917,15 @@ function WarOdysseyHeroBanner({
 }: {
   onOpenTrailer: (name: string, url?: string) => void;
 }) {
+  const getAssetUrl = (p: string) => {
+    if (!p) return "";
+    return CDN_BASE ? `${CDN_BASE}${p}` : p;
+  };
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(1);
   const [isPaused, setIsPaused] = useState(false);
-  const [bgSrc, setBgSrc] = useState(ODYSSEY_BG_PATH);
+  const [bgSrc, setBgSrc] = useState(() => getAssetUrl(ODYSSEY_BG_PATH));
 
   const currentSlide = WAR_ODYSSEY_SLIDES[currentIndex];
 
@@ -963,12 +982,13 @@ function WarOdysseyHeroBanner({
           src={bgSrc}
           alt="The Odyssey - Trận chiến sử thi cổ đại thành Troy"
           onError={() => {
-            if (CDN_BASE && bgSrc !== `${CDN_BASE}${ODYSSEY_BG_PATH}`) {
-              setBgSrc(`${CDN_BASE}${ODYSSEY_BG_PATH}`);
+            if (bgSrc !== ODYSSEY_BG_PATH) {
+              setBgSrc(ODYSSEY_BG_PATH);
             }
           }}
           className="w-full h-full object-cover object-[center_35%] scale-[1.01] filter brightness-[0.88] contrast-[1.1]"
           loading="eager"
+          decoding="async"
         />
       </div>
 
@@ -1009,10 +1029,11 @@ function WarOdysseyHeroBanner({
               )}
             >
               <img
-                src="/Folder-Background/the odysey/odyssey-warrior-helmet.png"
+                src={getAssetUrl("/Folder-Background/the odysey/odyssey-warrior-helmet.webp")}
                 alt="Chiến binh Mũ Giác Đấu La Mã"
                 className="h-full w-auto object-contain object-bottom"
                 loading="eager"
+                decoding="async"
               />
             </motion.div>
 
@@ -1029,10 +1050,11 @@ function WarOdysseyHeroBanner({
               )}
             >
               <img
-                src="/Folder-Background/the odysey/odyssey-warrior-spartan.png"
+                src={getAssetUrl("/Folder-Background/the odysey/odyssey-warrior-spartan.webp")}
                 alt="Thống lĩnh Sparta Leonidas"
                 className="h-full w-auto object-contain object-bottom"
                 loading="eager"
+                decoding="async"
               />
             </motion.div>
 
@@ -1049,10 +1071,11 @@ function WarOdysseyHeroBanner({
               )}
             >
               <img
-                src="/Folder-Background/the odysey/odyssey-warrior-achilles.png"
+                src={getAssetUrl("/Folder-Background/the odysey/odyssey-warrior-achilles.webp")}
                 alt="Dũng tướng Achilles xuất trận thành Troy"
                 className="h-full w-auto object-contain object-bottom"
                 loading="eager"
+                decoding="async"
               />
             </motion.div>
           </motion.div>
@@ -1093,10 +1116,17 @@ function WarOdysseyHeroBanner({
             {/* Official HD Logo Banner (Replaces plain text) */}
             <div className="h-16 sm:h-20 md:h-24 lg:h-28 max-w-[320px] sm:max-w-[460px] md:max-w-[540px] lg:max-w-[620px]">
               <img
-                src="/Folder-Background/the odysey/odyssey-logo-hd.png"
+                src={getAssetUrl("/Folder-Background/the odysey/odyssey-logo-hd.webp")}
                 alt="The Odyssey: Cuộc Chiến Thành Troy"
+                onError={(e) => {
+                  const target = e.currentTarget;
+                  if (!target.src.endsWith("/Folder-Background/the odysey/odyssey-logo-hd.webp")) {
+                    target.src = "/Folder-Background/the odysey/odyssey-logo-hd.webp";
+                  }
+                }}
                 className="h-full w-auto object-contain object-left drop-shadow-[0_8px_25px_rgba(0,0,0,0.95)]"
                 loading="eager"
+                decoding="async"
               />
             </div>
 
@@ -1212,7 +1242,7 @@ function WarOdysseyHeroBanner({
 
 // ── FANTASY DUNE PART TWO CINEMATIC HERO BANNER COMPONENT ──
 const DUNE_BG_PATH = "/Folder-Background/dune-2/dune-arrakis-sun-bg.webp";
-const DUNE_LOGO_PATH = "/Folder-Background/dune-2/dune-2-logo-hd.png";
+const DUNE_LOGO_PATH = "/Folder-Background/dune-2/dune-2-logo-hd.webp";
 
 interface DuneFantasySlide {
   id: string;
@@ -1242,10 +1272,10 @@ const DUNE_FANTASY_SLIDES: DuneFantasySlide[] = [
     year: 2024,
     quality: "4K UHD • Thuyết Minh",
     rating: "IMDb 8.5",
-    genres: ["Sử Thi Giả Tưởng", "Vũ Trụ Arrakis", "Hành Động", "Khoa Học Kỳ Ảo"],
+    genres: ["Sử Thi GiẢ Tưởng", "Vũ Trụ Arrakis", "Hành Động", "Khoa Học Kỳ Ảo"],
     overview:
       "Paul Atreides hợp nhất cùng Chani và tộc người Fremen để phát động cuộc kháng chiến báo thù những kẻ hủy diệt gia tộc mình, đối diện với định mệnh nghiệt ngã làm rung chuyển toàn cõi thiên hà.",
-    charImage: "/Folder-Background/dune-2/dune-ensemble-sandworm.png",
+    charImage: "/Folder-Background/dune-2/dune-ensemble-sandworm.webp",
     charAlt: "Toàn bộ nhân vật Dune 2 và Thần Thú Shai-Hulud sa mạc",
     slug: "hanh-tinh-cat-phan-hai",
     trailer_url: "https://www.youtube.com/watch?v=Way9Dexny3w",
@@ -1263,7 +1293,7 @@ const DUNE_FANTASY_SLIDES: DuneFantasySlide[] = [
     genres: ["Tình Yêu & Khát Vọng", "Kháng Chiến Fremen", "Sa Mạc Vô Tận", "Phiêu Lưu"],
     overview:
       "Sát cánh chiến đấu bên chiến binh quả cảm Chani, Paul thuần hóa loài sâu cát khổng lồ và học hỏi giáo lý sa mạc cổ xưa để trở thành thủ lĩnh được toàn thể người dân Arrakis tôn sùng.",
-    charImage: "/Folder-Background/dune-2/dune-paul-chani-hd.png",
+    charImage: "/Folder-Background/dune-2/dune-paul-chani-hd.webp",
     charAlt: "Paul Atreides và Chani sát cánh trong bộ chiến giáp Stillsuit",
     slug: "hanh-tinh-cat-phan-hai",
     trailer_url: "https://www.youtube.com/watch?v=Way9Dexny3w",
@@ -1281,7 +1311,7 @@ const DUNE_FANTASY_SLIDES: DuneFantasySlide[] = [
     genres: ["Quyền Năng Huyền Bí", "Tranh Đoạt Vương Quyền", "Thần Thoại Vũ Trụ", "Kịch Tính"],
     overview:
       "Vượt qua lằn ranh sinh tử nhờ Nước Sự Sống, Paul thức tỉnh đôi mắt xanh rực sáng của hương dược Arrakis và dẫn đầu hàng triệu chiến binh Fremen tiến thẳng vào trận chiến định đoạt ngai vàng hoàng đế.",
-    charImage: "/Folder-Background/dune-2/dune-paul-solo.png",
+    charImage: "/Folder-Background/dune-2/dune-paul-solo.webp",
     charAlt: "Paul Atreides khoác áo choàng sa mạc với đôi mắt xanh hương dược",
     slug: "hanh-tinh-cat-phan-hai",
     trailer_url: "https://www.youtube.com/watch?v=Way9Dexny3w",
@@ -1294,11 +1324,16 @@ function DuneFantasyHeroBanner({
 }: {
   onOpenTrailer: (name: string, url?: string) => void;
 }) {
+  const getAssetUrl = (p: string) => {
+    if (!p) return "";
+    return CDN_BASE ? `${CDN_BASE}${p}` : p;
+  };
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(1);
   const [isPaused, setIsPaused] = useState(false);
-  const [bgSrc, setBgSrc] = useState(DUNE_BG_PATH);
-  const [logoSrc, setLogoSrc] = useState(DUNE_LOGO_PATH);
+  const [bgSrc, setBgSrc] = useState(() => getAssetUrl(DUNE_BG_PATH));
+  const [logoSrc, setLogoSrc] = useState(() => getAssetUrl(DUNE_LOGO_PATH));
 
   const currentSlide = DUNE_FANTASY_SLIDES[currentIndex];
 
@@ -1355,12 +1390,13 @@ function DuneFantasyHeroBanner({
           src={bgSrc}
           alt="Dune: Hành Tinh Cát - Sa Mạc Arrakis"
           onError={() => {
-            if (CDN_BASE && bgSrc !== `${CDN_BASE}${DUNE_BG_PATH}`) {
-              setBgSrc(`${CDN_BASE}${DUNE_BG_PATH}`);
+            if (bgSrc !== DUNE_BG_PATH) {
+              setBgSrc(DUNE_BG_PATH);
             }
           }}
           className="w-full h-full object-cover object-[center_35%] scale-[1.01] filter brightness-[0.92] contrast-[1.08]"
           loading="eager"
+          decoding="async"
         />
       </div>
 
@@ -1398,12 +1434,19 @@ function DuneFantasyHeroBanner({
             )}
           >
             <motion.img
-              src={currentSlide.charImage}
+              src={getAssetUrl(currentSlide.charImage)}
               alt={currentSlide.charAlt}
+              onError={(e) => {
+                const target = e.currentTarget;
+                if (!target.src.endsWith(currentSlide.charImage)) {
+                  target.src = currentSlide.charImage;
+                }
+              }}
               animate={{ y: [0, -6, 0] }}
               transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
               className="h-full w-auto object-contain filter contrast-[1.08] brightness-[0.98]"
               loading="eager"
+              decoding="async"
             />
           </motion.div>
         </AnimatePresence>
@@ -1427,12 +1470,13 @@ function DuneFantasyHeroBanner({
                 src={logoSrc}
                 alt="Dune: Part Two"
                 onError={() => {
-                  if (CDN_BASE && logoSrc !== `${CDN_BASE}${DUNE_LOGO_PATH}`) {
-                    setLogoSrc(`${CDN_BASE}${DUNE_LOGO_PATH}`);
+                  if (logoSrc !== DUNE_LOGO_PATH) {
+                    setLogoSrc(DUNE_LOGO_PATH);
                   }
                 }}
                 className="h-full w-full object-contain object-left drop-shadow-[0_4px_24px_rgba(245,158,11,0.4)]"
                 loading="eager"
+                decoding="async"
               />
             </div>
 
