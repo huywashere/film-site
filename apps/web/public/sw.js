@@ -52,11 +52,26 @@ self.addEventListener("fetch", (event) => {
   // into ERR_FAILED when the response is opaque or blocked from CacheStorage.
   if (url.origin !== self.location.origin) return;
 
-  // Exclude hot-reloading dev urls and auth api calls
+  // Exclude hot-reloading dev urls, auth api calls, proxies, and media
   if (
     url.pathname.startsWith("/_next/webpack-hmr") ||
     url.pathname.startsWith("/api/v1/auth") ||
-    url.pathname.startsWith("/api/kkphim")
+    url.pathname.startsWith("/api/kkphim") ||
+    url.pathname.startsWith("/_next/image") ||
+    url.pathname.startsWith("/api/image-proxy") ||
+    url.pathname.startsWith("/api/hls-proxy")
+  ) {
+    return;
+  }
+
+  // Never intercept Next.js client-side navigations (RSC flights), APIs, or prefetch requests.
+  // Intercepting them here turns temporary network delays into ERR_FAILED or corrupts RSC JSON streams.
+  if (
+    url.searchParams.has("_rsc") ||
+    event.request.headers.get("RSC") === "1" ||
+    event.request.headers.get("Next-Router-State-Tree") ||
+    url.pathname.startsWith("/_next/data/") ||
+    url.pathname.startsWith("/api/")
   ) {
     return;
   }
@@ -76,6 +91,12 @@ self.addEventListener("fetch", (event) => {
   // the browser/CDN. Let them bypass the service worker so a deployment can
   // never serve an obsolete chunk during client-side navigation.
   if (isNextAsset) return;
+
+  // Only intercept font assets and precached offline assets. All other page navigations
+  // and data fetches must bypass the Service Worker to prevent 502/504 errors on tab switches.
+  if (!url.pathname.startsWith("/fonts/") && !ASSETS_TO_CACHE.includes(url.pathname)) {
+    return;
+  }
 
   event.respondWith(
     caches.match(event.request)

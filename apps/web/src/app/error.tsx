@@ -22,17 +22,15 @@ export default function ErrorPage({
 
     if (recoverFromChunkLoadError(error)) return;
 
-    if (process.env.NODE_ENV !== "development" || recoveryStarted.current)
-      return;
+    if (recoveryStarted.current) return;
 
     const recoveryId = `${window.location.pathname}:${error.message}`;
     if (sessionStorage.getItem(DEV_RECOVERY_KEY) === recoveryId) return;
 
     recoveryStarted.current = true;
     sessionStorage.setItem(DEV_RECOVERY_KEY, recoveryId);
-    // Do not call reset() before navigating. Reset unmounts this boundary and
-    // used to cancel its own reload timer, leaving the tab stuck on the 500 UI.
-    window.location.reload();
+    // Automatic retry with clean document reload
+    retryCurrentDocument();
   }, [error]);
 
   const retry = () => {

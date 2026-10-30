@@ -19,6 +19,26 @@ export function isChunkLoadError(error: unknown): boolean {
   );
 }
 
+export function isRecoverableNavigationError(error: unknown): boolean {
+  if (isChunkLoadError(error)) return true;
+  const value = error as ErrorLike | null;
+  const text = `${value?.name || ""} ${value?.message || ""}`.toLowerCase();
+
+  return (
+    text.includes("failed to fetch") ||
+    text.includes("networkerror") ||
+    text.includes("load failed") ||
+    text.includes("unexpected token '<'") ||
+    text.includes("unexpected token <") ||
+    text.includes("is not valid json") ||
+    text.includes("server components render") ||
+    text.includes("rsc") ||
+    text.includes("502") ||
+    text.includes("504") ||
+    text.includes("404")
+  );
+}
+
 export function buildChunkRecoveryUrl(href: string, now = Date.now()): string {
   const url = new URL(href);
   url.searchParams.set(CHUNK_RELOAD_PARAM, String(now));
@@ -31,11 +51,12 @@ function recoveryKey(pathname: string): string {
 
 /**
  * A deployment or a Turbopack rebuild can leave an already-open tab pointing
- * at chunk filenames that no longer exist. A React reset cannot repair that
- * document: it must request the current HTML and chunk map again.
+ * at chunk filenames that no longer exist, or an RSC flight request can receive
+ * a temporary 502/cached HTML page. A React reset cannot repair that document:
+ * it must request the current HTML and chunk map again cleanly.
  */
 export function recoverFromChunkLoadError(error: unknown): boolean {
-  if (typeof window === "undefined" || !isChunkLoadError(error)) return false;
+  if (typeof window === "undefined" || !isRecoverableNavigationError(error)) return false;
 
   const key = recoveryKey(window.location.pathname);
   const now = Date.now();

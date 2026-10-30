@@ -180,15 +180,16 @@ export default function TvClient({
   };
 
   // Determine current active stream URL
+  const currentChannel = activeChannel || initialChannel || getDefaultChannel();
   const allStreamUrls = useMemo(() => {
-    const urls = [activeChannel.streamUrl];
-    if (activeChannel.backupStreamUrls) {
-      urls.push(...activeChannel.backupStreamUrls);
+    const urls = [currentChannel?.streamUrl || ""];
+    if (currentChannel?.backupStreamUrls) {
+      urls.push(...currentChannel.backupStreamUrls);
     }
-    return urls;
-  }, [activeChannel]);
+    return urls.filter(Boolean);
+  }, [currentChannel]);
 
-  const currentStreamUrl = allStreamUrls[activeSourceIndex] || activeChannel.streamUrl;
+  const currentStreamUrl = allStreamUrls[activeSourceIndex] || currentChannel?.streamUrl || "";
   const hasAlternativeSource = allStreamUrls.length > 1;
 
   const handleSwitchSource = () => {

@@ -195,7 +195,7 @@ function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
             film={film}
             kind="poster"
             alt={filmTitle}
-            priority={rank <= 4}
+            priority={false}
             loadImmediately={true}
             allowTitleLookup={!film.poster_url && !film.thumb_url}
             className="absolute inset-0 h-full w-full transition-transform duration-500 group-hover/item:scale-105"
@@ -380,15 +380,13 @@ export function Top10RankedRow({
     title || t("home.top10Title", "TOP 10 Đang Được Xem Nhiều");
   const top10 = dedupeTop10(films || []);
 
-  // Pre-warm the top 6 posters into browser cache immediately for 0ms paint
+  // Pre-warm TMDB posters into browser cache (only TMDB edge CDN, never slow third-party provider URLs)
   useEffect(() => {
     if (typeof window !== "undefined" && top10.length > 0) {
-      top10.slice(0, 6).forEach((film) => {
+      top10.slice(0, 4).forEach((film) => {
         const rawUrl = resolveImageUrl(film.poster_url, film.thumb_url);
-        if (rawUrl) {
-          const targetUrl = isTmdbImageUrl(rawUrl)
-            ? tmdbImageVariant(rawUrl, "w500") || rawUrl
-            : rawUrl;
+        if (rawUrl && isTmdbImageUrl(rawUrl)) {
+          const targetUrl = tmdbImageVariant(rawUrl, "w500") || rawUrl;
           preloadImage(targetUrl);
         }
       });

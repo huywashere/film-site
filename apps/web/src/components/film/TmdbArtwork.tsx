@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { getImageProps } from 'next/image';
 import type { FilmItem } from '@/components/film/FilmCard';
 import { resolveImageUrl } from '@/components/film/FilmCard';
 import { useTmdbArtwork } from '@/hooks/useTmdbArtwork';
@@ -386,22 +385,8 @@ export function TmdbArtwork({
   const deliveredImageProps = useMemo(() => {
     if (!src) return null;
     // Remote provider URLs have already been normalized and sized upstream.
-    // Sending an uncommon host through Next's optimizer produces a 400 when
-    // that host is intentionally absent from remotePatterns, so deliver all
-    // absolute artwork URLs directly and retain the same-origin relay as the
-    // next candidate.
+    // Deliver all absolute artwork URLs directly without Next.js optimizer hops.
     const alreadySized = isPreOptimizedImageUrl(src) || /^https?:\/\//i.test(src);
-    const nextImageProps = getImageProps({
-      src,
-      alt: alt || film.name,
-      width: kind === 'backdrop' ? (preferOriginal ? 1920 : 1280) : 500,
-      height: kind === 'backdrop' ? (preferOriginal ? 1080 : 720) : 750,
-      sizes: responsiveSizes,
-      quality: kind === 'backdrop' ? 90 : 85,
-      loading: priority || nearViewport ? 'eager' : 'lazy',
-      fetchPriority: priority ? 'high' : nearViewport ? 'auto' : 'low',
-      unoptimized: alreadySized,
-    }).props;
     const responsiveSources = kind === 'backdrop'
       ? [
           artworkQuery.backdropW780 && `${artworkQuery.backdropW780} 780w`,
@@ -414,18 +399,25 @@ export function TmdbArtwork({
         ];
     const embeddedSrcSet = isTmdbImageUrl(src)
       ? responsiveSources.filter(Boolean).join(', ')
-      : '';
-    return embeddedSrcSet
-      ? { ...nextImageProps, srcSet: embeddedSrcSet }
-      : nextImageProps;
+      : undefined;
+
+    return {
+      src,
+      srcSet: embeddedSrcSet,
+      sizes: embeddedSrcSet ? responsiveSizes : undefined,
+      width: kind === 'backdrop' ? (preferOriginal ? 1920 : 1280) : 500,
+      height: kind === 'backdrop' ? (preferOriginal ? 1080 : 720) : 750,
+      loading: (priority || nearViewport ? 'eager' : 'lazy') as 'eager' | 'lazy',
+      fetchPriority: (priority ? 'high' : nearViewport ? 'auto' : 'low') as 'high' | 'auto' | 'low',
+      decoding: 'async' as const,
+      style: { color: 'transparent' },
+    };
   }, [
-    alt,
     artworkQuery.backdropW780,
     artworkQuery.backdropW1280,
     artworkQuery.posterW185,
     artworkQuery.posterW342,
     artworkQuery.posterW500,
-    film.name,
     kind,
     nearViewport,
     priority,

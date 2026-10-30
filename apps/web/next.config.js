@@ -261,6 +261,10 @@ const nextConfig = {
           "/((?!api|_next/static|_next/image|Folder-Background|images|brand|artplayer|avatars|img-backtop|img-cut|mascots|og-img|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico)$).*)",
         headers: [
           {
+            key: "Cache-Control",
+            value: "no-store, no-cache, must-revalidate, proxy-revalidate",
+          },
+          {
             key: "Cloudflare-CDN-Cache-Control",
             value: "no-store",
           },
