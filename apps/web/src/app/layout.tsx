@@ -109,11 +109,12 @@ export const metadata: Metadata = {
   ],
   icons: {
     icon: [
-      { url: "/flexphim-logo.svg", type: "image/svg+xml" },
-      { url: "/flexphim-logo.png", type: "image/png" },
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
+      { url: "/flexphim-logo.png", type: "image/png", sizes: "512x512" },
     ],
-    shortcut: "/flexphim-logo.svg",
-    apple: "/flexphim-logo.png",
+    shortcut: "/favicon.ico",
+    apple: "/icon-192.png",
   },
   manifest: "/manifest.json",
   appleWebApp: {
@@ -173,9 +174,6 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: PREPAINT_SCRIPT }} />
         <meta name="referrer" content="strict-origin-when-cross-origin" />
-        <link rel="icon" href="/flexphim-logo.svg" type="image/svg+xml" />
-        <link rel="alternate icon" href="/flexphim-logo.png" type="image/png" />
-        <link rel="apple-touch-icon" href="/flexphim-logo.png" />
         <link rel="preconnect" href="https://wsrv.nl" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://wsrv.nl" />
         <link rel="preconnect" href="https://image.tmdb.org" crossOrigin="anonymous" />
