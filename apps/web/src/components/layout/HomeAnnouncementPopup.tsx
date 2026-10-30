@@ -13,6 +13,9 @@ import {
 
 const DISMISSED_VERSION_KEY = "netphim:home-announcement:dismissed-version";
 
+// In-memory flag tracking dismissal during active page session so the popup does not re-open during internal SPA navigation
+let dismissedInCurrentVisit = false;
+
 function getSafeLink(value?: string) {
   const href = value?.trim();
   if (!href) return "";
@@ -37,35 +40,31 @@ export function HomeAnnouncementPopup() {
   const dismissButtonRef = useRef<HTMLButtonElement>(null);
 
   const dismiss = useCallback(() => {
-    if (config) {
-      try {
-        localStorage.setItem(
-          DISMISSED_VERSION_KEY,
-          String(config.homePopupVersion),
-        );
-      } catch {
-        // Closing must never depend on storage availability.
-      }
+    dismissedInCurrentVisit = true;
+    try {
+      localStorage.removeItem(DISMISSED_VERSION_KEY);
+      localStorage.removeItem("flexphim:home-announcement:dismissed-version");
+    } catch {
+      // Closing must never depend on storage availability.
     }
     setOpen(false);
-  }, [config]);
+  }, []);
 
   useEffect(() => {
     let active = true;
+    try {
+      localStorage.removeItem(DISMISSED_VERSION_KEY);
+      localStorage.removeItem("flexphim:home-announcement:dismissed-version");
+    } catch {
+      // Clean up legacy permanent dismiss flags so announcement shows on every visit
+    }
+
     siteConfigApi
       .getPublic()
       .then(({ data }) => {
         if (!active || !data.homePopupEnabled || !data.homePopupBody?.trim())
           return;
-        let dismissedVersion = 0;
-        try {
-          dismissedVersion = Number(
-            localStorage.getItem(DISMISSED_VERSION_KEY) || 0,
-          );
-        } catch {
-          // Storage can be unavailable in privacy mode; the announcement still works.
-        }
-        if (dismissedVersion === data.homePopupVersion) return;
+        if (dismissedInCurrentVisit) return;
         setConfig(data);
         setOpen(true);
       })
