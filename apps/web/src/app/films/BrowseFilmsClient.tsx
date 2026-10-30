@@ -419,6 +419,7 @@ function BrowseFilmsContent({
         title="Duyệt Tìm & Khám Phá"
         description="Khám phá kho phim điện ảnh, phim bộ và hoạt hình chọn lọc với hệ thống lọc đa tầng chuyên sâu."
         imageSrc="/img-backtop/tab-films.webp"
+        blurDataURL="data:image/webp;base64,UklGRrQAAABXRUJQVlA4IKgAAABQBQCdASogABIAPu1mqk8ppaOiKA1RMB2JYgDFCzQ/UFVIJRQ58x61lgqf+JvBB8ky6AAA/vnHcbtWCZysUiCcHuuqRxaZALlSrFJcJlbOboxbaaFElWC17tRH6OLesquLnOWfk80EOc9gCMDDtQrQqTflzmOnKLbLdMnRy0RqjeN4StLM5jRp2K9hypL8S2+jmZbuIeLdgeLm8uA/occO+FmgRst4AAA="
         objectPosition="center 10%"
         contentClassName="pb-14 sm:pb-18 md:pb-22 lg:pb-26"
       />

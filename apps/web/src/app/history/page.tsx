@@ -256,6 +256,7 @@ export default function HistoryPage() {
             : "Theo dõi và tiếp tục thưởng thức các bộ phim bạn đã xem gần đây."
         }
         imageSrc="/img-backtop/tab-history.webp"
+        blurDataURL="data:image/webp;base64,UklGRv4AAABXRUJQVlA4IPIAAADwBQCdASogABIAPu1iqU2ppaOiMAgBMB2JZQAIEDiBcIDVyHA8Q3aJHJd9BQaF9Frur+iQmLdVgAD+5/9Bba2d4cvkC8K6880zmOmQvSRuzSZvwqlZHcMvg2c+Oijineh+pe5bdeZRfQsKilyX4EdQQ5wJ57kPSwYJEYX85kq/TtiWrCR+qiL+Xq6ESZtRYsWpy6mxqwTvtdh0wJwt46qVD9Y/Nz6kPuimHEuNVR5gqNikr0AGLIYIYyi9cStwZsowiV0tr2SrXsWiox8X3VnLGycsVnWrY7Z6wd//OVl6LVWMQeP1OlGSDiHO4gN5WUgAAA=="
         objectPosition="center 4%"
         contentClassName="pb-6 sm:pb-8 md:pb-10"
       >

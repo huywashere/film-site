@@ -31,7 +31,7 @@ export interface VerticalTabsHeroBannerProps {
 
 const DEFAULT_HERO_BG_PATH = '/img-backtop/tab-genres.webp';
 const DEFAULT_HERO_BLUR_DATA_URL =
-  'data:image/webp;base64,UklGRrwAAABXRUJQVlA4ILAAAABQBQCdASogABIAPzmEuFOvKCUisAgB4CcJYwC/7BQ3v5mBu5etyb2XlLK7ybl4WESn/QAA/j/WrGUZKzfMd+2yJUlM3f/lUeMbv2wHHabRl4JoRomOqnDTkQi0dpnNG9JvC6KC8ucO+OUFgVo3llWbpnTXTbBvfHHrMxVonbWS+cJlEEoVTj137ze8CNoYSmrzVYqsv4ErsfQDBGM21iB57pPMK1Nm+c+/GolHi60AAA==';
+  'data:image/webp;base64,UklGRtgAAABXRUJQVlA4IMwAAADwBACdASogABIAPu1kp02ppaMiMBgMATAdiUAXyzgDJAAP/QeXElMcwu/H3G46/SAA/vaTwOrWdy8TJbQTWw9lMWy1VY3c0xyZiPCBWqotIPkKtiUqEhpHsly/gM+hwCuE4ljo7PM/m4z7CNtXe9092hrzw8eZ51EQv/SO8seuukyzZx0VhX8Bwl4SN2ackAOh5k+4bujFg8eK9/0RslRg2SoGzvphZlOzIY2hOFOM1zIVFZ8lFojHNMINn8MD2zdHgnKUgsQhCy1AAAA=';
 
 function VerticalTabsHeroBannerComponent({
   badge,
@@ -60,6 +60,11 @@ function VerticalTabsHeroBannerComponent({
   const targetBlurDataURL = customBlurDataURL || DEFAULT_HERO_BLUR_DATA_URL;
   const [imageSrc, setImageSrc] = useState(targetImageSrc);
 
+  // Sync if target prop changes
+  if (imageSrc !== targetImageSrc && customImageSrc) {
+    setImageSrc(targetImageSrc);
+  }
+
   return (
     <section
       data-hero-banner="true"
@@ -87,6 +92,13 @@ function VerticalTabsHeroBannerComponent({
           sizes="100vw"
           placeholder="blur"
           blurDataURL={targetBlurDataURL}
+          onError={() => {
+            if (imageSrc.endsWith('.webp')) {
+              setImageSrc(imageSrc.replace('.webp', '.jpg'));
+            } else if (imageSrc !== DEFAULT_HERO_BG_PATH) {
+              setImageSrc(DEFAULT_HERO_BG_PATH);
+            }
+          }}
           className={cn(
             'w-full h-full object-cover select-none transition-transform duration-300',
             // Lower image down on mobile so character heads and faces are not hidden behind navbar or top edge

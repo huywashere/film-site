@@ -103,6 +103,7 @@ export default function WatchlistPage() {
           title="Tủ Phim Của Tôi"
           description="Đăng nhập để xem danh sách phim đã lưu và đồng bộ trên mọi thiết bị."
           imageSrc="/img-backtop/tab-watchlist.webp"
+          blurDataURL="data:image/webp;base64,UklGRrgAAABXRUJQVlA4IKwAAADwBQCdASogABIAPu1iqU2ppaQiMAgBMB2JagCdMoRwKEM39A0l6WM94dQPuabYbLFEZvdNq/0kwAD+W3zibNLZUKqXovbS8hajm1abW2AmyoPhAdZbzgP5s5ZFAUiZklgeBNXzyvNpZCLHPtl0KiR/vyrv9wMHbfcMVDX3N1pNKj+Y4f8WFCV+igXCb3j6VIrJBGFMtAUTWHZs1KLIMrAvLrpE3z8Cg/IuaAAA"
           objectPosition="center 4%"
           contentClassName="pb-8 sm:pb-10 md:pb-12"
         />
@@ -142,6 +143,7 @@ export default function WatchlistPage() {
             : "Lưu lại các bộ phim yêu thích để thưởng thức trọn vẹn bất cứ lúc nào."
         }
         imageSrc="/img-backtop/tab-watchlist.webp"
+        blurDataURL="data:image/webp;base64,UklGRrgAAABXRUJQVlA4IKwAAADwBQCdASogABIAPu1iqU2ppaQiMAgBMB2JagCdMoRwKEM39A0l6WM94dQPuabYbLFEZvdNq/0kwAD+W3zibNLZUKqXovbS8hajm1abW2AmyoPhAdZbzgP5s5ZFAUiZklgeBNXzyvNpZCLHPtl0KiR/vyrv9wMHbfcMVDX3N1pNKj+Y4f8WFCV+igXCb3j6VIrJBGFMtAUTWHZs1KLIMrAvLrpE3z8Cg/IuaAAA"
         objectPosition="center 4%"
         contentClassName="pb-8 sm:pb-10 md:pb-12"
       />

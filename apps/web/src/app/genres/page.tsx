@@ -26,50 +26,50 @@ export const HUBS: HubCard[] = [
     slug: 'phim-han-quoc',
     title: 'Phim Hàn Quốc',
     href: '/country/han-quoc',
-    image: '/Folder-Background/chu-de/cong so.png',
+    image: '/Folder-Background/chu-de/cong-so.webp',
   },
   {
     slug: 'phim-trung-quoc',
     title: 'Phim Trung Quốc',
     href: '/country/trung-quoc',
-    image: '/Folder-Background/China/xương chó/pjakooca_1920x1080-chohoangvaxuong-01_1920_1080.png',
+    image: '/Folder-Background/China/cho-hoang-va-xuong/cho-hoang-va-xuong-card.webp',
   },
   {
     slug: 'anime-hoat-hinh',
     title: 'Anime & Hoạt Hình',
     href: '/films/anime',
-    image: '/Folder-Background/chu-de/naruto-team-7-black-3840x2160-25019 (1).png',
+    image: '/Folder-Background/chu-de/naruto-team-7.webp',
   },
   {
     slug: 'doraemon',
     title: 'Doraemon Movie',
     href: '/universe/doraemon',
-    image: '/Folder-Background/chu-de/thumb-1920-1401041.png',
+    image: '/Folder-Background/chu-de/doraemon.webp',
   },
   {
     slug: 'conan',
     title: 'Thám Tử Lừng Danh Conan',
     href: '/universe/conan',
-    image: '/Folder-Background/chu-de/conan.png',
+    image: '/Folder-Background/chu-de/conan.webp',
   },
   {
     slug: 'khoa-hoc-vien-tuong',
     title: 'Khoa Học Viễn Tưởng',
     href: '/genre/vien-tuong',
-    image: '/Folder-Background/chu-de/matrix.png',
+    image: '/Folder-Background/chu-de/matrix.webp',
   },
   {
     slug: 'chien-tranh',
     title: 'Chiến Tranh & Lịch Sử',
     href: '/genre/chien-tranh',
-    image: '/Folder-Background/chu-de/fury.png',
+    image: '/Folder-Background/chu-de/fury.webp',
     objectPosition: 'center 18%',
   },
   {
     slug: 'marvel',
     title: 'Vũ Trụ Marvel',
     href: '/universe/marvel',
-    image: '/Folder-Background/chu-de/marvel.png',
+    image: '/Folder-Background/chu-de/marvel.webp',
   },
   {
     slug: 'dc',
@@ -138,8 +138,15 @@ function ResilientHubCardImage({
     if (!src) return [];
     if (src.startsWith('/Folder-Background/') || src.startsWith('/img-backtop/')) {
       const encodedSrc = encodeURI(src);
-      const cdnUrl = CDN_BASE ? `${CDN_BASE}${encodedSrc}` : '';
-      return cdnUrl ? [encodedSrc, cdnUrl] : [encodedSrc];
+      const list = [encodedSrc];
+      if (CDN_BASE) list.push(`${CDN_BASE}${encodedSrc}`);
+      // Fallback candidate if .webp fails
+      if (encodedSrc.endsWith('.webp')) {
+        const pngFallback = encodedSrc.replace('.webp', '.png');
+        list.push(pngFallback);
+        if (CDN_BASE) list.push(`${CDN_BASE}${pngFallback}`);
+      }
+      return list;
     }
     if (src.includes('image.tmdb.org')) {
       return [
@@ -387,7 +394,8 @@ export default function GenresPage() {
         titleClassName="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-extrabold text-white tracking-tight"
         description="Khám phá các vũ trụ điện ảnh và tuyển tập phim đặc sắc nhất được tuyển chọn riêng cho bạn."
         descriptionClassName="text-xs sm:text-sm text-neutral-300 font-normal max-w-xl"
-        imageSrc="/Folder-Background/starwar/1140629.jpg"
+        imageSrc="/Folder-Background/starwar/1140629.webp"
+        blurDataURL="data:image/webp;base64,UklGRqIAAABXRUJQVlA4IJYAAAAwBQCdASogABIAPuVepU2pJSOiMAwBIByJYwCzgCBXz+fH0V5xYtJPewZGKeMUZ3FQAAD+rBd05BoOgNSWvPem2/jtBLKZ3mOFFMsJf/4iov8M9ACJZiqj7ZTv5hoI5fje5+kLr17AQWb55W06pcaq+FG8/NNkKHZMKWszgo2qS61V3UaLoQtB4H/SfZEslPqIGPswAAA="
         objectPosition="center 30%"
         contentClassName="pb-5 sm:pb-6 md:pb-7"
       />
