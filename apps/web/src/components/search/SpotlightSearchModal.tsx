@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo, startTransition } from "react";
+import React, { useState, useEffect, useRef, useMemo, useDeferredValue, startTransition } from "react";
 import Link from "next/link";
 import NextImage from "next/image";
 import { useQuery } from "@tanstack/react-query";
@@ -84,20 +84,43 @@ function filmSlugIdentity(film: FilmItem): string {
   return normalizeForSearch(film.slug || "");
 }
 
-function SearchCardImage({ film }: { film: FilmItem }) {
+const FALLBACK_GENRES = [
+  { label: "Hành Động", slug: "hanh-dong" },
+  { label: "Kinh Dị", slug: "kinh-di" },
+  { label: "Tình Cảm", slug: "tinh-cam" },
+  { label: "Hài Hước", slug: "hai-huoc" },
+  { label: "Viễn Tưởng", slug: "vien-tuong" },
+  { label: "Hoạt Hình", slug: "hoat-hinh" },
+  { label: "Cổ Trang", slug: "co-trang" },
+  { label: "Tâm Lý", slug: "tam-ly" },
+];
+
+const SearchCardImage = React.memo(function SearchCardImage({
+  film,
+  priority = false,
+}: {
+  film: FilmItem;
+  priority?: boolean;
+}) {
   return (
     <TmdbArtwork
       film={film}
       kind="poster"
-      priority={true}
+      priority={priority}
       className="absolute inset-0 h-full w-full transition-transform duration-300 group-hover:scale-105"
       alt={film.name || film.title || "Poster"}
     />
   );
-}
+});
 
 // ── Highlight matching text ───────────────────────────────────────
-function HighlightMatch({ text, query }: { text: string; query: string }) {
+const HighlightMatch = React.memo(function HighlightMatch({
+  text,
+  query,
+}: {
+  text: string;
+  query: string;
+}) {
   const trimmed = query.trim();
   if (!trimmed || !text) return <span>{text}</span>;
 
@@ -120,7 +143,7 @@ function HighlightMatch({ text, query }: { text: string; query: string }) {
       {after}
     </span>
   );
-}
+});
 
 function SmartIntentChips({
   intent,
@@ -195,8 +218,12 @@ export function SpotlightSearchModal({
   const navigation = useReliableNavigation();
   const [viewMode, setViewMode] = useState<"compact" | "expanded">("compact");
   const [query, setQuery] = useState("");
+  const deferredQuery = useDeferredValue(query);
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [history, setHistory] = useState<string[]>([]);
+  const [history, setHistory] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
+    return getHistory();
+  });
   const [activeTypeFilter, setActiveTypeFilter] = useState<
     "all" | "series" | "single" | "hoat-hinh" | "actor"
   >("all");
@@ -205,14 +232,11 @@ export function SpotlightSearchModal({
   >("all");
   const [selectedGenreSlug, setSelectedGenreSlug] = useState<string>("all");
 
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Load history on open & focus
+  // Load history on open & focus input on next animation frame
   useEffect(() => {
-    if (isOpen && mounted) {
+    if (isOpen) {
       setHistory(getHistory());
       setQuery("");
       setDebouncedQuery("");
@@ -220,38 +244,62 @@ export function SpotlightSearchModal({
       setActiveTypeFilter("all");
       setActiveLangFilter("all");
       setSelectedGenreSlug("all");
-      setTimeout(() => inputRef.current?.focus(), 50);
+      const raf = requestAnimationFrame(() => {
+        inputRef.current?.focus();
+      });
+      return () => cancelAnimationFrame(raf);
     }
-  }, [isOpen, mounted]);
+  }, [isOpen]);
 
   // Session cache để phục hồi kết quả 0ms khi backspace hoặc gõ lại từ khóa
   const searchCacheRef = useRef<Map<string, FilmItem[]>>(new Map());
-  const parsedIntent = useMemo(() => parseSearchIntent(query), [query]);
+  const parsedIntent = useMemo(
+    () => parseSearchIntent(deferredQuery),
+    [deferredQuery],
+  );
 
-  // IME-aware debounce: 50ms cho Latin, 110ms cho tiếng Việt/CJK
-  // Tối ưu tốc độ phản hồi cực nhanh, không gây lag gõ Telex
+  // Debounce for remote queries: 200ms Latin, 260ms IME
+  // Tối ưu phản hồi gõ chữ tức thì, không spam remote API khi đang gõ
   useEffect(() => {
-    const debounceDelay = isIMEQuery(query) ? 110 : 50;
-    const t = setTimeout(() => setDebouncedQuery(query), debounceDelay);
+    const trimmed = deferredQuery.trim();
+    if (!trimmed) {
+      setDebouncedQuery("");
+      return;
+    }
+    const debounceDelay = isIMEQuery(deferredQuery) ? 260 : 200;
+    const t = setTimeout(() => setDebouncedQuery(deferredQuery), debounceDelay);
     return () => clearTimeout(t);
-  }, [query]);
+  }, [deferredQuery]);
 
   // 0ms Instant Local Pre-Search (Immediate response while remote fetch is running)
   const instantLocalResults = useMemo(() => {
-    if (query.trim().length < 1) return [];
-    return searchLocalFilms(query, suggestions);
-  }, [query, suggestions]);
+    if (deferredQuery.trim().length < 1) return [];
+    return searchLocalFilms(deferredQuery, suggestions);
+  }, [deferredQuery, suggestions]);
 
   // Movie Search API (Remote fetch)
   const { data: searchData, isFetching: isSearchingMovies } = useQuery({
     queryKey: ["spotlight-search-fast", debouncedQuery],
     queryFn: () => movieApi.search(debouncedQuery, 1, 24).then((r) => r.data),
-    enabled: mounted && debouncedQuery.trim().length >= 2,
+    enabled: isOpen && debouncedQuery.trim().length >= 2,
     staleTime: 1000 * 60 * 10,
     gcTime: 1000 * 60 * 30,
     retry: false,
     refetchOnWindowFocus: false,
   });
+
+  const shouldSearchActors = useMemo(() => {
+    const q = debouncedQuery.trim();
+    if (q.length < 3) return false;
+    if (
+      activeTypeFilter === "series" ||
+      activeTypeFilter === "single" ||
+      activeTypeFilter === "hoat-hinh"
+    ) {
+      return false;
+    }
+    return true;
+  }, [debouncedQuery, activeTypeFilter]);
 
   // Actor Search API (Search people via TMDB API for both compact and expanded modes)
   const { data: actorSearchData, isFetching: isSearchingActors } = useQuery({
@@ -263,7 +311,7 @@ export function SpotlightSearchModal({
       if (!res.ok) return { results: [] };
       return res.json();
     },
-    enabled: mounted && debouncedQuery.trim().length >= 2,
+    enabled: isOpen && shouldSearchActors,
     staleTime: 1000 * 60 * 10,
     retry: false,
     refetchOnWindowFocus: false,
@@ -283,7 +331,9 @@ export function SpotlightSearchModal({
     queryKey: ["spotlight-genres"],
     queryFn: () => movieApi.getGenres().then((r) => r.data),
     staleTime: 1000 * 60 * 30,
-    enabled: mounted && isOpen,
+    enabled: isOpen,
+    retry: false,
+    refetchOnWindowFocus: false,
   });
 
   const remoteResults: FilmItem[] = useMemo(
@@ -301,7 +351,7 @@ export function SpotlightSearchModal({
 
   // Seamless merge of remote, session cache and instant local results with intelligent deduplication
   const rawResults: FilmItem[] = useMemo(() => {
-    const trimmed = query.trim().toLowerCase();
+    const trimmed = deferredQuery.trim().toLowerCase();
     if (!trimmed) return [];
     const seenIdentities = new Set<string>();
     const seenSlugs = new Set<string>();
@@ -345,11 +395,11 @@ export function SpotlightSearchModal({
     }
 
     return merged;
-  }, [remoteResults, instantLocalResults, query, parsedIntent.baseQuery]);
+  }, [remoteResults, instantLocalResults, deferredQuery, parsedIntent.baseQuery]);
 
   // Apply filters in expanded mode
   const sortedAndFilteredResults = useMemo(() => {
-    if (!query.trim() || activeTypeFilter === "actor") {
+    if (!deferredQuery.trim() || activeTypeFilter === "actor") {
       return [];
     }
 
@@ -392,7 +442,7 @@ export function SpotlightSearchModal({
     });
   }, [
     rawResults,
-    query,
+    deferredQuery,
     activeTypeFilter,
     activeLangFilter,
     selectedGenreSlug,
@@ -427,7 +477,7 @@ export function SpotlightSearchModal({
     });
   }, [suggestions]);
 
-  const activeQuery = query.trim();
+  const activeQuery = deferredQuery.trim();
   const isSearching = activeQuery.length > 0;
   const isQueryTooShort =
     activeQuery.length === 1 && uniqueSearchResults.length === 0 && !isFetching;
@@ -457,16 +507,7 @@ export function SpotlightSearchModal({
         .slice(0, 10)
         .map((g: any) => ({ label: g.name, slug: g.slug }));
     }
-    return [
-      { label: "Hành Động", slug: "hanh-dong" },
-      { label: "Kinh Dị", slug: "kinh-di" },
-      { label: "Tình Cảm", slug: "tinh-cam" },
-      { label: "Hài Hước", slug: "hai-huoc" },
-      { label: "Viễn Tưởng", slug: "vien-tuong" },
-      { label: "Hoạt Hình", slug: "hoat-hinh" },
-      { label: "Cổ Trang", slug: "co-trang" },
-      { label: "Tâm Lý", slug: "tam-ly" },
-    ];
+    return FALLBACK_GENRES;
   }, [genresData]);
 
   const handleHistoryClick = (term: string) => {
@@ -525,7 +566,7 @@ export function SpotlightSearchModal({
     };
   }, [isOpen, viewMode, onClose]);
 
-  if (!mounted || !isOpen) return null;
+  if (!isOpen) return null;
 
   /* ════════════════════════════════════════════════════════════
       MODE 1: COMPACT VIEW (FORM NHỎ - NO BACKGROUND BLUR/DIM)
@@ -653,7 +694,7 @@ export function SpotlightSearchModal({
                             <h4 className="truncate text-xs sm:text-sm font-bold text-neutral-200 group-hover:text-white transition-colors">
                               <HighlightMatch
                                 text={film.name || film.title || ""}
-                                query={debouncedQuery}
+                                query={deferredQuery || debouncedQuery}
                               />
                             </h4>
                             <p className="truncate text-[11px] text-neutral-400 mt-0.5">
@@ -713,7 +754,7 @@ export function SpotlightSearchModal({
                               <h5 className="truncate text-xs font-bold text-white group-hover:text-amber-300 transition-colors">
                                 <HighlightMatch
                                   text={person.name}
-                                  query={debouncedQuery}
+                                  query={deferredQuery || debouncedQuery}
                                 />
                               </h5>
                               <p className="truncate text-[10px] text-neutral-400 mt-0.5">
@@ -1166,7 +1207,7 @@ export function SpotlightSearchModal({
                         <h3 className="line-clamp-1 text-xs font-bold text-white">
                           <HighlightMatch
                             text={film.name || film.title || ""}
-                            query={debouncedQuery}
+                            query={deferredQuery || debouncedQuery}
                           />
                         </h3>
                         {film.origin_name && (

@@ -595,6 +595,9 @@ export function Navbar() {
           fetchBilingualFilms({ format: "all", genre: "", search: "", page: 1 }),
         staleTime: 15 * 60 * 1000,
       });
+
+      // Pre-warm Spotlight search modal chunk so clicks open immediately
+      void import("@/components/search/SpotlightSearchModal");
     };
 
     if ("requestIdleCallback" in window) {
@@ -1090,6 +1093,12 @@ export function Navbar() {
           <div className="flex shrink-0 items-center justify-end space-x-1.5 sm:space-x-3">
             <button
               id="navbar-search-btn"
+              onMouseEnter={() => {
+                void import("@/components/search/SpotlightSearchModal");
+              }}
+              onFocus={() => {
+                void import("@/components/search/SpotlightSearchModal");
+              }}
               onClick={() => setIsSpotlightOpen(true)}
               aria-label={t("nav.searchBtn")}
               title={`${t("nav.searchBtn")} (Ctrl + K)`}
@@ -1107,6 +1116,9 @@ export function Navbar() {
               </kbd>
             </button>
             <button
+              onPointerDown={() => {
+                void import("@/components/search/SpotlightSearchModal");
+              }}
               onClick={() => setIsSpotlightOpen(true)}
               aria-label={t("nav.searchBtn")}
               className="flex h-11 w-11 sm:h-10 sm:w-10 items-center justify-center rounded-xl text-neutral-400 hover:bg-white/[0.06] hover:text-white transition-colors active:scale-90 touch-manipulation cursor-pointer select-none sm:hidden"

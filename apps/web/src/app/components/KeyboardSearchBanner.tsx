@@ -28,6 +28,9 @@ export function KeyboardSearchBanner() {
   return (
     <>
       <div
+        onMouseEnter={() => {
+          void import("@/components/search/SpotlightSearchModal");
+        }}
         onClick={() => setIsSearchOpen(true)}
         className="fixed bottom-6 left-6 z-50 hidden sm:flex items-center space-x-2 bg-white/[0.03] hover:bg-white/[0.08] backdrop-blur-md px-4 py-1.5 rounded-full border border-white/10 text-neutral-300 text-[11px] select-none shadow-2xl transition-all duration-300 hover:scale-105 cursor-pointer"
       >
