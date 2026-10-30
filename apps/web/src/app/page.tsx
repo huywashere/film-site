@@ -8,7 +8,14 @@ import {
   ensureSixHeroFilms,
   type CuratedHeroMovie,
 } from "@/lib/curated-hero-pool";
-import { wsrvImageUrl, localImageProxyUrl } from "@/lib/image-cdn";
+import { REAL_TRENDING_TOP10_POOL } from "@/lib/curated-home-catalog";
+import { resolveImageUrl } from "@/components/film/FilmCard";
+import {
+  wsrvImageUrl,
+  localImageProxyUrl,
+  isTmdbImageUrl,
+  tmdbImageVariant,
+} from "@/lib/image-cdn";
 import {
   preferTmdbBackdropSize,
   preferTmdbPosterSize,
@@ -367,6 +374,27 @@ export default async function HomePage() {
   );
   const initialTitleLogo = resolveHeroImageUrl(initialHero?.titleLogo, "titleLogo");
 
+  const top10Candidates = (
+    initialPublicConfig?.homeTop10Slugs && initialPublicConfig.homeTop10Slugs.length > 0
+      ? initialPublicConfig.homeTop10Slugs
+          .slice(0, 3)
+          .map((slug) =>
+            REAL_TRENDING_TOP10_POOL.find((f) => f.slug === slug) ||
+            CURATED_HERO_FRANCHISE_POOL.find((f) => f.slug === slug),
+          )
+          .filter(Boolean)
+      : REAL_TRENDING_TOP10_POOL.slice(0, 3)
+  );
+
+  const top10PreloadUrls = top10Candidates
+    .map((film) => {
+      if (!film) return null;
+      const raw = resolveImageUrl(film.poster_url, film.thumb_url);
+      if (!raw) return null;
+      return isTmdbImageUrl(raw) ? tmdbImageVariant(raw, "w500") || raw : raw;
+    })
+    .filter((url): url is string => Boolean(url));
+
   return (
     <>
       {initialDesktopBackdrop && (
@@ -390,6 +418,9 @@ export default async function HomePage() {
       {initialTitleLogo && (
         <link rel="preload" as="image" href={initialTitleLogo} fetchPriority="high" />
       )}
+      {top10PreloadUrls.map((url) => (
+        <link key={url} rel="preload" as="image" href={url} fetchPriority="high" />
+      ))}
       <HomePageClient
         initialPublicConfig={initialPublicConfig}
         initialHeroFilms={initialHeroFilms}

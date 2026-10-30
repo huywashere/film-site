@@ -41,10 +41,33 @@ type ObserverCallback = () => void;
 let sharedArtworkObserver: IntersectionObserver | null = null;
 const artworkObserverCallbacks = new WeakMap<Element, ObserverCallback>();
 
-// Global in-memory cache of resolved artwork URLs per film slug and kind.
+// Global in-memory and session cache of resolved artwork URLs per film slug and kind.
 // Retains loaded artwork across client route navigations so cards paint instantly
 // without skeleton flicker on revisit.
 const resolvedArtworkCache = new Map<string, string>();
+
+function getPersistedArtwork(key: string): string | null {
+  if (resolvedArtworkCache.has(key)) return resolvedArtworkCache.get(key) || null;
+  if (typeof window !== 'undefined') {
+    try {
+      const val = window.sessionStorage.getItem(`flexphim:art:${key}`);
+      if (val) {
+        resolvedArtworkCache.set(key, val);
+        return val;
+      }
+    } catch {}
+  }
+  return null;
+}
+
+function persistArtwork(key: string, url: string): void {
+  resolvedArtworkCache.set(key, url);
+  if (typeof window !== 'undefined') {
+    try {
+      window.sessionStorage.setItem(`flexphim:art:${key}`, url);
+    } catch {}
+  }
+}
 
 function imageHostname(value?: string | null): string | null {
   if (!value) return null;
@@ -289,7 +312,7 @@ export function TmdbArtwork({
     }
 
     const cacheKey = `${film.slug}:${kind}`;
-    const cachedSrc = resolvedArtworkCache.get(cacheKey);
+    const cachedSrc = getPersistedArtwork(cacheKey);
     if (cachedSrc) {
       add(cachedSrc);
     }
@@ -325,7 +348,7 @@ export function TmdbArtwork({
 
   const [candidateIndex, setCandidateIndex] = useState(0);
   const [loadedSrc, setLoadedSrc] = useState<string | null>(
-    () => resolvedArtworkCache.get(`${film.slug}:${kind}`) || null,
+    () => getPersistedArtwork(`${film.slug}:${kind}`) || null,
   );
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
@@ -414,7 +437,7 @@ export function TmdbArtwork({
   // Reset only when the card identity changes. Resetting when recovery finds a
   // TMDB URL would retry the already-failed provider relay before using it.
   useEffect(() => {
-    const cached = resolvedArtworkCache.get(`${film.slug}:${kind}`);
+    const cached = getPersistedArtwork(`${film.slug}:${kind}`);
     setCandidateIndex(0);
     setLoadedSrc(cached || null);
     setFailedSrc(null);
@@ -511,7 +534,7 @@ export function TmdbArtwork({
           onLoad={() => {
             if (src) {
               markImagePreloaded(src);
-              resolvedArtworkCache.set(`${film.slug}:${kind}`, src);
+              persistArtwork(`${film.slug}:${kind}`, src);
             }
             setFailedSrc(null);
             setLoadedSrc(src);

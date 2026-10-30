@@ -19,6 +19,9 @@ import { cardFont } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
 import { TmdbArtwork } from "./TmdbArtwork";
 import { CURATED_HERO_FRANCHISE_POOL } from "@/lib/curated-hero-pool";
+import { REAL_TRENDING_TOP10_POOL } from "@/lib/curated-home-catalog";
+import { preloadImage } from "@/lib/image-preload-cache";
+import { isTmdbImageUrl, tmdbImageVariant } from "@/lib/image-cdn";
 
 import "swiper/css";
 import "swiper/css/navigation";
@@ -192,9 +195,9 @@ function Top10Item({ film, rank }: { film: FilmItem; rank: number }) {
             film={film}
             kind="poster"
             alt={filmTitle}
-            priority={false}
-            loadImmediately={rank <= 6}
-            allowTitleLookup
+            priority={rank <= 4}
+            loadImmediately={true}
+            allowTitleLookup={!film.poster_url && !film.thumb_url}
             className="absolute inset-0 h-full w-full transition-transform duration-500 group-hover/item:scale-105"
           />
 
@@ -304,13 +307,32 @@ function preferCuratedArtwork(film: FilmItem): FilmItem {
     return Boolean(filmTitle && candidateTitle === filmTitle);
   });
 
-  if (!curated) return film;
-  return {
-    ...film,
-    poster_url: curated.poster_url || film.poster_url,
-    thumb_url: curated.thumb_url || film.thumb_url,
-    tmdb: film.tmdb || curated.tmdb,
-  };
+  if (curated) {
+    return {
+      ...film,
+      poster_url: curated.poster_url || film.poster_url,
+      thumb_url: curated.thumb_url || film.thumb_url,
+      tmdb: film.tmdb || curated.tmdb,
+    };
+  }
+
+  const trending = REAL_TRENDING_TOP10_POOL.find((candidate) => {
+    if (candidate.slug === film.slug) return true;
+    const candidateTitle = getBaseTitle(
+      candidate.origin_name || candidate.name || candidate.title,
+    );
+    return Boolean(filmTitle && candidateTitle === filmTitle);
+  });
+
+  if (trending) {
+    return {
+      ...film,
+      poster_url: trending.poster_url || film.poster_url,
+      thumb_url: trending.thumb_url || film.thumb_url,
+    };
+  }
+
+  return film;
 }
 
 function dedupeTop10(films: FilmItem[]): FilmItem[] {
@@ -357,6 +379,22 @@ export function Top10RankedRow({
   const displayTitle =
     title || t("home.top10Title", "TOP 10 Đang Được Xem Nhiều");
   const top10 = dedupeTop10(films || []);
+
+  // Pre-warm the top 6 posters into browser cache immediately for 0ms paint
+  useEffect(() => {
+    if (typeof window !== "undefined" && top10.length > 0) {
+      top10.slice(0, 6).forEach((film) => {
+        const rawUrl = resolveImageUrl(film.poster_url, film.thumb_url);
+        if (rawUrl) {
+          const targetUrl = isTmdbImageUrl(rawUrl)
+            ? tmdbImageVariant(rawUrl, "w500") || rawUrl
+            : rawUrl;
+          preloadImage(targetUrl);
+        }
+      });
+    }
+  }, [top10]);
+
   if (top10.length === 0) return null;
 
   return (

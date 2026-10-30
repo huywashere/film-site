@@ -29,11 +29,7 @@ const HomeAnnouncementPopup = dynamic(
     ),
   { ssr: false },
 );
-const Top10RankedRow = dynamic(() =>
-  import("@/components/film/Top10RankedRow").then(
-    (module) => module.Top10RankedRow,
-  ),
-);
+import { Top10RankedRow } from "@/components/film/Top10RankedRow";
 const ContinueWatchingRow = dynamic(() =>
   import("@/components/film/ContinueWatchingRow").then(
     (module) => module.ContinueWatchingRow,
@@ -1701,8 +1697,11 @@ export default function HomePageClient({
   ]);
 
   const configuredTop10List = useMemo(() => {
-    const slugs = publicConfig?.homeTop10Slugs || [];
-    if (!slugs.length) return top10List;
+    const slugs =
+      publicConfig?.homeTop10Slugs?.length
+        ? publicConfig.homeTop10Slugs
+        : initialPublicConfig?.homeTop10Slugs || [];
+    if (!slugs.length) return top10List.length ? top10List : REAL_TRENDING_TOP10_POOL.slice(0, 10);
     const pool = deduplicate([
       ...top10List,
       ...trendingFilms,
@@ -1713,7 +1712,7 @@ export default function HomePageClient({
       .map((slug) => pool.find((film) => film.slug === slug))
       .filter((film): film is FilmItem => Boolean(film));
     return deduplicate([...selected, ...pool]).slice(0, 10);
-  }, [latestFilms, publicConfig?.homeTop10Slugs, top10List, trendingFilms]);
+  }, [initialPublicConfig?.homeTop10Slugs, latestFilms, publicConfig?.homeTop10Slugs, top10List, trendingFilms]);
 
   const weeklyMobileRowList = useMemo(() => {
     const interleaved: FilmItem[] = [];
