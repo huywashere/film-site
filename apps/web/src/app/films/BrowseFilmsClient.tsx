@@ -10,6 +10,7 @@ import {
   X,
   ChevronDown,
   SlidersHorizontal,
+  Filter,
 } from "lucide-react";
 import {
   FilmCard,
@@ -32,12 +33,63 @@ const YEARS = Array.from({ length: 27 }, (_, i) => 2026 - i);
 
 const QUICK_TYPES = [
   { label: "Tất cả", value: "all" },
-  { label: "Phim Bộ", value: "series" },
   { label: "Phim Lẻ", value: "single" },
-  { label: "Anime", value: "anime" },
+  { label: "Phim Bộ", value: "series" },
+  { label: "Phim Chiếu Rạp", value: "chieu-rap" },
+  { label: "Phim đang chiếu", value: "dang-chieu" },
   { label: "TV Shows", value: "tv-shows" },
+  { label: "Hoạt Hình", value: "anime" },
   { label: "Thuyết Minh", value: "thuyet-minh" },
-  { label: "Chiếu Rạp", value: "chieu-rap" },
+];
+
+const POPULAR_COUNTRIES = [
+  { label: "Toàn bộ khu vực", value: "" },
+  { label: "Hàn Quốc", value: "han-quoc" },
+  { label: "Trung Quốc", value: "trung-quoc" },
+  { label: "Thái Lan", value: "thai-lan" },
+  { label: "Nhật Bản", value: "nhat-ban" },
+  { label: "Âu Mỹ", value: "au-my" },
+  { label: "Việt Nam", value: "viet-nam" },
+  { label: "Hồng Kông", value: "hong-kong" },
+  { label: "Đài Loan", value: "dai-loan" },
+  { label: "Ấn Độ", value: "an-do" },
+  { label: "Anh", value: "anh" },
+  { label: "Pháp", value: "phap" },
+  { label: "Canada", value: "canada" },
+  { label: "Đức", value: "duc" },
+  { label: "Tây Ban Nha", value: "tay-ban-nha" },
+  { label: "Ý", value: "y" },
+  { label: "Nga", value: "nga" },
+  { label: "Úc", value: "uc" },
+  { label: "Brazil", value: "brazil" },
+  { label: "Mexico", value: "mexico" },
+  { label: "Thổ Nhĩ Kỳ", value: "tho-nhi-ky" },
+  { label: "Quốc Gia Khác", value: "quoc-gia-khac" },
+];
+
+const POPULAR_GENRES = [
+  { label: "Toàn bộ các loại", value: "" },
+  { label: "Hành Động", value: "hanh-dong" },
+  { label: "Cổ Trang", value: "co-trang" },
+  { label: "Tình Cảm", value: "tinh-cam" },
+  { label: "Hài Hước", value: "hai-huoc" },
+  { label: "Kinh Dị", value: "kinh-di" },
+  { label: "Viễn Tưởng", value: "vien-tuong" },
+  { label: "Võ Thuật", value: "vo-thuat" },
+  { label: "Chiến Tranh", value: "chien-tranh" },
+  { label: "Tâm Lý", value: "tam-ly" },
+  { label: "Hình Sự", value: "hinh-su" },
+  { label: "Phiêu Lưu", value: "phieu-luu" },
+  { label: "Gia Đình", value: "gia-dinh" },
+  { label: "Thần Thoại", value: "than-thoai" },
+  { label: "Chính Kịch", value: "chinh-kich" },
+  { label: "Bí Ẩn", value: "bi-an" },
+  { label: "Học Đường", value: "hoc-duong" },
+  { label: "Tài Liệu", value: "tai-lieu" },
+  { label: "Âm Nhạc", value: "am-nhac" },
+  { label: "Thể Thao", value: "the-thao" },
+  { label: "Trẻ Em", value: "tre-em" },
+  { label: "Phim 18+", value: "phim-18" },
 ];
 
 const QUALITIES = [
@@ -47,17 +99,24 @@ const QUALITIES = [
 ];
 
 const AUDIOS = [
-  { label: "Bản dịch", value: "all" },
-  { label: "Vietsub", value: "vietsub" },
-  { label: "Thuyết minh", value: "thuyet-minh" },
-  { label: "Lồng tiếng", value: "long-tieng" },
+  { label: "Toàn bộ ngôn ngữ", value: "all" },
+  { label: "Phụ đề", value: "vietsub" },
+  { label: "Thuyết Minh", value: "thuyet-minh" },
+  { label: "Lồng Tiếng", value: "long-tieng" },
+];
+
+const POPULAR_YEARS = [
+  2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015,
+  2014, 2013, 2012,
 ];
 
 const SORTS = [
-  { label: "Mới cập nhật", value: "modified.time" },
-  { label: "Năm phát hành", value: "year" },
-  { label: "Đánh giá cao nhất", value: "rating" },
-  { label: "Mức độ phổ biến", value: "view" },
+  { label: "Mặc định", value: "modified.time" },
+  { label: "Mới nhất", value: "_id" },
+  { label: "Điểm TMDB", value: "rating" },
+  { label: "Năm (Mới-Cũ)", value: "year" },
+  { label: "Năm (Cũ-Mới)", value: "year_asc" },
+  { label: "Xem nhiều", value: "view" },
 ];
 
 type BrowseFilmsClientProps = {
@@ -99,6 +158,15 @@ function BrowseFilmsContent({
     const value = Number(searchParams.get("page") || 1);
     return Number.isInteger(value) && value > 0 ? value : 1;
   });
+  const [isExpanded, setIsExpanded] = useState(() => {
+    return Boolean(
+      searchParams.get("genre") ||
+      searchParams.get("category") ||
+      searchParams.get("country") ||
+      searchParams.get("year")
+    );
+  });
+  const [customYearInput, setCustomYearInput] = useState("");
 
   // Reset stuck recovery counter once page mounts successfully
   useEffect(() => {
@@ -181,6 +249,7 @@ function BrowseFilmsContent({
     setSelectedGenre("");
     setSelectedCountry("");
     setSelectedYear("");
+    setCustomYearInput("");
     setSelectedQuality("all");
     setSelectedAudio("all");
     setSelectedSort("modified.time");
@@ -260,6 +329,7 @@ function BrowseFilmsContent({
         single: "phim-le",
         anime: "hoat-hinh",
         "tv-shows": "tv-shows",
+        "dang-chieu": "phim-bo-dang-chieu",
       };
       if (
         selectedGenre ||
@@ -267,6 +337,17 @@ function BrowseFilmsContent({
         selectedYear ||
         filteredTypes[selectedType]
       ) {
+        const isAsc = selectedSort === "year_asc";
+        const sortField =
+          selectedSort === "year_asc"
+            ? "year"
+            : selectedSort === "rating"
+              ? "vote_average"
+              : selectedSort === "view"
+                ? "view"
+                : selectedSort === "_id"
+                  ? "_id"
+                  : "modified.time";
         const res = await movieApi.getFiltered({
           type: filteredTypes[selectedType],
           category: selectedGenre || undefined,
@@ -274,8 +355,8 @@ function BrowseFilmsContent({
           year: selectedYear ? Number(selectedYear) : undefined,
           page,
           limit: 28,
-          sort_field: selectedSort,
-          sort_type: "desc",
+          sort_field: sortField,
+          sort_type: isAsc ? "asc" : "desc",
         });
         return res?.data?.data || res?.data || { items: [] };
       }
@@ -287,6 +368,10 @@ function BrowseFilmsContent({
       }
       if (selectedType === "chieu-rap") {
         const res = await movieApi.getChieuRap(page);
+        return res?.data?.data || res?.data || { items: [] };
+      }
+      if (selectedType === "dang-chieu") {
+        const res = await movieApi.getDangChieu(page);
         return res?.data?.data || res?.data || { items: [] };
       }
 
@@ -401,6 +486,10 @@ function BrowseFilmsContent({
       );
     } else if (selectedSort === "year") {
       list = [...list].sort((a, b) => (b.year || 0) - (a.year || 0));
+    } else if (selectedSort === "year_asc") {
+      list = [...list].sort((a, b) => (a.year || 0) - (b.year || 0));
+    } else if (selectedSort === "view") {
+      list = [...list].sort((a, b) => ((b as any).view || 0) - ((a as any).view || 0));
     }
 
     return list;
@@ -431,16 +520,12 @@ function BrowseFilmsContent({
 
       <div className="relative z-20 w-full px-3.5 sm:px-6 md:pl-20 lg:pl-24 pr-3.5 sm:pr-6 md:pr-10 space-y-5 sm:space-y-6 -mt-6 sm:-mt-8 md:-mt-10 lg:-mt-12">
 
-        {/* ── Hàng 1: Thanh Tìm Kiếm & Quick Format Pills ── */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-          {/* Quick Format Pills */}
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth py-0.5 -mx-3.5 px-3.5 sm:mx-0 sm:px-0">
+        {/* ── Hệ thống Bộ Lọc Tinh Gọn (Phong cách Film4k / RoPhim, Nút Tím FlexPhim) ── */}
+        <div className="space-y-3 sm:space-y-4">
+          {/* 1. Hàng Tabs Định Dạng Chính (Image 1) */}
+          <div className="flex items-center gap-5 sm:gap-7 md:gap-8 overflow-x-auto no-scrollbar border-b border-white/[0.08] pb-1 -mx-3.5 px-3.5 sm:mx-0 sm:px-0">
             {QUICK_TYPES.map((type) => {
               const isActive = selectedType === type.value;
-              const pillStyle = isActive
-                ? "bg-white text-black shadow-sm font-black border-white"
-                : "bg-[#12141c] text-neutral-400 hover:text-white hover:bg-white/[0.06] border border-white/[0.08]";
-
               return (
                 <button
                   key={type.value}
@@ -451,247 +536,283 @@ function BrowseFilmsContent({
                     setPage(1);
                   }}
                   className={cn(
-                    "px-3 py-1.5 rounded-xl text-xs whitespace-nowrap transition-all duration-200 cursor-pointer select-none shrink-0",
-                    pillStyle,
+                    "relative pb-2.5 text-xs sm:text-sm md:text-base whitespace-nowrap transition-all duration-200 cursor-pointer select-none shrink-0 font-bold",
+                    isActive
+                      ? "text-violet-400 font-extrabold"
+                      : "text-neutral-400 hover:text-white font-semibold",
                   )}
                 >
-                  {type.label}
+                  <span>{type.label}</span>
+                  {isActive && (
+                    <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-violet-500 rounded-full shadow-[0_0_8px_rgba(139,92,246,0.9)]" />
+                  )}
                 </button>
               );
             })}
           </div>
 
-              {/* Ô tìm kiếm nhanh nhỏ gọn */}
-              <div className="relative w-full md:w-72 shrink-0">
+          {/* 2. Thanh Điều Khiển: Nút Mở rộng / Thu gọn bộ lọc + Tìm kiếm nhanh (Image 1 & 2) */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-0.5">
+            <button
+              type="button"
+              onClick={() => setIsExpanded((prev) => !prev)}
+              className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-neutral-300 hover:text-violet-400 transition-colors cursor-pointer select-none py-1 group w-fit"
+            >
+              <Filter
+                size={14}
+                className={cn(
+                  "transition-colors",
+                  isExpanded ? "text-violet-400 fill-violet-400/20" : "text-neutral-400 group-hover:text-violet-400",
+                )}
+              />
+              <span>{isExpanded ? "Thu gọn bộ lọc" : "Mở rộng bộ lọc"}</span>
+              {activeFiltersCount > 0 && !isExpanded && (
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-violet-600 text-white shadow-sm">
+                  {activeFiltersCount}
+                </span>
+              )}
+            </button>
+
+            <div className="flex items-center justify-between sm:justify-end gap-2.5 w-full sm:w-auto">
+              {/* Ô tìm kiếm nhanh */}
+              <div className="relative flex-1 sm:w-64 sm:flex-initial">
                 <Search
-                  size={14}
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
+                  size={13}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
                 />
                 <input
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Tìm tên phim, diễn viên..."
-                  className="w-full bg-[#12141c] border border-white/10 hover:border-white/20 focus:border-white/40 rounded-xl pl-9 pr-8 py-1.5 text-xs text-white placeholder:text-neutral-500 focus:outline-none transition-colors"
+                  placeholder="Tìm phim, diễn viên..."
+                  className="w-full bg-[#12141c] border border-white/10 hover:border-white/20 focus:border-violet-500 rounded-full pl-8 pr-7 py-1 text-xs text-white placeholder:text-neutral-500 focus:outline-none transition-colors"
                 />
                 {search && (
                   <button
                     type="button"
                     onClick={() => setSearch("")}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-neutral-400 hover:text-white rounded-full transition-colors"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-neutral-400 hover:text-white rounded-full transition-colors cursor-pointer"
                   >
                     <X size={12} />
                   </button>
                 )}
               </div>
-            </div>
 
-            {/* ── Hàng 2: Bộ Lọc Tinh Gọn Dạng Select Pills (Không khung viền cồng kềnh) ── */}
-            <div className="flex flex-wrap items-center justify-between gap-2.5 pt-1">
-              <div className="flex flex-wrap items-center gap-2">
-                {/* 1. Thể Loại */}
-                <div className="relative">
-                  <select
-                    value={selectedGenre}
-                    onChange={(e) => {
-                      setSelectedGenre(e.target.value);
-                      setPage(1);
-                    }}
-                    className={cn(
-                      "appearance-none bg-[#12141c] border rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold focus:outline-none focus:border-white/40 cursor-pointer transition-colors",
-                      selectedGenre
-                        ? "border-white/40 text-white bg-white/10"
-                        : "border-white/10 text-neutral-300 hover:border-white/20",
-                    )}
-                  >
-                    <option value="">Thể Loại</option>
-                    {GENRES_LIST.map((g) => (
-                      <option
-                        key={g.slug}
-                        value={g.slug}
-                        className="bg-[#12141c] text-white"
-                      >
-                        {g.label}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown
-                    size={12}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
-                  />
-                </div>
-
-                {/* 2. Quốc Gia */}
-                <div className="relative">
-                  <select
-                    value={selectedCountry}
-                    onChange={(e) => {
-                      setSelectedCountry(e.target.value);
-                      setPage(1);
-                    }}
-                    className={cn(
-                      "appearance-none bg-[#12141c] border rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold focus:outline-none focus:border-white/40 cursor-pointer transition-colors",
-                      selectedCountry
-                        ? "border-white/40 text-white bg-white/10"
-                        : "border-white/10 text-neutral-300 hover:border-white/20",
-                    )}
-                  >
-                    <option value="">Quốc Gia</option>
-                    {COUNTRIES_LIST.map((c) => (
-                      <option
-                        key={c.slug}
-                        value={c.slug}
-                        className="bg-[#12141c] text-white"
-                      >
-                        {c.label}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown
-                    size={12}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
-                  />
-                </div>
-
-                {/* 3. Năm Phát Hành */}
-                <div className="relative">
-                  <select
-                    value={selectedYear}
-                    onChange={(e) => {
-                      setSelectedYear(e.target.value);
-                      setPage(1);
-                    }}
-                    className={cn(
-                      "appearance-none bg-[#12141c] border rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold focus:outline-none focus:border-white/40 cursor-pointer transition-colors",
-                      selectedYear
-                        ? "border-white/40 text-white bg-white/10"
-                        : "border-white/10 text-neutral-300 hover:border-white/20",
-                    )}
-                  >
-                    <option value="">Năm</option>
-                    {YEARS.map((y) => (
-                      <option
-                        key={y}
-                        value={y}
-                        className="bg-[#12141c] text-white"
-                      >
-                        {y}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown
-                    size={12}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
-                  />
-                </div>
-
-                {/* 4. Chất Lượng */}
-                <div className="relative">
-                  <select
-                    value={selectedQuality}
-                    onChange={(e) => {
-                      setSelectedQuality(e.target.value);
-                      setPage(1);
-                    }}
-                    className={cn(
-                      "appearance-none bg-[#12141c] border rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold focus:outline-none focus:border-white/40 cursor-pointer transition-colors",
-                      selectedQuality !== "all"
-                        ? "border-white/40 text-white bg-white/10"
-                        : "border-white/10 text-neutral-300 hover:border-white/20",
-                    )}
-                  >
-                    {QUALITIES.map((q) => (
-                      <option
-                        key={q.value}
-                        value={q.value}
-                        className="bg-[#12141c] text-white"
-                      >
-                        {q.label}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown
-                    size={12}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
-                  />
-                </div>
-
-                {/* 5. Bản Dịch */}
-                <div className="relative">
-                  <select
-                    value={selectedAudio}
-                    onChange={(e) => {
-                      setSelectedAudio(e.target.value);
-                      setPage(1);
-                    }}
-                    className={cn(
-                      "appearance-none bg-[#12141c] border rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold focus:outline-none focus:border-white/40 cursor-pointer transition-colors",
-                      selectedAudio !== "all"
-                        ? "border-white/40 text-white bg-white/10"
-                        : "border-white/10 text-neutral-300 hover:border-white/20",
-                    )}
-                  >
-                    {AUDIOS.map((a) => (
-                      <option
-                        key={a.value}
-                        value={a.value}
-                        className="bg-[#12141c] text-white"
-                      >
-                        {a.label}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown
-                    size={12}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
-                  />
-                </div>
-
-                {/* 6. Sắp Xếp */}
-                <div className="relative">
-                  <select
-                    value={selectedSort}
-                    onChange={(e) => {
-                      setSelectedSort(e.target.value);
-                      setPage(1);
-                    }}
-                    className="appearance-none bg-[#12141c] border border-white/10 hover:border-white/20 rounded-xl pl-3 pr-7 py-1.5 text-xs font-semibold text-neutral-300 focus:outline-none focus:border-white/40 cursor-pointer transition-colors"
-                  >
-                    {SORTS.map((s) => (
-                      <option
-                        key={s.value}
-                        value={s.value}
-                        className="bg-[#12141c] text-white"
-                      >
-                        {s.label}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown
-                    size={12}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
-                  />
-                </div>
-
-                {/* Nút Xóa Lọc */}
-                {isFiltered && (
-                  <button
-                    type="button"
-                    onClick={handleResetAll}
-                    className="inline-flex items-center gap-1.5 text-xs text-neutral-400 hover:text-white px-2.5 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 transition-colors cursor-pointer"
-                  >
-                    <RotateCcw size={11} />
-                    <span>Đặt lại</span>
-                  </button>
-                )}
-              </div>
+              {/* Nút Xóa Lọc */}
+              {isFiltered && (
+                <button
+                  type="button"
+                  onClick={handleResetAll}
+                  className="inline-flex items-center gap-1.5 text-xs text-neutral-300 hover:text-white px-2.5 py-1 rounded-full bg-white/[0.06] hover:bg-white/[0.1] border border-white/10 transition-colors cursor-pointer shrink-0"
+                >
+                  <RotateCcw size={11} />
+                  <span>Đặt lại</span>
+                </button>
+              )}
 
               {/* Số lượng phim */}
-              <span className="text-[11px] sm:text-xs text-neutral-400 font-medium self-center">
-                {films.length} phim{" "}
-                {totalItems ? `• Tổng số ${totalItems}` : ""}
+              <span className="text-[11px] sm:text-xs text-neutral-400 font-medium shrink-0 hidden md:inline">
+                {films.length} phim {totalItems ? `• ${totalItems} kết quả` : ""}
               </span>
             </div>
+          </div>
+
+          {/* 3. Khung Chi Tiết Bộ Lọc Mở Rộng Dạng Hàng Đơn Giản - Nút Màu Tím (Image 3) */}
+          {isExpanded && (
+            <div className="pt-2 pb-3 space-y-3 sm:space-y-3.5 border-t border-white/[0.08] text-xs sm:text-[13px] animate-in fade-in-50 duration-200">
+              {/* Row 1: Khu vực */}
+              <div className="flex items-start gap-2 sm:gap-3 py-0.5">
+                <span className="text-neutral-400 font-semibold text-xs sm:text-[13px] w-16 sm:w-20 shrink-0 pt-1 select-none">
+                  Khu vực
+                </span>
+                <div className="flex flex-wrap items-center gap-1 sm:gap-1.5 flex-1">
+                  {POPULAR_COUNTRIES.map((c) => {
+                    const isActive = selectedCountry === c.value;
+                    return (
+                      <button
+                        key={c.value}
+                        type="button"
+                        onClick={() => {
+                          setSelectedCountry(c.value);
+                          setPage(1);
+                        }}
+                        className={cn(
+                          "px-3 py-1 rounded-full text-xs transition-all duration-150 cursor-pointer select-none",
+                          isActive
+                            ? "bg-violet-600 text-white font-bold shadow-md shadow-violet-950/40"
+                            : "text-neutral-400 hover:text-white hover:bg-white/[0.05]",
+                        )}
+                      >
+                        {c.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Row 2: Loại hình (Thể loại) */}
+              <div className="flex items-start gap-2 sm:gap-3 py-0.5">
+                <span className="text-neutral-400 font-semibold text-xs sm:text-[13px] w-16 sm:w-20 shrink-0 pt-1 select-none">
+                  Loại hình
+                </span>
+                <div className="flex flex-wrap items-center gap-1 sm:gap-1.5 flex-1">
+                  {POPULAR_GENRES.map((g) => {
+                    const isActive = selectedGenre === g.value;
+                    return (
+                      <button
+                        key={g.value}
+                        type="button"
+                        onClick={() => {
+                          setSelectedGenre(g.value);
+                          setPage(1);
+                        }}
+                        className={cn(
+                          "px-3 py-1 rounded-full text-xs transition-all duration-150 cursor-pointer select-none",
+                          isActive
+                            ? "bg-violet-600 text-white font-bold shadow-md shadow-violet-950/40"
+                            : "text-neutral-400 hover:text-white hover:bg-white/[0.05]",
+                        )}
+                      >
+                        {g.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Row 3: Ngôn ngữ */}
+              <div className="flex items-start gap-2 sm:gap-3 py-0.5">
+                <span className="text-neutral-400 font-semibold text-xs sm:text-[13px] w-16 sm:w-20 shrink-0 pt-1 select-none">
+                  Ngôn ngữ
+                </span>
+                <div className="flex flex-wrap items-center gap-1 sm:gap-1.5 flex-1">
+                  {AUDIOS.map((a) => {
+                    const isActive = selectedAudio === a.value;
+                    return (
+                      <button
+                        key={a.value}
+                        type="button"
+                        onClick={() => {
+                          setSelectedAudio(a.value);
+                          setPage(1);
+                        }}
+                        className={cn(
+                          "px-3 py-1 rounded-full text-xs transition-all duration-150 cursor-pointer select-none",
+                          isActive
+                            ? "bg-violet-600 text-white font-bold shadow-md shadow-violet-950/40"
+                            : "text-neutral-400 hover:text-white hover:bg-white/[0.05]",
+                        )}
+                      >
+                        {a.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Row 4: Thập niên / Năm */}
+              <div className="flex items-start gap-2 sm:gap-3 py-0.5">
+                <span className="text-neutral-400 font-semibold text-xs sm:text-[13px] w-16 sm:w-20 shrink-0 pt-1 select-none">
+                  Thập niên
+                </span>
+                <div className="flex flex-wrap items-center gap-1 sm:gap-1.5 flex-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedYear("");
+                      setCustomYearInput("");
+                      setPage(1);
+                    }}
+                    className={cn(
+                      "px-3 py-1 rounded-full text-xs transition-all duration-150 cursor-pointer select-none",
+                      !selectedYear
+                        ? "bg-violet-600 text-white font-bold shadow-md shadow-violet-950/40"
+                        : "text-neutral-400 hover:text-white hover:bg-white/[0.05]",
+                    )}
+                  >
+                    Toàn bộ các thập niên
+                  </button>
+
+                  {POPULAR_YEARS.map((y) => {
+                    const isActive = String(selectedYear) === String(y);
+                    return (
+                      <button
+                        key={y}
+                        type="button"
+                        onClick={() => {
+                          setSelectedYear(String(y));
+                          setCustomYearInput("");
+                          setPage(1);
+                        }}
+                        className={cn(
+                          "px-3 py-1 rounded-full text-xs transition-all duration-150 cursor-pointer select-none",
+                          isActive
+                            ? "bg-violet-600 text-white font-bold shadow-md shadow-violet-950/40"
+                            : "text-neutral-400 hover:text-white hover:bg-white/[0.05]",
+                        )}
+                      >
+                        {y}
+                      </button>
+                    );
+                  })}
+
+                  {/* Input Nhập năm... */}
+                  <div className="inline-flex items-center ml-0.5">
+                    <input
+                      type="number"
+                      min="1970"
+                      max="2030"
+                      value={customYearInput}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setCustomYearInput(val);
+                        if (val.length === 4) {
+                          setSelectedYear(val);
+                          setPage(1);
+                        } else if (!val) {
+                          setSelectedYear("");
+                          setPage(1);
+                        }
+                      }}
+                      placeholder="Nhập năm..."
+                      className="w-24 bg-[#12141c] border border-white/10 hover:border-white/20 focus:border-violet-500 rounded-full px-2.5 py-0.5 text-xs text-white placeholder:text-neutral-500 focus:outline-none transition-colors"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Row 5: Sắp xếp */}
+              <div className="flex items-start gap-2 sm:gap-3 py-0.5">
+                <span className="text-neutral-400 font-semibold text-xs sm:text-[13px] w-16 sm:w-20 shrink-0 pt-1 select-none">
+                  Sắp xếp
+                </span>
+                <div className="flex flex-wrap items-center gap-1 sm:gap-1.5 flex-1">
+                  {SORTS.map((s) => {
+                    const isActive = selectedSort === s.value;
+                    return (
+                      <button
+                        key={s.value}
+                        type="button"
+                        onClick={() => {
+                          setSelectedSort(s.value);
+                          setPage(1);
+                        }}
+                        className={cn(
+                          "px-3 py-1 rounded-full text-xs transition-all duration-150 cursor-pointer select-none",
+                          isActive
+                            ? "bg-violet-600 text-white font-bold shadow-md shadow-violet-950/40"
+                            : "text-neutral-400 hover:text-white hover:bg-white/[0.05]",
+                        )}
+                      >
+                        {s.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* ── Lưới Thẻ Phim Chuẩn 7 Cột Phong Cách Trang Chủ (2xl:grid-cols-7) ── */}
         {isLoading ? (
