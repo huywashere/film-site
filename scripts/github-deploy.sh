@@ -196,7 +196,9 @@ wait_healthy admin || warn "Admin container chưa đạt trạng thái healthy"
 
 # OpenResty: Reload mượt mà không drop kết nối hiện tại (Zero-Downtime reload)
 info "Nạp cấu hình mới cho OpenResty..."
-docker exec netphim_openresty openresty -s reload 2>/dev/null || compose up -d --no-deps --pull never openresty
+docker exec netphim_openresty /usr/local/openresty/bin/openresty -s reload 2>/dev/null || \
+docker exec netphim_openresty nginx -s reload 2>/dev/null || \
+compose up -d --force-recreate --no-deps openresty
 wait_healthy openresty || rollback_services "$IMAGE_TAG"
 
 # Cloudflared Tunnel: Chỉ khởi động nếu chưa chạy, tuyệt đối không ngắt tunnel đang kết nối
