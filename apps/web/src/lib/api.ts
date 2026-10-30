@@ -1730,11 +1730,17 @@ export type PublicSiteConfiguration = {
 let publicSiteConfigurationRequest: Promise<AxiosResponse<PublicSiteConfiguration>> | null = null;
 let publicSiteConfigurationRequestedAt = 0;
 
+export function clearPublicSiteConfigCache() {
+  publicSiteConfigurationRequest = null;
+  publicSiteConfigurationRequestedAt = 0;
+}
+
 export const siteConfigApi = {
-  getPublic: () => {
+  getPublic: (forceRefresh = false) => {
     if (
+      forceRefresh ||
       !publicSiteConfigurationRequest ||
-      Date.now() - publicSiteConfigurationRequestedAt > 60_000
+      Date.now() - publicSiteConfigurationRequestedAt > 10_000
     ) {
       publicSiteConfigurationRequestedAt = Date.now();
       publicSiteConfigurationRequest = api

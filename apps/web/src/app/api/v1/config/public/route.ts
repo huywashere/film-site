@@ -42,7 +42,8 @@ function upstreamUrl(): string | null {
 
 function responseHeaders(available: boolean): HeadersInit {
   return {
-    "Cache-Control": "public, max-age=30, s-maxage=60, stale-while-revalidate=300",
+    "Cache-Control": "no-cache, no-store, max-age=0, must-revalidate",
+    Pragma: "no-cache",
     "X-NetPhim-Config-Available": available ? "1" : "0",
   };
 }

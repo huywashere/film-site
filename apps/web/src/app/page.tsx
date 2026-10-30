@@ -263,10 +263,12 @@ async function getInitialPublicConfiguration(): Promise<PublicSiteConfiguration 
   const isDev = process.env.NODE_ENV === "development";
   const candidates = [
     process.env.API_INTERNAL_URL,
+    process.env.NEXT_PUBLIC_API_URL,
+    "http://127.0.0.1:3001/api/v1",
+    "http://localhost:3001/api/v1",
     ...(isDev ? [] : ["http://api:4000/api/v1"]),
     "http://127.0.0.1:4000/api/v1",
     "http://localhost:4000/api/v1",
-    process.env.NEXT_PUBLIC_API_URL,
     "https://flexphim.top/api/v1",
   ].filter((url): url is string => typeof url === "string" && /^https?:\/\//i.test(url));
 

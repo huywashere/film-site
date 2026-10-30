@@ -1156,14 +1156,13 @@ function selectRandomFilms(groups: TmdbMovie[][]): HeroFilm[] {
 function isStoredHeroPlaylist(value: unknown): value is HeroFilm[] {
   return (
     Array.isArray(value) &&
-    value.length === 6 &&
+    value.length >= 1 &&
     value.every(
       (film) =>
         typeof film === "object" &&
         film !== null &&
         typeof (film as HeroFilm).slug === "string" &&
-        typeof (film as HeroFilm).heroBackdrop === "string" &&
-        !(film as HeroFilm).heroBackdrop?.includes("phimimg.com/upload/vod/"),
+        Boolean((film as HeroFilm).heroBackdrop || (film as HeroFilm).thumb_url || (film as HeroFilm).poster_url),
     )
   );
 }
@@ -1287,7 +1286,7 @@ const LAST_HERO_PLAYLIST_KEY = "flexphim.last-hero-playlist.v2";
   }
   const pinnedSlugs = activePinnedSlugs;
   const pinnedSlugsKey = pinnedSlugs.join(",");
-  const prevPinnedSlugsKeyRef = useRef(pinnedSlugsKey);
+  const prevPinnedSlugsKeyRef = useRef("");
 
   // Clear stale cached playlist if it doesn't match active pinned slugs (e.g. from previous default)
   if (
@@ -1409,8 +1408,9 @@ const LAST_HERO_PLAYLIST_KEY = "flexphim.last-hero-playlist.v2";
   const [trailerModalFilm, setTrailerModalFilm] = useState<FilmItem | null>(
     null,
   );
-  const [departingFilm, setDepartingFilm] = useState<HeroFilm | null>(null);
-  const [departingVisible, setDepartingVisible] = useState(false);
+  const [loadedSlideIndices, setLoadedSlideIndices] = useState<Set<number>>(
+    () => new Set([0, 1, 5]),
+  );
   const initialPaintFilm = useRef<HeroFilm | null>(featured[current] || null);
   const [visualReadiness, setVisualReadiness] = useState<
     Record<string, { backdrop: boolean; title: boolean }>
@@ -1436,8 +1436,22 @@ const LAST_HERO_PLAYLIST_KEY = "flexphim.last-hero-playlist.v2";
   const { toast } = useToast();
   const { t } = useTranslation();
 
+  // Track all loaded slide indices so backdrops remain mounted in DOM (zero decode latency on navigation)
   useEffect(() => {
-    if (prevPinnedSlugsKeyRef.current !== pinnedSlugsKey) {
+    if (!featured.length) return;
+    setLoadedSlideIndices((prev) => {
+      const next = new Set(prev);
+      next.add(current);
+      next.add((current + 1) % featured.length);
+      next.add((current - 1 + featured.length) % featured.length);
+      if (next.size === prev.size) return prev;
+      return next;
+    });
+  }, [current, featured.length]);
+
+  useEffect(() => {
+    const hasMissingBackdrops = featured.some((f) => !f.heroBackdrop && !f.thumb_url);
+    if (prevPinnedSlugsKeyRef.current !== pinnedSlugsKey || (pinnedSlugsKey && hasMissingBackdrops)) {
       prevPinnedSlugsKeyRef.current = pinnedSlugsKey;
       cachedHeroIndex = 0;
       cachedHeroPlaylist = null;
@@ -1450,8 +1464,6 @@ const LAST_HERO_PLAYLIST_KEY = "flexphim.last-hero-playlist.v2";
         }
       }
       setCurrent(0);
-      setDepartingFilm(null);
-      setDepartingVisible(false);
 
       const requested = pinnedSlugsKey
         ? pinnedSlugsKey
@@ -1516,13 +1528,15 @@ const LAST_HERO_PLAYLIST_KEY = "flexphim.last-hero-playlist.v2";
             } catch {}
             return null;
           }),
-        ).then((resolved) => {
+        ).then(async (resolved) => {
           if (!activeSync) return;
           const valid = resolved.filter((f): f is HeroFilm => Boolean(f));
           if (valid.length > 0) {
+            const enrichedValid = await enrichHeroTitleLogos(valid).catch(() => valid);
+            if (!activeSync) return;
             setFeatured((prev) => {
               const next = requested.map((slug) => {
-                const found = valid.find(
+                const found = enrichedValid.find(
                   (f) => f.slug === slug || CURATED_HERO_SLUG_ALIASES[slug] === f.slug,
                 );
                 if (found) return found;
@@ -1555,7 +1569,7 @@ const LAST_HERO_PLAYLIST_KEY = "flexphim.last-hero-playlist.v2";
         };
       }
     }
-  }, [films, pinnedSlugsKey]);
+  }, [featured, films, pinnedSlugsKey]);
 
   useEffect(() => {
     const enable = () => setAutoRotateEnabled(true);
@@ -1765,16 +1779,10 @@ const LAST_HERO_PLAYLIST_KEY = "flexphim.last-hero-playlist.v2";
         markVisualReady(target.slug, "backdrop");
       }
 
-      const isPinnedPlaylist = requestedSlugs.length > 0;
       if (outgoing && outgoing.slug !== target?.slug) {
-        if (!isPinnedPlaylist) {
-          setDepartingFilm(outgoing);
-          setDepartingVisible(true);
-        } else {
-          setDepartingFilm(null);
-          setDepartingVisible(false);
-        }
+        // Track outgoing slide to ensure smooth initial transition
       }
+
       setFeatured(initialPlaylist);
       setCurrent(selectedIndex);
       storeHeroPlaylist(initialPlaylist);
@@ -1787,22 +1795,6 @@ const LAST_HERO_PLAYLIST_KEY = "flexphim.last-hero-playlist.v2";
         } catch {}
       }
       initialPaintFilm.current = target || null;
-
-      if (outgoing && outgoing.slug !== target?.slug) {
-        if (!isPinnedPlaylist) {
-          firstFrame = window.requestAnimationFrame(() => {
-            secondFrame = window.requestAnimationFrame(() => {
-              if (active) setDepartingVisible(false);
-            });
-          });
-          transitionTimer = window.setTimeout(() => {
-            if (active) setDepartingFilm(null);
-          }, 1_050);
-        } else {
-          setDepartingFilm(null);
-          setDepartingVisible(false);
-        }
-      }
     };
 
     void initialize();
@@ -1890,12 +1882,12 @@ const LAST_HERO_PLAYLIST_KEY = "flexphim.last-hero-playlist.v2";
     });
   }, [featured]);
 
-  // Warm only the visible and next backdrop. Preloading every w1280 backdrop at
-  // once starved the small, above-the-fold card artwork on cold production loads.
+  // Warm visible, next, and previous backdrops for instant zero-latency cycling
   useEffect(() => {
     if (typeof window === "undefined" || !featured.length) return;
     const nextIndex = featured.length > 1 ? (current + 1) % featured.length : current;
-    const preloadItems = [featured[current], featured[nextIndex]].filter(
+    const prevIndex = featured.length > 1 ? (current - 1 + featured.length) % featured.length : current;
+    const preloadItems = [featured[current], featured[nextIndex], featured[prevIndex]].filter(
       (item, index, items): item is HeroFilm =>
         Boolean(item) && items.indexOf(item) === index,
     );
@@ -2115,35 +2107,18 @@ const LAST_HERO_PLAYLIST_KEY = "flexphim.last-hero-playlist.v2";
     if (reduceMotion) return;
 
     const ctx = gsap.context(() => {
-      // 1. Content entrance animation: smooth GPU glide & fade in without 550ms blank freeze
+      // 1. Content entrance animation: snappy GPU glide & fade in without blank freeze
       if (contentRef.current) {
         gsap.killTweensOf(contentRef.current);
         gsap.fromTo(
           contentRef.current,
-          { opacity: 0, y: 14, scale: 0.985 },
+          { opacity: 0.35, y: 8 },
           {
             opacity: 1,
             y: 0,
-            scale: 1,
-            duration: 0.52,
+            duration: 0.22,
             ease: "power2.out",
-            clearProps: "transform",
-          },
-        );
-      }
-
-      // 2. Cascading Fan Cards shift: subtle entrance on the container to preserve cards' coordinate transforms
-      if (fanCardsRef.current) {
-        gsap.killTweensOf(fanCardsRef.current);
-        gsap.fromTo(
-          fanCardsRef.current,
-          { opacity: 0.7, x: -14 },
-          {
-            opacity: 1,
-            x: 0,
-            duration: 0.4,
-            ease: "power2.out",
-            clearProps: "opacity",
+            clearProps: "transform,opacity",
           },
         );
       }
@@ -2338,23 +2313,26 @@ const LAST_HERO_PLAYLIST_KEY = "flexphim.last-hero-playlist.v2";
         onClose={() => setTrailerModalFilm(null)}
       />
 
-      {/* Direct CDN Preloaded Backdrop Layers (700ms GPU Opacity Crossfade) */}
+      {/* Direct CDN Preloaded Backdrop Layers (Fast 300ms GPU Opacity Crossfade) */}
       <div className="absolute inset-0 z-0 w-full h-full">
         {featured.map((item, idx) => {
           const isActive = idx === current;
           const preferredBackdrop = preferredHeroBackdrops.get(item.slug);
           const shouldLoadBackdrop =
-            isActive || idx === (current + 1) % featured.length;
+            isActive ||
+            loadedSlideIndices.has(idx) ||
+            idx === (current + 1) % featured.length ||
+            idx === (current - 1 + featured.length) % featured.length;
 
           return (
             <div
               key={`backdrop-${item.slug || idx}-${idx}`}
               data-hero-slide-active={isActive ? "true" : "false"}
               className={cn(
-                "absolute inset-0 w-full h-full transition-all duration-700 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] will-change-[opacity,transform] pointer-events-none",
+                "absolute inset-0 w-full h-full transition-opacity duration-300 ease-out will-change-[opacity] pointer-events-none",
                 isActive
-                  ? "opacity-100 scale-100 z-10"
-                  : "opacity-0 scale-[1.02] z-0",
+                  ? "opacity-100 z-10"
+                  : "opacity-0 z-0 pointer-events-none",
               )}
             >
               {shouldLoadBackdrop && (
@@ -2369,31 +2347,6 @@ const LAST_HERO_PLAYLIST_KEY = "flexphim.last-hero-playlist.v2";
             </div>
           );
         })}
-        {departingFilm ? (
-          <div
-            aria-hidden="true"
-            className={cn(
-              "pointer-events-none absolute inset-0 z-20 h-full w-full transition-opacity duration-700 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]",
-              departingVisible ? "opacity-100" : "opacity-0",
-            )}
-          >
-            <HeroBackdropImage
-              film={departingFilm}
-              isActive
-              preferredPortraitSrc={
-                preferredHeroBackdrops.get(departingFilm.slug)?.portrait
-              }
-              preferredLandscapeSrc={
-                preferredHeroBackdrops.get(departingFilm.slug)?.landscape
-              }
-              onReady={() =>
-                markVisualReady(departingFilm.slug, "backdrop")
-              }
-            />
-          </div>
-        ) : null}
-        {/* Keep the hero static: auto-decoding a full HLS stream made the
-            homepage tab CPU and bandwidth heavy. */}
       </div>
 
       {/* Vignette Dark Gradient Overlay (Edge-to-Edge Seamless Obsidian Fade) */}
@@ -2453,11 +2406,10 @@ const LAST_HERO_PLAYLIST_KEY = "flexphim.last-hero-playlist.v2";
                   aria-label={`Chuyển banner sang phim ${cardFilm.name}`}
                   style={{
                     transform: `translate3d(${config.x}px, ${config.y}px, 0) scale(${config.scale})`,
-                    filter: `brightness(${config.brightness})`,
                     zIndex: config.zIndex,
                   }}
                   className={cn(
-                    "fan-card-item absolute left-0 top-0 w-[158px] overflow-hidden rounded-[15px] border bg-[#0d1017] text-left cursor-pointer transition-all duration-300 ease-out will-change-transform [backface-visibility:hidden] [contain:layout_paint_style] shadow-[0_22px_54px_rgba(2,6,16,0.7)] hover:shadow-[0_30px_72px_rgba(2,6,16,0.78)] hover:scale-[1.045] hover:-translate-y-3 hover:brightness-105 hover:border-white/60 focus-visible:outline-2 focus-visible:outline-white/70 active:scale-[0.98]",
+                    "fan-card-item absolute left-0 top-0 w-[158px] overflow-hidden rounded-[15px] border bg-[#0d1017] text-left cursor-pointer transition-[transform,box-shadow,border-color] duration-300 ease-out will-change-transform [backface-visibility:hidden] [contain:layout_paint_style] shadow-[0_22px_54px_rgba(2,6,16,0.7)] hover:shadow-[0_30px_72px_rgba(2,6,16,0.78)] hover:scale-[1.045] hover:-translate-y-3 hover:border-white/60 focus-visible:outline-2 focus-visible:outline-white/70 active:scale-[0.98]",
                     index === 0
                       ? "border-white/35"
                       : "border-white/[0.18]",
@@ -2470,6 +2422,10 @@ const LAST_HERO_PLAYLIST_KEY = "flexphim.last-hero-playlist.v2";
                     <HeroFanCardImage
                       film={cardFilm}
                       className="fan-card-image h-full w-full object-cover transition-transform duration-500 ease-out"
+                    />
+                    <div
+                      className="absolute inset-0 bg-black pointer-events-none transition-opacity duration-300 z-10"
+                      style={{ opacity: 1 - config.brightness }}
                     />
 
                     <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#141414] via-[#141414]/85 to-transparent px-3 pb-3 pt-10 text-left">
@@ -2506,7 +2462,6 @@ const LAST_HERO_PLAYLIST_KEY = "flexphim.last-hero-playlist.v2";
       <div className="absolute inset-0 z-20 flex flex-col items-center justify-end px-4 sm:px-6 md:px-8 pb-4 sm:pb-16 md:pb-20 lg:pb-22 text-center pointer-events-none">
         <div
           ref={contentRef}
-          key={film.slug}
           aria-busy={!heroContentReady}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}

@@ -9,6 +9,7 @@ import {
   movieApi,
   recommendationApi,
   siteConfigApi,
+  clearPublicSiteConfigCache,
   type PublicSiteConfiguration,
 } from "@/lib/api";
 import {
@@ -684,6 +685,7 @@ export default function HomePageClient({
   // Real-time synchronization across Admin Studio and public web tabs
   useEffect(() => {
     const handleSync = () => {
+      clearPublicSiteConfigCache();
       void queryClient.invalidateQueries({ queryKey: ["public-site-configuration"] });
       void queryClient.refetchQueries({ queryKey: ["public-site-configuration"] });
     };
