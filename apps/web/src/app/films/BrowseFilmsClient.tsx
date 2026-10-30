@@ -105,6 +105,15 @@ const AUDIOS = [
   { label: "Lồng Tiếng", value: "long-tieng" },
 ];
 
+const AGE_RATINGS = [
+  { label: "Tất cả độ tuổi", value: "" },
+  { label: "P (Mọi lứa tuổi)", value: "p" },
+  { label: "K (Dưới 13 có người lớn)", value: "k" },
+  { label: "T13 (13+)", value: "t13" },
+  { label: "T16 (16+)", value: "t16" },
+  { label: "T18 (18+)", value: "t18" },
+];
+
 const POPULAR_YEARS = [
   2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015,
   2014, 2013, 2012,
@@ -151,6 +160,9 @@ function BrowseFilmsContent({
   );
   const [selectedQuality, setSelectedQuality] = useState("all");
   const [selectedAudio, setSelectedAudio] = useState("all");
+  const [selectedAge, setSelectedAge] = useState(
+    searchParams.get("age") || "",
+  );
   const [selectedSort, setSelectedSort] = useState(
     searchParams.get("sort") || "modified.time",
   );
@@ -196,6 +208,8 @@ function BrowseFilmsContent({
     if (g !== null) setSelectedGenre(g);
     const c = searchParams.get("country");
     if (c !== null) setSelectedCountry(c);
+    const a = searchParams.get("age");
+    if (a !== null) setSelectedAge(a);
     const q = searchParams.get("q") || searchParams.get("search");
     if (q !== null) {
       setSearch(q);
@@ -226,6 +240,7 @@ function BrowseFilmsContent({
     if (selectedYear) count++;
     if (selectedQuality !== "all") count++;
     if (selectedAudio !== "all") count++;
+    if (selectedAge) count++;
     if (debouncedSearch) count++;
     return count;
   }, [
@@ -236,6 +251,7 @@ function BrowseFilmsContent({
     selectedYear,
     selectedQuality,
     selectedAudio,
+    selectedAge,
     debouncedSearch,
   ]);
 
@@ -252,6 +268,7 @@ function BrowseFilmsContent({
     setCustomYearInput("");
     setSelectedQuality("all");
     setSelectedAudio("all");
+    setSelectedAge("");
     setSelectedSort("modified.time");
     setPage(1);
   }, []);
@@ -268,6 +285,7 @@ function BrowseFilmsContent({
       selectedYear,
       selectedQuality,
       selectedAudio,
+      selectedAge,
       selectedSort,
       page,
     ];
@@ -444,6 +462,20 @@ function BrowseFilmsContent({
 
     if (selectedYear) {
       list = list.filter((f) => String(f.year) === String(selectedYear));
+    }
+
+    if (selectedAge) {
+      if (selectedAge === "t18") {
+        list = list.filter((f) => {
+          const catSlugs = (f.category || []).map((c: any) => c.slug || c.name || "").join(" ").toLowerCase();
+          return catSlugs.includes("18") || (f.name || "").includes("18+");
+        });
+      } else if (selectedAge === "p" || selectedAge === "k") {
+        list = list.filter((f) => {
+          const catSlugs = (f.category || []).map((c: any) => c.slug || c.name || "").join(" ").toLowerCase();
+          return catSlugs.includes("hoat-hinh") || catSlugs.includes("tre-em") || catSlugs.includes("gia-dinh");
+        });
+      }
     }
 
     if (selectedQuality !== "all") {
@@ -694,6 +726,36 @@ function BrowseFilmsContent({
                         type="button"
                         onClick={() => {
                           setSelectedAudio(a.value);
+                          setPage(1);
+                        }}
+                        className={cn(
+                          "px-3 py-1 rounded-full text-xs transition-all duration-150 cursor-pointer select-none",
+                          isActive
+                            ? "bg-violet-600 text-white font-bold shadow-md shadow-violet-950/40"
+                            : "text-neutral-400 hover:text-white hover:bg-white/[0.05]",
+                        )}
+                      >
+                        {a.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Row: Độ tuổi */}
+              <div className="flex items-start gap-2 sm:gap-3 py-0.5">
+                <span className="text-neutral-400 font-semibold text-xs sm:text-[13px] w-16 sm:w-20 shrink-0 pt-1 select-none">
+                  Độ tuổi
+                </span>
+                <div className="flex flex-wrap items-center gap-1 sm:gap-1.5 flex-1">
+                  {AGE_RATINGS.map((a) => {
+                    const isActive = selectedAge === a.value;
+                    return (
+                      <button
+                        key={a.value}
+                        type="button"
+                        onClick={() => {
+                          setSelectedAge(a.value);
                           setPage(1);
                         }}
                         className={cn(
