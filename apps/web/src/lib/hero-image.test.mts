@@ -305,7 +305,7 @@ test('hero uses poster art on portrait phones and tablets, backdrop art elsewher
   assert.match(source, /srcSet=\{landscapeSrcSet\}/);
   assert.match(
     source,
-    /object-\[center_18%\][\s\S]*md:object-\[center_24%\][\s\S]*lg:object-center/,
+    /object-\[center_14%\][\s\S]*md:object-\[center_18%\][\s\S]*lg:object-\[center_16%\]/,
   );
   assert.match(
     source,
@@ -315,7 +315,7 @@ test('hero uses poster art on portrait phones and tablets, backdrop art elsewher
   assert.match(source, /function addHeroEdgeFallback\([\s\S]*https:\/\/wsrv\.nl\//);
   assert.match(source, /wsrvImageUrl\(directTmdb, "poster"\)/);
   assert.match(source, /function preferSameOriginHeroCandidates/);
-  assert.match(source, /object-\[center_18%\] opacity-100/);
+  assert.match(source, /object-\[center_14%\] opacity-100/);
   assert.doesNotMatch(source, /revealed \|\| decoded/);
   assert.match(source, /netphim\.tmdb-hero\.v9/);
   assert.match(source, /LEGACY_HERO_SESSION_KEYS[\s\S]*sessionStorage\.removeItem/);

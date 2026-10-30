@@ -1077,7 +1077,7 @@ function HeroBackdropImage({
           alt=""
           aria-hidden="true"
           decoding="async"
-          className="absolute inset-0 h-full w-full object-cover object-[center_18%] opacity-100 sm:object-[center_20%] md:object-[center_24%] lg:object-center brightness-[0.88]"
+          className="absolute inset-0 h-full w-full object-cover object-[center_14%] opacity-100 sm:object-[center_16%] md:object-[center_18%] lg:object-[center_16%] xl:object-[center_14%] brightness-[0.88]"
         />
       )}
       {src && !exhausted && (
@@ -1111,7 +1111,7 @@ function HeroBackdropImage({
               onReady();
             }}
             onError={tryNextCandidate}
-            className="h-full w-full object-cover object-[center_18%] opacity-100 sm:object-[center_20%] md:object-[center_24%] lg:object-center brightness-[0.88]"
+            className="h-full w-full object-cover object-[center_14%] opacity-100 sm:object-[center_16%] md:object-[center_18%] lg:object-[center_16%] xl:object-[center_14%] brightness-[0.88]"
           />
         </picture>
       )}
@@ -1861,60 +1861,77 @@ const LAST_HERO_PLAYLIST_KEY = "flexphim.last-hero-playlist.v2";
     };
   }, [current, featured, markVisualReady]);
 
-  // Aggressively preload ALL slide logo images in browser memory for instant 0ms transition
+  // Preload slide logo images cleanly during idle time to avoid blocking page load
   useEffect(() => {
     if (typeof window === "undefined" || !featured.length) return;
-    featured.filter(Boolean).forEach((item) => {
-      const logoUrl = item.titleLogo || getMovieLogo(item.slug);
-      if (logoUrl) {
-        if (item.slug) setMovieLogo(item.slug, logoUrl);
-        const candidates = buildHeroLogoCandidates(logoUrl);
-        candidates.forEach((src) => {
-          if (!preloadedHeroLogos.has(src) && !isMovieLogoPreloaded(src)) {
+    const timer = setTimeout(() => {
+      featured.slice(0, 6).filter(Boolean).forEach((item) => {
+        const logoUrl = item.titleLogo || getMovieLogo(item.slug);
+        if (logoUrl) {
+          if (item.slug) setMovieLogo(item.slug, logoUrl);
+          const candidates = buildHeroLogoCandidates(logoUrl);
+          const primary = candidates[0];
+          if (primary && !preloadedHeroLogos.has(primary) && !isMovieLogoPreloaded(primary)) {
             const img = new Image();
-            img.decoding = "sync";
-            img.src = src;
-            preloadedHeroLogos.add(src);
-            markMovieLogoPreloaded(src);
+            img.decoding = "async";
+            img.onload = () => {
+              preloadedHeroLogos.add(primary);
+              markMovieLogoPreloaded(primary);
+            };
+            img.onerror = () => {
+              preloadedHeroLogos.add(primary);
+            };
+            img.src = primary;
           }
-        });
-      }
-    });
+        }
+      });
+    }, 2000);
+    return () => clearTimeout(timer);
   }, [featured]);
 
-  // Warm visible, next, and previous backdrops for instant zero-latency cycling
+  // Warm next and previous backdrops cleanly after active slide has settled
   useEffect(() => {
     if (typeof window === "undefined" || !featured.length) return;
-    const nextIndex = featured.length > 1 ? (current + 1) % featured.length : current;
-    const prevIndex = featured.length > 1 ? (current - 1 + featured.length) % featured.length : current;
-    const preloadItems = [featured[current], featured[nextIndex], featured[prevIndex]].filter(
-      (item, index, items): item is HeroFilm =>
-        Boolean(item) && items.indexOf(item) === index,
-    );
-    preloadItems.forEach((item) => {
-      const usesPortraitArtwork = window.matchMedia(
-        "(max-width: 767px), (max-width: 1023px) and (orientation: portrait)",
-      ).matches;
-      const candidates = usesPortraitArtwork
-        ? buildHeroMobilePosterCandidates({
-            heroBackdrop: item.heroBackdrop,
-            thumbUrl: item.thumb_url,
-            posterUrl: item.poster_url,
-          })
-        : buildHeroImageCandidates({
-            heroBackdrop: item.heroBackdrop,
-            thumbUrl: item.thumb_url,
-            posterUrl: item.poster_url,
-          });
-      candidates.slice(0, 1).forEach((url) => {
-        const img = new window.Image();
-        const preloadUrl = usesPortraitArtwork ? getMobileHeroPoster(url) : url;
-        img.src = preloadUrl;
-        img.onload = () => {
-          preloadedHeroBackdrops.add(preloadUrl);
-        };
+    const timer = setTimeout(() => {
+      const nextIndex = featured.length > 1 ? (current + 1) % featured.length : current;
+      const prevIndex = featured.length > 1 ? (current - 1 + featured.length) % featured.length : current;
+      const preloadItems = [featured[nextIndex], featured[prevIndex]].filter(
+        (item, index, items): item is HeroFilm =>
+          Boolean(item) && items.indexOf(item) === index,
+      );
+      preloadItems.forEach((item) => {
+        const usesPortraitArtwork = window.matchMedia(
+          "(max-width: 767px), (max-width: 1023px) and (orientation: portrait)",
+        ).matches;
+        const candidates = usesPortraitArtwork
+          ? buildHeroMobilePosterCandidates({
+              heroBackdrop: item.heroBackdrop,
+              thumbUrl: item.thumb_url,
+              posterUrl: item.poster_url,
+            })
+          : buildHeroImageCandidates({
+              heroBackdrop: item.heroBackdrop,
+              thumbUrl: item.thumb_url,
+              posterUrl: item.poster_url,
+            });
+        const primary = candidates[0];
+        if (primary) {
+          const preloadUrl = usesPortraitArtwork ? getMobileHeroPoster(primary) : primary;
+          if (!preloadedHeroBackdrops.has(preloadUrl)) {
+            const img = new window.Image();
+            img.decoding = "async";
+            img.onload = () => {
+              preloadedHeroBackdrops.add(preloadUrl);
+            };
+            img.onerror = () => {
+              preloadedHeroBackdrops.add(preloadUrl);
+            };
+            img.src = preloadUrl;
+          }
+        }
       });
-    });
+    }, 2500);
+    return () => clearTimeout(timer);
   }, [current, featured]);
 
   const activateSlide = useCallback(
@@ -2305,7 +2322,7 @@ const LAST_HERO_PLAYLIST_KEY = "flexphim.last-hero-playlist.v2";
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       onTouchCancel={handleTouchCancel}
-      className="font-cinema relative mt-0 h-[72svh] min-h-[520px] max-h-[640px] sm:h-auto sm:min-h-[680px] sm:max-h-[940px] md:h-[94vh] md:min-h-[720px] lg:h-[96vh] lg:min-h-[760px] lg:max-h-[1050px] xl:h-[100dvh] w-full overflow-hidden bg-[#0c0d14] transform-gpu contain-paint select-none touch-pan-y"
+      className="font-cinema relative mt-0 h-[68svh] min-h-[480px] max-h-[620px] sm:h-auto sm:min-h-[560px] sm:max-h-[720px] md:h-[80vh] md:min-h-[580px] md:max-h-[760px] lg:h-[82vh] lg:min-h-[620px] lg:max-h-[800px] xl:h-[85vh] xl:max-h-[820px] w-full overflow-hidden bg-[#0c0d14] transform-gpu contain-paint select-none touch-pan-y"
     >
       <TrailerModal
         film={trailerModalFilm}
@@ -2363,7 +2380,7 @@ const LAST_HERO_PLAYLIST_KEY = "flexphim.last-hero-playlist.v2";
       />
 
       {/* 🎴 3-Card Cascading Cinema Deck (Left side desktop) */}
-      {fanCards.length > 0 && (
+      {false && fanCards.length > 0 && (
         <div
           className={`${cardFont.className} absolute left-6 top-1/2 z-30 hidden w-[420px] h-[300px] -translate-y-1/2 xl:block 2xl:left-14 pointer-events-none`}
       >
