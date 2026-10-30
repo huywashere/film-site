@@ -379,7 +379,7 @@ export class AdminOperationsService
 
   async revalidateWeb(paths: string[], actor: Actor) {
     const base = (process.env.NETPHIM_WEB_URL || "http://127.0.0.1:3000").replace(/\/$/, "");
-    const token = process.env.REVALIDATE_SECRET || "";
+    const token = (process.env.REVALIDATE_SECRET || process.env.HLS_PROXY_SECRET || "").replace(/^["']|["']$/g, "").trim();
     if (token.length < 32) throw new BadRequestException("REVALIDATE_SECRET chưa được cấu hình an toàn");
     const response = await fetch(`${base}/api/admin/revalidate`, {
       method: "POST",

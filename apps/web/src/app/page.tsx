@@ -178,6 +178,12 @@ async function resolveInitialHeroFilms(heroSlugs?: string[]): Promise<CuratedHer
 let cachedPublicConfig: PublicSiteConfiguration | null = null;
 let lastConfigFetch = 0;
 
+export function clearServerConfigCache() {
+  cachedPublicConfig = null;
+  lastConfigFetch = 0;
+  heroDetailServerCache.clear();
+}
+
 async function fetchConfigFromEndpoint(
   baseUrl: string,
 ): Promise<PublicSiteConfiguration | null> {

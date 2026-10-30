@@ -131,7 +131,24 @@ export default function ConfigurationPage() {
       });
       setConfig(updated);
       setSavedSnapshot(JSON.stringify(updated));
-      showNotification("Đã lưu và áp dụng cấu hình vận hành thành công.");
+
+      try {
+        await adminFetch("cache/revalidate", {
+          method: "POST",
+          body: JSON.stringify({ paths: ["/"] }),
+        });
+      } catch {}
+
+      if (typeof window !== "undefined") {
+        try {
+          const bc = new BroadcastChannel("flexphim-config-sync");
+          bc.postMessage({ type: "CONFIG_UPDATED", timestamp: Date.now() });
+          bc.close();
+          window.localStorage.setItem("flexphim_config_sync", Date.now().toString());
+        } catch {}
+      }
+
+      showNotification("Đã lưu và áp dụng cấu hình vận hành thành công. Trang web đã đồng bộ tức thì.");
       setRevisions(await adminFetch<ConfigurationRevision[]>("configuration/revisions?limit=20"));
       setError("");
     } catch (cause) {

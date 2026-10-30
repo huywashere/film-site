@@ -680,6 +680,36 @@ export default function HomePageClient({
   }, [showMoreSections]);
 
   const queryClient = useQueryClient();
+
+  // Real-time synchronization across Admin Studio and public web tabs
+  useEffect(() => {
+    const handleSync = () => {
+      void queryClient.invalidateQueries({ queryKey: ["public-site-configuration"] });
+      void queryClient.refetchQueries({ queryKey: ["public-site-configuration"] });
+    };
+
+    let channel: BroadcastChannel | null = null;
+    try {
+      channel = new BroadcastChannel("flexphim-config-sync");
+      channel.onmessage = (event) => {
+        if (event.data?.type === "CONFIG_UPDATED") {
+          handleSync();
+        }
+      };
+    } catch {}
+
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "flexphim_config_sync") {
+        handleSync();
+      }
+    };
+    window.addEventListener("storage", onStorage);
+
+    return () => {
+      channel?.close();
+      window.removeEventListener("storage", onStorage);
+    };
+  }, [queryClient]);
   const [catalogReady] = useState(true);
   const [secondaryCatalogReady] = useState(true);
   const { data: publicConfig } = useQuery({
@@ -687,7 +717,8 @@ export default function HomePageClient({
     queryFn: () => siteConfigApi.getPublic().then((response) => response.data),
     initialData: initialPublicConfig || undefined,
     enabled: true,
-    staleTime: 60_000, // 60s — config không thay đổi liên tục, tránh refetch mỗi mount
+    staleTime: 5_000, // 5s staleTime ensures instant refetch on window focus
+    refetchOnWindowFocus: true,
     retry: false,
   });
   useEffect(() => {

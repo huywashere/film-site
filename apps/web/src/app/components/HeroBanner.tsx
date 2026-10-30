@@ -1453,22 +1453,106 @@ const LAST_HERO_PLAYLIST_KEY = "flexphim.last-hero-playlist.v2";
       setDepartingFilm(null);
       setDepartingVisible(false);
 
-      const requested = pinnedSlugsKey ? pinnedSlugsKey.split(",") : [];
+      const requested = pinnedSlugsKey
+        ? pinnedSlugsKey
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : [];
       if (requested.length > 0) {
-        const immediate = requested
-          .map((slug) => {
+        // Step 1: Immediately render matching curated items or stubs so UI responds instantly
+        const immediate = requested.map((slug) => {
+          const alias = CURATED_HERO_SLUG_ALIASES[slug] || slug;
+          const match =
+            films?.find((f) => f.slug === slug || f.slug === alias) ||
+            CURATED_HERO_FRANCHISE_POOL.find(
+              (f) => f.slug === slug || f.slug === alias,
+            );
+          if (match) return match as HeroFilm;
+          const name = slug
+            .split("-")
+            .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+            .join(" ");
+          return {
+            _id: slug,
+            slug,
+            name,
+            origin_name: name,
+            type: "single",
+            quality: "FHD",
+          } as HeroFilm;
+        });
+        setFeatured(immediate);
+
+        // Step 2: Fetch detailed metadata in parallel and update banner state live
+        let activeSync = true;
+        void Promise.all(
+          requested.map(async (slug) => {
             const alias = CURATED_HERO_SLUG_ALIASES[slug] || slug;
-            return (
+            const existing =
               films?.find((f) => f.slug === slug || f.slug === alias) ||
               CURATED_HERO_FRANCHISE_POOL.find(
                 (f) => f.slug === slug || f.slug === alias,
-              )
-            );
-          })
-          .filter(Boolean) as HeroFilm[];
-        if (immediate.length > 0) {
-          setFeatured(immediate);
-        }
+              );
+            if (existing && (existing.thumb_url || (existing as HeroFilm).heroBackdrop)) {
+              return existing as HeroFilm;
+            }
+            try {
+              const res = await movieApi.getDetail(alias);
+              const detail = res.data as any;
+              const movie =
+                detail?.movie ||
+                detail?.data?.movie ||
+                detail?.data?.item ||
+                detail?.item;
+              if (movie?.name) {
+                return {
+                  ...movie,
+                  slug: movie.slug || slug,
+                  heroBackdrop:
+                    movie.heroBackdrop || movie.thumb_url || movie.poster_url,
+                } as HeroFilm;
+              }
+            } catch {}
+            return null;
+          }),
+        ).then((resolved) => {
+          if (!activeSync) return;
+          const valid = resolved.filter((f): f is HeroFilm => Boolean(f));
+          if (valid.length > 0) {
+            setFeatured((prev) => {
+              const next = requested.map((slug) => {
+                const found = valid.find(
+                  (f) => f.slug === slug || CURATED_HERO_SLUG_ALIASES[slug] === f.slug,
+                );
+                if (found) return found;
+                return (
+                  prev.find((f) => f.slug === slug) ||
+                  ({
+                    _id: slug,
+                    slug,
+                    name: slug,
+                    origin_name: slug,
+                  } as HeroFilm)
+                );
+              });
+              storeHeroPlaylist(next);
+              if (typeof window !== "undefined") {
+                try {
+                  window.localStorage.setItem(
+                    LAST_HERO_PLAYLIST_KEY,
+                    JSON.stringify(next),
+                  );
+                } catch {}
+              }
+              return next;
+            });
+          }
+        });
+
+        return () => {
+          activeSync = false;
+        };
       }
     }
   }, [films, pinnedSlugsKey]);
@@ -1635,6 +1719,13 @@ const LAST_HERO_PLAYLIST_KEY = "flexphim.last-hero-playlist.v2";
       const initialPlaylist = playlist.map(
         (film) => enrichedBySlug.get(film.slug) || film,
       );
+
+      // Immediately render resolved playlist so hero banner updates without blocking on asset preloads
+      if (initialPlaylist.length > 0) {
+        setFeatured(initialPlaylist);
+        setCurrent(selectedIndex);
+        storeHeroPlaylist(initialPlaylist);
+      }
       const initialLogoUrls = [
         initialPlaylist[selectedIndex],
         initialPlaylist[nextIndex],

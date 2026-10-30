@@ -87,7 +87,16 @@ export default function HeroBannerPage() {
         // Revalidation is non-blocking
       }
 
-      setNotice("Đã cập nhật danh sách Hero Banner thành công! Trang chủ Web đã đồng bộ.");
+      if (typeof window !== "undefined") {
+        try {
+          const bc = new BroadcastChannel("flexphim-config-sync");
+          bc.postMessage({ type: "CONFIG_UPDATED", timestamp: Date.now() });
+          bc.close();
+          window.localStorage.setItem("flexphim_config_sync", Date.now().toString());
+        } catch {}
+      }
+
+      setNotice("Đã cập nhật danh sách Hero Banner thành công! Trang chủ Web đã đồng bộ tức thì.");
       setTimeout(() => setNotice(""), 4500);
     } catch (cause) {
       setError(

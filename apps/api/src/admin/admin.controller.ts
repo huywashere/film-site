@@ -740,11 +740,13 @@ export class AdminController {
 
   @Patch("configuration")
   @RequireAdminPermissions("cms.manage")
-  updateConfiguration(
+  async updateConfiguration(
     @Body() body: UpdateSiteConfigurationDto,
     @Req() req: any,
   ) {
-    return this.adminService.updateConfiguration(body, req.user);
+    const updated = await this.adminService.updateConfiguration(body, req.user);
+    this.operations.revalidateWeb(["/"], req.user).catch(() => {});
+    return updated;
   }
 
   @Get("configuration/revisions")
@@ -757,8 +759,10 @@ export class AdminController {
 
   @Post("configuration/revisions/:id/restore")
   @RequireAdminPermissions("cms.manage")
-  restoreConfigurationRevision(@Param("id") id: string, @Req() req: any) {
-    return this.adminService.restoreConfigurationRevision(id, req.user);
+  async restoreConfigurationRevision(@Param("id") id: string, @Req() req: any) {
+    const restored = await this.adminService.restoreConfigurationRevision(id, req.user);
+    this.operations.revalidateWeb(["/"], req.user).catch(() => {});
+    return restored;
   }
 
   @Get("sync-schedules")
