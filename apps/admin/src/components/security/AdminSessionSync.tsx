@@ -41,14 +41,11 @@ export function AdminSessionSync() {
       if (activeEpoch && activeEpoch !== sessionEpoch) sessionEpoch = activeEpoch;
       const start = Number(sessionEpoch.split(":", 1)[0]);
       if (current - start >= SESSION_MAX_AGE_MS) {
-        if (currentAdminSessionEpoch() !== sessionEpoch) return;
+        endAdminSession();
         try {
-          endAdminSession();
           await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
         } finally {
-          if (!currentAdminSessionEpoch()) {
-            window.location.assign("/login?session_expired=1");
-          }
+          window.location.assign("/login?session_expired=1");
         }
       }
     };

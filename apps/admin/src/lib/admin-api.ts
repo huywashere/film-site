@@ -84,10 +84,10 @@ export async function adminFetch<T>(
           typeof window !== "undefined" &&
           window.location.pathname !== "/login"
         ) {
-          if (currentAdminSessionEpoch() === sessionEpoch) {
-            endAdminSession();
-            window.location.assign("/login?session_expired=1");
-          }
+          endAdminSession();
+          fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
+          window.location.assign("/login?session_expired=1");
+          return new Promise(() => {}) as Promise<T>;
         }
         throw new Error(
           payload?.message || `Yêu cầu thất bại (HTTP ${response.status})`,

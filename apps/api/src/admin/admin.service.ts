@@ -99,6 +99,12 @@ export class AdminService implements OnModuleInit {
 
   // ── 1. Dashboard Overview Stats & Charts ──────────────────────────
   async getOverviewStats(range = "14d") {
+    const cacheKey = `admin:overview_stats:${range}`;
+    try {
+      const cached = await this.cache.getJson<any>(cacheKey);
+      if (cached) return cached;
+    } catch {}
+
     const now = new Date();
     const startOfToday = new Date(
       now.getFullYear(),
@@ -233,7 +239,7 @@ export class AdminService implements OnModuleInit {
       };
     });
 
-    return {
+    const result = {
       totalUsers,
       totalMovies,
       activeUsers,
@@ -262,6 +268,12 @@ export class AdminService implements OnModuleInit {
       dailyChartData,
       topMovies,
     };
+
+    try {
+      await this.cache.setJson(cacheKey, result, 15);
+    } catch {}
+
+    return result;
   }
 
   async getCurrentAdmin(

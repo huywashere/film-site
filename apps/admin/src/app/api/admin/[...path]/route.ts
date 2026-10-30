@@ -57,7 +57,15 @@ async function forward(
       const devRes = await handleDevFallback(request, path || []);
       if (devRes) return devRes;
     }
-    return NextResponse.json({ message: "Phiên Admin đã hết hạn" }, { status: 401 });
+    const res = NextResponse.json({ message: "Phiên Admin đã hết hạn" }, { status: 401 });
+    res.cookies.set(ADMIN_SESSION_COOKIE, "", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 0,
+    });
+    return res;
   }
 
   if (!ALLOWED_METHODS.has(request.method)) {
@@ -190,7 +198,15 @@ async function forward(
       headers: { "Content-Type": contentType, "Cache-Control": "no-store" },
     });
 
-    if (isDevAutoToken && sessionToken) {
+    if (response.status === 401) {
+      finalRes.cookies.set(ADMIN_SESSION_COOKIE, "", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 0,
+      });
+    } else if (isDevAutoToken && sessionToken) {
       finalRes.cookies.set(ADMIN_SESSION_COOKIE, sessionToken, {
         httpOnly: true,
         secure: false,

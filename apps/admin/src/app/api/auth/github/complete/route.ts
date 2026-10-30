@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     response.cookies.set(ADMIN_SESSION_COOKIE, payload.token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "lax",
       path: "/",
       maxAge: ADMIN_SESSION_MAX_AGE_SECONDS,
     });

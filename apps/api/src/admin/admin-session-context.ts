@@ -38,10 +38,7 @@ export function adminContextFingerprint(context: AdminRequestContext) {
 }
 
 export function shouldBindAdminIp() {
-  return (
-    process.env.NODE_ENV === "production" ||
-    process.env.ADMIN_SESSION_BIND_IP !== "false"
-  );
+  return process.env.ADMIN_SESSION_BIND_IP === "true";
 }
 
 export function adminSessionContextMatches(

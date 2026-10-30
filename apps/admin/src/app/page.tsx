@@ -53,11 +53,11 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (force = false) => {
     setLoading(true);
     setError("");
     try {
-      setStats(await adminFetch<Stats>(`stats?range=${range}`, { bypassCache: true }));
+      setStats(await adminFetch<Stats>(`stats?range=${range}`, { bypassCache: force }));
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Không thể tải tổng quan vận hành");
     } finally {
@@ -65,7 +65,7 @@ export default function AdminDashboardPage() {
     }
   }, [range]);
 
-  useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => { void refresh(false); }, [refresh]);
 
   const chart = useMemo(() => {
     const points = stats?.dailyChartData || [];
@@ -93,7 +93,7 @@ export default function AdminDashboardPage() {
           <select value={range} onChange={(event) => setRange(event.target.value)} className="admin-control h-9 px-3 text-[11px] font-semibold">
             {Object.entries(rangeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </select>
-          <button onClick={() => void refresh()} disabled={loading} className="admin-icon-button" aria-label="Làm mới tổng quan"><IconRefresh size={16} className={loading ? "animate-spin" : ""} /></button>
+          <button onClick={() => void refresh(true)} disabled={loading} className="admin-icon-button" aria-label="Làm mới tổng quan"><IconRefresh size={16} className={loading ? "animate-spin" : ""} /></button>
         </div>
       </header>
 
