@@ -608,7 +608,7 @@ function SciFiTransformersHeroBanner({
       onMouseLeave={() => setIsPaused(false)}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
-      className="relative h-[76svh] min-h-[580px] max-h-[680px] w-full select-none overflow-hidden bg-[#0a0b10] sm:h-[95vh] sm:min-h-[740px] sm:max-h-[1000px] lg:h-[100vh] lg:min-h-[860px]"
+      className="relative mt-0 h-[68svh] min-h-[480px] max-h-[620px] sm:h-auto sm:min-h-[560px] sm:max-h-[720px] md:h-[80vh] md:min-h-[580px] md:max-h-[760px] lg:h-[82vh] lg:min-h-[620px] lg:max-h-[800px] xl:h-[85vh] xl:max-h-[820px] w-full select-none overflow-hidden bg-[#0a0b10] transform-gpu contain-paint touch-pan-y"
     >
       {/* ── Layer 1: Background Scenic Image (Desolate Glacial Cybertron Ring) ── */}
       <div className="absolute inset-0 w-full h-full overflow-hidden">
@@ -783,7 +783,7 @@ function SciFiTransformersHeroBanner({
       </div>
 
       {/* ── Slide Navigation Controls (Prev / Next & Dots) ── */}
-      <div className="absolute right-3 sm:right-8 md:right-12 bottom-3 sm:bottom-32 md:bottom-40 lg:bottom-48 xl:bottom-56 z-30 flex items-center gap-1.5 sm:gap-3 select-none pointer-events-auto">
+      <div className="absolute right-4 sm:right-8 md:right-12 bottom-4 sm:bottom-6 md:bottom-8 z-30 flex items-center gap-1.5 sm:gap-3 select-none pointer-events-auto">
         {/* Indicators */}
         <div className="hidden sm:flex items-center gap-1.5 mr-2">
           {TRANSFORMERS_SLIDES.map((slide, idx) => (
@@ -974,7 +974,7 @@ function WarOdysseyHeroBanner({
       onMouseLeave={() => setIsPaused(false)}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
-      className="relative h-[76svh] min-h-[580px] max-h-[680px] w-full select-none overflow-hidden bg-[#0a0b10] sm:h-[95vh] sm:min-h-[740px] sm:max-h-[1000px] lg:h-[100vh] lg:min-h-[860px]"
+      className="relative mt-0 h-[68svh] min-h-[480px] max-h-[620px] sm:h-auto sm:min-h-[560px] sm:max-h-[720px] md:h-[80vh] md:min-h-[580px] md:max-h-[760px] lg:h-[82vh] lg:min-h-[620px] lg:max-h-[800px] xl:h-[85vh] xl:max-h-[820px] w-full select-none overflow-hidden bg-[#0a0b10] transform-gpu contain-paint touch-pan-y"
     >
       {/* ── Layer 1: Background Scenic Image (Epic Battle Coastal Fire & Burning Ships) ── */}
       <div className="absolute inset-0 w-full h-full overflow-hidden">
@@ -1189,7 +1189,7 @@ function WarOdysseyHeroBanner({
       </div>
 
       {/* ── Slide Navigation Controls (Prev / Next & Dots) ── */}
-      <div className="absolute right-3 sm:right-8 md:right-12 bottom-3 sm:bottom-32 md:bottom-40 lg:bottom-48 xl:bottom-56 z-30 flex items-center gap-1.5 sm:gap-3 select-none pointer-events-auto">
+      <div className="absolute right-4 sm:right-8 md:right-12 bottom-4 sm:bottom-6 md:bottom-8 z-30 flex items-center gap-1.5 sm:gap-3 select-none pointer-events-auto">
         {/* Indicators */}
         <div className="hidden sm:flex items-center gap-1.5 mr-2">
           {WAR_ODYSSEY_SLIDES.map((slide, idx) => (
@@ -1382,7 +1382,7 @@ function DuneFantasyHeroBanner({
       onMouseLeave={() => setIsPaused(false)}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
-      className="relative h-[76svh] min-h-[580px] max-h-[680px] w-full select-none overflow-hidden bg-[#0a0b10] sm:h-[95vh] sm:min-h-[740px] sm:max-h-[1000px] lg:h-[100vh] lg:min-h-[860px]"
+      className="relative mt-0 h-[68svh] min-h-[480px] max-h-[620px] sm:h-auto sm:min-h-[560px] sm:max-h-[720px] md:h-[80vh] md:min-h-[580px] md:max-h-[760px] lg:h-[82vh] lg:min-h-[620px] lg:max-h-[800px] xl:h-[85vh] xl:max-h-[820px] w-full select-none overflow-hidden bg-[#0a0b10] transform-gpu contain-paint touch-pan-y"
     >
       {/* ── Layer 1: Background Scenic Image (Scorching Arrakis Desert Sun & Spice Dunes) ── */}
       <div className="absolute inset-0 w-full h-full overflow-hidden">
@@ -1540,7 +1540,7 @@ function DuneFantasyHeroBanner({
       </div>
 
       {/* ── Layer 5: Slide Indicators & Navigation Controls ── */}
-      <div className="absolute right-3 sm:right-8 md:right-12 bottom-3 sm:bottom-32 md:bottom-40 lg:bottom-48 xl:bottom-56 z-30 flex items-center gap-1.5 sm:gap-3 select-none pointer-events-auto">
+      <div className="absolute right-4 sm:right-8 md:right-12 bottom-4 sm:bottom-6 md:bottom-8 z-30 flex items-center gap-1.5 sm:gap-3 select-none pointer-events-auto">
         <div className="hidden sm:flex items-center gap-1.5 mr-2">
           {DUNE_FANTASY_SLIDES.map((slide, idx) => (
             <button
@@ -1683,7 +1683,7 @@ function GenreCuratedHeroBanner({
       onMouseLeave={() => setIsPaused(false)}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
-      className="relative h-[76svh] min-h-[580px] max-h-[680px] w-full select-none overflow-hidden bg-[#0a0b10] sm:h-[95vh] sm:min-h-[740px] sm:max-h-[1080px] lg:h-[100vh] lg:min-h-[860px]"
+      className="relative mt-0 h-[68svh] min-h-[480px] max-h-[620px] sm:h-auto sm:min-h-[560px] sm:max-h-[720px] md:h-[80vh] md:min-h-[580px] md:max-h-[760px] lg:h-[82vh] lg:min-h-[620px] lg:max-h-[800px] xl:h-[85vh] xl:max-h-[820px] w-full select-none overflow-hidden bg-[#0a0b10] transform-gpu contain-paint touch-pan-y"
     >
       {/* ── Background Media: Live Video Trailer or Dynamic Backdrop ── */}
       <div className="absolute inset-0 w-full h-full overflow-hidden">
@@ -1887,7 +1887,7 @@ function GenreCuratedHeroBanner({
       )}
 
       {/* ── Desktop Controls: Sound Toggle, Maturity Rating & Slide Chevrons ── */}
-      <div className="hidden sm:flex absolute right-6 sm:right-12 bottom-28 md:bottom-36 lg:bottom-44 z-30 pointer-events-auto items-center gap-2 sm:gap-3 select-none">
+      <div className="hidden sm:flex absolute right-6 sm:right-12 bottom-4 sm:bottom-6 md:bottom-8 z-30 pointer-events-auto items-center gap-2 sm:gap-3 select-none">
         {/* Sound Toggle (Mute / Unmute) */}
         {ytKey && (
           <button

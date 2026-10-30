@@ -20,6 +20,8 @@
     "db:performance": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/report-db-performance.ps1",
     "perf:waterfall:4g": "pnpm --filter web perf:waterfall:4g",
     "preview:sprites": "node scripts/generate-scrubber-sprites.mjs",
+    "convert:webp": "node scripts/convert-all-images-to-webp.mjs",
+    "upload:r2": "node scripts/upload-assets-to-r2.mjs",
     "docker:build": "docker compose --project-directory . -f infra/docker/docker-compose.yml build",
     "docker:up": "docker compose --project-directory . -f infra/docker/docker-compose.yml up -d",
     "docker:down": "docker compose --project-directory . -f infra/docker/docker-compose.yml down",
