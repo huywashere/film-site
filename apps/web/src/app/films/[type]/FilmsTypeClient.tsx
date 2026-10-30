@@ -1135,18 +1135,44 @@ export default function FilmsTypeClient({
     [isAnime, isSongNguAI, type],
   );
 
+  // Home-feed instant seed for zero-latency instant transitions from home
+  const cachedHomeFeed = queryClient.getQueryData<any>(["home-feed-v1", 24]);
+  const homeFeedSeed = useMemo(() => {
+    if (page !== 1 || !cachedHomeFeed?.sections) return undefined;
+    const sectionKey = isSeries ? "series" : isSingle ? "single" : isAnime ? "anime" : null;
+    if (!sectionKey) return undefined;
+    const items = cachedHomeFeed.sections[sectionKey];
+    if (Array.isArray(items) && items.length > 0) {
+      return {
+        status: true,
+        items,
+        pagination: {
+          currentPage: 1,
+          totalPages: 100,
+          totalItems: items.length * 50,
+        },
+      };
+    }
+    return undefined;
+  }, [cachedHomeFeed, isAnime, isSeries, isSingle, page]);
+
   // Main Page Query
+  const effectiveInitialData = initialData || homeFeedSeed;
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
     queryKey: ["films-type", type, page],
     queryFn: () => withCatalogTimeout(apiFn(page).then((r) => r.data)),
-    initialData,
-    initialDataUpdatedAt,
+    initialData: effectiveInitialData,
+    initialDataUpdatedAt: initialData
+      ? initialDataUpdatedAt
+      : homeFeedSeed
+        ? Date.now() - 30_000
+        : undefined,
     staleTime: initialData ? 0 : 30 * 60 * 1000,
     gcTime: 2 * 60 * 60 * 1000,
     retry: false,
     refetchOnMount: initialData ? "always" : true,
     refetchOnWindowFocus: false,
-    placeholderData: (previousData) => previousData,
+    placeholderData: (previousData) => previousData || homeFeedSeed,
   });
 
   // Secondary Page Queries for Pure Japanese Anime Universe Hub

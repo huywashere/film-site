@@ -4,6 +4,8 @@ import { getInitialFilmCatalog } from "@/lib/server-catalog";
 import { headers } from "next/headers";
 import { buildSeoMetadata } from "@/lib/seo";
 
+export const revalidate = 600;
+
 type FilmsTypePageProps = {
   params: Promise<{ type: string }>;
   searchParams: Promise<{ page?: string | string[] }>;
@@ -82,6 +84,7 @@ export default async function FilmsTypePage({
     headers(),
   ]);
   const page = normalizePage(query.page);
+
   const initialData =
     requestHeaders.get("rsc") === "1"
       ? null

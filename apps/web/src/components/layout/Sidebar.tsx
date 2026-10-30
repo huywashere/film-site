@@ -24,6 +24,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { cardFont } from '@/lib/fonts';
 import { movieApi } from '@/lib/api';
+import { fetchBilingualFilms } from '@/lib/bilingual-catalog';
 import { tmdbApi, type TmdbDiscoverOptions } from '@/lib/tmdb';
 
 function TelegramIcon({ className, size = 20 }: { className?: string; size?: number }) {
@@ -244,6 +245,24 @@ export function Sidebar() {
         });
       }
 
+      if (href === '/song-ngu') {
+        void queryClient.prefetchQuery({
+          queryKey: ['bilingual-films-catalog', 'all', '', '', 1],
+          queryFn: () =>
+            fetchBilingualFilms({ format: 'all', genre: '', search: '', page: 1 }),
+          staleTime: 15 * 60 * 1000,
+        });
+        if (typeof window !== 'undefined') {
+          [
+            '/Folder-Background/China/tuoc-cot/tuoc-cot-bg.webp',
+            '/Folder-Background/China/tuoc-cot/tuoc-cot-couple-chars.webp',
+            '/Folder-Background/China/tuoc-cot/tuoc-cot-logo.webp',
+          ].forEach((src) => {
+            const img = new window.Image();
+            img.src = src;
+          });
+        }
+      }
       if (href === '/watch-party' && typeof window !== 'undefined') {
         const img = new window.Image();
         img.src = '/img-backtop/tab-watch-party.webp';
@@ -256,7 +275,7 @@ export function Sidebar() {
   useEffect(() => {
     if (!mounted || typeof window === 'undefined') return;
     const timer = setTimeout(() => {
-      const topRoutes = ['/', '/films', '/genres', '/films/series', '/films/single', '/watchlist', '/history'];
+      const topRoutes = ['/', '/films', '/genres', '/films/series', '/films/single', '/song-ngu', '/watchlist', '/history'];
       topRoutes.forEach((route) => {
         try {
           router.prefetch(route);

@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { movieApi } from '@/lib/api';
+import { fetchBilingualFilms } from '@/lib/bilingual-catalog';
 import { Bookmark, Clapperboard, History, Home, LayoutDashboard, User } from 'lucide-react';
 import { motion, useReducedMotion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '@/store/authStore';
@@ -40,6 +41,25 @@ export function MobileBottomNav() {
           queryFn: () => movieApi.getLatest(1).then((r) => r?.data?.data || r?.data || { items: [] }),
           staleTime: 15 * 60 * 1000,
         });
+      } else if (href === '/films/series') {
+        void queryClient.prefetchQuery({
+          queryKey: ['films-type', 'series', 1],
+          queryFn: () => movieApi.getSeries(1).then((r) => r.data),
+          staleTime: 15 * 60 * 1000,
+        });
+      } else if (href === '/films/single') {
+        void queryClient.prefetchQuery({
+          queryKey: ['films-type', 'single', 1],
+          queryFn: () => movieApi.getSingle(1).then((r) => r.data),
+          staleTime: 15 * 60 * 1000,
+        });
+      } else if (href === '/song-ngu') {
+        void queryClient.prefetchQuery({
+          queryKey: ['bilingual-films-catalog', 'all', '', '', 1],
+          queryFn: () =>
+            fetchBilingualFilms({ format: 'all', genre: '', search: '', page: 1 }),
+          staleTime: 15 * 60 * 1000,
+        });
       } else if (href === '/') {
         void queryClient.prefetchQuery({
           queryKey: ['home-feed-v1', 24],
@@ -65,7 +85,7 @@ export function MobileBottomNav() {
     let idleId: number | undefined;
     const timer = setTimeout(() => {
       const runWarm = () => {
-        ['/', '/films', '/genres'].forEach((route) => {
+        ['/', '/films', '/genres', '/films/series', '/films/single', '/song-ngu'].forEach((route) => {
           try {
             router.prefetch(route);
           } catch {}

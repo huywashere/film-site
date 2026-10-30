@@ -42,6 +42,7 @@ import { useSettingsStore } from "@/store/settingsStore";
 import { useTranslation } from "@/store/langStore";
 import { useThemeStore } from "@/store/themeStore";
 import { api, movieApi, publishedMovieApi, systemNotificationApi } from "@/lib/api";
+import { fetchBilingualFilms } from "@/lib/bilingual-catalog";
 import { resolveImageUrl } from "@/components/film/FilmCard";
 import { cn } from "@/lib/utils";
 import { cardFont, logoFont } from "@/lib/fonts";
@@ -496,6 +497,12 @@ export function Navbar() {
           });
         }
       } else if (href === "/song-ngu") {
+        void queryClient.prefetchQuery({
+          queryKey: ["bilingual-films-catalog", "all", "", "", 1],
+          queryFn: () =>
+            fetchBilingualFilms({ format: "all", genre: "", search: "", page: 1 }),
+          staleTime: 15 * 60 * 1000,
+        });
         if (typeof window !== "undefined") {
           [
             "/Folder-Background/China/tuoc-cot/tuoc-cot-bg.webp",
@@ -569,6 +576,24 @@ export function Navbar() {
         try {
           navigation.prefetch(link.href);
         } catch {}
+      });
+
+      // Idle pre-warm primary 3 nav tabs so clicks are instantaneous
+      void queryClient.prefetchQuery({
+        queryKey: ["films-type", "series", 1],
+        queryFn: () => movieApi.getSeries(1).then((r) => r.data),
+        staleTime: 15 * 60 * 1000,
+      });
+      void queryClient.prefetchQuery({
+        queryKey: ["films-type", "single", 1],
+        queryFn: () => movieApi.getSingle(1).then((r) => r.data),
+        staleTime: 15 * 60 * 1000,
+      });
+      void queryClient.prefetchQuery({
+        queryKey: ["bilingual-films-catalog", "all", "", "", 1],
+        queryFn: () =>
+          fetchBilingualFilms({ format: "all", genre: "", search: "", page: 1 }),
+        staleTime: 15 * 60 * 1000,
       });
     };
 

@@ -31,3 +31,4 @@ export function StuckNavigationRecovery({ timeoutMs = 3500 }: { timeoutMs?: numb
 
   return null;
 }
+
