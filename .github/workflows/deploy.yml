@@ -88,6 +88,7 @@ jobs:
             NEXT_PUBLIC_FIREBASE_APP_ID=${{ vars.NEXT_PUBLIC_FIREBASE_APP_ID || '1:1072309032788:web:5dd1a252f1ea97e8775ac1' }}
             NEXT_PUBLIC_CDN_URL=${{ vars.NEXT_PUBLIC_CDN_URL || 'https://pub-47e070c7a48e4c1091d1f838e4270a38.r2.dev' }}
             NEXT_PUBLIC_CDN_ASSETS_URL=${{ vars.NEXT_PUBLIC_CDN_ASSETS_URL || 'https://pub-47e070c7a48e4c1091d1f838e4270a38.r2.dev' }}
+            NEXT_PUBLIC_GA_ID=${{ vars.NEXT_PUBLIC_GA_ID || 'G-8FMY43PBDQ' }}
           cache-from: type=gha,scope=web
           cache-to: type=gha,mode=max,scope=web
 
