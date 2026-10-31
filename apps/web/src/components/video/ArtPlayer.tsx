@@ -658,10 +658,10 @@ export default function ArtPlayer({
               if (freezeCounter >= 7) {
                 freezeCounter = 0;
                 try {
-                  const resumeTime = video.currentTime;
+                  const resumeTime = isLive ? -1 : video.currentTime;
                   hls.recoverMediaError();
                   hls.startLoad(resumeTime);
-                  video.currentTime = resumeTime;
+                  if (!isLive) video.currentTime = resumeTime;
                   void video.play().catch(() => {});
                 } catch {}
               }
@@ -691,7 +691,7 @@ export default function ArtPlayer({
               if (hls.autoLevelEnabled && hls.loadLevel > 0) {
                 hls.nextAutoLevel = hls.loadLevel - 1;
               }
-              hls.startLoad(video.currentTime);
+              hls.startLoad(isLive ? -1 : video.currentTime);
             } else if (stalledFor >= 6_000 && stallRecoveries === 1) {
               stallRecoveries = 2;
               if (!switchTransport()) {
@@ -1523,6 +1523,7 @@ export default function ArtPlayer({
 
     // Advertisement & Auto Skip Intro listeners
     player.on('video:timeupdate', () => {
+      if (isLive) return;
       const activeAd = findActiveAd(player.currentTime);
       if (activeAd) {
         const adKey = `${activeAd.start.toFixed(1)}-${activeAd.end.toFixed(1)}`;
@@ -1690,7 +1691,7 @@ export default function ArtPlayer({
       const now = Date.now();
       const ct = player.currentTime;
       const dur = player.duration;
-      if (dur > 0) {
+      if (dur > 0 && Number.isFinite(dur) && !isLive) {
         if (!player.video.seeking) lastStablePlaybackTime = ct;
         if (now - lastSave > 5000) {
           lastSave = now;

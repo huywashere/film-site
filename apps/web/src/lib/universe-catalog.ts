@@ -108,7 +108,7 @@ export const DC_SPOTLIGHTS: UniverseSpotlightItem[] = [
     heroBackdrop: "/Folder-Background/DC/iUIgje.webp",
     titleLogo: "https://image.tmdb.org/t/p/w500/nO5Uix3Qr4WjOyU1BMPv0okyNWm.png",
     charLeftImage: "/Folder-Background/DC/dc-joker-char.webp",
-    charImage: "/Folder-Background/DC/thumb-1920-457955.webp",
+    charImage: "/Folder-Background/DC/dc-batman-char.webp",
     trailer_url: "https://www.youtube.com/watch?v=EXeTwQWrcwY",
     subFranchise: "batman",
     objectPosition: "object-[center_28%]",

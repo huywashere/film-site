@@ -46,6 +46,17 @@ const DIRECT_HLS_HOST_SUFFIXES = [
   "vsphim.com",
   "vicdn.cc",
   "vidsrc.sbs",
+  "vnns.net",
+  "vtvdigital.vn",
+  "truyenhinhso.vn",
+  "freem3u.xyz",
+  "vtvprime.vn",
+  "mediatech.vn",
+  "canthotv.vn",
+  "akamaized.net",
+  "trtworld.com",
+  "trt.com.tr",
+  "cgtn.com",
 ];
 
 export function isDirectHlsAllowedByCsp(value: string) {
@@ -71,9 +82,19 @@ export function selectInitialHlsTransport(
 ) {
   const safeProxy = proxyUrl?.startsWith("/api/hls-proxy?") ? proxyUrl : "";
   const directAllowed = Boolean(directUrl) && isDirectHlsAllowedByCsp(directUrl);
-  const primary =
+  const isDirectFallback = Boolean(proxyUrl && !safeProxy && isDirectHlsAllowedByCsp(proxyUrl));
+
+  const primary: string =
     safeProxy && (preferSameOrigin || !directAllowed) ? safeProxy : directUrl || safeProxy;
-  const fallback = primary === safeProxy ? (directAllowed ? directUrl : "") : safeProxy;
+
+  let fallback: string | undefined = undefined;
+  if (primary === safeProxy) {
+    fallback = directAllowed ? directUrl : undefined;
+  } else if (safeProxy) {
+    fallback = safeProxy;
+  } else if (isDirectFallback && proxyUrl && proxyUrl !== directUrl) {
+    fallback = proxyUrl;
+  }
 
   return {
     primary,

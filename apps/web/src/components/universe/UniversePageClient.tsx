@@ -134,10 +134,12 @@ function UniverseSpotlightLogo({
   titleLogo,
   name,
   isPriority = false,
+  align = 'left',
 }: {
   titleLogo?: string | null;
   name: string;
   isPriority?: boolean;
+  align?: 'left' | 'center';
 }) {
   const candidates = useMemo(() => getUniverseLogoCandidates(titleLogo), [titleLogo]);
 
@@ -159,14 +161,24 @@ function UniverseSpotlightLogo({
 
   if (!titleLogo || hasFailedAll || !src) {
     return (
-      <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.9)]">
+      <h1
+        className={cn(
+          "text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.9)]",
+          align === "center" ? "text-center mx-auto" : "text-left",
+        )}
+      >
         {name}
       </h1>
     );
   }
 
   return (
-    <div className="relative h-16 sm:h-24 md:h-28 lg:h-32 xl:h-36 w-72 sm:w-96 md:w-[420px] lg:w-[480px] xl:w-[520px] max-w-full drop-shadow-[0_10px_30px_rgba(0,0,0,0.95)]">
+    <div
+      className={cn(
+        "relative h-16 sm:h-24 md:h-28 lg:h-32 xl:h-36 w-72 sm:w-96 md:w-[420px] lg:w-[480px] xl:w-[520px] max-w-full drop-shadow-[0_10px_30px_rgba(0,0,0,0.95)]",
+        align === "center" ? "mx-auto" : "",
+      )}
+    >
       <Image
         key={src}
         src={src}
@@ -191,7 +203,8 @@ function UniverseSpotlightLogo({
           }
         }}
         className={cn(
-          'object-contain object-left transition-opacity duration-200',
+          'object-contain transition-opacity duration-200',
+          align === 'center' ? 'object-center' : 'object-left',
           isReady ? 'opacity-100' : 'opacity-0',
         )}
         sizes="(max-width: 768px) 320px, 520px"
@@ -318,6 +331,8 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
   const activeSpotlight: UniverseSpotlightItem = useMemo(() => {
     return spotlights[currentIdx] || spotlights[0];
   }, [spotlights, currentIdx]);
+
+  const hasDualCharacters = Boolean(activeSpotlight.charLeftImage && activeSpotlight.charImage);
 
   const thumbnailScrollRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLElement>(null);
@@ -489,32 +504,54 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
 
         {/* Cinematic Lighting Gradients */}
         {/* Left readable text shadow mask */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#07080c] via-[#07080c]/75 via-40% to-transparent pointer-events-none z-[1]" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#07080c] via-[#07080c]/85 via-40% to-transparent pointer-events-none z-[1]" />
         {/* Bottom bleed into body content */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#07080c] via-[#07080c]/50 via-25% to-transparent pointer-events-none z-[1]" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#07080c] via-[#07080c]/60 via-25% to-transparent pointer-events-none z-[1]" />
         {/* Top subtle fade for navbar readability */}
         <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-[#07080c]/80 to-transparent pointer-events-none z-[1]" />
 
         {/* ── Top-Right Brand Emblem (DC Universe) ── */}
         {isDC && (
-          <div className="absolute top-20 sm:top-24 md:top-28 right-6 sm:right-10 md:right-14 lg:right-20 z-20 pointer-events-none select-none">
-            <div className="relative h-14 w-14 sm:h-18 sm:w-18 md:h-22 md:w-22 lg:h-26 lg:w-26 shrink-0 drop-shadow-[0_8px_32px_rgba(35,173,229,0.55)]">
+          <div className="absolute top-16 sm:top-20 md:top-24 right-4 sm:right-8 md:right-12 lg:right-16 z-20 pointer-events-none select-none">
+            <div className="relative h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 shrink-0 drop-shadow-[0_8px_32px_rgba(35,173,229,0.55)]">
               <Image
                 src="/images/logos/dc-logo.svg"
                 alt="DC Comics"
                 fill
                 priority
-                sizes="(max-width: 640px) 72px, (max-width: 1024px) 88px, 104px"
+                sizes="(max-width: 640px) 64px, (max-width: 1024px) 80px, 96px"
                 className="object-contain filter drop-shadow-[0_0_20px_rgba(0,140,255,0.4)]"
               />
             </div>
           </div>
         )}
 
-        {/* ── Layer 2.5: Left Character Cutout with Smooth Slide-In from Left (e.g. Joker for DC) ── */}
-        {/* ── Layer 2.5: Left Character Cutout (e.g. Joker for DC / Mandalorian for Space) ── */}
+        {/* Center Corridor Atmospheric Radial Backdrop for Dual Showdown (Desktop/Tablet) */}
+        {hasDualCharacters && (
+          <div
+            className="absolute inset-0 hidden md:block bg-[radial-gradient(ellipse_at_center,rgba(7,8,12,0.82)_0%,rgba(7,8,12,0.45)_50%,transparent_75%)] pointer-events-none z-[2]"
+            aria-hidden="true"
+          />
+        )}
+
+        {/* Mobile Protective Scrim for Dual Showdown (constrains characters to upper ~45%, protects lower ~55%) */}
+        {hasDualCharacters && (
+          <div
+            className="absolute inset-x-0 bottom-0 h-[58%] md:hidden bg-gradient-to-t from-[#07080c] via-[#07080c]/95 via-45% to-transparent pointer-events-none z-[5]"
+            aria-hidden="true"
+          />
+        )}
+
+        {/* ── Layer 2.5: Left Character Cutout (e.g. Joker for DC / Left Showdown) ── */}
         {activeSpotlight.charLeftImage && (
-          <div className="absolute left-0 bottom-[-16px] sm:bottom-[-28px] md:bottom-[-36px] top-0 h-full w-full max-w-lg sm:max-w-xl md:max-w-2xl lg:max-w-3xl flex items-end justify-start pointer-events-none z-[3] overflow-hidden pl-0 sm:pl-2 md:pl-6 lg:pl-10">
+          <div
+            className={cn(
+              "pointer-events-none z-[3] overflow-hidden",
+              hasDualCharacters
+                ? "absolute top-14 sm:top-16 left-0 h-[45%] w-[48%] md:top-0 md:bottom-[-20px] md:h-full md:w-[22vw] md:max-w-[240px] xl:w-[26vw] xl:max-w-[380px] flex items-end justify-start pl-1 sm:pl-3 md:pl-6 xl:pl-10"
+                : "absolute left-0 bottom-[-16px] sm:bottom-[-28px] md:bottom-[-36px] top-0 h-full w-full max-w-lg sm:max-w-xl md:max-w-2xl lg:max-w-3xl flex items-end justify-start pl-0 sm:pl-2 md:pl-6 lg:pl-10"
+            )}
+          >
             <AnimatePresence mode="wait">
               <motion.div
                 key={`left-char-${activeSpotlight.id}`}
@@ -522,13 +559,23 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 50 }}
                 transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-                className="relative h-full flex items-end justify-start w-full [mask-image:linear-gradient(to_bottom,black_0%,black_75%,transparent_98%)] [-webkit-mask-image:linear-gradient(to_bottom,black_0%,black_75%,transparent_98%)]"
+                className={cn(
+                  "relative h-full flex items-end justify-start w-full",
+                  hasDualCharacters
+                    ? "[mask-image:linear-gradient(to_bottom,black_0%,black_80%,transparent_100%)] md:[mask-image:linear-gradient(to_right,black_75%,transparent_100%)]"
+                    : "[mask-image:linear-gradient(to_bottom,black_0%,black_75%,transparent_98%)]"
+                )}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={activeSpotlight.charLeftImage}
                   alt=""
-                  className="h-[60%] sm:h-[75%] md:h-[84%] lg:h-[92%] max-h-[720px] w-auto max-w-full object-contain object-bottom select-none filter contrast-[1.06] brightness-[1.02] drop-shadow-[0_20px_50px_rgba(0,0,0,0.9)] opacity-50 sm:opacity-95 lg:opacity-100 transition-all duration-300"
+                  className={cn(
+                    "w-auto max-w-full object-contain select-none filter contrast-[1.06] brightness-[1.02] drop-shadow-[0_20px_50px_rgba(0,0,0,0.9)] transition-all duration-300",
+                    hasDualCharacters
+                      ? "h-full max-h-[460px] md:max-h-[580px] xl:max-h-[740px] object-bottom-left opacity-90 sm:opacity-95 xl:opacity-100"
+                      : "h-[60%] sm:h-[75%] md:h-[84%] lg:h-[92%] max-h-[720px] object-bottom opacity-50 sm:opacity-95 lg:opacity-100"
+                  )}
                   loading="eager"
                 />
               </motion.div>
@@ -536,9 +583,16 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
           </div>
         )}
 
-        {/* ── Layer 3: Character Cutout with Smooth Slide-In from Right (e.g. Batman for DC / Spider-Man for Marvel / Darth Vader for Space) ── */}
+        {/* ── Layer 3: Character Cutout from Right (e.g. Batman for DC / Spider-Man for Marvel) ── */}
         {activeSpotlight.charImage && (
-          <div className="absolute right-0 bottom-[-16px] sm:bottom-[-28px] md:bottom-[-36px] top-0 h-full w-full max-w-2xl sm:max-w-3xl md:max-w-4xl lg:max-w-5xl xl:max-w-6xl flex items-end justify-end pointer-events-none z-[4] overflow-hidden pr-2 sm:pr-8 md:pr-14 lg:pr-20 xl:pr-28">
+          <div
+            className={cn(
+              "pointer-events-none z-[4] overflow-hidden",
+              hasDualCharacters
+                ? "absolute top-14 sm:top-16 right-0 h-[46%] w-[50%] md:top-0 md:bottom-[-20px] md:h-full md:w-[22vw] md:max-w-[260px] xl:w-[26vw] xl:max-w-[420px] flex items-end justify-end pr-1 sm:pr-3 md:pr-6 xl:pr-10"
+                : "absolute right-0 bottom-[-16px] sm:bottom-[-28px] md:bottom-[-36px] top-0 h-full w-full max-w-2xl sm:max-w-3xl md:max-w-4xl lg:max-w-5xl xl:max-w-6xl flex items-end justify-end pr-2 sm:pr-8 md:pr-14 lg:pr-20 xl:pr-28"
+            )}
+          >
             <AnimatePresence mode="wait">
               <motion.div
                 key={`right-char-${activeSpotlight.id}`}
@@ -546,7 +600,12 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -50 }}
                 transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
-                className="relative h-full flex items-end justify-end w-full [mask-image:linear-gradient(to_bottom,black_0%,black_75%,transparent_98%)] [-webkit-mask-image:linear-gradient(to_bottom,black_0%,black_75%,transparent_98%)]"
+                className={cn(
+                  "relative h-full flex items-end justify-end w-full",
+                  hasDualCharacters
+                    ? "[mask-image:linear-gradient(to_bottom,black_0%,black_80%,transparent_100%)] md:[mask-image:linear-gradient(to_left,black_75%,transparent_100%)]"
+                    : "[mask-image:linear-gradient(to_bottom,black_0%,black_75%,transparent_98%)]"
+                )}
               >
                 {/* Secondary Cutout if co-appearing (e.g. Rampage Awakened) */}
                 {activeSpotlight.charImageSecondary && (
@@ -572,8 +631,13 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                   src={activeSpotlight.charImage}
                   alt={activeSpotlight.name}
                   className={cn(
-                    "h-[70%] sm:h-[80%] md:h-[86%] lg:h-[94%] max-h-[740px] w-auto max-w-full object-contain object-bottom select-none filter contrast-[1.04] brightness-[1.02] drop-shadow-[0_20px_50px_rgba(0,0,0,0.85)] transition-all duration-300",
-                    activeSpotlight.charImageSecondary ? "relative z-10" : ""
+                    "w-auto max-w-full object-contain select-none filter contrast-[1.04] brightness-[1.02] drop-shadow-[0_20px_50px_rgba(0,0,0,0.85)] transition-all duration-300",
+                    hasDualCharacters
+                      ? "h-full max-h-[480px] md:max-h-[600px] xl:max-h-[760px] object-bottom-right opacity-90 sm:opacity-95 xl:opacity-100"
+                      : cn(
+                          "h-[70%] sm:h-[80%] md:h-[86%] lg:h-[94%] max-h-[740px] object-bottom",
+                          activeSpotlight.charImageSecondary ? "relative z-10" : ""
+                        )
                   )}
                   loading="eager"
                 />
@@ -584,8 +648,11 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
 
         {/* Spotlight Content Overlay */}
         <div className="relative z-10 mx-auto flex h-full max-w-[1760px] flex-col justify-end px-4 pb-20 pt-20 sm:px-8 sm:pb-10 lg:px-14 lg:pb-12">
-          <div className="flex flex-col gap-6 2xl:flex-row 2xl:items-end 2xl:justify-between 2xl:gap-8">
-            {/* Left Column: Movie Info & Actions with Glide Transition from Left */}
+          <div className={cn(
+            "flex flex-col gap-6 2xl:flex-row 2xl:items-end 2xl:justify-between 2xl:gap-8",
+            hasDualCharacters ? "w-full" : ""
+          )}>
+            {/* Left Column / Center Column: Movie Info & Actions with Glide Transition from Left */}
             <AnimatePresence mode="wait">
               <motion.div
                 key={`info-${activeSpotlight.id}`}
@@ -595,13 +662,15 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                 transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
                 className={cn(
                   "space-y-3 sm:space-y-3.5 relative z-10",
-                  activeSpotlight.charLeftImage
-                    ? "max-w-xl md:max-w-lg lg:max-w-xl xl:max-w-2xl md:ml-[340px] lg:ml-[420px] xl:ml-[480px] 2xl:ml-[540px]"
-                    : "max-w-xl xl:max-w-2xl 2xl:max-w-3xl"
+                  hasDualCharacters
+                    ? "mx-auto w-full max-w-xl text-center items-center flex flex-col"
+                    : activeSpotlight.charLeftImage
+                      ? "max-w-xl md:max-w-lg lg:max-w-xl xl:max-w-2xl md:ml-[340px] lg:ml-[420px] xl:ml-[480px] 2xl:ml-[540px]"
+                      : "max-w-xl xl:max-w-2xl 2xl:max-w-3xl"
                 )}
               >
                 {/* Universe Official Brand Logo for Marvel & Space (DC is positioned on the top-right) */}
-                {(isMarvel || isSpace) && (
+                {(isMarvel || (isSpace && !activeSpotlight.titleLogo)) && (
                   <div className="flex items-center select-none ml-0.5 sm:ml-1">
                     {isMarvel && (
                       // Official Marvel Brand Logo
@@ -616,8 +685,8 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                         />
                       </div>
                     )}
-                    {isSpace && (
-                      // Official Star Wars Logo Banner
+                    {isSpace && !activeSpotlight.titleLogo && (
+                      // Official Star Wars Logo Banner (fallback if titleLogo is absent)
                       <div className="relative h-8 sm:h-10 md:h-11 w-28 sm:w-36 md:w-40 shrink-0">
                         <Image
                           src="/Folder-Background/starwar/star-wars-logo.svg"
@@ -635,8 +704,11 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
 
                 {/* Movie Title or Logo. Keep every small logo mounted so changing
                     slides only crossfades already-painted DOM nodes. */}
-                <div className="space-y-2">
-                  <div className="relative h-16 w-72 max-w-full sm:h-24 sm:w-96 md:h-28 md:w-[420px] lg:h-32 lg:w-[480px] xl:h-36 xl:w-[520px]">
+                <div className={cn("space-y-2", hasDualCharacters ? "w-full flex flex-col items-center" : "")}>
+                  <div className={cn(
+                    "relative h-16 w-72 max-w-full sm:h-24 sm:w-96 md:h-28 md:w-[420px] lg:h-32 lg:w-[480px] xl:h-36 xl:w-[520px]",
+                    hasDualCharacters ? "mx-auto" : ""
+                  )}>
                     {spotlights.map((item, idx) => (
                       <div
                         key={item.id}
@@ -650,19 +722,26 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                           titleLogo={item.titleLogo}
                           name={item.name}
                           isPriority={idx === 0}
+                          align={hasDualCharacters ? 'center' : 'left'}
                         />
                       </div>
                     ))}
                   </div>
 
-                  <div className="space-y-1">
-                    <div className="text-xs sm:text-sm font-medium text-neutral-300 drop-shadow flex items-center gap-2">
+                  <div className={cn("space-y-1", hasDualCharacters ? "text-center flex flex-col items-center" : "")}>
+                    <div className={cn(
+                      "text-xs sm:text-sm font-medium text-neutral-300 drop-shadow flex items-center gap-2",
+                      hasDualCharacters ? "justify-center" : ""
+                    )}>
                       <span>{activeSpotlight.origin_name}</span>
                       <span className="text-neutral-500">•</span>
                       <span>{activeSpotlight.year}</span>
                     </div>
                     {activeSpotlight.subtitle && (
-                      <p className="text-xs sm:text-base font-semibold text-cyan-300/90 font-mono tracking-wide drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)]">
+                      <p className={cn(
+                        "text-xs sm:text-base font-semibold text-cyan-300/90 font-mono tracking-wide drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)]",
+                        hasDualCharacters ? "text-center" : ""
+                      )}>
                         {activeSpotlight.subtitle}
                       </p>
                     )}
@@ -670,7 +749,10 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                 </div>
 
                 {/* Meta tags */}
-                <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
+                <div className={cn(
+                  "flex flex-wrap items-center gap-2 pt-1 text-xs",
+                  hasDualCharacters ? "justify-center" : ""
+                )}>
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 font-bold shadow-sm">
                     <Star size={12} className="fill-amber-400 text-amber-400" />
                     <span>{activeSpotlight.rating.toFixed(1)} TMDB</span>
@@ -687,7 +769,10 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
 
                 {/* Genre Pills */}
                 {activeSpotlight.genres && activeSpotlight.genres.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-0.5">
+                  <div className={cn(
+                    "flex flex-wrap items-center gap-1.5 sm:gap-2 pt-0.5",
+                    hasDualCharacters ? "justify-center" : ""
+                  )}>
                     {activeSpotlight.genres.map((genre) => (
                       <span
                         key={genre}
@@ -700,12 +785,18 @@ export function UniversePageClient({ universe }: UniversePageClientProps) {
                 )}
 
                 {/* Synopsis */}
-                <p className="text-xs sm:text-sm text-neutral-300/90 line-clamp-2 sm:line-clamp-3 leading-relaxed max-w-xl drop-shadow">
+                <p className={cn(
+                  "text-xs sm:text-sm text-neutral-300/90 line-clamp-2 sm:line-clamp-3 leading-relaxed max-w-xl drop-shadow",
+                  hasDualCharacters ? "text-center mx-auto" : ""
+                )}>
                   {activeSpotlight.content}
                 </p>
 
                 {/* Actions Buttons */}
-                <div className="grid w-full grid-cols-2 gap-2 pt-2 sm:flex sm:flex-wrap sm:items-center sm:gap-2.5">
+                <div className={cn(
+                  "grid w-full grid-cols-2 gap-2 pt-2 sm:flex sm:flex-wrap sm:items-center sm:gap-2.5",
+                  hasDualCharacters ? "justify-center sm:justify-center" : ""
+                )}>
                   <Link
                     href={`/watch/${activeSpotlight.slug}`}
                     data-universe-action="watch"

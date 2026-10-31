@@ -1241,7 +1241,6 @@ function WarOdysseyHeroBanner({
 }
 
 // ── FANTASY DUNE PART TWO CINEMATIC HERO BANNER COMPONENT ──
-const DUNE_BG_PATH = "/Folder-Background/dune-2/dune-arrakis-sun-bg.webp";
 const DUNE_LOGO_PATH = "/Folder-Background/dune-2/dune-2-logo-hd.webp";
 
 interface DuneFantasySlide {
@@ -1255,11 +1254,9 @@ interface DuneFantasySlide {
   rating: string;
   genres: string[];
   overview: string;
-  charImage: string;
-  charAlt: string;
+  backdropUrl: string;
   slug: string;
   trailer_url: string;
-  charHeightClass?: string;
 }
 
 const DUNE_FANTASY_SLIDES: DuneFantasySlide[] = [
@@ -1272,14 +1269,12 @@ const DUNE_FANTASY_SLIDES: DuneFantasySlide[] = [
     year: 2024,
     quality: "4K UHD • Thuyết Minh",
     rating: "IMDb 8.5",
-    genres: ["Sử Thi GiẢ Tưởng", "Vũ Trụ Arrakis", "Hành Động", "Khoa Học Kỳ Ảo"],
+    genres: ["Sử Thi Giả Tưởng", "Vũ Trụ Arrakis", "Hành Động", "Khoa Học Kỳ Ảo"],
     overview:
       "Paul Atreides hợp nhất cùng Chani và tộc người Fremen để phát động cuộc kháng chiến báo thù những kẻ hủy diệt gia tộc mình, đối diện với định mệnh nghiệt ngã làm rung chuyển toàn cõi thiên hà.",
-    charImage: "/Folder-Background/dune-2/dune-ensemble-sandworm.webp",
-    charAlt: "Toàn bộ nhân vật Dune 2 và Thần Thú Shai-Hulud sa mạc",
+    backdropUrl: "/Folder-Background/dune-2/dune-2-2024-movies-7680x4320-14998.webp",
     slug: "hanh-tinh-cat-phan-hai",
     trailer_url: "https://www.youtube.com/watch?v=Way9Dexny3w",
-    charHeightClass: "h-[80%] sm:h-[88%] md:h-[94%] lg:h-[98%] max-h-[760px]",
   },
   {
     id: "dune-paul-chani-duo",
@@ -1293,11 +1288,9 @@ const DUNE_FANTASY_SLIDES: DuneFantasySlide[] = [
     genres: ["Tình Yêu & Khát Vọng", "Kháng Chiến Fremen", "Sa Mạc Vô Tận", "Phiêu Lưu"],
     overview:
       "Sát cánh chiến đấu bên chiến binh quả cảm Chani, Paul thuần hóa loài sâu cát khổng lồ và học hỏi giáo lý sa mạc cổ xưa để trở thành thủ lĩnh được toàn thể người dân Arrakis tôn sùng.",
-    charImage: "/Folder-Background/dune-2/dune-paul-chani-hd.webp",
-    charAlt: "Paul Atreides và Chani sát cánh trong bộ chiến giáp Stillsuit",
+    backdropUrl: "/Folder-Background/dune-2/dune-hub-ensemble.webp",
     slug: "hanh-tinh-cat-phan-hai",
     trailer_url: "https://www.youtube.com/watch?v=Way9Dexny3w",
-    charHeightClass: "h-[76%] sm:h-[84%] md:h-[90%] lg:h-[96%] max-h-[720px]",
   },
   {
     id: "dune-muaddib-prophet",
@@ -1311,11 +1304,9 @@ const DUNE_FANTASY_SLIDES: DuneFantasySlide[] = [
     genres: ["Quyền Năng Huyền Bí", "Tranh Đoạt Vương Quyền", "Thần Thoại Vũ Trụ", "Kịch Tính"],
     overview:
       "Vượt qua lằn ranh sinh tử nhờ Nước Sự Sống, Paul thức tỉnh đôi mắt xanh rực sáng của hương dược Arrakis và dẫn đầu hàng triệu chiến binh Fremen tiến thẳng vào trận chiến định đoạt ngai vàng hoàng đế.",
-    charImage: "/Folder-Background/dune-2/dune-paul-solo.webp",
-    charAlt: "Paul Atreides khoác áo choàng sa mạc với đôi mắt xanh hương dược",
+    backdropUrl: "/Folder-Background/Dune-3/dune-part-three-2880x1800-26846.webp",
     slug: "hanh-tinh-cat-phan-hai",
     trailer_url: "https://www.youtube.com/watch?v=Way9Dexny3w",
-    charHeightClass: "h-[74%] sm:h-[82%] md:h-[88%] lg:h-[94%] max-h-[700px]",
   },
 ];
 
@@ -1332,7 +1323,6 @@ function DuneFantasyHeroBanner({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(1);
   const [isPaused, setIsPaused] = useState(false);
-  const [bgSrc, setBgSrc] = useState(() => getAssetUrl(DUNE_BG_PATH));
   const [logoSrc, setLogoSrc] = useState(() => getAssetUrl(DUNE_LOGO_PATH));
 
   const currentSlide = DUNE_FANTASY_SLIDES[currentIndex];
@@ -1384,20 +1374,22 @@ function DuneFantasyHeroBanner({
       onTouchEnd={handleTouchEnd}
       className="relative mt-0 h-[68svh] min-h-[480px] max-h-[620px] sm:h-auto sm:min-h-[560px] sm:max-h-[720px] md:h-[80vh] md:min-h-[580px] md:max-h-[760px] lg:h-[82vh] lg:min-h-[620px] lg:max-h-[800px] xl:h-[85vh] xl:max-h-[820px] w-full select-none overflow-hidden bg-[#0a0b10] transform-gpu contain-paint touch-pan-y"
     >
-      {/* ── Layer 1: Background Scenic Image (Scorching Arrakis Desert Sun & Spice Dunes) ── */}
+      {/* ── Layer 1: Seamless Cinematic High-Res Cover (Crossfading Scenic Backdrop) ── */}
       <div className="absolute inset-0 w-full h-full overflow-hidden">
-        <img
-          src={bgSrc}
-          alt="Dune: Hành Tinh Cát - Sa Mạc Arrakis"
-          onError={() => {
-            if (bgSrc !== DUNE_BG_PATH) {
-              setBgSrc(DUNE_BG_PATH);
-            }
-          }}
-          className="w-full h-full object-cover object-[center_35%] scale-[1.01] filter brightness-[0.92] contrast-[1.08]"
-          loading="eager"
-          decoding="async"
-        />
+        <AnimatePresence initial={false} mode="sync">
+          <motion.img
+            key={currentSlide.id}
+            src={getAssetUrl(currentSlide.backdropUrl)}
+            alt={currentSlide.name}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.85, ease: "easeInOut" }}
+            className="absolute inset-0 w-full h-full object-cover object-[center_35%] scale-[1.01] filter brightness-[0.92] contrast-[1.08]"
+            loading="eager"
+            decoding="async"
+          />
+        </AnimatePresence>
       </div>
 
       {/* ── Layer 2: Warm Cinematic Desert Blending ── */}
@@ -1405,9 +1397,9 @@ function DuneFantasyHeroBanner({
         className="absolute inset-0 z-10 pointer-events-none"
         style={{
           background: `
-            linear-gradient(to right, rgba(10,11,16,0.88) 0%, rgba(10,11,16,0.58) 38%, rgba(10,11,16,0.18) 72%, transparent 100%),
-            linear-gradient(to top, #0a0b10 0%, rgba(10,11,16,0.7) 12%, rgba(10,11,16,0.2) 28%, transparent 48%),
-            linear-gradient(to bottom, rgba(10,11,16,0.65) 0%, rgba(10,11,16,0.15) 14%, transparent 26%)
+            linear-gradient(to right, rgba(10,11,16,0.92) 0%, rgba(10,11,16,0.65) 42%, rgba(10,11,16,0.2) 75%, transparent 100%),
+            linear-gradient(to top, #0a0b10 0%, rgba(10,11,16,0.8) 18%, rgba(10,11,16,0.2) 36%, transparent 60%),
+            linear-gradient(to bottom, rgba(10,11,16,0.7) 0%, rgba(10,11,16,0.15) 15%, transparent 28%)
           `,
         }}
       />
@@ -1417,40 +1409,6 @@ function DuneFantasyHeroBanner({
         className="pointer-events-none absolute -bottom-10 left-1/4 w-[600px] h-[300px] bg-amber-500/10 blur-[140px] rounded-full z-10"
         aria-hidden="true"
       />
-
-      {/* ── Layer 3: Character Cutout with Smooth Slide Effect from Left/Right & Gentle Hover ── */}
-      <div className="absolute right-0 bottom-0 top-0 h-full w-full max-w-2xl sm:max-w-3xl md:max-w-4xl lg:max-w-5xl flex items-end justify-end pointer-events-none z-10 overflow-hidden pr-3 sm:pr-8 md:pr-14 lg:pr-20 xl:pr-28">
-        <AnimatePresence initial={false} custom={direction}>
-          <motion.div
-            key={currentSlide.id}
-            custom={direction}
-            initial={{ opacity: 0, x: direction > 0 ? 100 : -100 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: direction > 0 ? -100 : 100 }}
-            transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
-            className={cn(
-              "relative select-none pointer-events-none drop-shadow-[0_25px_50px_rgba(0,0,0,0.95)]",
-              currentSlide.charHeightClass || "h-[76%] sm:h-[84%] md:h-[90%] lg:h-[96%]",
-            )}
-          >
-            <motion.img
-              src={getAssetUrl(currentSlide.charImage)}
-              alt={currentSlide.charAlt}
-              onError={(e) => {
-                const target = e.currentTarget;
-                if (!target.src.endsWith(currentSlide.charImage)) {
-                  target.src = currentSlide.charImage;
-                }
-              }}
-              animate={{ y: [0, -6, 0] }}
-              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-              className="h-full w-auto object-contain filter contrast-[1.08] brightness-[0.98]"
-              loading="eager"
-              decoding="async"
-            />
-          </motion.div>
-        </AnimatePresence>
-      </div>
 
       {/* ── Layer 4: Foreground Content (Netflix Layout with Title Logo & Action Buttons) ── */}
       <div className="pointer-events-none absolute inset-0 z-20 flex flex-col justify-end px-4 pb-12 sm:justify-center sm:px-14 sm:pb-32 md:px-20 lg:px-24 lg:pb-12">

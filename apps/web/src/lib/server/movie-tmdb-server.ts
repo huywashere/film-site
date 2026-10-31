@@ -9,6 +9,7 @@ import {
   sortTmdbImages,
   sortTmdbLogos,
   isNonChineseTmdbImage,
+  type BackdropSize,
 } from "@/lib/tmdb";
 
 export interface ServerTmdbResult {
@@ -171,13 +172,19 @@ export const getMovieTmdbServer = cache(async (movie: any): Promise<ServerTmdbRe
       logos: cleanLogos,
     };
 
+    // Pick the highest-resolution backdrop available (prefer 4K/1080p).
+    // Use "original" for hero banners so they don't appear pixelated on large screens.
+    // Fallback to w1280 for any backdrop that is smaller than full HD.
+    const backdropSize: BackdropSize =
+      bestBackdrop && (bestBackdrop.width || 0) >= 1920 ? "original" : "w1280";
+
     const result: ServerTmdbResult = {
       tmdbId: resolvedId,
       mediaType: resolvedType,
       bestBackdrop,
       bestPoster,
       bestLogo,
-      tmdbBackdropUrl: bestBackdrop?.file_path ? tmdbBackdrop(bestBackdrop.file_path, "w1280") : null,
+      tmdbBackdropUrl: bestBackdrop?.file_path ? tmdbBackdrop(bestBackdrop.file_path, backdropSize) : null,
       tmdbPosterUrl: bestPoster?.file_path ? tmdbPoster(bestPoster.file_path, "w500") : null,
       tmdbLogoUrl: bestLogo?.file_path ? tmdbLogo(bestLogo.file_path, "w500") : null,
       images: filteredImages,

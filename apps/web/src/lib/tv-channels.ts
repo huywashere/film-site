@@ -622,7 +622,8 @@ export const TV_CHANNELS: TvChannel[] = [
   },
 ];
 
-export function getChannelBySlug(slug: string): TvChannel | undefined {
+export function getChannelBySlug(slug?: string | null): TvChannel | undefined {
+  if (!slug || typeof slug !== "string") return undefined;
   const normalized = slug.trim().toLowerCase();
   return (
     TV_CHANNELS.find((c) => c.slug.toLowerCase() === normalized) ||

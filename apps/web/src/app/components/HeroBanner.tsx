@@ -437,7 +437,11 @@ async function enrichHeroTitleLogos(playlist: HeroFilm[]): Promise<HeroFilm[]> {
       const hasTmdbBackdrop = Boolean(
         film.heroBackdrop && film.heroBackdrop.includes("image.tmdb.org"),
       );
-      if (film.titleLogoResolved && film.titleLogo && hasTmdbBackdrop) return film;
+      // Only skip enrichment when BOTH logo AND backdrop are already from TMDB.
+      // If titleLogoResolved=true but titleLogo is missing (e.g. SSR timeout),
+      // we must still re-enrich on the client to fetch the proper TMDB logo/backdrop.
+      const hasTmdbLogo = Boolean(film.titleLogo);
+      if (film.titleLogoResolved && hasTmdbLogo && hasTmdbBackdrop) return film;
 
       let tmdbId = Number(
         (film as any).tmdbId ||
@@ -502,8 +506,11 @@ async function enrichHeroTitleLogos(playlist: HeroFilm[]): Promise<HeroFilm[]> {
 
         const bestLogo = getBestTitleLogo(images.logos || []);
         const cleanBackdrops = sortTmdbImages(images.backdrops || []);
-        const bestBackdrop = cleanBackdrops[0]?.file_path
-          ? tmdbBackdrop(cleanBackdrops[0].file_path, "w1280")
+        // Use high-res: 'original' for 1080p+ backdrops, else 'w1280'
+        const topBackdrop = cleanBackdrops[0];
+        const backdropQuality = topBackdrop && (topBackdrop.width || 0) >= 1920 ? "original" : "w1280";
+        const bestBackdrop = topBackdrop?.file_path
+          ? tmdbBackdrop(topBackdrop.file_path, backdropQuality)
           : undefined;
 
         const cleanPosters = sortTmdbImages(images.posters || []);

@@ -361,7 +361,7 @@ function ResilientAsianHeroBackdrop({
   }, [item.thumb_url, item.poster_url]);
 
   const mobileCandidates = useMemo(() => {
-    const directList = [item.poster_url, item.thumb_url].filter(Boolean) as string[];
+    const directList = [item.thumb_url, item.poster_url].filter(Boolean) as string[];
     const all: string[] = [];
     for (const url of directList) {
       for (const cand of buildAsianHeroImageCandidates(url)) {
@@ -369,7 +369,7 @@ function ResilientAsianHeroBackdrop({
       }
     }
     return all;
-  }, [item.poster_url, item.thumb_url]);
+  }, [item.thumb_url, item.poster_url]);
 
   const [desktopIdx, setDesktopIdx] = useState(0);
   const [mobileIdx, setMobileIdx] = useState(0);
@@ -380,7 +380,7 @@ function ResilientAsianHeroBackdrop({
   }, [item.slug, item.thumb_url, item.poster_url]);
 
   const desktopSrc = desktopCandidates[desktopIdx] || item.thumb_url || item.poster_url || "";
-  const mobilePosterSrc = mobileCandidates[mobileIdx] || item.poster_url || item.thumb_url || "";
+  const mobilePosterSrc = mobileCandidates[mobileIdx] || item.thumb_url || item.poster_url || "";
 
   return (
     <picture className="absolute inset-0 w-full h-full block">
@@ -439,7 +439,7 @@ function ResilientAsianHeroLogo({
     return (
       <h1
         data-curated-hero-text={item.slug}
-        className="text-2xl sm:text-4xl md:text-5xl font-black text-white tracking-wider uppercase drop-shadow-[0_8px_20px_rgba(0,0,0,0.95)]"
+        className="text-xl sm:text-3xl md:text-5xl font-black text-white tracking-wider uppercase drop-shadow-[0_8px_20px_rgba(0,0,0,0.95)]"
       >
         {item.origin_name || item.calligraphyTitle || item.name}
       </h1>
@@ -447,7 +447,7 @@ function ResilientAsianHeroLogo({
   }
 
   return (
-    <div className="h-12 sm:h-16 md:h-20 lg:h-24 max-w-[320px] sm:max-w-[460px] md:max-w-[540px]">
+    <div className="h-9 sm:h-12 md:h-18 lg:h-22 max-w-[220px] sm:max-w-[340px] md:max-w-[500px]">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         data-curated-hero-logo={item.slug}
@@ -546,7 +546,7 @@ function AsianCuratedHeroBanner({
       data-hero-banner="true"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
-      className="relative h-[78svh] min-h-[580px] w-full select-none overflow-hidden bg-[#0a0b10] sm:h-[88vh] sm:min-h-[680px] lg:h-[95vh] lg:min-h-[780px]"
+      className="relative h-[82svh] min-h-[620px] max-h-[760px] w-full select-none overflow-hidden bg-[#0a0b10] sm:h-[88vh] sm:min-h-[680px] lg:h-[95vh] lg:min-h-[780px]"
     >
       {/* ── Layer 1: Background Scenic Image (Backdrop) with Subtle Smooth Gliding Motion ── */}
       <div className="absolute inset-0 w-full h-full overflow-hidden">
@@ -582,9 +582,9 @@ function AsianCuratedHeroBanner({
         </AnimatePresence>
       </div>
 
-      {/* ── Layer 2: Soft Cinematic Blending Overlays (Hiển thị trọn vẹn cảnh nền, không đánh đen) ── */}
+      {/* ── Layer 2: Soft Cinematic Blending Overlays (Hiển thị trọn vẹn cảnh nền trên desktop) ── */}
       <div
-        className="absolute inset-0 z-10 pointer-events-none"
+        className="hidden md:block absolute inset-0 z-10 pointer-events-none"
         style={{
           background: `
             linear-gradient(to right, rgba(10,11,16,0.76) 0%, rgba(10,11,16,0.36) 44%, rgba(10,11,16,0.03) 75%, transparent 100%),
@@ -595,7 +595,7 @@ function AsianCuratedHeroBanner({
 
       {/* ── Layer 3: Character Cutout with Smooth Right-to-Left Glide ── */}
       {currentItem.charactersUrl && (
-        <div className="absolute right-0 bottom-[-20px] sm:bottom-[-32px] md:bottom-[-44px] top-0 h-[calc(100%+44px)] w-full max-w-2xl sm:max-w-3xl md:max-w-4xl lg:max-w-5xl pointer-events-none z-10 overflow-hidden [mask-image:linear-gradient(to_bottom,black_0%,black_62%,transparent_94%)]">
+        <div className="absolute right-0 top-14 sm:top-16 md:top-0 bottom-auto md:bottom-[-44px] h-[48%] sm:h-[52%] md:h-[calc(100%+44px)] w-full md:max-w-4xl lg:max-w-5xl pointer-events-none z-10 overflow-hidden [mask-image:linear-gradient(to_bottom,black_0%,black_75%,transparent_98%)] md:[mask-image:linear-gradient(to_bottom,black_0%,black_62%,transparent_94%)]">
           <AnimatePresence>
             <motion.div
               key={`chars-${currentItem.slug}`}
@@ -604,7 +604,7 @@ function AsianCuratedHeroBanner({
               exit={{ opacity: 0, x: -45 }}
               transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
               style={{ willChange: "transform, opacity", transform: "translateZ(0)" }}
-              className="absolute inset-0 flex items-end justify-end pr-3 sm:pr-8 md:pr-14 lg:pr-20 xl:pr-28"
+              className="absolute inset-0 flex items-end justify-center md:justify-end pr-0 md:pr-14 lg:pr-20 xl:pr-28"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -613,18 +613,20 @@ function AsianCuratedHeroBanner({
                 decoding="async"
                 fetchPriority="high"
                 loading="eager"
-                className="h-[80%] sm:h-[88%] md:h-[94%] lg:h-[98%] max-h-[760px] w-auto max-w-full object-contain object-bottom select-none drop-shadow-[0_20px_45px_rgba(0,0,0,0.65)]"
+                className="h-full md:h-[94%] lg:h-[98%] max-h-[330px] sm:max-h-[420px] md:max-h-[760px] w-auto max-w-[92%] sm:max-w-[85%] md:max-w-full object-contain object-bottom select-none drop-shadow-[0_16px_36px_rgba(0,0,0,0.7)]"
               />
             </motion.div>
           </AnimatePresence>
         </div>
       )}
 
-      {/* ── Layer 3.5: Seamless Bottom Blend Gradient to guarantee characters fade deeply into bottom background ── */}
-      <div className="absolute inset-x-0 bottom-0 h-36 sm:h-48 md:h-56 bg-gradient-to-t from-[#0a0b10] via-[#0a0b10]/80 via-40% to-transparent pointer-events-none z-15" />
+      {/* ── Layer 3.5: Protective Gradients (Top Scrim cho Navbar & Bottom Scrim cho Nội dung) ── */}
+      <div className="md:hidden absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[#0a0b10]/85 via-[#0a0b10]/30 to-transparent pointer-events-none z-15" />
+      <div className="hidden md:block absolute inset-x-0 bottom-0 h-36 sm:h-48 md:h-56 bg-gradient-to-t from-[#0a0b10] via-[#0a0b10]/80 via-40% to-transparent pointer-events-none z-15" />
+      <div className="absolute inset-x-0 bottom-0 h-72 sm:h-80 md:hidden bg-gradient-to-t from-[#0a0b10] via-[#0a0b10]/95 via-50% to-transparent pointer-events-none z-15" />
 
       {/* ── Layer 4: Typography, Logo Banner, Genre Pills & Actions ── */}
-      <div className="absolute inset-0 z-20 flex flex-col justify-start pt-52 sm:pt-56 md:pt-60 lg:pt-64 xl:pt-72 px-4 sm:px-10 md:px-16 lg:px-24 pointer-events-none">
+      <div className="absolute inset-0 z-20 flex flex-col justify-end pb-8 sm:pb-12 md:justify-start md:pb-0 md:pt-60 lg:pt-64 xl:pt-72 px-4 sm:px-10 md:px-16 lg:px-24 pointer-events-none">
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
             key={currentItem.slug || currentItem._id || currentIndex}
@@ -646,25 +648,25 @@ function AsianCuratedHeroBanner({
               ease: [0.16, 1, 0.3, 1],
             }}
             style={{ willChange: "transform, opacity", transform: "translateZ(0)" }}
-            className="max-w-xl sm:max-w-2xl space-y-2.5 sm:space-y-4 pt-2 sm:pt-4 pointer-events-auto"
+            className="max-w-xl sm:max-w-2xl space-y-2 sm:space-y-3.5 md:space-y-4 pt-0 md:pt-4 pointer-events-auto"
           >
             {/* Title Group with Logo Banner */}
-            <div className="space-y-2">
+            <div className="space-y-1.5 sm:space-y-2">
               <ResilientAsianHeroLogo key={currentItem.slug} item={currentItem} />
 
               {/* Subtitle — Chuẩn không màu */}
-              <p className="text-base sm:text-xl font-medium italic text-neutral-200/90 drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)]">
+              <p className="text-xs sm:text-base md:text-xl font-medium italic text-neutral-300 drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)] line-clamp-1 sm:line-clamp-none">
                 {currentItem.name} {currentItem.origin_name ? `(${currentItem.origin_name})` : ""}
               </p>
             </div>
 
             {/* Genre Pills */}
             {currentItem.genres && currentItem.genres.length > 0 && (
-              <div className="flex flex-wrap items-center gap-2 pt-0.5">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-0.5">
                 {currentItem.genres.map((genre) => (
                   <span
                     key={genre}
-                    className="px-3 py-1 rounded-full bg-white/[0.12] hover:bg-white/[0.2] text-xs font-semibold text-neutral-100 border border-white/[0.15] backdrop-blur-md transition-colors shadow-sm"
+                    className="px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full bg-white/[0.12] hover:bg-white/[0.2] text-[11px] sm:text-xs font-semibold text-neutral-100 border border-white/[0.15] backdrop-blur-md transition-colors shadow-sm"
                   >
                     {genre}
                   </span>
@@ -673,25 +675,25 @@ function AsianCuratedHeroBanner({
             )}
 
             {/* Description */}
-            <p className="text-xs sm:text-sm text-neutral-200/95 font-medium leading-relaxed max-w-lg line-clamp-3 sm:line-clamp-none drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)]">
+            <p className="text-[11px] sm:text-xs md:text-sm text-neutral-300 font-medium leading-relaxed max-w-lg line-clamp-2 sm:line-clamp-3 drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)]">
               {currentItem.content}
             </p>
 
             {/* CTA Buttons */}
-            <div className="flex items-center gap-3 pt-2 sm:pt-3">
+            <div className="flex items-center gap-2.5 sm:gap-3 pt-1.5 sm:pt-3">
               <Link
                 href={`/watch/${currentItem.slug}`}
-                className="inline-flex items-center gap-2.5 px-6 sm:px-7 py-2.5 sm:py-3 rounded-full bg-white hover:bg-neutral-100 text-neutral-950 font-black text-xs sm:text-sm shadow-xl shadow-black/40 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                className="inline-flex items-center gap-2 px-5 sm:px-7 py-2 sm:py-3 rounded-full bg-white hover:bg-neutral-100 text-neutral-950 font-black text-xs sm:text-sm shadow-xl shadow-black/40 transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0"
               >
-                <Play className="w-4 h-4 fill-current text-neutral-950" />
+                <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current text-neutral-950" />
                 <span>Xem Ngay</span>
               </Link>
 
               <Link
                 href={`/film/${currentItem.slug}`}
-                className="inline-flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-white/15 hover:bg-white/25 border border-white/20 text-white font-bold text-xs sm:text-sm backdrop-blur-md transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                className="inline-flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 sm:py-3 rounded-full bg-white/15 hover:bg-white/25 border border-white/20 text-white font-bold text-xs sm:text-sm backdrop-blur-md transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0"
               >
-                <Info className="w-4 h-4" />
+                <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 <span>Chi Tiết</span>
               </Link>
             </div>
@@ -722,7 +724,7 @@ function AsianCuratedHeroBanner({
 
       {/* ── Pagination Dots ── */}
       {curatedList.length > 1 && (
-        <div className="absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-1.5 sm:bottom-8 sm:gap-2 lg:right-16 lg:left-auto lg:translate-x-0">
+        <div className="absolute bottom-3 sm:bottom-5 md:bottom-8 left-1/2 z-30 flex -translate-x-1/2 items-center gap-1.5 sm:gap-2 lg:right-16 lg:left-auto lg:translate-x-0">
           {curatedList.map((item, idx) => (
             <button
               key={item._id || item.slug || idx}

@@ -89,14 +89,17 @@ export function Sidebar() {
   // All theme/universe/country/catalogue pages hide the rail on top of the
   // hero banner, and reveal it smoothly when scrolling into body content.
   // Watch and film detail pages keep the sidebar always pinned.
+  const isTvPage = pathname === '/tv' || pathname.startsWith('/tv');
   const isPinnedPage =
     isFilmDetailPage ||
     isWatchPage ||
+    isTvPage ||
     isUserActivityPage ||
     isGenresPage ||
     isFilmsPage ||
     optimisticPath === '/genres' ||
     optimisticPath === '/films' ||
+    optimisticPath === '/tv' ||
     Boolean(optimisticPath?.startsWith('/films/'));
   const isAlwaysPinnedPage = isPinnedPage;
   const isHeroBannerPage = isHomePage || isCountryPage || isGenrePage || isUniversePage;

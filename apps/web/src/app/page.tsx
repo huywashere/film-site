@@ -126,10 +126,16 @@ async function resolveInitialHeroFilms(heroSlugs?: string[]): Promise<CuratedHer
         let resolvedPoster = poster;
         let resolvedLogo: string | undefined;
 
+        // Track whether TMDB had a valid ID we could query
+        const hasTmdbId = Boolean(movie.tmdb?.id && movie.tmdb.id !== "0");
+
         try {
+          // Increase timeout: cold TMDB fetch over Docker/VPS networking needs more budget.
+          // If movie has a known tmdb.id, give it up to 5000ms; otherwise 3500ms.
+          const timeoutMs = hasTmdbId ? 5000 : 3500;
           const tmdbServer = await Promise.race([
             getMovieTmdbServer(movie),
-            new Promise<null>((resolve) => setTimeout(() => resolve(null), 2000)),
+            new Promise<null>((resolve) => setTimeout(() => resolve(null), timeoutMs)),
           ]);
           if (tmdbServer?.tmdbBackdropUrl) {
             resolvedBackdrop = tmdbServer.tmdbBackdropUrl;
@@ -167,10 +173,29 @@ async function resolveInitialHeroFilms(heroSlugs?: string[]): Promise<CuratedHer
             ? movie.category.map((c: any) => c.name || c)
             : [],
         };
-        heroDetailServerCache.set(mappedSlug, {
-          film,
-          expiresAt: Date.now() + 300_000,
-        });
+
+        // IMPORTANT: Only cache if artwork is fully resolved.
+        // If movie has a known tmdb.id but we still don't have a TMDB backdrop/logo
+        // (i.e. SSR timeout), do NOT persist this degraded state — let the next
+        // request retry TMDB resolution rather than serving missing artwork for 5min.
+        const isArtworkDegraded =
+          hasTmdbId &&
+          (!resolvedLogo || !resolvedBackdrop?.includes("image.tmdb.org"));
+
+        if (!isArtworkDegraded) {
+          heroDetailServerCache.set(mappedSlug, {
+            film,
+            expiresAt: Date.now() + 300_000, // 5 minutes for fully resolved results
+          });
+        } else {
+          // Cache degraded result for a very short time (15s) so rapid requests
+          // don't spam TMDB, but subsequent visitors can get a fresh retry quickly.
+          heroDetailServerCache.set(mappedSlug, {
+            film,
+            expiresAt: Date.now() + 15_000,
+          });
+        }
+
         return film;
       } catch {
         return null;
