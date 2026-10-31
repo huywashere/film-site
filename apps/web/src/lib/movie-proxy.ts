@@ -170,6 +170,7 @@ export function createMovieProxyHandler(config: MovieProxyConfig) {
       "X-Source": config.sourceName,
       "Cache-Control": `public, max-age=${browserTtl}, s-maxage=${ttlSeconds}, stale-while-revalidate=${swrTtl}`,
       "CDN-Cache-Control": `public, max-age=${ttlSeconds}, stale-while-revalidate=${swrTtl}`,
+      "Cloudflare-CDN-Cache-Control": `public, max-age=${ttlSeconds}, stale-while-revalidate=${swrTtl}`,
     };
   }
 

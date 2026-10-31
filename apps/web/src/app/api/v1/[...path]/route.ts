@@ -38,6 +38,62 @@ function firstPartyCookie(cookie: string) {
   return cookie.replace(/;\s*Domain=[^;]+/gi, '');
 }
 
+function determineCacheHeaders(request: NextRequest, path: string[]): Record<string, string> {
+  if (request.method !== 'GET' && request.method !== 'HEAD') {
+    return {
+      'Cache-Control': 'no-store, no-cache, must-revalidate',
+      'CDN-Cache-Control': 'no-store',
+      'Cloudflare-CDN-Cache-Control': 'no-store',
+    };
+  }
+
+  // Check for auth headers or user-specific cookies
+  const hasAuth = Boolean(
+    request.headers.get('authorization') ||
+    request.headers.get('x-user-id') ||
+    request.headers.get('cookie')?.includes('session') ||
+    request.headers.get('cookie')?.includes('token')
+  );
+
+  const fullPath = path.join('/').toLowerCase();
+
+  // Private routes that must never be cached
+  const isPrivate =
+    hasAuth ||
+    /(?:^|\/)(auth|user|profile|account|history|bookmarks|favorites|watchlist|rating|comment|telemetry|admin)(?:\/|$)/i.test(
+      fullPath,
+    );
+
+  if (isPrivate) {
+    return {
+      'Cache-Control': 'private, no-store, no-cache, must-revalidate',
+      'CDN-Cache-Control': 'no-store',
+      'Cloudflare-CDN-Cache-Control': 'no-store',
+    };
+  }
+
+  // Public catalog routes with tiered TTLs
+  let ttl = 300; // default 5 minutes
+  if (/(?:^|\/)(genres|countries|categories)(?:\/|$)/i.test(fullPath)) {
+    ttl = 86400; // 24 hours for static taxonomy
+  } else if (/(?:^|\/)(trending|top-rated|home)(?:\/|$)/i.test(fullPath)) {
+    ttl = 600; // 10 minutes
+  } else if (/(?:^|\/)latest(?:\/|$)/i.test(fullPath)) {
+    ttl = 180; // 3 minutes
+  } else if (/^films\/[^/]+$/i.test(fullPath)) {
+    ttl = 900; // 15 minutes for movie details
+  }
+
+  const swr = Math.min(ttl * 2, 3600);
+  const browserTtl = Math.min(ttl, 60);
+
+  return {
+    'Cache-Control': `public, max-age=${browserTtl}, s-maxage=${ttl}, stale-while-revalidate=${swr}`,
+    'CDN-Cache-Control': `public, max-age=${ttl}, stale-while-revalidate=${swr}`,
+    'Cloudflare-CDN-Cache-Control': `public, max-age=${ttl}, stale-while-revalidate=${swr}`,
+  };
+}
+
 async function proxyRequest(
   request: NextRequest,
   context: { params: Promise<{ path: string[] }> },
@@ -100,6 +156,17 @@ async function proxyRequest(
   cookies.forEach((cookie) =>
     responseHeaders.append('set-cookie', firstPartyCookie(cookie)),
   );
+
+  if (upstreamResponse.status === 200) {
+    const cacheHeaders = determineCacheHeaders(request, path);
+    Object.entries(cacheHeaders).forEach(([name, value]) => {
+      responseHeaders.set(name, value);
+    });
+  } else {
+    responseHeaders.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    responseHeaders.set('CDN-Cache-Control', 'no-store');
+    responseHeaders.set('Cloudflare-CDN-Cache-Control', 'no-store');
+  }
 
   return new NextResponse(upstreamResponse.body, {
     status: upstreamResponse.status,
